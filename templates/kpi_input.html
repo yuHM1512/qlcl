@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nhập liệu KPI</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .hero-section {
+            background: linear-gradient(135deg, #2c3e50 0%, #3498db 50%, #9b59b6 100%);
+            color: white;
+            padding: 28px 0;
+            margin-bottom: 20px;
+        }
+        .step-card { background: white; border-radius: 12px; padding: 14px; box-shadow: 0 3px 10px rgba(0,0,0,0.08); border-left: 4px solid #3498db; }
+        .step-card.optional { border-left-color: #f39c12; }
+        .muted { color:#6b7280; }
+        .error { color:#b91c1c; margin:8px 0; }
+        .success { color:#065f46; margin:8px 0; }
+    </style>
+    <script>
+        async function fetchTasks() {
+            const res = await fetch('/api/tasks');
+            if (!res.ok) return [];
+            const data = await res.json();
+            return data.tasks || [];
+        }
+
+        let allTasks = [];
+        let selectedTasks = [];
+
+        function renderTaskRows() {
+            const container = document.getElementById('task-rows');
+            container.innerHTML = '';
+            selectedTasks.forEach((it, idx) => {
+                const card = document.createElement('div');
+                card.className = 'step-card mb-3';
+                const available = [it.task_name, ...allTasks.filter(t => !selectedTasks.some(s => s.task_name === t))];
+                card.innerHTML = `
+                    <div class="row g-3 align-items-end">
+                        <div class="col-12 col-md-7">
+                            <label class="form-label">Công việc</label>
+                            <select class="form-select" data-idx="${idx}" onchange="onTaskChange(event)">
+                                ${available.map(t => `<option value="${t}" ${t===it.task_name?'selected':''}>${t}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div class="col-8 col-md-3">
+                            <label class="form-label">Số lượng</label>
+                            <input class="form-control" type="number" min="0" value="${it.thuc_hien}" data-idx="${idx}" onchange="onQtyChange(event)" />
+                        </div>
+                        <div class="col-4 col-md-2 text-end">
+                            <button class="btn btn-outline-danger w-100" onclick="removeRow(${idx})"><i class="fa fa-trash me-1"></i>Xóa</button>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+            document.getElementById('btn-add').disabled = allTasks.filter(t => !selectedTasks.some(s => s.task_name === t)).length === 0;
+        }
+
+        function onTaskChange(e) {
+            const idx = Number(e.target.getAttribute('data-idx'));
+            const val = e.target.value;
+            selectedTasks[idx].task_name = val;
+            renderTaskRows();
+        }
+        function onQtyChange(e) {
+            const idx = Number(e.target.getAttribute('data-idx'));
+            const val = Number(e.target.value || 0);
+            selectedTasks[idx].thuc_hien = val;
+        }
+        function addRow() {
+            const available = allTasks.filter(t => !selectedTasks.some(s => s.task_name === t));
+            if (available.length === 0) return;
+            selectedTasks.push({ task_name: available[0], thuc_hien: 0 });
+            renderTaskRows();
+        }
+        function removeRow(idx) {
+            selectedTasks.splice(idx,1);
+            renderTaskRows();
+        }
+
+        async function initForm() {
+            allTasks = await fetchTasks();
+            selectedTasks = [];
+            if (allTasks.length > 0) {
+                selectedTasks = [{ task_name: allTasks[0], thuc_hien: 0 }];
+            }
+            renderTaskRows();
+        }
+
+        async function submitForm() {
+            const fromEl = document.getElementById('from_date');
+            const toEl = document.getElementById('to_date');
+            const fromDate = fromEl ? fromEl.value : '';
+            const toDate = toEl ? toEl.value : '';
+            const msg = document.getElementById('msg');
+            msg.textContent = '';
+            if (!fromDate || !toDate || selectedTasks.length === 0) {
+                msg.textContent = 'Vui lòng nhập đầy đủ thông tin';
+                msg.className = 'error';
+                return;
+            }
+
+            // Validation rules
+            try {
+                const dFrom = new Date(fromDate);
+                const dTo = new Date(toDate);
+                if (isNaN(dFrom.getTime()) || isNaN(dTo.getTime())) {
+                    throw new Error('Ngày không hợp lệ');
+                }
+                // 1) Cho phép cùng 1 ngày
+                // 2) Nếu là mốc (from != to): phải cùng tuần ISO và cùng tháng
+                if (dTo < dFrom) {
+                    throw new Error('Ngày Đến phải >= Ngày Từ');
+                }
+                if (dTo.getTime() !== dFrom.getTime()) {
+                    // Must be same ISO week and same month
+                    const sameMonth = dFrom.getMonth() === dTo.getMonth() && dFrom.getFullYear() === dTo.getFullYear();
+                    const weekFrom = getISOWeek(dFrom);
+                    const weekTo = getISOWeek(dTo);
+                    const sameWeek = weekFrom.year === weekTo.year && weekFrom.week === weekTo.week;
+                    if (!sameWeek) {
+                        throw new Error('Khoảng thời gian phải nằm trong cùng 1 tuần làm việc.');
+                    }
+                    if (!sameMonth) {
+                        throw new Error('Khoảng thời gian phải nằm trong cùng 1 tháng.');
+                    }
+                }
+            } catch (e) {
+                msg.textContent = e.message || 'Lỗi dữ liệu ngày';
+                msg.className = 'error';
+                return;
+            }
+
+            const res = await fetch('/api/input', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ from_date: fromDate, to_date: toDate, items: selectedTasks })
+            });
+            if (!res.ok) {
+                const data = await res.json().catch(()=>({}));
+                msg.textContent = data.detail || 'Lỗi khi lưu dữ liệu';
+                msg.className = 'error';
+                return;
+            }
+            const data = await res.json();
+            msg.textContent = `Đã lưu ${data.inserted} dòng.`;
+            msg.className = 'success';
+            await initForm();
+            showToast(`Đã lưu ${data.inserted} dòng`, 'success');
+        }
+
+        // Helper: tính tuần ISO từ một ngày
+        function getISOWeek(dateObj) {
+            const d = new Date(Date.UTC(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate()));
+            // Set to nearest Thursday: current date + 4 - current day number
+            const dayNum = d.getUTCDay() || 7; // Sunday=7
+            d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+            const yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
+            const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+            return { year: d.getUTCFullYear(), week: weekNo };
+        }
+        async function initErrorFormTasks() {
+            try {
+                const res = await fetch('/api/tasks');
+                if (!res.ok) return;
+                const data = await res.json();
+                const sel = document.getElementById('err_task');
+                if (!sel) return;
+                sel.innerHTML = '<option value="">-- Chọn công việc --</option>';
+                (data.tasks || []).forEach(t => {
+                    const op = document.createElement('option');
+                    op.value = t; op.textContent = t; sel.appendChild(op);
+                });
+            } catch {}
+        }
+
+        async function submitErrorForm() {
+            const msg = document.getElementById('err_msg');
+            if (msg) { msg.textContent=''; msg.className=''; }
+            const payload = {
+                ngay_ghi_nhan: (document.getElementById('err_ngay')||{}).value || null,
+                task_name: (document.getElementById('err_task')||{}).value || null,
+                phan_loai_loi: (document.getElementById('err_phan_loai')||{}).value || null,
+                mo_ta: (document.getElementById('err_mo_ta')||{}).value || null,
+                muc_do_anh_huong: (document.getElementById('err_muc_do')||{}).value || null,
+                huong_giai_quyet: (document.getElementById('err_huong_gq')||{}).value || null,
+            };
+            try {
+                const res = await fetch('/api/input-error', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
+                if (!res.ok) {
+                    const d = await res.json().catch(()=>({}));
+                    if (msg) { msg.className = 'error'; msg.textContent = d.detail || 'Lỗi khi lưu sai sót'; }
+                    return;
+                }
+                const d = await res.json();
+                if (msg) { msg.className = 'success'; msg.textContent = 'Đã ghi nhận sai sót (ID: ' + d.id + ')'; }
+                resetErrorForm();
+                await initErrorFormTasks();
+                showToast('Đã ghi nhận sai sót', 'success');
+            } catch (e) {
+                if (msg) { msg.className = 'error'; msg.textContent = 'Lỗi khi lưu sai sót'; }
+            }
+        }
+
+        function resetErrorForm() {
+            ['err_ngay','err_task','err_phan_loai','err_mo_ta','err_muc_do','err_huong_gq'].forEach(id=>{
+                const el = document.getElementById(id);
+                if (el) el.value = '';
+            });
+            const msg = document.getElementById('err_msg');
+            if (msg) { msg.textContent=''; msg.className=''; }
+        }
+
+        // Functions for Edit Data tab
+        let editDataList = [];
+
+        async function loadEditData() {
+            const loadingEl = document.getElementById('edit-loading');
+            const containerEl = document.getElementById('edit-data-container');
+            const emptyEl = document.getElementById('edit-empty');
+            const rowsEl = document.getElementById('edit-rows');
+            
+            if (loadingEl) loadingEl.style.display = 'block';
+            if (containerEl) containerEl.style.display = 'none';
+            if (emptyEl) emptyEl.style.display = 'none';
+            
+            // Lấy giá trị filter từ input
+            const fromDateEl = document.getElementById('edit-filter-from');
+            const toDateEl = document.getElementById('edit-filter-to');
+            const fromDate = fromDateEl ? fromDateEl.value : '';
+            const toDate = toDateEl ? toDateEl.value : '';
+            
+            // Tạo query string nếu có filter
+            let url = '/api/input-edit';
+            const params = new URLSearchParams();
+            if (fromDate) params.append('from_date', fromDate);
+            if (toDate) params.append('to_date', toDate);
+            if (params.toString()) {
+                url += '?' + params.toString();
+            }
+            
+            try {
+                const res = await fetch(url);
+                if (!res.ok) {
+                    throw new Error('Không thể tải dữ liệu');
+                }
+                const data = await res.json();
+                editDataList = data.items || [];
+                
+                if (loadingEl) loadingEl.style.display = 'none';
+                
+                if (editDataList.length === 0) {
+                    if (emptyEl) emptyEl.style.display = 'block';
+                    if (containerEl) containerEl.style.display = 'none';
+                } else {
+                    if (containerEl) containerEl.style.display = 'block';
+                    if (emptyEl) emptyEl.style.display = 'none';
+                    renderEditRows();
+                }
+            } catch (e) {
+                if (loadingEl) loadingEl.style.display = 'none';
+                const msgEl = document.getElementById('edit-msg');
+                if (msgEl) {
+                    msgEl.textContent = 'Lỗi khi tải dữ liệu: ' + e.message;
+                    msgEl.className = 'error';
+                }
+            }
+        }
+
+        function applyEditFilter() {
+            const fromDateEl = document.getElementById('edit-filter-from');
+            const toDateEl = document.getElementById('edit-filter-to');
+            const fromDate = fromDateEl ? fromDateEl.value : '';
+            const toDate = toDateEl ? toDateEl.value : '';
+            
+            // Validation
+            if (fromDate && toDate) {
+                const dFrom = new Date(fromDate);
+                const dTo = new Date(toDate);
+                if (dTo < dFrom) {
+                    const msgEl = document.getElementById('edit-msg');
+                    if (msgEl) {
+                        msgEl.textContent = 'Ngày Đến phải >= Ngày Từ';
+                        msgEl.className = 'error';
+                    }
+                    return;
+                }
+            }
+            
+            loadEditData();
+        }
+
+        function clearEditFilter() {
+            const fromDateEl = document.getElementById('edit-filter-from');
+            const toDateEl = document.getElementById('edit-filter-to');
+            if (fromDateEl) fromDateEl.value = '';
+            if (toDateEl) toDateEl.value = '';
+            loadEditData();
+        }
+
+        function renderEditRows() {
+            const rowsEl = document.getElementById('edit-rows');
+            if (!rowsEl) return;
+            
+            rowsEl.innerHTML = '';
+            
+            editDataList.forEach((item, idx) => {
+                const card = document.createElement('div');
+                card.className = 'step-card mb-3';
+                card.innerHTML = `
+                    <div class="row g-3 align-items-end">
+                        <div class="col-12 col-md-3">
+                            <label class="form-label">Từ ngày</label>
+                            <input class="form-control" type="date" value="${item.from_date}" data-idx="${idx}" data-field="from_date" />
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <label class="form-label">Đến ngày</label>
+                            <input class="form-control" type="date" value="${item.to_date}" data-idx="${idx}" data-field="to_date" />
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <label class="form-label">Công việc</label>
+                            <input class="form-control" type="text" value="${item.task_name}" data-idx="${idx}" data-field="task_name" />
+                        </div>
+                        <div class="col-8 col-md-1">
+                            <label class="form-label">Số lượng</label>
+                            <input class="form-control" type="number" min="0" value="${item.thuc_hien}" data-idx="${idx}" data-field="thuc_hien" />
+                        </div>
+                        <div class="col-4 col-md-1 text-end">
+                            <button class="btn btn-primary w-100" onclick="saveEditRow(${idx})" title="Lưu">
+                                <i class="fa fa-save"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="mt-2 text-muted small">
+                        <i class="fa fa-clock me-1"></i>Ngày tạo: ${item.created_at || 'N/A'}
+                    </div>
+                `;
+                rowsEl.appendChild(card);
+            });
+        }
+
+        async function saveEditRow(idx) {
+            const item = editDataList[idx];
+            if (!item) return;
+            
+            const msgEl = document.getElementById('edit-msg');
+            if (msgEl) {
+                msgEl.textContent = '';
+                msgEl.className = '';
+            }
+            
+            // Lấy giá trị từ các input
+            const fromDateEl = document.querySelector(`input[data-idx="${idx}"][data-field="from_date"]`);
+            const toDateEl = document.querySelector(`input[data-idx="${idx}"][data-field="to_date"]`);
+            const taskNameEl = document.querySelector(`input[data-idx="${idx}"][data-field="task_name"]`);
+            const thucHienEl = document.querySelector(`input[data-idx="${idx}"][data-field="thuc_hien"]`);
+            
+            const fromDate = fromDateEl ? fromDateEl.value : item.from_date;
+            const toDate = toDateEl ? toDateEl.value : item.to_date;
+            const taskName = taskNameEl ? taskNameEl.value.trim() : item.task_name;
+            const thucHien = thucHienEl ? parseInt(thucHienEl.value) || 0 : item.thuc_hien;
+            
+            // Validation
+            if (!fromDate || !toDate || !taskName) {
+                if (msgEl) {
+                    msgEl.textContent = 'Vui lòng nhập đầy đủ thông tin';
+                    msgEl.className = 'error';
+                }
+                return;
+            }
+            
+            if (thucHien < 0) {
+                if (msgEl) {
+                    msgEl.textContent = 'Số lượng phải >= 0';
+                    msgEl.className = 'error';
+                }
+                return;
+            }
+            
+            try {
+                const res = await fetch(`/api/input-edit/${item.id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        from_date: fromDate,
+                        to_date: toDate,
+                        task_name: taskName,
+                        thuc_hien: thucHien
+                    })
+                });
+                
+                if (!res.ok) {
+                    const data = await res.json().catch(() => ({}));
+                    if (msgEl) {
+                        msgEl.textContent = data.detail || 'Lỗi khi cập nhật dữ liệu';
+                        msgEl.className = 'error';
+                    }
+                    return;
+                }
+                
+                const data = await res.json();
+                
+                if (msgEl) {
+                    msgEl.textContent = 'Đã cập nhật thành công!';
+                    msgEl.className = 'success';
+                }
+                showToast('Đã cập nhật dữ liệu thành công', 'success');
+                
+                // Reload dữ liệu để hiển thị giá trị mới
+                await loadEditData();
+            } catch (e) {
+                if (msgEl) {
+                    msgEl.textContent = 'Lỗi khi cập nhật: ' + e.message;
+                    msgEl.className = 'error';
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if ('{{ step }}' === 'form') { 
+                initForm(); 
+                initErrorFormTasks();
+                
+                // Listen for tab change event to load edit data
+                const editTab = document.getElementById('tab-chinhsua');
+                if (editTab) {
+                    editTab.addEventListener('shown.bs.tab', function () {
+                        loadEditData();
+                    });
+                }
+            }
+        });
+
+        // Toast helper
+        function showToast(message, variant) {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+            const wrapper = document.createElement('div');
+            wrapper.className = `toast align-items-center text-bg-${variant||'primary'} border-0`; 
+            wrapper.setAttribute('role','alert');
+            wrapper.setAttribute('aria-live','assertive');
+            wrapper.setAttribute('aria-atomic','true');
+            wrapper.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">${message}</div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>`;
+            container.appendChild(wrapper);
+            const toast = new bootstrap.Toast(wrapper, { delay: 2500 });
+            toast.show();
+            wrapper.addEventListener('hidden.bs.toast', () => wrapper.remove());
+        }
+    </script>
+</head>
+<body>
+    <nav class="navbar navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="/">
+                <img src="/templates/Logo.png" alt="Logo" style="height:36px;" class="me-2"/>
+                KPI QLCL
+            </a>
+            <div class="d-flex">
+                <a class="btn btn-outline-light btn-sm" href="/">Trang chủ</a>
+            </div>
+        </div>
+    </nav>
+
+    <section class="hero-section">
+        <div class="container">
+            <div class="row">
+                <div class="col-12 text-center">
+                    <h1 class="h3 mb-1"><i class="fas fa-tasks me-2"></i>Nhập liệu KPI theo chức vụ</h1>
+                    <p class="mb-0">Chọn khoảng thời gian và các công việc đã thực hiện</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="container">
+        {% if step == 'login' %}
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card shadow">
+                    <div class="card-body">
+                        <h5 class="card-title mb-3">Đăng nhập</h5>
+                        {% if error %}
+                        <div class="alert alert-danger" role="alert">{{ error }}</div>
+                        {% endif %}
+                        <form method="post" action="/login" class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label">Mã nhân viên</label>
+                                <input class="form-control" type="text" name="ma_nv" placeholder="VD: T0154" required />
+                            </div>
+                            <div class="col-12 d-flex gap-2">
+                                <button class="btn btn-primary" type="submit"><i class="fa fa-sign-in-alt me-1"></i>Đăng nhập</button>
+                                <a class="btn btn-outline-secondary" href="/">Về trang chủ</a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <ul class="nav nav-tabs mb-3" id="kpiTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="tab-thuchien" data-bs-toggle="tab" data-bs-target="#pane-thuchien" type="button" role="tab">
+                    <i class="fa fa-check me-1"></i>Cập nhật thực hiện công việc
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tab-saisot" data-bs-toggle="tab" data-bs-target="#pane-saisot" type="button" role="tab">
+                    <i class="fa fa-triangle-exclamation me-1"></i>Cập nhật sai sót
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tab-chinhsua" data-bs-toggle="tab" data-bs-target="#pane-chinhsua" type="button" role="tab">
+                    <i class="fa fa-edit me-1"></i>Chỉnh sửa dữ liệu
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content">
+        <div class="tab-pane fade show active" id="pane-thuchien" role="tabpanel">
+        <div class="card shadow mb-3">
+            <div class="card-body d-flex flex-wrap gap-3 align-items-center justify-content-between">
+                <div><strong>Nhân viên:</strong> {{ user.ho_ten }} (<span class="text-muted">{{ user.ma_nv }}</span>)</div>
+                <div><span class="badge bg-primary">{{ user.chuc_vu }}</span></div>
+                <form method="post" action="/logout" class="ms-auto">
+                    <button class="btn btn-outline-secondary btn-sm" type="submit">Đăng xuất</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card shadow mb-3">
+            <div class="card-body">
+                <h5 class="card-title">Khoảng thời gian</h5>
+                <div class="row g-3">
+                    <div class="col-12 col-md-6">
+                        <label class="form-label">Từ ngày</label>
+                        <input id="from_date" class="form-control" type="date" />
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label class="form-label">Đến ngày</label>
+                        <input id="to_date" class="form-control" type="date" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <h5 class="card-title mb-0">Công việc thực hiện</h5>
+                    <button id="btn-add" class="btn btn-outline-primary" onclick="addRow()"><i class="fa fa-plus me-1"></i>Thêm Task</button>
+                </div>
+                <div id="task-rows" class="mt-2"></div>
+                <div id="msg" class="mt-2"></div>
+                <div class="mt-3 d-flex gap-2">
+                    <button class="btn btn-primary" onclick="submitForm()"><i class="fa fa-save me-1"></i>Ghi dữ liệu</button>
+                    <a class="btn btn-outline-secondary" href="/">Về trang chủ</a>
+                </div>
+            </div>
+        </div>
+        </div>
+
+        <div class="tab-pane fade" id="pane-saisot" role="tabpanel">
+            <div class="card shadow mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">Thông tin sai sót</h5>
+                    <div class="row g-3">
+                        <div class="col-12 col-md-4">
+                            <label class="form-label">Ngày ghi nhận sai sót</label>
+                            <input id="err_ngay" class="form-control" type="date" />
+                        </div>
+                        <div class="col-12 col-md-8">
+                            <label class="form-label">Công việc có sai sót</label>
+                            <select id="err_task" class="form-select"></select>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label">Phân loại sai sót</label>
+                            <select id="err_phan_loai" class="form-select">
+                                <option value="">-- Chọn --</option>
+                                <option>Không kịp KHSXKHXH</option>
+                                <option>Lỗi đại trà</option>
+                                <option>Khiếu nại có phạt tiền</option>
+                                <option>Lãng phí SX</option>
+                                <option>Không tuân thủ các QT, QĐ về CV chuyên môn</option>
+                                <option>Phàn nàn có căn cứ từ các đối tác CV</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label">Mức độ ảnh hưởng</label>
+                            <select id="err_muc_do" class="form-select">
+                                <option value="">-- Chọn --</option>
+                                <option>Ảnh hưởng đến MTCL công ty/phòng</option>
+                                <option>Chưa ảnh hưởng đến MTCL công ty/phòng</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Mô tả</label>
+                            <textarea id="err_mo_ta" class="form-control" rows="3" placeholder="Mô tả chi tiết"></textarea>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Hướng giải quyết</label>
+                            <select id="err_huong_gq" class="form-select">
+                                <option value="">-- Chọn --</option>
+                                <option>Mở HĐKP</option>
+                                <option>Đào tạo lại công việc</option>
+                                <option>Mở HĐKP kết hợp với đào tạo lại công việc</option>
+                                <option>Tiếp tục theo dõi</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="err_msg" class="mt-2"></div>
+                    <div class="mt-3 d-flex gap-2">
+                        <button class="btn btn-danger" onclick="submitErrorForm()"><i class="fa fa-paper-plane me-1"></i>Gửi sai sót</button>
+                        <button class="btn btn-outline-secondary" onclick="resetErrorForm()">Làm mới</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="pane-chinhsua" role="tabpanel">
+            <div class="card shadow mb-3">
+                <div class="card-body">
+                    <h5 class="card-title mb-3"><i class="fa fa-edit me-2"></i>Chỉnh sửa dữ liệu đã nhập</h5>
+                    
+                    <!-- Bộ lọc theo ngày -->
+                    <div class="card mb-3" style="background-color: #f8f9fa;">
+                        <div class="card-body">
+                            <h6 class="card-subtitle mb-3"><i class="fa fa-filter me-2"></i>Bộ lọc theo ngày</h6>
+                            <div class="row g-3">
+                                <div class="col-12 col-md-4">
+                                    <label class="form-label">Từ ngày</label>
+                                    <input id="edit-filter-from" class="form-control" type="date" />
+                                </div>
+                                <div class="col-12 col-md-4">
+                                    <label class="form-label">Đến ngày</label>
+                                    <input id="edit-filter-to" class="form-control" type="date" />
+                                </div>
+                                <div class="col-12 col-md-4 d-flex align-items-end gap-2">
+                                    <button class="btn btn-primary" onclick="applyEditFilter()">
+                                        <i class="fa fa-search me-1"></i>Lọc
+                                    </button>
+                                    <button class="btn btn-outline-secondary" onclick="clearEditFilter()">
+                                        <i class="fa fa-times me-1"></i>Xóa lọc
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="edit-loading" class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Đang tải...</span>
+                        </div>
+                    </div>
+                    <div id="edit-data-container" style="display: none;">
+                        <div id="edit-msg" class="mt-2"></div>
+                        <div id="edit-rows" class="mt-3"></div>
+                    </div>
+                    <div id="edit-empty" style="display: none;" class="text-center py-4 text-muted">
+                        <i class="fa fa-inbox fa-3x mb-3"></i>
+                        <p>Chưa có dữ liệu nào được nhập.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <div id="toast-container" class="toast-container position-fixed top-0 end-0 p-3" style="z-index:1080;"></div>
+</body>
+</html>
+
+
+

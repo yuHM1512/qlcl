@@ -1,0 +1,1617 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>QC Input (Sản phẩm)</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #2563eb; --bg: #f8fafb; --card: #fff; --border: #e2e8f0; }
+        body { background: var(--bg); font-family: 'Roboto', 'Inter', system-ui, sans-serif; padding-bottom: 110px; }
+        .mobile-container { max-width: 520px; margin: 0 auto; padding: 1.25rem; }
+        .landscape-split { display: block; }
+        .left-panel, .right-panel { width: 100%; }
+        .plan-compact { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; font-size: 0.9rem; }
+        @media (orientation: landscape) and (min-width: 820px) {
+            .mobile-container { max-width: 1100px; }
+            .landscape-split { display: grid; grid-template-columns: 1fr 1.4fr; gap: 1rem; align-items: start; }
+            .left-panel { position: sticky; top: 90px; }
+            .plan-card { padding: 0.75rem 1rem; }
+            .plan-compact { gap: 8px 16px; }
+            .plan-compact span { white-space: nowrap; }
+            .plan-compact strong { font-weight: 700; }
+        }
+        .glass-header { position: sticky; top: 0; background: #f8fafb; border-bottom: 1px solid var(--border); z-index: 1000; padding: 1rem 1.25rem; margin: -1.25rem -1.25rem 1.5rem -1.25rem; display: flex; align-items: center; justify-content: space-between; }
+        .header-title { font-weight: 800; font-size: 1.05rem; color: var(--primary); margin: 0; }
+        .card-lite { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 1rem; box-shadow: 0 6px 16px rgba(15, 23, 42, 0.05); }
+        .fixed-footer { position: fixed; bottom: 0; left: 0; right: 0; padding: 1rem 1.25rem 1.5rem; background: rgba(248, 250, 251, 0.9); border-top: 1px solid var(--border); }
+        .btn-save { width: 100%; max-width: 460px; margin: 0 auto; display: block; height: 56px; border-radius: 16px; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: #fff; border: none; font-weight: 800; font-size: 1.05rem; box-shadow: 0 10px 20px rgba(37, 99, 235, 0.25); }
+        .label { font-size: 0.75rem; letter-spacing: 0.04em; text-transform: uppercase; color: #64748b; font-weight: 700; }
+        .defect-item { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 0.75rem; }
+        .defect-product { background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 1rem; }
+        .pill { background: #e0e7ff; color: #1e40af; font-weight: 700; border-radius: 999px; padding: 4px 10px; font-size: 0.75rem; }
+        .station-chip {
+            border: 1.5px solid #cbd5f5;
+            background: #eef2ff;
+            color: #1e40af;
+            font-weight: 700;
+            border-radius: 999px;
+            padding: 6px 12px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .station-chip.active {
+            background: #1d4ed8;
+            color: #fff;
+            border-color: #1d4ed8;
+            box-shadow: 0 6px 16px rgba(29, 78, 216, 0.25);
+        }
+        .combo-dropdown { position: relative; }
+        .combo-trigger {
+            width: 100%;
+            text-align: left;
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 0.45rem 0.7rem;
+            font-weight: 600;
+            color: #0f172a;
+        }
+        .combo-panel {
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: calc(100% + 6px);
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+            z-index: 50;
+            display: none;
+            max-height: 280px;
+            overflow: hidden;
+        }
+        .combo-panel.open { display: block; }
+        .combo-search {
+            width: 100%;
+            padding: 0.55rem 0.8rem;
+            border: none;
+            border-bottom: 1px solid var(--border);
+            outline: none;
+        }
+        .combo-list { max-height: 220px; overflow: auto; }
+        .combo-item { padding: 0.55rem 0.8rem; cursor: pointer; }
+        .combo-item:hover { background: #f8fafc; }
+        .pos-bucket {
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 0.85rem;
+        }
+        .pos-bucket-header { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
+        .pos-badge {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            color: #fff;
+            font-weight: 800;
+            border-radius: 12px;
+            padding: 0.35rem 0.65rem;
+            font-size: 0.85rem;
+            letter-spacing: 0.01em;
+            white-space: nowrap;
+        }
+        .pos-bucket-meta { font-size: 0.78rem; color: #64748b; white-space: nowrap; }
+        .pos-table th {
+            font-size: 0.7rem;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: #64748b;
+            font-weight: 800;
+            border-bottom: 1px solid var(--border) !important;
+        }
+        .pos-table td { vertical-align: top; }
+        .pos-pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.15rem 0.5rem;
+            border-radius: 999px;
+            font-size: 0.72rem;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+        .pos-pill.mass { background: rgba(245, 158, 11, 0.14); color: #92400e; }
+        .pos-pill.serious { background: rgba(239, 68, 68, 0.14); color: #991b1b; }
+        .pos-pill.multi { background: rgba(79, 70, 229, 0.14); color: #312e81; }
+        .pos-empty { color: #64748b; font-size: 0.85rem; }
+        .pos-vi-tri { font-size: 0.82rem; line-height: 1.15rem; }
+        .pos-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            border: none;
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            border-radius: 999px;
+            padding: 0.35rem 0.85rem;
+            font-weight: 800;
+            font-size: 0.78rem;
+            color: #fff;
+            box-shadow: 0 10px 18px rgba(37, 99, 235, 0.22);
+        }
+        .pos-toggle .material-symbols-outlined { font-size: 18px; }
+        .pos-toggle:hover { filter: brightness(0.98); }
+        .voice-bar { background: #fff; border: 1px dashed #cbd5f5; border-radius: 12px; padding: 0.75rem; display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
+        .voice-hint { font-size: 0.8rem; color: #64748b; }
+        .btn-mic {
+            width: 42px;
+            height: 42px;
+            border-radius: 999px;
+            border: 2px solid #ef4444;
+            color: #ef4444;
+            background: #fff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+        .btn-mic.listening {
+            background: #ef4444;
+            color: #fff;
+            box-shadow: 0 0 0 6px rgba(239, 68, 68, 0.15);
+            animation: pulse-red 1.2s infinite;
+        }
+        .pulse-success {
+            animation: pulse-success 0.6s ease;
+        }
+        @keyframes pulse-red {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.35); }
+            70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+        @keyframes pulse-success {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        .speech-toast {
+            position: fixed;
+            left: 50%;
+            bottom: 120px;
+            transform: translateX(-50%);
+            background: #0f172a;
+            color: #fff;
+            padding: 0.6rem 0.9rem;
+            border-radius: 999px;
+            font-size: 0.85rem;
+            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.3);
+            display: none;
+            z-index: 1200;
+        }
+        .btn-mic-inline {
+            width: 34px;
+            height: 34px;
+            border-radius: 999px;
+            border: 1.5px solid #ef4444;
+            color: #ef4444;
+            background: #fff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+        .btn-mic-inline.listening {
+            background: #ef4444;
+            color: #fff;
+            box-shadow: 0 0 0 5px rgba(239, 68, 68, 0.15);
+            animation: pulse-red 1.2s infinite;
+        }
+
+        /* Camera capture styles */
+        .camera-section { margin-top: 0.75rem; }
+        .camera-trigger {
+            width: 100%;
+            border: 2px dashed #cbd5e1;
+            border-radius: 12px;
+            padding: 1rem;
+            background: #f8fafc;
+            color: #64748b;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .camera-trigger:hover { border-color: #2563eb; color: #2563eb; background: #eff6ff; }
+        .camera-trigger i { font-size: 1.2rem; }
+        .camera-preview-area {
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 2px solid #e2e8f0;
+        }
+        .camera-preview-area img {
+            width: 100%;
+            max-height: 240px;
+            object-fit: cover;
+            display: block;
+        }
+        .camera-actions {
+            display: flex;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            background: rgba(255,255,255,0.95);
+        }
+        .camera-actions .btn { flex: 1; border-radius: 10px; font-weight: 700; font-size: 0.85rem; }
+        .camera-badge-ok {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: #10b981;
+            color: #fff;
+            border-radius: 999px;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+        .camera-uploading {
+            position: absolute;
+            inset: 0;
+            background: rgba(255,255,255,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: #2563eb;
+        }
+    </style>
+</head>
+<body>
+<div class="mobile-container">
+    <div class="glass-header">
+        <a href="/qc" class="text-secondary"><i class="fas fa-arrow-left fa-lg"></i></a>
+        <h1 class="header-title">NHẬP LỖI QC (SP)</h1>
+        <button onclick="logout()" class="btn btn-sm text-danger" title="Đăng xuất"><i class="fas fa-sign-out-alt fa-lg"></i></button>
+    </div>
+
+    <div class="text-center mb-3">
+        <span class="badge bg-primary rounded-pill px-3 py-2 fw-normal" style="font-size: 0.85rem">
+            <i class="fas fa-map-marker-alt me-1"></i> {{ user.don_vi }} - {{ user.bo_phan }}
+        </span>
+    </div>
+
+    <div id="planSelectionArea">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="text-muted fw-bold mb-0 ms-1" style="font-size: 0.85rem; letter-spacing: 0.5px;">KẾ HOẠCH CÓ SẴN</h6>
+            <a href="/qc-input/rework" class="btn btn-sm btn-primary" style="border-radius: 8px; font-weight: 700;">
+                <i class="fas fa-recycle me-1"></i> Tái chế
+            </a>
+        </div>
+        <div id="plansList" class="d-flex flex-column gap-3">
+            <div class="text-center text-muted my-4" id="loadingPlansMsg">
+                <i class="fas fa-spinner fa-spin me-2"></i> Đang tải kế hoạch...
+            </div>
+        </div>
+    </div>
+
+    <div id="inputDataArea" style="display: none;">
+        <button class="btn btn-sm btn-light mb-3 rounded-pill fw-bold" onclick="backToPlanSelection()">
+            <i class="fas fa-chevron-left me-1"></i> Trở về danh sách kế hoạch
+        </button>
+
+        <div id="stationCard" class="card-lite mb-3" style="display: none;">
+            <div class="label text-primary">Trạm</div>
+            <div id="stationValue" class="fw-bold text-dark mt-2"></div>
+            <div id="stationOptions" class="d-flex flex-wrap gap-2 mt-2"></div>
+            <div id="stationHint" class="text-muted small mt-2"></div>
+        </div>
+
+        <div class="card-lite mb-3 plan-card" style="background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%); color: white;">
+            <div class="plan-compact">
+                <span>Kế hoạch: <strong id="lblSelectedPlanCompact">...</strong></span>
+                <span>Mã hàng: <strong id="lblSelectedMaHangCompact">...</strong></span>
+                <span>Khách: <strong id="lblSelectedKhachHangCompact">...</strong></span>
+                <span>Loại: <strong id="lblSelectedLoaiHangCompact">...</strong></span>
+            </div>
+        </div>
+
+        <div class="landscape-split">
+            <div class="left-panel">
+                <div class="card-lite mb-3">
+                    <div class="label text-primary">Số sản phẩm đã kiểm</div>
+                    <div class="d-flex align-items-center justify-content-between mt-2">
+                        <div class="d-flex gap-2 align-items-center">
+                            <button class="btn btn-success btn-sm" onclick="adjustOutputStatus('Passed')">+1 Đạt</button>
+                            <button class="btn btn-danger btn-sm" onclick="adjustOutputStatus('Failed')">+1 Lỗi</button>
+                        </div>
+                        <div class="d-grid gap-2" style="grid-template-columns: 1fr 1fr; min-width: 200px;">
+                            <div class="text-center">
+                                <div class="fw-bold fs-3" id="lblOutputTotal">0</div>
+                                <div class="text-muted small">Tổng đã kiểm</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="fw-bold fs-3 text-danger" id="lblOutputFailed">0</div>
+                                <div class="text-muted small">Tổng lỗi</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-lite mb-3" id="posSummaryCard" style="display: none;">
+                    <div class="label text-primary">Thống kê lỗi theo vị trí</div>
+                    <div id="posSummaryContainer" class="d-flex flex-column gap-2 mt-3"></div>
+                </div>
+            </div>
+            <div class="right-panel">
+                <div class="card-lite">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="label mb-0">Sản phẩm lỗi</div>
+                    </div>
+                    <div id="defectProducts" class="d-flex flex-column gap-3"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="fixed-footer" id="footerSave" style="display: none;">
+    <button class="btn-save" id="btnSubmitReport" onclick="submitReport()">
+        <i class="fas fa-cloud-upload-alt me-2"></i> GHI NHẬN LỖI
+    </button>
+</div>
+
+<div class="speech-toast" id="speechToast"></div>
+
+<script id="pageContext" type="application/json">
+    {{ {"don_vi": user.don_vi, "bo_phan": user.bo_phan, "station": (user.station or [])} | tojson }}
+</script>
+
+<script>
+    const pageContextEl = document.getElementById('pageContext');
+    const pageContext = pageContextEl ? JSON.parse(pageContextEl.textContent || '{}') : {};
+    const userDonVi = pageContext.don_vi || "";
+    const userBoPhan = pageContext.bo_phan || "";
+    const userStationsRaw = pageContext.station || [];
+    const stationOptions = ["Trạm trước seam", "Trạm sau seam", "Trạm cuối chuyền"];
+
+    let availablePlans = [];
+    let masterBoPhan = [];
+    let masterMaLoiOptions = [];
+    let chiTietOptionsByBlock = {};
+    let selectedPlanId = null;
+    let outputTotal = 0;
+    let outputFailed = 0;
+    let pendingFailedCount = 0;
+    let baseSpIndex = 0;
+    let recognition = null;
+    let isListening = false;
+    let voiceTarget = null;
+    let selectedStation = '';
+    let stationList = [];
+    const reportDateStr = (() => {
+        const now = new Date();
+        const y = now.getFullYear();
+        const m = String(now.getMonth() + 1).padStart(2, '0');
+        const d = String(now.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+    })();
+
+    async function logout() {
+        try {
+            const res = await fetch('/logout', { method: 'POST' });
+            if (res.redirected) window.location.href = res.url;
+            else window.location.href = '/login';
+        } catch (e) {
+            window.location.href = '/login';
+        }
+    }
+
+    function normalizeStationList(raw) {
+        if (Array.isArray(raw)) return raw.filter(x => !!x);
+        if (typeof raw === 'string') {
+            try {
+                const parsed = JSON.parse(raw);
+                if (Array.isArray(parsed)) return parsed.filter(x => !!x);
+            } catch (e) {}
+        }
+        return [];
+    }
+
+    function renderStationSelector() {
+        const card = document.getElementById('stationCard');
+        const valueEl = document.getElementById('stationValue');
+        const optionsEl = document.getElementById('stationOptions');
+        const hintEl = document.getElementById('stationHint');
+        if (!card || !valueEl || !optionsEl || !hintEl) return;
+
+        stationList = normalizeStationList(userStationsRaw);
+        if (!stationList.length) stationList = stationOptions.slice();
+
+        if (!stationList.length) {
+            card.style.display = 'none';
+            selectedStation = '';
+            return;
+        }
+
+        card.style.display = 'block';
+        optionsEl.innerHTML = '';
+        hintEl.textContent = '';
+
+        if (stationList.length === 1) {
+            selectedStation = stationList[0];
+            valueEl.textContent = selectedStation;
+            optionsEl.style.display = 'none';
+            hintEl.textContent = 'Hệ thống tự nhận trạm theo QC.';
+            return;
+        }
+
+        valueEl.textContent = selectedStation || 'Chưa chọn';
+        optionsEl.style.display = 'flex';
+        stationList.forEach(st => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'station-chip' + (st === selectedStation ? ' active' : '');
+            btn.textContent = st;
+            btn.addEventListener('click', () => {
+                setSelectedStation(st);
+            });
+            optionsEl.appendChild(btn);
+        });
+        hintEl.textContent = 'Chọn trạm để nhập dữ liệu.';
+    }
+
+    function setSelectedStation(station) {
+        selectedStation = station || '';
+        renderStationSelector();
+        // Reset counts and current defects on station change
+        document.getElementById('defectProducts').innerHTML = '';
+        chiTietOptionsByBlock = {};
+        pendingFailedCount = 0;
+        setOutputDisplay(0, 0);
+        baseSpIndex = 0;
+        loadExistingEntry();
+        fetchOutputTotal();
+        loadPosSummary();
+    }
+
+    function getActiveStation() {
+        if (selectedStation) return selectedStation;
+        if (stationList.length === 1) return stationList[0];
+        return '';
+    }
+
+    function ensureStationSelected() {
+        const station = getActiveStation();
+        if (!station && stationList.length > 1) {
+            alert('Vui lòng chọn Trạm trước khi nhập dữ liệu.');
+            return false;
+        }
+        return true;
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        await loadPlans();
+        await loadMasterMaLoiOptions();
+        initSpeechRecognition();
+    });
+
+    async function loadPlans() {
+        try {
+            const params = new URLSearchParams();
+            if (userDonVi) params.append('don_vi', userDonVi);
+            if (userBoPhan) {
+                params.append('bo_phan', userBoPhan);
+            }
+            const res = await fetch(`/api/prod-plan?${params.toString()}`);
+            const data = await res.json();
+            availablePlans = data.rows || [];
+            renderPlansList();
+        } catch (e) {
+            console.error(e);
+            document.getElementById('loadingPlansMsg').innerText = "Lỗi tải danh sách kế hoạch!";
+        }
+    }
+
+    function renderPlansList() {
+        const container = document.getElementById('plansList');
+        document.getElementById('loadingPlansMsg').style.display = 'none';
+
+        if (availablePlans.length === 0) {
+            container.innerHTML = `
+                <div class="text-center p-4 bg-white rounded shadow-sm border">
+                    <i class="fas fa-clipboard-list fa-3x text-muted mb-3 opacity-50"></i>
+                    <h6 class="text-muted fw-bold">CHƯA CÓ KẾ HOẠCH NÀO</h6>
+                    <p class="small text-muted mb-0">Không tìm thấy kế hoạch nào cho ${userDonVi} - ${userBoPhan}</p>
+                </div>
+            `;
+            return;
+        }
+
+        let html = '';
+        availablePlans.forEach(p => {
+            html += `
+            <div class="card-lite" style="cursor: pointer;" onclick="selectPlan(${p.id})">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <span class="pill mb-2 d-inline-block">${p.ke_hoach}</span>
+                        <h5 class="fw-bold mb-1 text-dark" style="font-size: 1.1rem">${p.ma_hang}</h5>
+                        <div class="text-muted" style="font-size: 0.85rem">Loại hàng: ${p.loai_hang || '--'}</div>
+                    </div>
+                    <div class="text-end">
+                        <i class="fas fa-chevron-right text-primary opacity-50 mt-3" style="font-size: 1.2rem"></i>
+                    </div>
+                </div>
+            </div>
+            `;
+        });
+        container.innerHTML = html;
+    }
+
+    async function selectPlan(planId) {
+        selectedPlanId = planId;
+        const plan = availablePlans.find(p => p.id == planId);
+
+        document.getElementById('planSelectionArea').style.display = 'none';
+        document.getElementById('inputDataArea').style.display = 'block';
+        document.getElementById('footerSave').style.display = 'block';
+
+        document.getElementById('lblSelectedPlanCompact').textContent = plan.ke_hoach || '--';
+        document.getElementById('lblSelectedMaHangCompact').textContent = plan.ma_hang || '--';
+        document.getElementById('lblSelectedKhachHangCompact').textContent = plan.khach_hang || '--';
+        document.getElementById('lblSelectedLoaiHangCompact').textContent = plan.loai_hang || '--';
+
+        document.getElementById('defectProducts').innerHTML = '';
+        chiTietOptionsByBlock = {};
+        baseSpIndex = 0;
+        pendingFailedCount = 0;
+        setOutputDisplay(0, 0);
+        renderStationSelector();
+        loadPosSummary();
+
+        try {
+            const lhRes = await fetch('/api/dm/loai-hang');
+            const lhData = await lhRes.json();
+            const lh = lhData.rows.find(l => l.ten_loai === plan.loai_hang);
+            if (lh) {
+                const bpRes = await fetch(`/api/dm/bo-phan?loai_hang_id=${lh.id}`);
+                const bpData = await bpRes.json();
+                masterBoPhan = bpData.rows || [];
+                if (getActiveStation()) {
+                    await loadExistingEntry();
+                    await fetchOutputTotal();
+                    loadPosSummary();
+                }
+            } else {
+                masterBoPhan = [];
+                alert('Cảnh báo: Loại hàng này chưa được định nghĩa trong danh mục master!');
+            }
+        } catch (e) { console.error(e); }
+    }
+
+    function backToPlanSelection() {
+        document.getElementById('inputDataArea').style.display = 'none';
+        document.getElementById('footerSave').style.display = 'none';
+        document.getElementById('planSelectionArea').style.display = 'block';
+        selectedPlanId = null;
+        selectedStation = '';
+        const stationCard = document.getElementById('stationCard');
+        if (stationCard) stationCard.style.display = 'none';
+    }
+
+    async function loadExistingEntry() {
+        if (!selectedPlanId) return;
+        const station = getActiveStation();
+        if (!station && stationList.length > 1) return;
+        try {
+            const params = new URLSearchParams({ plan_id: selectedPlanId, date: reportDateStr });
+            if (station) params.append('station', station);
+            const res = await fetch(`/api/qc/error-log-sp?${params.toString()}`);
+            const data = await res.json();
+            document.getElementById('defectProducts').innerHTML = '';
+            // reset per-block counters implicitly by clearing UI
+            chiTietOptionsByBlock = {};
+            if (!data.exists) return;
+            const d = data.data || {};
+            if (d.defect_products && d.defect_products.length) {
+                baseSpIndex = d.defect_products.length;
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    async function loadMasterMaLoiOptions() {
+        try {
+            const res = await fetch('/api/dm/ma-loi-options');
+            const data = await res.json();
+            masterMaLoiOptions = data.rows || [];
+        } catch (e) { console.error(e); }
+    }
+
+    function renderOutputDisplay() {
+        const totalElem = document.getElementById('lblOutputTotal');
+        const failedElem = document.getElementById('lblOutputFailed');
+        if (totalElem) totalElem.textContent = outputTotal;
+        if (failedElem) failedElem.textContent = outputFailed;
+    }
+
+    function setOutputDisplay(total, failed) {
+        outputTotal = total || 0;
+        outputFailed = failed || 0;
+        renderOutputDisplay();
+    }
+
+    async function fetchOutputTotal() {
+        if (!selectedPlanId) return;
+        const station = getActiveStation();
+        if (!station && stationList.length > 1) return;
+        try {
+            const params = new URLSearchParams({ plan_id: selectedPlanId, date: reportDateStr });
+            if (station) params.append('station', station);
+            const res = await fetch(`/api/qc/output-sp?${params.toString()}`);
+            const data = await res.json();
+            setOutputDisplay(data.total || 0, data.failed_count || 0);
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    async function adjustOutputStatus(status) {
+        if (!selectedPlanId) { alert('Vui lòng chọn Kế hoạch!'); return; }
+        if (!ensureStationSelected()) return;
+        const station = getActiveStation();
+        if (status === 'Failed') {
+            pendingFailedCount += 1;
+            renderOutputDisplay();
+            addDefectProduct(null, true);
+            setTimeout(() => {
+                const container = document.getElementById('defectProducts');
+                if (container && container.lastElementChild) {
+                    container.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }, 50);
+            return;
+        }
+        try {
+            const res = await fetch('/api/qc/output-sp-log', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    plan_id: parseInt(selectedPlanId),
+                    date: reportDateStr,
+                    station: station,
+                    delta: 1,
+                    status: status
+                })
+            });
+             if (!res.ok) throw new Error('API Error');
+             const data = await res.json();
+             setOutputDisplay(data.total || 0, data.failed_count || 0);
+             loadPosSummary();
+         } catch (e) {
+             console.error(e);
+             alert('Lỗi khi cập nhật số sản phẩm đã kiểm.');
+         }
+     }
+
+     function loaiPillClass(loai) {
+         const s = (loai || '').toLowerCase();
+         if (s.includes('đại trà')) return 'mass';
+         if (s.includes('nghiêm')) return 'serious';
+         return 'multi';
+     }
+
+     function getCurrentBucketLabel() {
+         try {
+             const parts = new Intl.DateTimeFormat('en-GB', {
+                 timeZone: 'Asia/Bangkok',
+                 hour: '2-digit',
+                 minute: '2-digit',
+                 hour12: false
+             }).formatToParts(new Date());
+             const hh = Number(parts.find(p => p.type === 'hour')?.value || 0);
+             const mm = Number(parts.find(p => p.type === 'minute')?.value || 0);
+             const mins = hh * 60 + mm;
+             if (mins < (9 * 60 + 30)) return '7H30 - 9H30';
+             if (mins < (11 * 60 + 30)) return '9H30 - 11H30';
+             if (mins < (14 * 60 + 30)) return '12H30 - 14H30';
+             if (mins < (16 * 60 + 30)) return '14H30 - 16H30';
+             return 'Sau 16H30';
+         } catch (e) {
+             return '';
+         }
+     }
+
+     function renderBucketBlock(b, opts = {}) {
+         const items = b.items || [];
+         const has = items.length > 0;
+         const meta = `SP kiểm: ${b.output_total || 0} • ${has ? items.length + ' dòng' : 'Không có lỗi'}`;
+         const table = has ? `
+             <div class="table-responsive mt-2">
+                 <table class="table table-sm mb-0 pos-table">
+                     <thead>
+                         <tr>
+                             <th style="width: 160px;">Loại lỗi</th>
+                             <th>Vị trí</th>
+                             <th class="text-end" style="width: 84px;">Số lượng</th>
+                         </tr>
+                     </thead>
+                     <tbody>
+                         ${items.map((it) => `
+                             <tr>
+                                 <td><span class="pos-pill ${loaiPillClass(it.loai_loi)}">${it.loai_loi}</span></td>
+                                 <td class="text-muted pos-vi-tri">${it.vi_tri}</td>
+                                 <td class="text-end fw-bold">${it.qty || 0}</td>
+                             </tr>
+                         `).join('')}
+                     </tbody>
+                 </table>
+             </div>
+         ` : `<div class="pos-empty mt-2">Không có cảnh báo lỗi trong khung giờ này.</div>`;
+         return `
+             <div class="pos-bucket">
+                 <div class="pos-bucket-header">
+                     <span class="pos-badge">${b.time_bucket}</span>
+                     <span class="pos-bucket-meta">${meta}</span>
+                 </div>
+                 ${table}
+             </div>
+         `;
+     }
+
+     function renderPosSummary(data) {
+         const card = document.getElementById('posSummaryCard');
+         const wrap = document.getElementById('posSummaryContainer');
+         if (!card || !wrap) return;
+         const buckets = data?.buckets || [];
+         card.style.display = 'block';
+         if (!buckets.length) {
+             wrap.innerHTML = '<div class="pos-empty">Chưa có dữ liệu.</div>';
+             return;
+         }
+         const currentLabel = getCurrentBucketLabel();
+         const currentIdx = currentLabel ? buckets.findIndex(x => x.time_bucket === currentLabel) : -1;
+         const focusIdx = currentIdx >= 0 ? currentIdx : 0;
+         const currentBucket = buckets[focusIdx];
+         const otherBuckets = buckets.filter((_, i) => i !== focusIdx);
+
+         const toggleId = `posOtherBuckets`;
+         const toggleBtnId = `posToggleBtn`;
+         const otherHtml = otherBuckets.length ? `
+             <div class="d-flex justify-content-center">
+                 <button type="button" class="pos-toggle" id="${toggleBtnId}">
+                     <span class="material-symbols-outlined" id="${toggleBtnId}-icon">expand_more</span>
+                     <span id="${toggleBtnId}-label">Xem mốc khác</span>
+                 </button>
+             </div>
+             <div id="${toggleId}" class="d-none mt-2">
+                 <div class="d-flex flex-column gap-2">
+                     ${otherBuckets.map(b => renderBucketBlock(b)).join('')}
+                 </div>
+             </div>
+         ` : '';
+
+         wrap.innerHTML = `
+             <div class="d-flex flex-column gap-2">
+                 ${renderBucketBlock(currentBucket)}
+                 ${otherHtml}
+             </div>
+         `;
+
+         const btn = document.getElementById(toggleBtnId);
+         if (btn) {
+             btn.addEventListener('click', () => {
+                 const panel = document.getElementById(toggleId);
+                 const icon = document.getElementById(`${toggleBtnId}-icon`);
+                 const label = document.getElementById(`${toggleBtnId}-label`);
+                 if (!panel) return;
+                 const isOpen = !panel.classList.contains('d-none');
+                 panel.classList.toggle('d-none', isOpen);
+                 if (icon) icon.textContent = isOpen ? 'expand_more' : 'expand_less';
+                 if (label) label.textContent = isOpen ? 'Xem mốc khác' : 'Ẩn mốc khác';
+             });
+         }
+     }
+
+     async function loadPosSummary() {
+         const card = document.getElementById('posSummaryCard');
+         const wrap = document.getElementById('posSummaryContainer');
+         if (!card || !wrap) return;
+         if (!selectedPlanId) {
+             card.style.display = 'none';
+             return;
+         }
+         const st = getActiveStation();
+         if (!st && stationList.length > 1) {
+             card.style.display = 'block';
+             wrap.innerHTML = '<div class="pos-empty">Vui lòng chọn Trạm để xem thống kê.</div>';
+             return;
+         }
+         try {
+             const params = new URLSearchParams({ plan_id: selectedPlanId, date: reportDateStr });
+             if (st) params.append('station', st);
+             const res = await fetch(`/api/qc/input/pos-summary?${params.toString()}`);
+             const data = await res.json();
+             renderPosSummary(data);
+         } catch (e) {
+             console.error(e);
+             card.style.display = 'block';
+             wrap.innerHTML = '<div class="pos-empty">Lỗi tải thống kê.</div>';
+         }
+     }
+
+     function normalizeProductPrefill(prefill) {
+         if (!prefill) return null;
+         if (prefill.bo_phan_items && prefill.bo_phan_items.length) return prefill;
+        const grouped = {};
+        (prefill.defects || []).forEach(d => {
+            const key = `${d.bo_phan_id || ''}|${d.chi_tiet_id || ''}`;
+            if (!grouped[key]) {
+                grouped[key] = {
+                    bo_phan_id: d.bo_phan_id,
+                    chi_tiet_id: d.chi_tiet_id,
+                    defects: []
+                };
+            }
+            grouped[key].defects.push({
+                ma_loi_id: d.ma_loi_id,
+                mo_ta_loi_id: d.mo_ta_loi_id,
+                muc_do: d.muc_do
+            });
+        });
+        return { bo_phan_items: Object.values(grouped) };
+    }
+
+    function addDefectProduct(prefill = null, pendingFailed = false) {
+        if (!masterBoPhan || masterBoPhan.length === 0) {
+            alert('Chưa có danh mục Bộ phận cho loại hàng này.');
+            return;
+        }
+        const container = document.getElementById('defectProducts');
+        const productId = Date.now() + Math.floor(Math.random() * 1000);
+        const displayIndex = baseSpIndex + container.querySelectorAll('.defect-product').length + 1;
+        const product = document.createElement('div');
+        product.className = 'defect-product';
+        product.dataset.productId = productId;
+        product.dataset.displayIndex = displayIndex;
+        product.dataset.existing = prefill ? '1' : '0';
+        product.dataset.pendingFailed = pendingFailed ? '1' : '0';
+        product.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <div class="label mb-0">Sản phẩm lỗi #${displayIndex}</div>
+                <button class="btn btn-sm btn-outline-danger" onclick="removeDefectProduct(${productId})"><i class="fas fa-trash me-1"></i>Xóa</button>
+            </div>
+            <div class="bo-phan-blocks d-flex flex-column gap-2"></div>
+            <div class="text-end mt-2">
+                <button class="btn btn-sm btn-primary" onclick="addBoPhanBlock(${productId})"><i class="fas fa-plus me-1"></i>Thêm Bộ phận</button>
+            </div>
+        `;
+        container.appendChild(product);
+        const normalized = normalizeProductPrefill(prefill);
+        if (normalized && normalized.bo_phan_items && normalized.bo_phan_items.length) {
+            normalized.bo_phan_items.forEach(bp => addBoPhanBlock(productId, bp));
+        } else {
+            addBoPhanBlock(productId);
+        }
+    }
+
+    function removeDefectProduct(productId) {
+        const product = document.querySelector(`.defect-product[data-product-id="${productId}"]`);
+        if (product) {
+            if (product.dataset.pendingFailed === '1') {
+                pendingFailedCount = Math.max(0, pendingFailedCount - 1);
+                renderOutputDisplay();
+            }
+            product.remove();
+        }
+        const products = document.querySelectorAll('.defect-product');
+        products.forEach((p, idx) => {
+            p.dataset.displayIndex = idx + 1;
+            const label = p.querySelector('.label');
+            if (label) label.textContent = `Sản phẩm lỗi #${baseSpIndex + idx + 1}`;
+        });
+    }
+
+    function addBoPhanBlock(productId, prefill = null) {
+        const product = document.querySelector(`.defect-product[data-product-id="${productId}"]`);
+        if (!product) return;
+        const list = product.querySelector('.bo-phan-blocks');
+        const blockId = Date.now() + Math.floor(Math.random() * 1000);
+        const displayIndex = list.querySelectorAll('.bo-phan-block').length + 1;
+        const block = document.createElement('div');
+        block.className = 'defect-item bo-phan-block';
+        block.dataset.blockId = blockId;
+        block.dataset.displayIndex = displayIndex;
+        block.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <div class="label mb-0">Bộ phận #${displayIndex}</div>
+                <button class="btn btn-sm btn-outline-secondary" onclick="removeBoPhanBlock(${productId}, ${blockId})">Xóa</button>
+            </div>
+            <div class="row g-2">
+                <div class="col-12">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <label class="label mb-0">Bộ phận</label>
+                        <button type="button" class="btn-mic-inline" onclick="startVoiceField('bo_phan', { blockId: ${blockId} })" title="Voice Bộ phận">
+                            <i class="fas fa-microphone"></i>
+                        </button>
+                    </div>
+                    <div class="combo-dropdown" data-type="bo-phan" data-block-id="${blockId}">
+                        <button type="button" class="combo-trigger" onclick="toggleCombo(this)">-- Chọn Bộ phận --</button>
+                        <div class="combo-panel">
+                            <input type="text" class="combo-search" placeholder="Tìm Bộ phận..." oninput="filterCombo(this)">
+                            <div class="combo-list"></div>
+                        </div>
+                        <select class="sel-bo-phan" style="display:none;"></select>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <label class="label mb-0">Chi tiết</label>
+                        <button type="button" class="btn-mic-inline" onclick="startVoiceField('chi_tiet', { blockId: ${blockId} })" title="Voice Chi tiết">
+                            <i class="fas fa-microphone"></i>
+                        </button>
+                    </div>
+                    <div class="combo-dropdown" data-type="chi-tiet" data-block-id="${blockId}">
+                        <button type="button" class="combo-trigger" onclick="toggleCombo(this)">-- Chọn Chi tiết --</button>
+                        <div class="combo-panel">
+                            <input type="text" class="combo-search" placeholder="Tìm Chi tiết..." oninput="filterCombo(this)">
+                            <div class="combo-list"></div>
+                        </div>
+                        <select class="sel-chi-tiet" style="display:none;"></select>
+                    </div>
+                </div>
+            </div>
+            <div class="defect-items d-flex flex-column gap-2 mt-2"></div>
+            <div class="text-end mt-2">
+                <button class="btn btn-sm btn-primary" onclick="addDefectItem(${blockId})"><i class="fas fa-plus me-1"></i>Thêm lỗi</button>
+            </div>
+            <!-- Camera capture temporarily disabled -->
+        `;
+        list.appendChild(block);
+        initCombo(block);
+
+        if (prefill && prefill.bo_phan_id) {
+            selectComboValue(block.querySelector('.combo-dropdown[data-type="bo-phan"]'), String(prefill.bo_phan_id));
+            loadChiTietOptions(block, prefill.bo_phan_id, prefill.chi_tiet_id || null);
+        }
+
+        if (prefill && prefill.defects && prefill.defects.length) {
+            prefill.defects.forEach(d => addDefectItem(blockId, d));
+        } else {
+            addDefectItem(blockId);
+        }
+    }
+
+    function removeBoPhanBlock(productId, blockId) {
+        const product = document.querySelector(`.defect-product[data-product-id="${productId}"]`);
+        if (!product) return;
+        const block = product.querySelector(`.bo-phan-block[data-block-id="${blockId}"]`);
+        if (block) block.remove();
+        const blocks = product.querySelectorAll('.bo-phan-block');
+        blocks.forEach((b, idx) => {
+            b.dataset.displayIndex = idx + 1;
+            const label = b.querySelector('.label');
+            if (label) label.textContent = `Bộ phận #${idx + 1}`;
+        });
+    }
+
+    function addDefectItem(blockId, prefill = null) {
+        const block = document.querySelector(`.bo-phan-block[data-block-id="${blockId}"]`);
+        if (!block) return;
+        const list = block.querySelector('.defect-items');
+        const itemId = Date.now() + Math.floor(Math.random() * 1000);
+        const nextIndex = list.querySelectorAll('.defect-item').length + 1;
+        const item = document.createElement('div');
+        item.className = 'defect-item';
+        item.dataset.itemId = itemId;
+        item.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <div class="label mb-0">Lỗi #${nextIndex}</div>
+                <button class="btn btn-sm btn-outline-secondary" onclick="removeDefectItem(${blockId}, ${itemId})">Xóa</button>
+            </div>
+            <div class="row g-2">
+                <div class="col-12">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <label class="label mb-0">Mã lỗi</label>
+                        <button type="button" class="btn-mic-inline" onclick="startVoiceField('ma_loi', { itemId: ${itemId} })" title="Voice Mã lỗi">
+                            <i class="fas fa-microphone"></i>
+                        </button>
+                    </div>
+                    <div class="combo-dropdown" data-type="ma-loi" data-item-id="${itemId}">
+                        <button type="button" class="combo-trigger" onclick="toggleCombo(this)">-- Chọn Mã lỗi --</button>
+                        <div class="combo-panel">
+                            <input type="text" class="combo-search" placeholder="Tìm Mã lỗi..." oninput="filterCombo(this)">
+                            <div class="combo-list"></div>
+                        </div>
+                        <select class="sel-ma-loi" style="display:none;" onchange="onMaLoiChange(${itemId}, this)"></select>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <label class="label mb-0">Mức độ</label>
+                        <button type="button" class="btn-mic-inline" onclick="startVoiceField('muc_do', { itemId: ${itemId} })" title="Voice Mức độ">
+                            <i class="fas fa-microphone"></i>
+                        </button>
+                    </div>
+                    <select class="form-select sel-muc-do"></select>
+                </div>
+            </div>
+        `;
+        list.appendChild(item);
+        initCombo(item);
+        item.querySelector('.sel-muc-do').innerHTML = '<option value="">-- Chọn Mức độ --</option>';
+
+        if (prefill && prefill.ma_loi_id && prefill.mo_ta_loi_id) {
+            selectComboValue(item.querySelector('.combo-dropdown[data-type="ma-loi"]'), `${prefill.ma_loi_id}|${prefill.mo_ta_loi_id}`);
+            applyMucDoOptions(item, prefill.muc_do || null);
+        }
+    }
+
+    function removeDefectItem(blockId, itemId) {
+        const block = document.querySelector(`.bo-phan-block[data-block-id="${blockId}"]`);
+        if (!block) return;
+        const item = block.querySelector(`.defect-item[data-item-id="${itemId}"]`);
+        if (item) item.remove();
+        const items = block.querySelectorAll('.defect-item');
+        items.forEach((it, idx) => {
+            const label = it.querySelector('.label');
+            if (label) label.textContent = `Lỗi #${idx + 1}`;
+        });
+    }
+
+    function initCombo(scope) {
+        scope.querySelectorAll('.combo-dropdown').forEach(combo => {
+            const type = combo.dataset.type;
+            if (type === 'bo-phan') {
+                const options = masterBoPhan.map(bp => ({ value: String(bp.id), label: bp.ten_bo_phan }));
+                setComboOptions(combo, options, '-- Chọn Bộ phận --');
+            }
+            if (type === 'ma-loi') {
+                const options = masterMaLoiOptions.map(opt => ({
+                    value: `${opt.ma_loi_id}|${opt.mo_ta_loi_id}`,
+                    label: opt.label
+                }));
+                setComboOptions(combo, options, '-- Chọn Mã lỗi --');
+            }
+            if (type === 'chi-tiet') {
+                setComboOptions(combo, [], '-- Chọn Chi tiết --');
+            }
+        });
+
+        // no-op for voice context in this mode
+    }
+
+    async function onBoPhanChange(blockId, selectElem) {
+        const block = document.querySelector(`.bo-phan-block[data-block-id="${blockId}"]`);
+        if (!block) return;
+        const bpId = selectElem.value;
+        await loadChiTietOptions(block, bpId, null);
+    }
+
+    async function loadChiTietOptions(block, bpId, selectedId) {
+        if (!bpId) {
+            setComboOptions(block.querySelector('.combo-dropdown[data-type="chi-tiet"]'), [], '-- Chọn Chi tiết --');
+            return;
+        }
+        try {
+            setComboOptions(block.querySelector('.combo-dropdown[data-type="chi-tiet"]'), [], 'Đang tải...');
+            const res = await fetch(`/api/dm/chi-tiet?bo_phan_id=${bpId}`);
+            const data = await res.json();
+            chiTietOptionsByBlock[block.dataset.blockId] = data.rows || [];
+            const options = (data.rows || []).map(ct => ({ value: String(ct.id), label: ct.ten_chi_tiet }));
+            setComboOptions(block.querySelector('.combo-dropdown[data-type="chi-tiet"]'), options, '-- Chọn Chi tiết --');
+            if (selectedId) {
+                selectComboValue(block.querySelector('.combo-dropdown[data-type="chi-tiet"]'), String(selectedId));
+            }
+        } catch (e) { console.error(e); }
+    }
+
+    function onMaLoiChange(itemId, selectElem) {
+        const item = document.querySelector(`.defect-item[data-item-id="${itemId}"]`);
+        if (!item) return;
+        applyMucDoOptions(item, null);
+    }
+
+    function toggleCombo(btn) {
+        const combo = btn.closest('.combo-dropdown');
+        const panel = combo.querySelector('.combo-panel');
+        closeAllCombos();
+        panel.classList.add('open');
+        // Do not auto-focus search to avoid auto-opening keyboard on mobile.
+    }
+
+    function closeAllCombos() {
+        document.querySelectorAll('.combo-panel.open').forEach(p => p.classList.remove('open'));
+    }
+
+    function filterCombo(inputElem) {
+        const combo = inputElem.closest('.combo-dropdown');
+        const type = combo.dataset.type;
+        const kw = (inputElem.value || '').toLowerCase();
+        let list = [];
+        if (type === 'bo-phan') {
+            list = masterBoPhan.map(bp => ({ value: String(bp.id), label: bp.ten_bo_phan }));
+        } else if (type === 'chi-tiet') {
+            const blockId = combo.dataset.blockId;
+            const raw = chiTietOptionsByBlock[blockId] || [];
+            list = raw.map(ct => ({ value: String(ct.id), label: ct.ten_chi_tiet }));
+        } else if (type === 'ma-loi') {
+            list = masterMaLoiOptions.map(opt => ({ value: `${opt.ma_loi_id}|${opt.mo_ta_loi_id}`, label: opt.label }));
+        }
+        const filtered = list.filter(o => (o.label || '').toLowerCase().includes(kw));
+        setComboOptions(combo, filtered, combo.querySelector('.combo-trigger').textContent || '-- Chọn --', false);
+    }
+
+    function setComboOptions(combo, options, placeholder, resetTrigger = true) {
+        if (!combo) return;
+        const list = combo.querySelector('.combo-list');
+        const sel = combo.querySelector('select');
+        const trigger = combo.querySelector('.combo-trigger');
+        list.innerHTML = '';
+        sel.innerHTML = '';
+        if (resetTrigger) trigger.textContent = placeholder;
+        options.forEach(o => {
+            const opt = document.createElement('option');
+            opt.value = o.value;
+            opt.textContent = o.label;
+            sel.appendChild(opt);
+
+            const item = document.createElement('div');
+            item.className = 'combo-item';
+            item.textContent = o.label;
+            item.addEventListener('click', () => {
+                sel.value = o.value;
+                trigger.textContent = o.label;
+                combo.querySelector('.combo-panel').classList.remove('open');
+                if (combo.dataset.type === 'bo-phan') {
+                    onBoPhanChange(combo.dataset.blockId, sel);
+                } else if (combo.dataset.type === 'ma-loi') {
+                    onMaLoiChange(combo.dataset.itemId, sel);
+                }
+            });
+            list.appendChild(item);
+        });
+    }
+
+    function selectComboValue(combo, value) {
+        if (!combo) return;
+        const sel = combo.querySelector('select');
+        const trigger = combo.querySelector('.combo-trigger');
+        sel.value = value;
+        const option = Array.from(sel.options).find(o => o.value === value);
+        if (option) trigger.textContent = option.textContent;
+    }
+
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.combo-dropdown')) {
+            closeAllCombos();
+        }
+    });
+
+    function applyMucDoOptions(item, prefillValue) {
+        const selMucDo = item.querySelector('.sel-muc-do');
+        selMucDo.innerHTML = '<option value="">-- Chọn Mức độ --</option>';
+        selMucDo.dataset.skip = '';
+        const mlVal = item.querySelector('.sel-ma-loi').value;
+        if (!mlVal) return;
+        const [maId, moTaId] = mlVal.split('|').map(v => parseInt(v));
+        const found = masterMaLoiOptions.find(o => o.ma_loi_id === maId && o.mo_ta_loi_id === moTaId);
+        const mucDo = found ? found.muc_do : null;
+        if (!mucDo || typeof mucDo !== 'object') {
+            selMucDo.dataset.skip = '1';
+            return;
+        }
+        const levels = Object.keys(mucDo);
+        levels.forEach(level => {
+            const opt = document.createElement('option');
+            opt.value = level;
+            opt.textContent = level;
+            selMucDo.appendChild(opt);
+        });
+        if (prefillValue) {
+            selMucDo.value = prefillValue;
+        } else if (levels.length === 1) {
+            selMucDo.value = levels[0];
+        }
+    }
+
+    function initSpeechRecognition() {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            const btn = document.getElementById('btnMic');
+            if (btn) btn.disabled = true;
+            showSpeechToast('Trình duyệt không hỗ trợ nhận diện giọng nói.');
+            return;
+        }
+        recognition = new SpeechRecognition();
+        recognition.lang = 'vi-VN';
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
+        recognition.onstart = () => {
+            isListening = true;
+            updateMicUi(true);
+            showSpeechToast('Bắt đầu ghi âm... vui lòng đọc');
+        };
+        recognition.onend = () => {
+            isListening = false;
+            updateMicUi(false);
+        };
+        recognition.onerror = () => {
+            isListening = false;
+            updateMicUi(false);
+            showSpeechToast('Không nghe rõ, vui lòng thử lại.');
+        };
+        recognition.onresult = async (event) => {
+            const transcript = event.results[0][0].transcript || '';
+            await handleVoiceInput(transcript);
+            recognition.stop();
+        };
+    }
+
+    function toggleVoiceInput() {
+        if (!recognition) return;
+        if (isListening) return;
+        recognition.start();
+        if (navigator.vibrate) navigator.vibrate(40);
+    }
+
+    function updateMicUi(listening) {
+        const btn = document.getElementById('btnMic');
+        if (!btn) return;
+        if (listening) btn.classList.add('listening');
+        else btn.classList.remove('listening');
+    }
+
+    function showSpeechToast(message) {
+        const toast = document.getElementById('speechToast');
+        if (!toast) return;
+        toast.textContent = message;
+        toast.style.display = 'block';
+        clearTimeout(toast._timer);
+        toast._timer = setTimeout(() => { toast.style.display = 'none'; }, 1800);
+    }
+
+    function startVoiceField(field, ctx) {
+        voiceTarget = { field, ...ctx };
+        toggleVoiceInput();
+    }
+
+    function normalizeText(text) {
+        return (text || '')
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/[^a-z0-9\s]/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+    }
+
+    function parseVietnameseNumber(text) {
+        const t = normalizeText(text);
+        if (!t) return null;
+        if (/^\d+$/.test(t)) return parseInt(t, 10);
+        const map = {
+            khong: 0, mot: 1, motj: 1, hai: 2, ba: 3, bon: 4, tu: 4, nam: 5,
+            lam: 5, sau: 6, bay: 7, tam: 8, chin: 9, muoi: 10
+        };
+        const parts = t.split(' ');
+        if (parts.length === 1 && map[parts[0]] !== undefined) return map[parts[0]];
+        if (parts.length === 2 && parts[0] === 'muoi' && map[parts[1]] !== undefined) return 10 + map[parts[1]];
+        if (parts.length === 2 && map[parts[0]] !== undefined && parts[1] === 'muoi') return map[parts[0]] * 10;
+        if (parts.length === 3 && map[parts[0]] !== undefined && parts[1] === 'muoi' && map[parts[2]] !== undefined) {
+            return map[parts[0]] * 10 + map[parts[2]];
+        }
+        return null;
+    }
+
+    function parseMaLoiCode(segment) {
+        const t = normalizeText(segment);
+        const direct = t.match(/c\s*(\d{1,3})/);
+        if (direct) return `c${direct[1]}`;
+        const idx = t.indexOf('xe');
+        if (idx >= 0) {
+            const tail = t.slice(idx + 2).trim();
+            const num = parseVietnameseNumber(tail);
+            if (num !== null) return `c${num}`;
+        }
+        return null;
+    }
+
+    function getBestMatch(options, text, labelKey = 'label') {
+        const needle = normalizeText(text);
+        if (!needle) return { match: null, ambiguous: false };
+
+        const exact = [];
+        const partial = [];
+        options.forEach(opt => {
+            const label = normalizeText(opt[labelKey] || '');
+            if (!label) return;
+            if (label === needle) {
+                exact.push(opt);
+            } else if (label.includes(needle) || needle.includes(label)) {
+                partial.push(opt);
+            }
+        });
+
+        if (exact.length === 1) return { match: exact[0], ambiguous: false };
+        if (exact.length > 1) return { match: exact[0], ambiguous: true };
+        if (partial.length === 1) return { match: partial[0], ambiguous: false };
+        if (partial.length > 1) return { match: null, ambiguous: true };
+        return { match: null, ambiguous: false };
+    }
+
+    async function handleVoiceInput(text) {
+        if (!text || !voiceTarget) return;
+        showSpeechToast(`Đã nghe: ${text}`);
+        const field = voiceTarget.field;
+
+        if (field === 'bo_phan') {
+            const blockId = voiceTarget.blockId;
+            const block = document.querySelector(`.bo-phan-block[data-block-id="${blockId}"]`);
+            if (!block) return;
+            const bpResult = getBestMatch(masterBoPhan.map(bp => ({ value: String(bp.id), label: bp.ten_bo_phan })), text);
+            if (bpResult.match) {
+                selectComboValue(block.querySelector('.combo-dropdown[data-type="bo-phan"]'), bpResult.match.value);
+                await onBoPhanChange(blockId, block.querySelector('.sel-bo-phan'));
+                block.classList.add('pulse-success');
+                setTimeout(() => block.classList.remove('pulse-success'), 600);
+            } else if (bpResult.ambiguous) {
+                showSpeechToast('Có nhiều Bộ phận trùng, vui lòng đọc đầy đủ hơn.');
+            } else {
+                showSpeechToast('Không tìm thấy Bộ phận phù hợp.');
+            }
+        }
+
+        if (field === 'chi_tiet') {
+            const blockId = voiceTarget.blockId;
+            const block = document.querySelector(`.bo-phan-block[data-block-id="${blockId}"]`);
+            if (!block) return;
+            const options = (chiTietOptionsByBlock[blockId] || []).map(ct => ({ value: String(ct.id), label: ct.ten_chi_tiet }));
+            const ctResult = getBestMatch(options, text);
+            if (ctResult.match) {
+                selectComboValue(block.querySelector('.combo-dropdown[data-type="chi-tiet"]'), ctResult.match.value);
+                block.classList.add('pulse-success');
+                setTimeout(() => block.classList.remove('pulse-success'), 600);
+            } else if (ctResult.ambiguous) {
+                showSpeechToast('Có nhiều Chi tiết trùng, vui lòng đọc đầy đủ hơn.');
+            } else {
+                showSpeechToast('Không tìm thấy Chi tiết phù hợp.');
+            }
+        }
+
+        if (field === 'ma_loi') {
+            const itemId = voiceTarget.itemId;
+            const item = document.querySelector(`.defect-item[data-item-id="${itemId}"]`);
+            if (!item) return;
+            const code = parseMaLoiCode(text);
+            let match = null;
+            if (code) {
+                match = masterMaLoiOptions.find(opt => normalizeText(opt.label).includes(code));
+            }
+            if (!match) {
+                const mlResult = getBestMatch(masterMaLoiOptions, text);
+                match = mlResult.match;
+                if (!match && mlResult.ambiguous) {
+                    showSpeechToast('Có nhiều Mã lỗi trùng, vui lòng đọc đầy đủ hơn.');
+                    voiceTarget = null;
+                    return;
+                }
+            }
+            if (match) {
+                selectComboValue(item.querySelector('.combo-dropdown[data-type="ma-loi"]'), `${match.ma_loi_id}|${match.mo_ta_loi_id}`);
+                applyMucDoOptions(item, null);
+                item.classList.add('pulse-success');
+                setTimeout(() => item.classList.remove('pulse-success'), 600);
+            } else {
+                showSpeechToast('Không tìm thấy Mã lỗi phù hợp.');
+            }
+        }
+
+        if (field === 'muc_do') {
+            const itemId = voiceTarget.itemId;
+            const item = document.querySelector(`.defect-item[data-item-id="${itemId}"]`);
+            if (!item) return;
+            const sel = item.querySelector('.sel-muc-do');
+            const opts = Array.from(sel.options).map(o => ({ value: o.value, label: o.textContent }));
+            const mdResult = getBestMatch(opts, text);
+            if (mdResult.match) {
+                sel.value = mdResult.match.value;
+                item.classList.add('pulse-success');
+                setTimeout(() => item.classList.remove('pulse-success'), 600);
+            } else if (mdResult.ambiguous) {
+                showSpeechToast('Có nhiều Mức độ trùng, vui lòng đọc rõ hơn.');
+            } else {
+                showSpeechToast('Không tìm thấy Mức độ phù hợp.');
+            }
+        }
+
+        voiceTarget = null;
+    }
+    // ============ Camera Capture per Block (disabled) ============
+    const blockImagePaths = {};  // blockId -> image_path (relative)
+    /*
+    function onCameraCapture(blockId, inputElem) {
+        const file = inputElem.files && inputElem.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('cameraTriggerArea_' + blockId).style.display = 'none';
+            document.getElementById('cameraPreviewArea_' + blockId).style.display = 'block';
+            document.getElementById('cameraPreviewImg_' + blockId).src = e.target.result;
+            document.getElementById('cameraBadge_' + blockId).style.display = 'none';
+            document.getElementById('cameraActions_' + blockId).style.display = 'flex';
+            // Clear any previous upload for this block
+            delete blockImagePaths[blockId];
+            // Auto-upload latest image (no confirm required)
+            confirmCameraImage(blockId);
+        };
+        reader.readAsDataURL(file);
+    }
+
+    async function confirmCameraImage(blockId) {
+        const input = document.getElementById('cameraInput_' + blockId);
+        const file = input.files && input.files[0];
+        if (!file) { alert('Không có hình ảnh để tải lên.'); return; }
+
+        // Show uploading state
+        document.getElementById('cameraUploading_' + blockId).style.display = 'flex';
+        document.getElementById('cameraActions_' + blockId).style.display = 'none';
+
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+            const res = await fetch('/api/qc/upload-sp-image', { method: 'POST', body: formData });
+            if (!res.ok) throw new Error('Upload failed');
+            const data = await res.json();
+            blockImagePaths[blockId] = data.image_path;
+
+            // Show success
+            document.getElementById('cameraUploading_' + blockId).style.display = 'none';
+            document.getElementById('cameraBadge_' + blockId).style.display = 'flex';
+            document.getElementById('cameraActions_' + blockId).innerHTML = `
+                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="retakeCamera(${blockId})" style="flex:1;"><i class="fas fa-redo me-1"></i>Chá»¥p láº¡i</button>
+            `;
+            document.getElementById('cameraActions_' + blockId).style.display = 'flex';
+            showSpeechToast('Đã lưu hình ảnh!');
+        } catch (e) {
+            console.error(e);
+            document.getElementById('cameraUploading_' + blockId).style.display = 'none';
+            document.getElementById('cameraActions_' + blockId).style.display = 'flex';
+            alert('Lỗi khi tải hình ảnh lên server.');
+        }
+    }
+
+    function retakeCamera(blockId) {
+        delete blockImagePaths[blockId];
+        const input = document.getElementById('cameraInput_' + blockId);
+        input.value = '';
+        document.getElementById('cameraPreviewArea_' + blockId).style.display = 'none';
+        document.getElementById('cameraTriggerArea_' + blockId).style.display = 'block';
+        document.getElementById('cameraBadge_' + blockId).style.display = 'none';
+        document.getElementById('cameraActions_' + blockId).innerHTML = `
+            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="retakeCamera(${blockId})"><i class="fas fa-redo me-1"></i>Chá»¥p láº¡i</button>
+        `;
+    }
+    */
+    async function submitReport() {
+        const planId = selectedPlanId;
+        const output = outputTotal || 0;
+        if (!planId) { alert('Vui lòng chọn Kế hoạch!'); return; }
+        if (!ensureStationSelected()) return;
+        const station = getActiveStation();
+
+        const defectProductsEls = document.querySelectorAll('.defect-product');
+        const defect_products = [];
+        for (let product of defectProductsEls) {
+            if (product.dataset.existing === '1') continue;
+            const boPhanBlocks = product.querySelectorAll('.bo-phan-block');
+            if (!boPhanBlocks || boPhanBlocks.length === 0) {
+                alert('Mỗi Sản phẩm lỗi cần ít nhất 1 Bộ phận.');
+                return;
+            }
+            const defects = [];
+            for (let block of boPhanBlocks) {
+                const bpId = block.querySelector('.sel-bo-phan').value;
+                const ctId = block.querySelector('.sel-chi-tiet').value;
+                if (!bpId || !ctId) {
+                    alert('Vui lòng chọn Bộ phận và Chi tiết cho tất cả các block!');
+                    return;
+                }
+                const defectItems = block.querySelectorAll('.defect-item');
+                if (!defectItems || defectItems.length === 0) {
+                    alert('Mỗi Bộ phận cần ít nhất 1 lỗi.');
+                    return;
+                }
+                for (let item of defectItems) {
+                    const mlVal = item.querySelector('.sel-ma-loi').value;
+                    const mucDoElem = item.querySelector('.sel-muc-do');
+                    const mucDo = mucDoElem.value;
+                    if (!mlVal) {
+                        alert('Vui lòng chọn Mã lỗi cho tất cả các lỗi!');
+                        return;
+                    }
+                    if (!mucDo && mucDoElem.dataset.skip !== '1') {
+                        alert('Vui lòng chọn Mức độ cho tất cả các lỗi!');
+                        return;
+                    }
+                    const parts = mlVal.split('|');
+                    const maLoiId = parseInt(parts[0]);
+                    const moTaLoiId = parseInt(parts[1]);
+                    defects.push({
+                        bo_phan_id: parseInt(bpId),
+                        chi_tiet_id: parseInt(ctId),
+                        ma_loi_id: maLoiId,
+                        mo_ta_loi_id: moTaLoiId,
+                        muc_do: mucDo,
+                        image_path: blockImagePaths[block.dataset.blockId] || null
+                    });
+                }
+            }
+            defect_products.push({ defects: defects });
+        }
+
+        if (defect_products.length === 0) {
+            alert('Chưa có Sản phẩm lỗi mới để lưu.');
+            return;
+        }
+        const payload = {
+            plan_id: parseInt(planId),
+            date: reportDateStr,
+            station: station,
+            output: output,
+            defect_products: defect_products,
+            pending_failed_count: pendingFailedCount,
+            append_only: true
+        };
+
+        const btn = document.getElementById('btnSubmitReport');
+        const originalBtnHtml = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> ĐANG LƯU...';
+
+        try {
+            const res = await fetch('/api/qc/error-log-sp', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (res.ok) {
+                btn.innerHTML = '<i class="fas fa-check me-2"></i> THÀNH CÔNG!';
+                btn.style.background = '#10b981';
+                baseSpIndex += defect_products.length;
+                document.getElementById('defectProducts').innerHTML = '';
+                chiTietOptionsByBlock = {};
+                pendingFailedCount = 0;
+                await fetchOutputTotal();
+                loadPosSummary();
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.innerHTML = originalBtnHtml;
+                    btn.style.background = '';
+                }, 800);
+            } else {
+                const err = await res.json();
+                alert('Lỗi: ' + (err.detail || 'Không thể lưu.'));
+                btn.disabled = false;
+                btn.innerHTML = originalBtnHtml;
+            }
+        } catch (e) {
+            console.error(e);
+            alert('Lỗi kết nối server.');
+            btn.disabled = false;
+            btn.innerHTML = originalBtnHtml;
+        }
+    }
+</script>
+</body>
+</html>
+
+
+
+

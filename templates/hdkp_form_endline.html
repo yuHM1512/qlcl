@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BÁO CÁO HÀNH ĐỘNG KHẮC PHỤC PHÒNG NGỪA</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .hero-section {
+            background: linear-gradient(135deg, #2c3e50 0%, #3498db 50%, #9b59b6 100%);
+            color: white;
+            padding: 28px 0;
+            margin-bottom: 20px;
+        }
+        .section-card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+            margin-bottom: 24px;
+        }
+        .section-header {
+            border-left: 4px solid #3498db;
+            padding-left: 16px;
+            margin-bottom: 20px;
+        }
+        .section-header h4 {
+            color: #2c3e50;
+            margin: 0;
+        }
+        .subsection-header {
+            background: #f8f9fa;
+            padding: 12px 16px;
+            border-left: 3px solid #f39c12;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+        .dynamic-row {
+            background: #f8f9fa;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            border: 1px solid #dee2e6;
+        }
+        .row-number {
+            background: #3498db;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        .btn-remove-row {
+            float: right;
+        }
+        .error { color: #b91c1c; margin: 8px 0; }
+        .success { color: #065f46; margin: 8px 0; }
+    </style>
+</head>
+<body>
+    <div class="hero-section">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-auto">
+                    <img src="/templates/Logo.png" alt="Logo" style="height: 50px;" />
+                </div>
+                <div class="col">
+                    <h4 class="mb-0">BÁO CÁO HÀNH ĐỘNG KHẮC PHỤC PHÒNG NGỪA</h4>
+                    <small>DPS ID: {{dps_id}}</small>
+                </div>
+                <div class="col-auto">
+                    <a href="/qc/cap" class="btn btn-light btn-sm">
+                        <i class="fas fa-arrow-left"></i> Quay lại
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div id="alert-container"></div>
+
+        <form id="hdkp-form" data-dps-id="{{ dps_id }}">
+            <!-- Section I: Mô tả vấn đề -->
+            <div class="section-card">
+                <div class="section-header">
+                    <h4><i class="fas fa-clipboard-list"></i> I. MÔ TẢ VẤN ĐỀ</h4>
+                </div>
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label">1. Vấn đề gì đã xảy ra?</label>
+                        <textarea class="form-control" id="vd_what" name="vd_what" rows="3"></textarea>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">2. Vấn đề phát hiện ra khi nào?</label>
+                        <input type="text" class="form-control" id="vd_when" name="vd_when">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">3. Ai là người phát hiện ra vấn đề?</label>
+                        <input type="text" class="form-control" id="vd_who" name="vd_who">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">4. Vấn đề xảy ra ở đâu? Bộ phận nào?</label>
+                        <input type="text" class="form-control" id="vd_where" name="vd_where">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">5. Vấn đề xảy ra như thế nào? Mô tả tình huống</label>
+                        <textarea class="form-control" id="vd_how" name="vd_how" rows="4"></textarea>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">6. Vấn đề đã từng xảy ra chưa?</label>
+                        <input type="text" class="form-control" id="vd_before" name="vd_before">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">7. Tại sao vấn đề này lại nghiêm trọng?</label>
+                        <textarea class="form-control" id="vd_importance" name="vd_importance" rows="3"></textarea>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">8. Hình ảnh, nếu có</label>
+                        <div class="mb-2">
+                            <input type="file" class="form-control" id="vd_image_file" name="vd_image_file" accept="image/*" onchange="handleImageUpload(event)">
+                            <small class="text-muted">Chấp nhận: JPG, PNG, GIF, BMP, WEBP</small>
+                        </div>
+                        <div id="image-preview" class="mt-2" style="display: none;">
+                            <img id="preview-img" src="" alt="Preview" style="max-width: 300px; max-height: 200px; border-radius: 8px; border: 1px solid #dee2e6;">
+                            <button type="button" class="btn btn-sm btn-danger ms-2" onclick="removeImage()">
+                                <i class="fas fa-times"></i> Xóa
+                            </button>
+                        </div>
+                        <input type="hidden" id="vd_image" name="vd_image">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section II: Kế hoạch khắc phục, phòng ngừa -->
+            <div class="section-card">
+                <div class="section-header">
+                    <h4><i class="fas fa-tasks"></i> II. KẾ HOẠCH KHẮC PHỤC, PHÒNG NGỪA</h4>
+                </div>
+
+                <!-- Subsection A -->
+                <div class="subsection-header">
+                    A/ Tại sao vấn đề này xảy ra
+                </div>
+                <div id="section-a-rows">
+                    <!-- Dynamic rows sẽ được thêm vào đây -->
+                </div>
+                <button type="button" class="btn btn-outline-primary btn-sm mb-3" onclick="addKehoachRow('A')">
+                    <i class="fas fa-plus"></i> Thêm ý
+                </button>
+
+                <!-- Subsection B -->
+                <div class="subsection-header">
+                    B/ Tại sao vấn đề này không được phát hiện từ trước
+                </div>
+                <div id="section-b-rows">
+                    <!-- Dynamic rows sẽ được thêm vào đây -->
+                </div>
+                <button type="button" class="btn btn-outline-primary btn-sm mb-3" onclick="addKehoachRow('B')">
+                    <i class="fas fa-plus"></i> Thêm ý
+                </button>
+            </div>
+
+            <!-- Section III: Chi tiết kế hoạch -->
+            <div class="section-card">
+                <div class="section-header">
+                    <h4><i class="fas fa-list-check"></i> III. CHI TIẾT KẾ HOẠCH KHẮC PHỤC PHÒNG NGỪA (To Do List)</h4>
+                </div>
+                <div id="chitiet-rows">
+                    <!-- Dynamic rows sẽ được thêm vào đây -->
+                </div>
+                <button type="button" class="btn btn-outline-primary btn-sm mb-3" onclick="addChitietRow()">
+                    <i class="fas fa-plus"></i> Thêm công việc
+                </button>
+            </div>
+
+            <!-- Submit -->
+            <div class="d-flex justify-content-between mb-4">
+                <button type="button" class="btn btn-secondary" onclick="window.location.href='/qc/cap'">
+                    <i class="fas fa-times"></i> Hủy
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Lưu và tạo PDF
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        const dpsId = parseInt(document.getElementById('hdkp-form').dataset.dpsId, 10);
+        let kehoachRowCount = { A: 0, B: 0 };
+        let chitietRowCount = 0;
+
+        // Template cho row kế hoạch
+        function getKehoachRowHTML(section, rowNum) {
+            return `
+                <div class="dynamic-row" data-section="${section}" data-row="${rowNum}">
+                    <div class="row-number">${rowNum}</div>
+                    <button type="button" class="btn btn-sm btn-danger btn-remove-row" onclick="removeKehoachRow('${section}', ${rowNum})">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    <div class="row g-3 mt-2">
+                        <div class="col-12">
+                            <label class="form-label">Nguyên nhân cuối cùng</label>
+                            <textarea class="form-control" name="kehoach[${section}][${rowNum}][root_cause]" rows="2"></textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Hành động khắc phục tức thời</label>
+                            <textarea class="form-control" name="kehoach[${section}][${rowNum}][hdkp_tuc_thoi]" rows="2"></textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Hành động phòng ngừa</label>
+                            <textarea class="form-control" name="kehoach[${section}][${rowNum}][hd_phong_ngua]" rows="2"></textarea>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Thời gian theo dõi</label>
+                            <input type="text" class="form-control" name="kehoach[${section}][${rowNum}][tg_theo_doi]">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Trách nhiệm thực hiện</label>
+                            <input type="text" class="form-control" name="kehoach[${section}][${rowNum}][trach_nhiem]">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Thời gian thực hiện (từ…đến)</label>
+                            <input type="text" class="form-control" name="kehoach[${section}][${rowNum}][tg_thuc_hien]">
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Template cho row chi tiết
+        function getChitietRowHTML(rowNum) {
+            return `
+                <div class="dynamic-row" data-row="${rowNum}">
+                    <div class="row-number">${rowNum}</div>
+                    <button type="button" class="btn btn-sm btn-danger btn-remove-row" onclick="removeChitietRow(${rowNum})">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    <div class="row g-3 mt-2">
+                        <div class="col-12">
+                            <label class="form-label">Công việc cụ thể</label>
+                            <textarea class="form-control" name="chitiet[${rowNum}][cong_viec]" rows="2"></textarea>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Trách nhiệm thực hiện</label>
+                            <input type="text" class="form-control" name="chitiet[${rowNum}][trach_nhiem]">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Ngày bắt đầu</label>
+                            <input type="date" class="form-control" name="chitiet[${rowNum}][ngay_bat_dau]">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Ngày hoàn thành</label>
+                            <input type="date" class="form-control" name="chitiet[${rowNum}][ngay_hoan_thanh]">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Trách nhiệm giám sát, báo cáo</label>
+                            <input type="text" class="form-control" name="chitiet[${rowNum}][giam_sat]">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Kết quả kiểm tra, giám sát</label>
+                            <select class="form-select" name="chitiet[${rowNum}][ket_qua]">
+                                <option value="">-- Chọn --</option>
+                                <option value="Đạt">Đạt</option>
+                                <option value="Không đạt">Không đạt</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Kết luận</label>
+                            <input type="text" class="form-control" name="chitiet[${rowNum}][ket_luan]">
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function addKehoachRow(section) {
+            kehoachRowCount[section]++;
+            const container = document.getElementById(`section-${section.toLowerCase()}-rows`);
+            container.insertAdjacentHTML('beforeend', getKehoachRowHTML(section, kehoachRowCount[section]));
+        }
+
+        function removeKehoachRow(section, rowNum) {
+            const row = document.querySelector(`[data-section="${section}"][data-row="${rowNum}"]`);
+            if (row) row.remove();
+        }
+
+        function addChitietRow() {
+            chitietRowCount++;
+            const container = document.getElementById('chitiet-rows');
+            container.insertAdjacentHTML('beforeend', getChitietRowHTML(chitietRowCount));
+        }
+
+        function removeChitietRow(rowNum) {
+            const row = document.querySelector(`[data-row="${rowNum}"]`);
+            if (row) row.remove();
+        }
+
+        // Handle image upload
+        async function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            // Validate file type
+            const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/bmp', 'image/webp'];
+            if (!allowedTypes.includes(file.type)) {
+                showAlert('File không hợp lệ. Chỉ chấp nhận: JPG, PNG, GIF, BMP, WEBP', 'error');
+                event.target.value = '';
+                return;
+            }
+
+            // Validate file size (max 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                showAlert('File quá lớn. Kích thước tối đa: 5MB', 'error');
+                event.target.value = '';
+                return;
+            }
+
+            // Show loading
+            const previewDiv = document.getElementById('image-preview');
+            const previewImg = document.getElementById('preview-img');
+            previewImg.src = '';
+            previewDiv.style.display = 'block';
+            previewImg.alt = 'Đang upload...';
+
+            // Upload file
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+
+                const response = await fetch('/api/upload-image', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    // Set URL to hidden input
+                    document.getElementById('vd_image').value = result.url;
+                    
+                    // Show preview
+                    previewImg.src = result.url;
+                    previewImg.alt = 'Preview';
+                    showAlert('Upload hình ảnh thành công!', 'success');
+                } else {
+                    showAlert(`Lỗi: ${result.detail || 'Không thể upload file'}`, 'error');
+                    previewDiv.style.display = 'none';
+                    event.target.value = '';
+                }
+            } catch (error) {
+                showAlert(`Lỗi: ${error.message}`, 'error');
+                previewDiv.style.display = 'none';
+                event.target.value = '';
+            }
+        }
+
+        function removeImage() {
+            document.getElementById('vd_image_file').value = '';
+            document.getElementById('vd_image').value = '';
+            document.getElementById('image-preview').style.display = 'none';
+        }
+
+        // Load dữ liệu đã lưu
+        async function loadSavedData() {
+            try {
+                const response = await fetch(`/api/qc/hdkp/${dpsId}`);
+                if (!response.ok) return;
+                
+                const data = await response.json();
+
+                // Load Section I
+                if (data.mota) {
+                    Object.keys(data.mota).forEach(key => {
+                        if (key.startsWith('vd_')) {
+                            const el = document.getElementById(key);
+                            if (el) {
+                                if (key === 'vd_image' && data.mota[key]) {
+                                    // Load image preview
+                                    const previewDiv = document.getElementById('image-preview');
+                                    const previewImg = document.getElementById('preview-img');
+                                    previewImg.src = data.mota[key];
+                                    previewImg.alt = 'Preview';
+                                    previewDiv.style.display = 'block';
+                                }
+                                el.value = data.mota[key] || '';
+                            }
+                        }
+                    });
+                }
+
+                // Load Section II
+                if (data.kehoach && data.kehoach.length > 0) {
+                    data.kehoach.forEach(item => {
+                        const section = item.section;
+                        kehoachRowCount[section] = (kehoachRowCount[section] || 0) + 1;
+                        const container = document.getElementById(`section-${section.toLowerCase()}-rows`);
+                        container.insertAdjacentHTML('beforeend', getKehoachRowHTML(section, kehoachRowCount[section]));
+                        
+                        // Fill data
+                        const row = container.querySelector(`[data-section="${section}"][data-row="${kehoachRowCount[section]}"]`);
+                        if (row) {
+                            const inputs = row.querySelectorAll('input, textarea');
+                            inputs.forEach(input => {
+                                const name = input.name;
+                                const match = name.match(/\[(\w+)\]$/);
+                                if (match) {
+                                    const field = match[1];
+                                    input.value = item[field] || '';
+                                }
+                            });
+                        }
+                    });
+                }
+
+                // Load Section III
+                if (data.chitiet && data.chitiet.length > 0) {
+                    data.chitiet.forEach(item => {
+                        chitietRowCount++;
+                        const container = document.getElementById('chitiet-rows');
+                        container.insertAdjacentHTML('beforeend', getChitietRowHTML(chitietRowCount));
+                        
+                        // Fill data
+                        const row = container.querySelector(`[data-row="${chitietRowCount}"]`);
+                        if (row) {
+                            const inputs = row.querySelectorAll('input, textarea, select');
+                            inputs.forEach(input => {
+                                const name = input.name;
+                                const match = name.match(/\[(\w+)\]$/);
+                                if (match) {
+                                    const field = match[1];
+                                    if (input.type === 'date') {
+                                        // Format date from YYYY-MM-DD
+                                        input.value = item[field] ? item[field].substring(0, 10) : '';
+                                    } else {
+                                        input.value = item[field] || '';
+                                    }
+                                }
+                            });
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading data:', error);
+            }
+        }
+
+        // Form submit
+        document.getElementById('hdkp-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const data = {
+                mota: {},
+                kehoach: [],
+                chitiet: []
+            };
+
+            // Collect Section I
+            ['vd_what', 'vd_when', 'vd_who', 'vd_where', 'vd_how', 'vd_before', 'vd_importance', 'vd_image'].forEach(key => {
+                data.mota[key] = formData.get(key) || null;
+            });
+
+            // Collect Section II
+            const kehoachData = {};
+            for (let [name, value] of formData.entries()) {
+                if (name.startsWith('kehoach[')) {
+                    const match = name.match(/kehoach\[([AB])\]\[(\d+)\]\[(\w+)\]/);
+                    if (match && value) {
+                        const [, section, rowNum, field] = match;
+                        if (!kehoachData[section]) kehoachData[section] = {};
+                        if (!kehoachData[section][rowNum]) kehoachData[section][rowNum] = { section: section };
+                        kehoachData[section][rowNum][field] = value;
+                    }
+                }
+            }
+            Object.keys(kehoachData).forEach(section => {
+                Object.keys(kehoachData[section]).forEach(rowNum => {
+                    data.kehoach.push(kehoachData[section][rowNum]);
+                });
+            });
+
+            // Collect Section III
+            const chitietData = {};
+            for (let [name, value] of formData.entries()) {
+                if (name.startsWith('chitiet[')) {
+                    const match = name.match(/chitiet\[(\d+)\]\[(\w+)\]/);
+                    if (match && value) {
+                        const [, rowNum, field] = match;
+                        if (!chitietData[rowNum]) chitietData[rowNum] = {};
+                        chitietData[rowNum][field] = value;
+                    }
+                }
+            }
+            Object.keys(chitietData).forEach(rowNum => {
+                data.chitiet.push(chitietData[rowNum]);
+            });
+
+            try {
+                const response = await fetch(`/api/qc/hdkp/${dpsId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    let message = 'Lưu thành công!';
+                    if (result.pdf_url) {
+                        message += ` <a href="${result.pdf_url}" target="_blank" class="alert-link">Xem file PDF</a>`;
+                    }
+                    showAlert(message, 'success');
+                    
+                    // Tự động redirect về trang "Thống kê sai sót" sau 2 giây
+                    setTimeout(() => {
+                        window.location.href = '/qc/cap';
+                    }, 2000);
+                } else {
+                    showAlert(`Lỗi: ${result.detail || 'Không thể lưu dữ liệu'}`, 'error');
+                }
+            } catch (error) {
+                showAlert(`Lỗi: ${error.message}`, 'error');
+            }
+        });
+
+        function showAlert(message, type = 'success') {
+            const alertContainer = document.getElementById('alert-container');
+            alertContainer.innerHTML = `
+                <div class="alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show" role="alert">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            setTimeout(() => {
+                alertContainer.innerHTML = '';
+            }, 5000);
+        }
+
+        // Load data khi trang load
+        loadSavedData();
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+

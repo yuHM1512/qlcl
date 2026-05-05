@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Manufacturing Management Portal - QLCL</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet" />
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: #f8fafc;
+            overflow-x: hidden;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .glass-card:hover {
+            transform: translateY(-8px);
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.05);
+        }
+
+        .brand-gradient {
+            background: linear-gradient(135deg, #3b82f6 0%, #0ea5e9 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .floating {
+            animation: floating 6s ease-in-out infinite;
+        }
+
+        @keyframes floating {
+            0% {
+                transform: translate(0, 0px);
+            }
+
+            50% {
+                transform: translate(0, 15px);
+            }
+
+            100% {
+                transform: translate(0, 0px);
+            }
+        }
+
+        .module-icon {
+            transition: all 0.4s ease;
+        }
+
+        .glass-card:hover .module-icon {
+            transform: scale(1.1) rotate(5deg);
+        }
+
+        /* Abstract backgrounds */
+        .bg-blob {
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.4;
+            z-index: -1;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen flex flex-col items-center justify-start p-6 pt-24 md:p-10 relative overflow-y-auto figma-ui">
+    <!-- Abstract Background Blobs -->
+    <div class="bg-blob bg-blue-100 top-[-100px] left-[-100px] animate-pulse"></div>
+    <div class="bg-blob bg-indigo-100 bottom-[-100px] right-[-100px] animate-pulse" style="animation-delay: 2s"></div>
+
+    <!-- User Profile & Logout -->
+    <div class="absolute top-8 right-8 z-50 flex items-center gap-4">
+        {% if user %}
+        <div class="flex flex-col items-end">
+            <span class="text-sm font-black text-slate-800">{{ user.name }}</span>
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{{ user.department }}</span>
+        </div>
+        {% else %}
+        <div class="flex flex-col items-end">
+            <span class="text-sm font-black text-slate-800">Guest</span>
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Chưa đăng nhập</span>
+        </div>
+        {% endif %}
+        <div
+            class="h-12 w-12 rounded-2xl bg-white shadow-lg border border-slate-100 flex items-center justify-center text-accent">
+            <span class="material-symbols-outlined !text-3xl">account_circle</span>
+        </div>
+        {% if user %}
+        <form action="/logout" method="post" style="margin:0;">
+            <button type="submit"
+                class="h-12 px-4 rounded-2xl bg-red-50 text-red-600 border border-red-100 flex items-center justify-center gap-2 hover:bg-red-100 transition-all font-bold text-sm">
+                <span class="material-symbols-outlined !text-xl">logout</span>
+                Thoát
+            </button>
+        </form>
+        {% else %}
+        <a href="/login"
+            class="h-12 px-4 rounded-2xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center gap-2 hover:bg-blue-100 transition-all font-bold text-sm">
+            <span class="material-symbols-outlined !text-xl">login</span>
+            Đăng nhập
+        </a>
+        {% endif %}
+    </div>
+
+    <div class="max-w-5xl w-full space-y-12 relative z-10">
+        <!-- Hero Section -->
+        <header class="text-center space-y-4">
+            <div class="flex justify-center mb-6">
+                <img src="/templates/Logo.png" alt="Logo" class="h-20 w-auto object-contain">
+            </div>
+            <div
+                class="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-full text-xs font-bold uppercase tracking-widest mb-4 border border-blue-100/50 shadow-sm animate-bounce">
+                M29 Digital Team
+            </div>
+            <h1 class="text-6xl font-[900] text-slate-800 tracking-tight leading-tight">
+                Công cụ số <br />
+                <span class="brand-gradient">Phòng QLCL</span>
+            </h1>
+            <p class="text-slate-500 text-lg max-w-2xl mx-auto font-medium">
+                Bộ công cụ số hoá, sử dụng cho Phòng Quản Lý Chất Lượng (QLCL).
+            </p>
+        </header>
+
+        <!-- Module Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <!-- KPI Module -->
+            <a href="/kpi" class="glass-card p-10 rounded-[3rem] group">
+                <div
+                    class="w-16 h-16 bg-blue-600 text-white rounded-2xl flex items-center justify-center mb-8 shadow-xl shadow-blue-200 module-icon">
+                    <span class="material-symbols-outlined !text-4xl">analytics</span>
+                </div>
+                <h3 class="text-2xl font-bold text-slate-800 mb-3 group-hover:text-blue-600 transition-colors">KPI QLCL System</h3>
+                <p class="text-slate-500 text-sm leading-relaxed mb-6">
+                    Hệ thống theo dõi KPIs, Dashboard và nhập liệu chỉ số chất lượng cho Phòng QLCL.
+                </p>
+                <div class="flex items-center gap-2 text-blue-600 font-bold text-sm">
+                    Truy cập Module
+                    <span
+                        class="material-symbols-outlined text-lg transition-transform group-hover:translate-x-1">arrow_forward</span>
+                </div>
+            </a>
+
+            <!-- QC Module -->
+            <a href="/qc" class="glass-card p-10 rounded-[3rem] group">
+                <div
+                    class="w-16 h-16 bg-indigo-600 text-white rounded-2xl flex items-center justify-center mb-8 shadow-xl shadow-indigo-200 module-icon">
+                    <span class="material-symbols-outlined !text-4xl">fact_check</span>
+                </div>
+                <h3 class="text-2xl font-bold text-slate-800 mb-3 group-hover:text-indigo-600 transition-colors">QC Inline/Endline</h3>
+                <p class="text-slate-500 text-sm leading-relaxed mb-6">
+                    Module kiểm soát chất lượng Inline và Endline (Đang phát triển).
+                </p>
+                <div class="flex items-center gap-2 text-indigo-600 font-bold text-sm">
+                    Truy cập Module
+                    <span
+                        class="material-symbols-outlined text-lg transition-transform group-hover:translate-x-1">arrow_forward</span>
+                </div>
+            </a>
+
+            <!-- Coming Soon Block -->
+            <div
+                class="glass-card p-10 rounded-[3rem] opacity-50 grayscale cursor-not-allowed flex flex-col items-center justify-center min-h-[300px] text-center">
+                <div class="w-16 h-16 bg-slate-200 text-slate-400 rounded-2xl flex items-center justify-center mb-6">
+                    <span class="material-symbols-outlined !text-4xl">hourglass_empty</span>
+                </div>
+                <h3 class="text-xl font-bold text-slate-600 mb-2">Tính năng mới</h3>
+                <div
+                    class="inline-flex px-3 py-1 bg-slate-100 text-slate-400 rounded-lg text-[10px] uppercase font-bold tracking-wider">
+                    Sắp ra mắt
+                </div>
+            </div>
+        </div>
+
+        <footer class="pt-8 text-center">
+            <p class="text-slate-400 text-xs font-medium uppercase tracking-[0.2em]">
+                M29 Digital Team • Advanced Manufacturing Solutions
+            </p>
+        </footer>
+    </div>
+</body>
+
+</html>

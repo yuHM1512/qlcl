@@ -1,0 +1,14 @@
+fastapi==0.115.2
+uvicorn[standard]==0.30.6
+jinja2==3.1.4
+psycopg2-binary==2.9.9
+python-multipart==0.0.9
+openpyxl==3.1.2
+pywin32==306
+python-dotenv==1.0.0
+sqlalchemy==2.0.40
+pydantic-settings==2.8.1
+psycopg[binary]==3.2.6
+google-api-python-client==2.169.0
+google-auth==2.40.1
+

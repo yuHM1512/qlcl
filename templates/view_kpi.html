@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>View KPI - QLCL</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Headers: center horizontally and vertically */
+        #summaryTable th, #errorsTable th { text-align: center; vertical-align: middle; }
+        /* Values: left align, vertically centered */
+        #summaryTable td, #errorsTable td { text-align: left; vertical-align: middle; }
+        /* Keep explicit left alignment utility if used */
+        #summaryTable td.text-start { text-align: left; }
+        /* Compact tables: smaller font, tighter padding, wrap long text */
+        #summaryTable th, #summaryTable td,
+        #errorsTable th, #errorsTable td {
+            font-size: 12px; /* smaller text to fit more info */
+            padding: 6px 8px;
+            white-space: normal;
+            word-break: break-word;
+        }
+        /* Slightly smaller header */
+        #summaryTable th, #errorsTable th { font-weight: 600; font-size: 11.5px; }
+        /* Colorize errors table header groups */
+        /* First 8 columns: STT, Ngày ghi nhận, Bộ phận, Mã NV, Công việc sai sót, Phân loại lỗi, Mô tả, Mức độ ảnh hưởng */
+        #errorsTable thead th:nth-child(-n+8) { background: #0d6efd; color: #fff; }
+        /* Remaining columns (actions/follow-up) */
+        #errorsTable thead th:nth-child(n+9) { background: #198754; color: #fff; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="/">
+                <img src="/templates/Logo.png" alt="Logo" style="height:36px;" class="me-2"/>
+                KPI QLCL
+            </a>
+            <div class="d-flex gap-2">
+                <a class="btn btn-outline-light btn-sm" href="/kpi-input"><i class="fa fa-edit me-1"></i>Nhập dữ liệu KPI</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container my-4">
+        <div class="row g-4">
+            <div class="col-12">
+                <div class="card shadow">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0"><i class="fas fa-gauge-high me-2"></i>Dashboard</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="ratio ratio-16x9">
+                            <iframe title="KPI QLCL" src="https://kpi.hachibavn.com/qlcl" frameborder="0" allowfullscreen></iframe>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12">
+                <ul class="nav nav-tabs" id="viewTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="tab-summary" data-bs-toggle="tab" data-bs-target="#pane-summary" type="button" role="tab">
+                            <i class="fas fa-database me-1"></i> Theo dõi theo tuần
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="tab-summary-month" data-bs-toggle="tab" data-bs-target="#pane-summary-month" type="button" role="tab">
+                            <i class="fas fa-calendar-alt me-1"></i> Theo dõi theo tháng
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="tab-errors" data-bs-toggle="tab" data-bs-target="#pane-errors" type="button" role="tab">
+                            <i class="fas fa-triangle-exclamation me-1"></i> Thống kê sai sót
+                        </button>
+                    </li>
+                </ul>
+                <div class="tab-content">
+                    <div class="tab-pane fade show active" id="pane-summary" role="tabpanel">
+                        <div class="card shadow border-top-0">
+                            <div class="card-header bg-secondary text-white">
+                                <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-lg-between gap-2">
+                                    <div class="mb-0"><i class="fas fa-database me-2"></i>Theo dõi theo tuần</div>
+                                    <div class="d-flex flex-wrap align-items-center gap-2">
+                                        <div class="d-flex align-items-center gap-1">
+                                            <label class="text-white-50">Chức vụ</label>
+                                            <select id="sum_role" class="form-select form-select-sm" style="width:auto;">
+                                                <option value="QAPL">QAPL</option>
+                                                <option value="QANL">QANL</option>
+                                                <option value="QAQT" selected>QAQT</option>
+                                            </select>
+                                        </div>
+                                        <div class="d-flex align-items-center gap-1">
+                                            <label class="text-white-50">Tuần</label>
+                                            <input type="number" min="1" max="53" id="sum_week" class="form-control form-control-sm" style="width:6rem;" placeholder="VD 45" />
+                                        </div>
+                                        <div class="d-flex align-items-center gap-1">
+                                            <label class="text-white-50">Năm</label>
+                                            <input type="number" min="2000" max="2100" id="sum_year" class="form-control form-control-sm" style="width:6rem;" placeholder="VD 2025" />
+                                        </div>
+                                        <button class="btn btn-light btn-sm" onclick="loadSummary()"><i class="fa fa-rotate me-1"></i>Tải</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-striped table-bordered" id="summaryTable">
+                                        <thead id="summaryHead"></thead>
+                                        <tbody id="summaryBody"></tbody>
+                                    </table>
+                                </div>
+                                <div id="summaryEmpty" class="text-muted">Chọn chức vụ và nhấn Tải để xem dữ liệu.</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="pane-summary-month" role="tabpanel">
+                        <div class="card shadow border-top-0">
+                            <div class="card-header bg-secondary text-white">
+                                <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-lg-between gap-2">
+                                    <div class="mb-0"><i class="fas fa-calendar-alt me-2"></i>Theo dõi theo tuần theo tháng</div>
+                                    <div class="d-flex flex-wrap align-items-center gap-2">
+                                        <div class="d-flex align-items-center gap-1">
+                                            <label class="text-white-50">Chức vụ</label>
+                                            <select id="sum_month_role" class="form-select form-select-sm" style="width:auto;">
+                                                <option value="QAPL">QAPL</option>
+                                                <option value="QANL">QANL</option>
+                                                <option value="QAQT" selected>QAQT</option>
+                                            </select>
+                                        </div>
+                                        <div class="d-flex align-items-center gap-1">
+                                            <label class="text-white-50">Tháng</label>
+                                            <input type="month" id="sum_month" class="form-control form-control-sm" style="width:auto;" value="">
+                                        </div>
+                                        <button class="btn btn-light btn-sm" onclick="loadSummaryMonth()"><i class="fa fa-rotate me-1"></i>Tải</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-striped table-bordered" id="summaryMonthTable">
+                                        <thead id="summaryMonthHead"></thead>
+                                        <tbody id="summaryMonthBody"></tbody>
+                                    </table>
+                                </div>
+                                <div id="summaryMonthEmpty" class="text-muted">Chọn tháng và nhấn Tải để xem dữ liệu.</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="pane-errors" role="tabpanel">
+                        <div class="card shadow border-top-0">
+                            <div class="card-header bg-secondary text-white d-flex align-items-center justify-content-between">
+                                <div><i class="fas fa-triangle-exclamation me-2"></i>Thống kê sai sót</div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <label class="text-white-50 me-1">Chức vụ</label>
+                                    <select id="err_role" class="form-select form-select-sm" style="width:auto;">
+                                        <option value="">Tất cả</option>
+                                        <option value="QAPL">QAPL</option>
+                                        <option value="QANL">QANL</option>
+                                        <option value="QAQT">QAQT</option>
+                                    </select>
+                                    <button class="btn btn-light btn-sm" onclick="loadErrors()"><i class="fa fa-rotate me-1"></i>Tải</button>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-hover table-bordered" id="errorsTable">
+                                        <thead>
+                                            <tr>
+                                                <th>STT</th>
+                                                <th>Ngày ghi nhận</th>
+                                                <th>Bộ phận</th>
+                                                <th>Mã NV</th>
+                                                <th>Công việc sai sót</th>
+                                                <th>Phân loại lỗi</th>
+                                                <th>Mô tả</th>
+                                                <th>Mức độ ảnh hưởng</th>
+                                                <th>Hành động</th>
+                                                <th>Trách nhiệm</th>
+                                                <th>Thời hạn</th>
+                                                <th>Tiến độ</th>
+                                                <th>Ngày hoàn thành</th>
+                                                <th>Kết luận</th>
+                                                <th>BM HĐKP</th>
+                                                <th>Ghi chú</th>
+                                                <th>PDF HĐKP</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="errorsBody"></tbody>
+                                    </table>
+                                </div>
+                                <div id="errorsEmpty" class="text-muted">Chưa có dữ liệu.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Auto switch to errors tab if hash is present
+        if (window.location.hash === '#pane-errors') {
+            document.addEventListener('DOMContentLoaded', () => {
+                const tabButton = document.getElementById('tab-errors');
+                if (tabButton) {
+                    tabButton.click();
+                }
+            });
+        }
+        
+        function fmtDMY2(value) {
+            if (!value) return '';
+            try {
+                const d = new Date(value);
+                if (isNaN(d.getTime())) return '';
+                const dd = String(d.getDate()).padStart(2,'0');
+                const mm = String(d.getMonth()+1).padStart(2,'0');
+                const yy = String(d.getFullYear()).slice(-2);
+                return `${dd}-${mm}-${yy}`;
+            } catch { return ''; }
+        }
+        async function loadSummary() {
+            const role = document.getElementById('sum_role').value;
+            const weekInput = document.getElementById('sum_week');
+            const yearInput = document.getElementById('sum_year');
+            const head = document.getElementById('summaryHead');
+            const body = document.getElementById('summaryBody');
+            const empty = document.getElementById('summaryEmpty');
+            head.innerHTML = ''; body.innerHTML='';
+            empty.style.display = 'none';
+            try {
+                const params = new URLSearchParams();
+                params.append('chuc_vu', role);
+                const weekVal = (weekInput && weekInput.value) ? parseInt(weekInput.value, 10) : NaN;
+                if (!Number.isNaN(weekVal) && weekVal >= 1 && weekVal <= 53) {
+                    params.append('week', String(weekVal));
+                }
+                const yearVal = (yearInput && yearInput.value) ? parseInt(yearInput.value, 10) : NaN;
+                if (!Number.isNaN(yearVal) && yearVal >= 2000 && yearVal <= 2100) {
+                    params.append('year', String(yearVal));
+                }
+                const res = await fetch(`/api/summary?${params.toString()}`);
+                if (!res.ok) throw new Error('API error');
+                const data = await res.json();
+                const tasks = data.tasks || [];
+                const rows = data.rows || [];
+                if (tasks.length === 0 || rows.length === 0) {
+                    empty.style.display = 'block';
+                    empty.textContent = 'Không có dữ liệu.';
+                    return;
+                }
+                // Build header
+                let h1 = '<tr><th>Tuần-Năm</th><th>Mã nhân viên</th><th>Tên nhân viên</th>';
+                tasks.forEach(t => { h1 += `<th colspan="2" class="text-center" style="font-size: 10px;">${t}</th>`; });
+                h1 += '</tr>';
+                let h2 = '<tr><th></th><th></th><th></th>';
+                tasks.forEach(() => { h2 += '<th>TH</th><th>SS</th>'; });
+                h2 += '</tr>';
+                head.innerHTML = h1 + h2;
+                const totals = tasks.map(() => ({ th: 0, ss: 0 }));
+                // Build body
+                rows.forEach(r => {
+                    let tr = `<tr><td>${r.week_year}</td><td>${r.ma_nv}</td><td class="text-start">${r.ho_ten||''}</td>`;
+                    tasks.forEach((t, idx) => {
+                        const m = (r.metrics && r.metrics[t]) ? r.metrics[t] : { thuc_hien: 0, sai_sot: 0 };
+                        const thucHien = Number(m.thuc_hien) || 0;
+                        const saiSot = Number(m.sai_sot) || 0;
+                        totals[idx].th += thucHien;
+                        totals[idx].ss += saiSot;
+                        tr += `<td class="text-center">${thucHien}</td><td class="text-center">${saiSot}</td>`;
+                    });
+                    tr += '</tr>';
+                    body.insertAdjacentHTML('beforeend', tr);
+                });
+                let totalRow = '<tr class="table-secondary fw-semibold"><td>Tổng</td><td></td><td></td>';
+                totals.forEach(total => {
+                    totalRow += `<td class="text-center">${total.th.toLocaleString('vi-VN')}</td><td class="text-center">${total.ss.toLocaleString('vi-VN')}</td>`;
+                });
+                totalRow += '</tr>';
+                body.insertAdjacentHTML('beforeend', totalRow);
+            } catch (e) {
+                empty.style.display = 'block';
+                empty.textContent = 'Lỗi tải dữ liệu.';
+            }
+        }
+
+        async function loadSummaryMonth() {
+            const role = document.getElementById('sum_month_role').value;
+            const monthInput = document.getElementById('sum_month');
+            const head = document.getElementById('summaryMonthHead');
+            const body = document.getElementById('summaryMonthBody');
+            const empty = document.getElementById('summaryMonthEmpty');
+            const selectedMonth = monthInput.value;
+            head.innerHTML = ''; body.innerHTML='';
+            empty.style.display = 'none';
+
+            const buildMonthKey = (value) => {
+                if (!value) return '';
+                try {
+                    const d = new Date(value);
+                    if (Number.isNaN(d.getTime())) return '';
+                    const yy = String(d.getFullYear()).slice(-2);
+                    const mm = String(d.getMonth() + 1).padStart(2, '0');
+                    return `${yy}-${mm}`;
+                } catch {
+                    return '';
+                }
+            };
+
+            const selectedKey = (() => {
+                if (!selectedMonth) return '';
+                const [year, month] = selectedMonth.split('-');
+                if (!year || !month) return '';
+                return `${String(year).slice(-2)}-${month.padStart(2, '0')}`;
+            })();
+
+            try {
+                const params = new URLSearchParams();
+                params.append('chuc_vu', role);
+                if (selectedKey) {
+                    params.append('month', selectedKey);
+                }
+                const res = await fetch(`/api/summary/monthly?${params.toString()}`);
+                if (!res.ok) throw new Error('API error');
+                const data = await res.json();
+                const tasks = data.tasks || [];
+                const rows = data.rows || [];
+                if (tasks.length === 0 || rows.length === 0) {
+                    empty.style.display = 'block';
+                    empty.textContent = 'Không có dữ liệu.';
+                    return;
+                }
+
+                let h1 = '<tr><th>Tháng-Năm (yy-mm)</th><th>Mã nhân viên</th><th>Tên nhân viên</th>';
+                tasks.forEach(t => { h1 += `<th colspan="2" class="text-center" style="font-size: 10px;">${t}</th>`; });
+                h1 += '</tr>';
+                let h2 = '<tr><th></th><th></th><th></th>';
+                tasks.forEach(() => { h2 += '<th>TH</th><th>SS</th>'; });
+                h2 += '</tr>';
+                head.innerHTML = h1 + h2;
+                const totals = tasks.map(() => ({ th: 0, ss: 0 }));
+
+                let hasData = false;
+                rows.forEach(r => {
+                    const key = buildMonthKey(r.from_date) || (typeof r.month_year === 'string' ? r.month_year : '');
+                    if (selectedKey && key !== selectedKey) {
+                        return;
+                    }
+                    const label = key || 'N/A';
+                    hasData = true;
+                    let tr = `<tr><td>${label}</td><td>${r.ma_nv}</td><td class="text-start">${r.ho_ten||''}</td>`;
+                    tasks.forEach((t, idx) => {
+                        const m = (r.metrics && r.metrics[t]) ? r.metrics[t] : { thuc_hien: 0, sai_sot: 0 };
+                        const thucHien = Number(m.thuc_hien) || 0;
+                        const saiSot = Number(m.sai_sot) || 0;
+                        totals[idx].th += thucHien;
+                        totals[idx].ss += saiSot;
+                        tr += `<td class="text-center">${thucHien}</td><td class="text-center">${saiSot}</td>`;
+                    });
+                    tr += '</tr>';
+                    body.insertAdjacentHTML('beforeend', tr);
+                });
+
+                if (!hasData) {
+                    empty.style.display = 'block';
+                    empty.textContent = 'Không có dữ liệu.';
+                    return;
+                }
+
+                let totalRow = '<tr class="table-secondary fw-semibold"><td>Tổng</td><td></td><td></td>';
+                totals.forEach(total => {
+                    totalRow += `<td class="text-center">${total.th.toLocaleString('vi-VN')}</td><td class="text-center">${total.ss.toLocaleString('vi-VN')}</td>`;
+                });
+                totalRow += '</tr>';
+                body.insertAdjacentHTML('beforeend', totalRow);
+            } catch (e) {
+                empty.style.display = 'block';
+                empty.textContent = 'Lỗi tải dữ liệu.';
+            }
+        }
+
+        async function loadErrors() {
+            const role = document.getElementById('err_role').value;
+            const body = document.getElementById('errorsBody');
+            const empty = document.getElementById('errorsEmpty');
+            body.innerHTML = ''; empty.style.display='none';
+            try {
+                const url = role ? `/api/errors?chuc_vu=${encodeURIComponent(role)}` : '/api/errors';
+                const res = await fetch(url);
+                if (!res.ok) throw new Error('API error');
+                const data = await res.json();
+                const rows = data.rows || [];
+                if (rows.length === 0) { empty.style.display='block'; return; }
+                rows.forEach((r, idx) => {
+                    const tr = document.createElement('tr');
+                    
+                    // Tạo button BM HĐKP
+                    let bmHdkpCell = '';
+                    if (r.needs_hdkp) {
+                        // Có thể mở form HĐKP
+                        bmHdkpCell = `<a href="/hdkp-form/${r.id}" class="btn btn-sm btn-primary" onclick="event.stopPropagation()"><i class="fas fa-edit"></i> ${r.cap_form ? 'Sửa' : 'Tạo'} HĐKP</a>`;
+                    } else if (r.cap_form) {
+                        // Có file nhưng không cần HĐKP (trường hợp cũ)
+                        bmHdkpCell = `<a href="${r.cap_form}" target="_blank" class="btn btn-sm btn-success" onclick="event.stopPropagation()"><i class="fas fa-file-pdf"></i> Xem</a>`;
+                    } else {
+                        bmHdkpCell = '<span class="text-muted">-</span>';
+                    }
+                    
+                    // Tạo cell PDF HĐKP
+                    let pdfCell = '';
+                    if (r.cap_form && r.cap_form.includes('/api/pdf/')) {
+                        // Có file PDF, hiển thị link và button regenerate
+                        pdfCell = `
+                            <div class="d-flex gap-1 justify-content-center">
+                                <a href="${r.cap_form}" target="_blank" class="btn btn-sm btn-danger" onclick="event.stopPropagation()" title="Xem PDF">
+                                    <i class="fas fa-file-pdf"></i> PDF
+                                </a>
+                                <button class="btn btn-sm btn-warning" onclick="event.stopPropagation(); regeneratePDF(${r.id})" title="Tạo lại PDF">
+                                    <i class="fas fa-redo"></i>
+                                </button>
+                            </div>
+                        `;
+                    } else {
+                        pdfCell = '<span class="text-muted">-</span>';
+                    }
+                    
+                    tr.innerHTML = `
+                        <td class="text-center">${idx+1}</td>
+                        <td>${fmtDMY2(r.ngay_ghi_nhan)}</td>
+                        <td>${r.chuc_vu||''}</td>
+                        <td>${r.ma_nv||''}</td>
+                        <td>${r.task_name||''}</td>
+                        <td>${r.phan_loai_loi||''}</td>
+                        <td>${r.mo_ta||''}</td>
+                        <td>${r.muc_do_anh_huong||''}</td>
+                        <td>${r.hanh_dong||''}</td>
+                        <td>${r.trach_nhiem||''}</td>
+                        <td>${fmtDMY2(r.thoi_han)}</td>
+                        <td class="text-center">${r.tien_do||''}</td>
+                        <td>${fmtDMY2(r.ngay_hoan_thanh)}</td>
+                        <td>${r.ket_luan||''}</td>
+                        <td class="text-center">${bmHdkpCell}</td>
+                        <td>${r.ghi_chu||''}</td>
+                        <td class="text-center">${pdfCell}</td>
+                    `;
+                    tr.style.cursor='pointer';
+                    tr.addEventListener('click', ()=> openErrorModal(r));
+                    body.appendChild(tr);
+                });
+            } catch (e) {
+                empty.style.display='block'; empty.textContent='Lỗi tải dữ liệu.';
+            }
+        }
+
+        async function regeneratePDF(errorId) {
+            if (!confirm('Bạn có chắc muốn tạo lại PDF? File PDF cũ sẽ bị thay thế.')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/hdkp/${errorId}/regenerate-pdf`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.status === 'ok') {
+                    alert('PDF đã được tạo lại thành công!');
+                    // Reload để cập nhật link PDF mới
+                    loadErrors();
+                } else {
+                    alert('Lỗi: ' + (data.detail || 'Không thể tạo lại PDF'));
+                }
+            } catch (error) {
+                alert('Lỗi khi tạo lại PDF: ' + error.message);
+            }
+        }
+
+        const PHAN_LOAI_OPTIONS = [
+            'Không kịp KHSXKHXH','Lỗi đại trà','Khiếu nại có phạt tiền','Lãng phí SX','Không tuân thủ các QT, QĐ về CV chuyên môn','Phàn nàn có căn cứ từ các đối tác CV'
+        ];
+        const MUC_DO_OPTIONS = [
+            'Ảnh hưởng đến MTCL công ty/phòng','Chưa ảnh hưởng đến MTCL công ty/phòng'
+        ];
+        const HUONG_GQ_OPTIONS = [
+            'Mở HĐKP','Đào tạo lại công việc','Mở HĐKP kết hợp với đào tạo lại công việc','Tiếp tục theo dõi'
+        ];
+
+        async function populateModalDropdowns(currentTaskName, currentPhanLoai, currentMucDo, currentHuongGQ) {
+            // task_name from /api/tasks (based on login cookie)
+            try {
+                const sel = document.getElementById('edit_task_name');
+                if (sel) {
+                    sel.innerHTML = '';
+                    const res = await fetch('/api/tasks');
+                    const data = await res.json().catch(()=>({tasks:[]}));
+                    const tasks = data.tasks || [];
+                    const addOpt = (text) => { const o = document.createElement('option'); o.value=text; o.textContent=text; sel.appendChild(o); };
+                    addOpt('');
+                    tasks.forEach(addOpt);
+                    if (currentTaskName) sel.value = currentTaskName;
+                }
+            } catch {}
+            // Static dropdowns
+            const setOptions = (id, arr, current) => {
+                const s = document.getElementById(id);
+                if (!s) return;
+                s.innerHTML = '';
+                const add = (t)=>{ const o=document.createElement('option'); o.value=t; o.textContent=t; s.appendChild(o); };
+                add(''); arr.forEach(add);
+                if (current) s.value = current;
+            };
+            setOptions('edit_phan_loai_loi', PHAN_LOAI_OPTIONS, currentPhanLoai);
+            setOptions('edit_muc_do_anh_huong', MUC_DO_OPTIONS, currentMucDo);
+            setOptions('edit_huong_giai_quyet', HUONG_GQ_OPTIONS, currentHuongGQ);
+        }
+
+        function openErrorModal(row) {
+            document.getElementById('edit_id').value = row.id;
+            // Fill simple fields first
+            ['ngay_ghi_nhan','mo_ta','hanh_dong','trach_nhiem','thoi_han','tien_do','ngay_hoan_thanh','ket_luan','cap_form','ghi_chu']
+                .forEach(f=>{ const el=document.getElementById('edit_'+f); if(el) el.value = row[f] || ''; });
+            // Populate dropdowns with current values selected
+            populateModalDropdowns(row.task_name||'', row.phan_loai_loi||'', row.muc_do_anh_huong||'', row.huong_giai_quyet||'');
+            const modal = new bootstrap.Modal(document.getElementById('errorEditModal'));
+            modal.show();
+        }
+
+        async function saveErrorEdit() {
+            const id = document.getElementById('edit_id').value;
+            const payload = {};
+            ['ngay_ghi_nhan','task_name','phan_loai_loi','mo_ta','muc_do_anh_huong','huong_giai_quyet','hanh_dong','trach_nhiem','thoi_han','ngay_hoan_thanh','ket_luan','cap_form','ghi_chu']
+                .forEach(f=>{ payload[f] = document.getElementById('edit_'+f).value || null; });
+            try {
+                const res = await fetch(`/api/error/${id}`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
+                if (!res.ok) throw new Error('API error');
+                const modalEl = document.getElementById('errorEditModal');
+                bootstrap.Modal.getInstance(modalEl).hide();
+                loadErrors();
+            } catch (e) {
+                alert('Lỗi khi lưu chỉnh sửa');
+            }
+        }
+    </script>
+
+    <!-- Modal edit error -->
+    <div class="modal fade" id="errorEditModal" tabindex="-1">
+      <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Cập nhật sai sót</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <input type="hidden" id="edit_id" />
+            <div class="row g-3">
+                <div class="col-12 col-md-4">
+                    <label class="form-label">Ngày ghi nhận lỗi</label>
+                    <input id="edit_ngay_ghi_nhan" type="date" class="form-control" />
+                </div>
+                <div class="col-12 col-md-8">
+                    <label class="form-label">Công việc</label>
+                    <select id="edit_task_name" class="form-select"></select>
+                </div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label">Phân loại lỗi</label>
+                    <select id="edit_phan_loai_loi" class="form-select"></select>
+                </div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label">Mức độ ảnh hưởng</label>
+                    <select id="edit_muc_do_anh_huong" class="form-select"></select>
+                </div>
+                <div class="col-12">
+                    <label class="form-label">Mô tả</label>
+                    <textarea id="edit_mo_ta" class="form-control" rows="3"></textarea>
+                </div>
+                <div class="col-12">
+                    <label class="form-label">Hướng giải quyết</label>
+                    <select id="edit_huong_giai_quyet" class="form-select"></select>
+                </div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label">Hành động</label>
+                    <input id="edit_hanh_dong" type="text" class="form-control" />
+                </div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label">Trách nhiệm</label>
+                    <input id="edit_trach_nhiem" type="text" class="form-control" />
+                </div>
+                <div class="col-12 col-md-4">
+                    <label class="form-label">Thời hạn</label>
+                    <input id="edit_thoi_han" type="date" class="form-control" />
+                </div>
+                <div class="col-12 col-md-4">
+                    <label class="form-label">Tiến độ (tự cập nhật theo Ngày hoàn thành)</label>
+                    <input id="edit_tien_do" type="text" class="form-control" disabled />
+                </div>
+                <div class="col-12 col-md-4">
+                    <label class="form-label">Ngày hoàn thành</label>
+                    <input id="edit_ngay_hoan_thanh" type="date" class="form-control" />
+                </div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label">Kết luận</label>
+                    <input id="edit_ket_luan" type="text" class="form-control" />
+                </div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label">BM HĐKP</label>
+                    <input id="edit_cap_form" type="text" class="form-control" />
+                </div>
+                <div class="col-12">
+                    <label class="form-label">Ghi chú</label>
+                    <textarea id="edit_ghi_chu" class="form-control" rows="2"></textarea>
+                </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+            <button type="button" class="btn btn-primary" onclick="saveErrorEdit()">Lưu</button>
+          </div>
+        </div>
+      </div>
+    </div>
+</body>
+</html>
+
+

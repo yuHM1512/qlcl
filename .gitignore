@@ -1,0 +1,16 @@
+.venv/
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+.env
+*.log
+
+images/
+pdf_files/
+
+gemba_cp/templates/credentials_m29.json
+
+.idea/
+.vscode/

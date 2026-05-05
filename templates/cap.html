@@ -1,0 +1,1089 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>H&#x00E0;nh &#x0111;&#x1ED9;ng kh&#x1EAF;c ph&#x1EE5;c - QLCL</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@500;700;800&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Manrope', 'sans-serif'],
+                    },
+                    colors: {
+                        surface: '#f8f9fa',
+                        'surface-lowest': '#ffffff',
+                        'surface-low': '#f3f4f6',
+                        'surface-high': '#e7e8e9',
+                        'on-surface': '#191c1d',
+                        'on-surface-variant': '#424654',
+                        primary: '#0040a1',
+                        'primary-container': '#0056d2',
+                        'secondary-container': '#9cb4fe',
+                        'error-container': '#ffdad6',
+                    },
+                    boxShadow: {
+                        'cloud': '0px 20px 40px rgba(25, 28, 29, 0.05)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #f8f9fa; color: #191c1d; }
+        .glass-header {
+            background: rgba(248, 249, 250, 0.8);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #0040a1 0%, #0056d2 100%);
+            color: #ffffff;
+            border-radius: 0.75rem;
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0px 8px 16px rgba(0, 64, 161, 0.2);
+        }
+        .btn-tertiary {
+            background: transparent;
+            color: #0040a1;
+            border-radius: 0.75rem;
+            transition: all 0.3s ease;
+        }
+        .btn-tertiary:hover { background-color: #f3f4f6; }
+        .input-field {
+            width: 100%;
+            background-color: #f3f4f6;
+            border: 2px solid transparent;
+            border-radius: 0.75rem;
+            padding: 0.75rem 1rem;
+            color: #191c1d;
+            font-size: 0.875rem;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+        .input-field:focus {
+            background-color: #ffffff;
+            border-color: rgba(0, 64, 161, 0.4);
+            box-shadow: 0px 4px 12px rgba(0, 64, 161, 0.08);
+        }
+        .input-field::placeholder { color: rgba(66, 70, 84, 0.5); }
+        .pill {
+            background: #f3f4f6;
+            border-radius: 999px;
+            padding: 6px 12px;
+            font-size: 12px;
+            color: #424654;
+            font-weight: 600;
+        }
+        .tick {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            background: #ef4444;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            box-shadow: 0px 6px 14px rgba(25, 28, 29, 0.08);
+        }
+        .tick[data-state="off"] {
+            background: transparent;
+            color: transparent;
+            box-shadow: none;
+        }
+        .row-card { background: #ffffff; border-radius: 16px; }
+        .fade-in { animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+        .modal-backdrop { background: rgba(25, 28, 29, 0.35); }
+        .alert-title { display: inline-flex; align-items: center; gap: 8px; border-radius: 999px; padding: 6px 12px; }
+        .alert-over { background: rgba(255, 218, 214, 0.55); }
+        .alert-serious { background: rgba(255, 218, 214, 0.75); }
+        .alert-mass { background: rgba(255, 200, 200, 0.8); }
+        .alert-multi { background: rgba(255, 218, 214, 0.65); }
+        .tooltip {
+            position: fixed;
+            z-index: 60;
+            max-width: 320px;
+            background: #ffffff;
+            color: #191c1d;
+            border-radius: 12px;
+            box-shadow: 0px 20px 40px rgba(25, 28, 29, 0.08);
+            padding: 12px 14px;
+            font-size: 13px;
+            line-height: 1.5;
+            pointer-events: none;
+        }
+        @media (min-width: 1024px) {
+            body.sidebar-collapsed aside {
+                width: 72px;
+            }
+            body.sidebar-collapsed aside a,
+            body.sidebar-collapsed aside button {
+                justify-content: center;
+                padding-left: 0.75rem;
+                padding-right: 0.75rem;
+                font-size: 0;
+            }
+            body.sidebar-collapsed aside span:not(.material-symbols-outlined) {
+                display: none;
+            }
+            body.sidebar-collapsed aside .material-symbols-outlined {
+                margin-right: 0;
+                font-size: 20px;
+            }
+            body.sidebar-collapsed aside #submenu-settings {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <header class="glass-header sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-8 py-6 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <button id="sidebarToggle" class="w-9 h-9 rounded-full bg-surface-lowest shadow-sm flex items-center justify-center text-on-surface-variant hover:text-primary transition" title="Thu gọn / Mở rộng menu">
+                    <span class="material-symbols-outlined">menu</span>
+                </button>
+                <a href="/qc" class="text-on-surface-variant hover:text-on-surface transition">
+                    <span class="material-symbols-outlined">arrow_back</span>
+                </a>
+                <div>
+                    <h1 class="font-display text-2xl font-bold">QC Inline/Endline</h1>
+                    <p class="text-xs text-on-surface-variant font-medium">H&#x00E0;nh &#x0111;&#x1ED9;ng kh&#x1EAF;c ph&#x1EE5;c</p>
+                </div>
+            </div>
+            <button onclick="logout()" class="btn-tertiary px-4 py-2 flex items-center gap-2">
+                <span class="material-symbols-outlined text-sm">logout</span> &#x0110;&#x0103;ng xu&#x1EA5;t
+            </button>
+        </div>
+    </header>
+
+    <div class="max-w-7xl mx-auto px-8 py-10 flex flex-col lg:flex-row gap-10">
+        <aside class="w-full lg:w-64 shrink-0">
+            <div class="rounded-2xl bg-surface-high/70 p-4 space-y-2">
+                <a href="/qc" class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-low transition font-semibold">
+                    <span class="material-symbols-outlined">inventory_2</span>
+                    K&#x1EBF; ho&#x1EA1;ch s&#x1EA3;n xu&#x1EA5;t
+                </a>
+                <a href="/qc/dashboard" class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-low transition font-semibold">
+                    <span class="material-symbols-outlined">dashboard</span>
+                    Dashboard
+                </a>
+                <a href="/qc/cap" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-surface-lowest text-primary font-semibold">
+                    <span class="material-symbols-outlined">task_alt</span>
+                    H&#x00E0;nh &#x0111;&#x1ED9;ng kh&#x1EAF;c ph&#x1EE5;c
+                </a>
+                <a href="/qc/settings/details" class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-low transition font-semibold">
+                    <span class="material-symbols-outlined">settings</span>
+                    C&#x00E0;i &#x0111;&#x1EB7;t danh m&#x1EE5;c
+                </a>
+            </div>
+        </aside>
+
+        <main class="flex-1 space-y-10">
+            <div class="space-y-2">
+                <h2 class="font-display text-3xl font-bold">H&#x00E0;nh &#x0111;&#x1ED9;ng kh&#x1EAF;c ph&#x1EE5;c</h2>
+                <p class="text-sm text-on-surface-variant">Theo d&#x00F5;i c&#x00E1;c l&#x1ED7;i c&#x1EA7;n x&#x1EED; l&#x00FD; theo m&#x1ED1;c th&#x1EDD;i gian.</p>
+            </div>
+
+
+            <div class="flex flex-wrap items-end gap-3">
+                <div class="space-y-1">
+                    <label class="text-xs uppercase tracking-widest text-on-surface-variant font-semibold">Ng&#x00E0;y</label>
+                    <input id="capDateInput" type="date" class="input-field" />
+                </div>
+                <div class="space-y-1 min-w-[180px]">
+                    <label class="text-xs uppercase tracking-widest text-on-surface-variant font-semibold">Đơn vị</label>
+                    <select id="capDonVi" class="input-field"></select>
+                </div>
+                <div class="space-y-1 min-w-[180px]">
+                    <label class="text-xs uppercase tracking-widest text-on-surface-variant font-semibold">Bộ phận</label>
+                    <select id="capBoPhan" class="input-field"></select>
+                </div>
+                <div class="space-y-1 min-w-[180px]">
+                    <label class="text-xs uppercase tracking-widest text-on-surface-variant font-semibold">Trạm</label>
+                    <select id="capStation" class="input-field"></select>
+                </div>
+                <button id="capTodayBtn" class="btn-primary px-4 py-2">H&#x00F4;m nay</button>
+                <button id="capRefreshBtn" class="btn-primary px-4 py-2 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-sm">refresh</span>
+                    L&#x00E0;m m&#x1EDB;i
+                </button>
+            </div>
+<div id="capContainer" class="space-y-10">
+                <div class="text-sm text-on-surface-variant">Đang tải dữ liệu...</div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal -->
+    <div id="modal" class="hidden fixed inset-0 z-50 items-center justify-center">
+        <div class="absolute inset-0 modal-backdrop"></div>
+        <div class="relative bg-surface-lowest rounded-2xl shadow-cloud max-w-lg w-full mx-4 p-6 space-y-4">
+            <div class="flex items-center justify-between">
+                <h4 id="modalTitle" class="font-display text-xl font-bold">Chi ti&#x1EBF;t l&#x1ED7;i</h4>
+                <button class="btn-tertiary px-3 py-2" onclick="closeModal()">
+                    <span class="material-symbols-outlined text-base">close</span>
+                </button>
+            </div>
+            <div id="modalBody" class="text-sm text-on-surface-variant leading-relaxed"></div>
+        </div>
+    </div>
+
+    <div id="tooltip" class="tooltip hidden"></div>
+
+    <div id="actionModal" class="hidden fixed inset-0 z-50 items-center justify-center">
+        <div class="absolute inset-0 modal-backdrop transition-opacity"></div>
+        <div class="relative bg-surface-low rounded-3xl shadow-2xl max-w-5xl w-full mx-4 overflow-hidden flex flex-col max-h-[90vh] ring-1 ring-black/5">
+            <!-- Header -->
+            <div class="flex items-center justify-between p-6 md:px-8 md:py-6 border-b border-surface-high/60 shrink-0 bg-surface-lowest backdrop-blur-xl z-10">
+                <div class="space-y-1">
+                    <div class="flex items-center gap-3">
+                        <div class="h-10 w-10 rounded-xl bg-error-container/50 flex items-center justify-center text-[#900B09]">
+                            <span class="material-symbols-outlined">assignment_late</span>
+                        </div>
+                        <div>
+                            <h4 id="actionTitle" class="font-display text-xl md:text-2xl font-bold tracking-tight text-on-surface">Nguyên nhân & Hành động</h4>
+                            <p class="text-sm text-on-surface-variant font-medium mt-0.5">Cập nhật thông tin chi tiết và hướng xử lý phòng ngừa</p>
+                        </div>
+                    </div>
+                </div>
+                <button class="h-10 w-10 flex items-center justify-center rounded-full bg-surface hover:bg-surface-high text-on-surface-variant transition-colors" onclick="closeActionModal()">
+                    <span class="material-symbols-outlined text-xl">close</span>
+                </button>
+            </div>
+            
+            <!-- Body -->
+            <div class="p-6 md:p-8 overflow-y-auto w-full z-0">
+                <form class="space-y-8 text-sm">
+                    <!-- Section A: Nguyên nhân -->
+                    <div class="bg-surface-lowest rounded-2xl p-6 ring-1 ring-surface-high/50 shadow-sm space-y-6">
+                        <div class="flex items-center gap-3 pb-4 border-b border-surface-high/40">
+                            <div class="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                                <span class="material-symbols-outlined text-[20px]">search_insights</span>
+                            </div>
+                            <h5 class="font-display text-lg font-bold text-on-surface">1. Phân tích Nguyên nhân</h5>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <p class="text-[11px] uppercase tracking-widest text-on-surface-variant font-bold flex items-center gap-2">
+                                <span class="w-1.5 h-1.5 rounded-full bg-primary/50"></span>
+                                Phân loại nhóm (4M1E)
+                            </p>
+                            <div class="grid grid-cols-2 lg:grid-cols-5 gap-3">
+                                <label class="flex flex-col items-center justify-center gap-2 cursor-pointer bg-surface hover:bg-surface-high transition p-4 rounded-2xl text-on-surface font-semibold border-2 border-transparent has-[:checked]:border-primary/50 has-[:checked]:bg-primary/5 has-[:checked]:text-primary group shadow-sm hover:shadow">
+                                    <input type="checkbox" class="peer sr-only" data-field="nn_cong_nhan">
+                                    <div class="h-10 w-10 rounded-full bg-surface-lowest group-has-[:checked]:bg-white flex items-center justify-center shadow-sm group-has-[:checked]:shadow group-has-[:checked]:text-primary transition-all">
+                                        <span class="material-symbols-outlined text-[22px] text-on-surface-variant group-has-[:checked]:text-primary">person</span>
+                                    </div>
+                                    <span class="text-[13px]">Công nhân</span>
+                                </label>
+                                
+                                <label class="flex flex-col items-center justify-center gap-2 cursor-pointer bg-surface hover:bg-surface-high transition p-4 rounded-2xl text-on-surface font-semibold border-2 border-transparent has-[:checked]:border-primary/50 has-[:checked]:bg-primary/5 has-[:checked]:text-primary group shadow-sm hover:shadow">
+                                    <input type="checkbox" class="peer sr-only" data-field="nn_may_moc">
+                                    <div class="h-10 w-10 rounded-full bg-surface-lowest group-has-[:checked]:bg-white flex items-center justify-center shadow-sm group-has-[:checked]:shadow group-has-[:checked]:text-primary transition-all">
+                                        <span class="material-symbols-outlined text-[22px] text-on-surface-variant group-has-[:checked]:text-primary">precision_manufacturing</span>
+                                    </div>
+                                    <span class="text-[13px]">Máy móc</span>
+                                </label>
+
+                                <label class="flex flex-col items-center justify-center gap-2 cursor-pointer bg-surface hover:bg-surface-high transition p-4 rounded-2xl text-on-surface font-semibold border-2 border-transparent has-[:checked]:border-primary/50 has-[:checked]:bg-primary/5 has-[:checked]:text-primary group shadow-sm hover:shadow">
+                                    <input type="checkbox" class="peer sr-only" data-field="nn_phuong_phap">
+                                    <div class="h-10 w-10 rounded-full bg-surface-lowest group-has-[:checked]:bg-white flex items-center justify-center shadow-sm group-has-[:checked]:shadow group-has-[:checked]:text-primary transition-all">
+                                        <span class="material-symbols-outlined text-[22px] text-on-surface-variant group-has-[:checked]:text-primary">account_tree</span>
+                                    </div>
+                                    <span class="text-[13px]">Phương pháp</span>
+                                </label>
+
+                                <label class="flex flex-col items-center justify-center gap-2 cursor-pointer bg-surface hover:bg-surface-high transition p-4 rounded-2xl text-on-surface font-semibold border-2 border-transparent has-[:checked]:border-primary/50 has-[:checked]:bg-primary/5 has-[:checked]:text-primary group shadow-sm hover:shadow">
+                                    <input type="checkbox" class="peer sr-only" data-field="nn_nguyen_phu_lieu">
+                                    <div class="h-10 w-10 rounded-full bg-surface-lowest group-has-[:checked]:bg-white flex items-center justify-center shadow-sm group-has-[:checked]:shadow group-has-[:checked]:text-primary transition-all">
+                                        <span class="material-symbols-outlined text-[22px] text-on-surface-variant group-has-[:checked]:text-primary">category</span>
+                                    </div>
+                                    <span class="text-[13px] text-center leading-tight">Nguyên<br>phụ liệu</span>
+                                </label>
+
+                                <label class="flex flex-col items-center justify-center gap-2 cursor-pointer bg-surface hover:bg-surface-high transition p-4 rounded-2xl text-on-surface font-semibold border-2 border-transparent has-[:checked]:border-primary/50 has-[:checked]:bg-primary/5 has-[:checked]:text-primary group shadow-sm hover:shadow">
+                                    <input type="checkbox" class="peer sr-only" data-field="nn_moi_truong">
+                                    <div class="h-10 w-10 rounded-full bg-surface-lowest group-has-[:checked]:bg-white flex items-center justify-center shadow-sm group-has-[:checked]:shadow group-has-[:checked]:text-primary transition-all">
+                                        <span class="material-symbols-outlined text-[22px] text-on-surface-variant group-has-[:checked]:text-primary">eco</span>
+                                    </div>
+                                    <span class="text-[13px]">Môi trường</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="space-y-2">
+                            <label class="text-[11px] uppercase tracking-widest text-on-surface-variant font-bold flex items-center gap-2">
+                                <span class="w-1.5 h-1.5 rounded-full bg-primary/50"></span>
+                                Mô tả chi tiết nguyên nhân
+                            </label>
+                            <textarea class="input-field resize-none bg-surface/80" rows="3" placeholder="Ghi chú chi tiết vấn đề phát sinh..." data-field="mo_ta"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Section B: Hành động -->
+                    <div class="bg-surface-lowest rounded-2xl p-6 ring-1 ring-surface-high/50 shadow-sm space-y-6">
+                        <div class="flex items-center gap-3 pb-4 border-b border-surface-high/40">
+                            <div class="h-8 w-8 rounded-lg bg-green-500/10 flex items-center justify-center text-green-600">
+                                <span class="material-symbols-outlined text-[20px]">task_alt</span>
+                            </div>
+                            <h5 class="font-display text-lg font-bold text-on-surface">2. Kế hoạch Hành động & Khắc phục</h5>
+                        </div>
+
+                        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                            <div class="lg:col-span-12 space-y-2">
+                                <label class="text-[11px] uppercase tracking-widest text-on-surface-variant font-bold flex items-center gap-2">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-green-500/50"></span>
+                                    Giải pháp thực hiện
+                                </label>
+                                <textarea class="input-field resize-none bg-surface/80" rows="3" placeholder="Cách xử lý tức thời và biện pháp tránh tái diễn..." data-field="giai_phap"></textarea>
+                            </div>
+
+                            <div class="lg:col-span-4 space-y-2">
+                                <label class="text-[11px] uppercase tracking-widest text-on-surface-variant font-bold flex items-center gap-2">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-green-500/50"></span>
+                                    Trạm áp dụng
+                                </label>
+                                <div class="relative">
+                                    <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant/50">place</span>
+                                    <input class="input-field pl-10 bg-surface/80" placeholder="Vị trí xử lý..." data-field="tram_ap_dung"/>
+                                </div>
+                            </div>
+
+                            <div class="lg:col-span-4 space-y-2">
+                                <label class="text-[11px] uppercase tracking-widest text-on-surface-variant font-bold flex items-center gap-2">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-green-500/50"></span>
+                                    Tiến độ
+                                </label>
+                                <div class="relative">
+                                    <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant/50">pending_actions</span>
+                                    <select class="input-field pl-10 bg-surface-high/50 appearance-none pointer-events-none font-semibold text-on-surface" data-field="tien_do" tabindex="-1" readonly>
+                                        <option value="Chưa thực hiện">Chưa thực hiện</option>
+                                        <option value="Đang thực hiện">Đang thực hiện</option>
+                                        <option value="Đã hoàn thành">Đã hoàn thành</option>
+                                    </select>
+                                    <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant/50 pointer-events-none hidden">expand_more</span>
+                                </div>
+                            </div>
+
+                            <div class="lg:col-span-4 space-y-2">
+                                <label class="text-[11px] uppercase tracking-widest text-on-surface-variant font-bold flex items-center gap-2">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-green-500/50"></span>
+                                    Ngày hoàn thành
+                                </label>
+                                <div class="relative">
+                                    <input type="date" class="input-field bg-surface/80 [color-scheme:light]" data-field="ngay_hoan_thanh"/>
+                                </div>
+                            </div>
+
+                            <div class="lg:col-span-6 space-y-2">
+                                <label class="text-[11px] uppercase tracking-widest text-on-surface-variant font-bold flex items-center gap-2">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-green-500/50"></span>
+                                    Kết luận
+                                </label>
+                                <div class="relative">
+                                    <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant/50">fact_check</span>
+                                    <input class="input-field pl-10 bg-surface/80" placeholder="Kết quả đánh giá sau xử lý..." data-field="ket_luan"/>
+                                </div>
+                            </div>
+
+                            <div class="lg:col-span-6 space-y-2">
+                                <label class="text-[11px] uppercase tracking-widest text-on-surface-variant font-bold flex items-center gap-2">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-green-500/50"></span>
+                                    Ghi chú thêm
+                                </label>
+                                <div class="relative">
+                                    <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant/50">edit_note</span>
+                                    <input class="input-field pl-10 bg-surface/80" placeholder="Thông tin bổ sung..." data-field="ghi_chu"/>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Footer -->
+            <div class="p-6 md:px-8 md:py-5 border-t border-surface-high/60 shrink-0 flex items-center justify-end gap-3 bg-surface-lowest backdrop-blur-xl z-10">
+                <button type="button" class="btn-tertiary px-6 py-2.5 font-bold hover:bg-surface-low rounded-xl" onclick="closeActionModal()">Hủy</button>
+                <button type="button" class="btn-primary px-8 py-2.5 font-bold tracking-wide flex items-center gap-2 shadow-lg shadow-primary/20 rounded-xl" id="saveActionBtn">
+                    <span class="material-symbols-outlined text-[18px]">save</span>
+                    Lưu cập nhật
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function logout() {
+            fetch('/logout', { method: 'POST' }).then((res) => {
+                if (res.redirected) window.location.href = res.url;
+                else window.location.href = '/login';
+            }).catch(() => { window.location.href = '/login'; });
+        }
+
+        function formatDateVN(dateStr) {
+            if (!dateStr) return '';
+            const [y, m, d] = dateStr.split('-');
+            return `${d}/${m}/${y}`;
+        }
+
+        function getTodayStr() {
+            const now = new Date();
+            const y = now.getFullYear();
+            const m = String(now.getMonth() + 1).padStart(2, '0');
+            const d = String(now.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+
+        let capLastHeartbeat = null;
+        const sidebarKey = 'qlcl_sidebar_collapsed';
+
+        function applySidebarState() {
+            const collapsed = localStorage.getItem(sidebarKey) === '1';
+            document.body.classList.toggle('sidebar-collapsed', collapsed);
+            const icon = document.querySelector('#sidebarToggle .material-symbols-outlined');
+            if (icon) icon.textContent = collapsed ? 'menu_open' : 'menu';
+        }
+
+        function toggleSidebar() {
+            const collapsed = localStorage.getItem(sidebarKey) === '1';
+            localStorage.setItem(sidebarKey, collapsed ? '0' : '1');
+            applySidebarState();
+        }
+
+        async function loadCap(dateOverride = null) {
+            const container = document.getElementById('capContainer');
+            if (!container) return;
+            container.innerHTML = '<div class="text-sm text-on-surface-variant">Đang tải dữ liệu...</div>';
+            try {
+                const dateVal = dateOverride || document.getElementById('capDateInput')?.value || getTodayStr();
+                const params = new URLSearchParams({ date: dateVal });
+                const donVi = document.getElementById('capDonVi')?.value || '';
+                const boPhan = document.getElementById('capBoPhan')?.value || '';
+                const station = document.getElementById('capStation')?.value || '';
+                if (donVi) params.set('don_vi', donVi);
+                if (boPhan) params.set('bo_phan', boPhan);
+                if (station) params.set('station', station);
+                const res = await fetch(`/api/qc/cap?${params.toString()}`);
+                const data = await res.json();
+                renderCap(data);
+            } catch (e) {
+                console.error(e);
+                container.innerHTML = '<div class="text-sm text-on-surface-variant">Không thể tải dữ liệu.</div>';
+            }
+        }
+
+        function fillSelect(el, options, placeholder) {
+            if (!el) return;
+            const current = el.value || '';
+            el.innerHTML = '';
+            const opt0 = document.createElement('option');
+            opt0.value = '';
+            opt0.textContent = placeholder || '--';
+            el.appendChild(opt0);
+            (options || []).forEach(v => {
+                const opt = document.createElement('option');
+                opt.value = v;
+                opt.textContent = v;
+                el.appendChild(opt);
+            });
+            if (current) el.value = current;
+        }
+
+        async function loadCapFilters() {
+            try {
+                const donVi = document.getElementById('capDonVi')?.value || '';
+                const params = new URLSearchParams();
+                if (donVi) params.set('don_vi', donVi);
+                const res = await fetch(`/api/qc/cap/filters?${params.toString()}`);
+                const data = await res.json();
+                fillSelect(document.getElementById('capDonVi'), data.don_vi, 'Đơn vị');
+                fillSelect(document.getElementById('capBoPhan'), data.bo_phan, 'Bộ phận');
+                fillSelect(document.getElementById('capStation'), data.station, 'Trạm');
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function onDonViChange() {
+            loadCapFilters().then(() => loadCap());
+        }
+
+        // auto-refresh disabled by request
+
+        function renderCap(data) {
+            const container = document.getElementById('capContainer');
+            if (!container) return;
+            const dates = data?.dates || [];
+            if (!dates.length) {
+                container.innerHTML = '<div class="text-sm text-on-surface-variant">Chưa có dữ liệu.</div>';
+                return;
+            }
+            container.innerHTML = dates.map((d, di) => {
+                const buckets = d.buckets || [];
+                const bucketHtml = buckets.map((b, bi) => {
+                    const rows = b.rows || [];
+                    if (!rows.length) return '';
+                    const detailId = `detail-${di}-${bi}`;
+                    const countLabel = `${rows.length} nhóm hành động`;
+                    const header = `
+                        <div class="flex flex-wrap items-center justify-between gap-3">
+                            <div class="flex items-center gap-4">
+                                <span class="bg-primary text-white text-base font-bold px-4 py-2 rounded-xl shadow-sm tracking-wide">${b.time_bucket}</span>
+                                <span class="text-xs text-on-surface-variant">${countLabel}</span>
+                            </div>
+                            <button class="btn-tertiary px-3 py-2 flex items-center gap-2 toggle-detail" data-target="${detailId}">
+                                <span class="material-symbols-outlined text-sm">expand_more</span>
+                                Chi tiết
+                            </button>
+                        </div>`;
+
+                    const tableHead = `
+                        <div class="row-card p-4 space-y-4">
+                            <div class="grid grid-cols-11 gap-3 items-center text-xs uppercase tracking-widest text-on-surface-variant font-semibold bg-surface-low py-3 px-4 rounded-xl">
+                                <div>Xí nghiệp</div>
+                                <div class="max-w-[72px] text-center">Tổ</div>
+                                <div>Trạm</div>
+                                <div>Nhu cầu</div>
+                                <div>SP kiểm</div>
+                                <div>SP lỗi</div>
+                                <div>Tái chế</div>
+                                <div>Lỗi vượt mục tiêu</div>
+                                <div>Lỗi nghiêm trọng</div>
+                                <div>Lỗi đại trà</div>
+                                <div>Lỗi nguy cơ hàng loạt</div>
+                            </div>
+                            <div class="space-y-4 px-4 pb-2">
+                                ${rows.map(r => renderRow(r)).join('')}
+                            </div>
+                        </div>`;
+
+                    const detail = `
+                        <div id="${detailId}" class="hidden space-y-4">
+                            ${rows.map(r => renderDetail(r)).join('')}
+                        </div>`;
+
+                    return `
+                        <div class="rounded-2xl bg-surface-low p-5 space-y-4">
+                            ${header}
+                            ${tableHead}
+                            ${detail}
+                        </div>`;
+                }).join('');
+
+                return `
+                    <section class="space-y-6 fade-in">
+                        <div class="flex items-center gap-3">
+                            <div class="h-12 w-12 rounded-2xl bg-surface-lowest flex items-center justify-center text-primary shadow-cloud">
+                                <span class="material-symbols-outlined">event</span>
+                            </div>
+                            <div>
+                                <p class="text-xs uppercase tracking-widest text-on-surface-variant font-semibold">Date</p>
+                                <h3 class="font-display text-2xl font-bold">${formatDateVN(d.date)}</h3>
+                            </div>
+                        </div>
+                        <div class="space-y-5">${bucketHtml || '<div class="text-sm text-on-surface-variant">Chưa có dữ liệu.</div>'}</div>
+                    </section>`;
+            }).join('');
+
+            bindToggle();
+            bindPopups();
+            bindActionForms();
+            bindHdkpToggles();
+            bindHdkpButtons();
+        }
+
+        function renderTick(flag, title, body) {
+            if (!flag) {
+                return '<span class="tick" data-state="off"></span>';
+            }
+            const safeTitle = title || '';
+            const safeBody = body || '';
+            return `
+                <button class="tick popup-trigger" data-title="${safeTitle}" data-body="${safeBody}">
+                    <span class="material-symbols-outlined text-base">check</span>
+                </button>`;
+        }
+
+        function renderThumbs(images) {
+            if (!images || images.length === 0) return '';
+            const thumbs = images.slice(0, 3).map(url => `
+                <a href="${url}" target="_blank" class="block">
+                    <img src="${url}" class="w-10 h-10 rounded-lg object-cover border border-surface-high" />
+                </a>`).join('');
+            return `<div class="flex items-center gap-2">${thumbs}</div>`;
+        }
+
+        function renderRow(r) {
+            const rate = (r.rate_percent ?? 0).toFixed(1);
+            const target = r.target_percent != null ? `${r.target_percent}%` : '--';
+            const overBody = `Mục tiêu: ${target}<br>Tỷ lệ thực tế: ${rate}%`;
+            const massBody = (r.mass_list || []).map(x => `${x.ma_loi} - ${x.vi_tri} - ${x.qty}`).join('<br>') || 'Không có';
+            const seriousBody = (r.serious_list || []).map(x => `${x.ma_loi} - ${x.vi_tri} - ${x.qty}`).join('<br>') || 'Không có';
+            const multiBody = (r.multi_list || []).map(x => `${x.ma_loi} - ${x.vi_tri} - ${x.consecutive}`).join('<br>') || 'Không có';
+            return `
+                <div class="grid grid-cols-11 gap-3 items-center text-sm font-semibold">
+                    <div>${r.don_vi}</div>
+                    <div class="max-w-[72px] text-center">${r.bo_phan}</div>
+                    <div>${r.station || '--'}</div>
+                    <div class="text-xs font-medium leading-snug">${r.ke_hoach}</div>
+                    <div>${r.output_total}</div>
+                    <div>${r.defect_total}</div>
+                    <div>${r.rework_done_count ?? 0}</div>
+                    <div>${renderTick(r.over_target, 'Lỗi vượt mục tiêu', overBody)}</div>
+                    <div>${renderTick(r.has_serious, 'Lỗi nghiêm trọng', seriousBody)}</div>
+                    <div>${renderTick(r.is_mass, 'Lỗi đại trà', massBody)}</div>
+                    <div>${renderTick(r.has_multi, 'Lỗi nguy cơ hàng loạt', multiBody)}</div>
+                </div>`;
+        }
+
+        function renderDetail(r) {
+            const hasSerious = r.serious_list && r.serious_list.length > 0;
+            const hasMulti = r.multi_list && r.multi_list.length > 0;
+            const hasOver = !!r.over_target;
+            const hasMass = r.mass_list && r.mass_list.length > 0;
+            
+            if (!hasSerious && !hasMulti && !hasOver && !hasMass) return '';
+
+            const unitHeader = `<div class="font-display text-base font-bold text-primary mb-2 flex items-center gap-2">
+                <span class="material-symbols-outlined text-sm">location_on</span>
+                ${r.don_vi} - ${r.bo_phan}${r.station ? ' - ' + r.station : ''}
+            </div>`;
+
+            const seriousRows = (r.serious_list || []).map(x => `
+                <div class="grid grid-cols-4 gap-3 text-sm items-center py-3 px-4 bg-surface-lowest rounded-xl shadow-sm hover:shadow-cloud transition">
+                    <div class="font-semibold text-on-surface">${x.ma_loi} - ${x.vi_tri}</div>
+                    <div class="font-semibold text-on-surface">${x.qty}</div>
+                    <div class="space-y-2"><button class="btn-primary px-4 py-2 text-xs font-semibold open-action-form" data-title="${x.ma_loi} - ${x.vi_tri}" data-plan-id="${r.plan_id}" data-date="${r.date}" data-time-bucket="${r.time_bucket}" data-station="${r.station || ''}" data-bo-phan="${r.bo_phan || ''}" data-loai-loi="L&#x1ED7;i nguy c&#x1A1; h&#x00E0;ng lo&#x1EA1;t" data-ma-loi="${x.ma_loi}" data-vi-tri="${x.vi_tri}" data-images="${encodeURIComponent(JSON.stringify(x.images || []))}">${x.action_done ? 'Theo d&#x00F5;i nguy&#x00EA;n nh&#x00E2;n &amp; H&#x00E0;nh &#x0111;&#x1ED9;ng' : 'Nguy&#x00EA;n nh&#x00E2;n &amp; H&#x00E0;nh &#x0111;&#x1ED9;ng'}</button>
+                        ${renderThumbs(x.images || [])}
+                    </div>
+                    <div class="pl-4"><div class="hdkp-control flex items-center gap-2"><input type="checkbox" class="hdkp-toggle h-4 w-4 rounded text-primary focus:ring-primary cursor-pointer accent-primary" ${x.hdkp_pdf ? 'checked' : ''}><button class="hdkp-btn ${x.hdkp_pdf ? '' : 'hidden'} btn-tertiary px-2 py-1 text-xs" type="button" data-dps-id="${x.action_id || ""}">&#x0110;i&#x1EC1;n H&#x0110;KP</button><a class="hdkp-view ${x.hdkp_pdf ? '' : 'hidden'} btn btn-sm btn-success" href="${x.hdkp_pdf || "#"}" target="_blank"><i class="fas fa-file-pdf"></i> Xem</a></div></div>
+                </div>`).join('');
+
+            const multiRows = (r.multi_list || []).map(x => `
+                <div class="grid grid-cols-4 gap-3 text-sm items-center py-3 px-4 bg-surface-lowest rounded-xl shadow-sm hover:shadow-cloud transition">
+                    <div class="font-semibold text-on-surface">${x.ma_loi} - ${x.vi_tri}</div>
+                    <div class="font-semibold text-on-surface">${x.consecutive}</div>
+                    <div class="space-y-2"><button class="btn-primary px-4 py-2 text-xs font-semibold open-action-form" data-title="${x.ma_loi} - ${x.vi_tri}" data-plan-id="${r.plan_id}" data-date="${r.date}" data-time-bucket="${r.time_bucket}" data-station="${r.station || ''}" data-bo-phan="${r.bo_phan || ''}" data-loai-loi="L&#x1ED7;i nguy c&#x1A1; h&#x00E0;ng lo&#x1EA1;t" data-ma-loi="${x.ma_loi}" data-vi-tri="${x.vi_tri}" data-images="${encodeURIComponent(JSON.stringify(x.images || []))}">${x.action_done ? 'Theo d&#x00F5;i nguy&#x00EA;n nh&#x00E2;n &amp; H&#x00E0;nh &#x0111;&#x1ED9;ng' : 'Nguy&#x00EA;n nh&#x00E2;n &amp; H&#x00E0;nh &#x0111;&#x1ED9;ng'}</button>
+                        ${renderThumbs(x.images || [])}
+                    </div>
+                    <div class="pl-4"><div class="hdkp-control flex items-center gap-2"><input type="checkbox" class="hdkp-toggle h-4 w-4 rounded text-primary focus:ring-primary cursor-pointer accent-primary" ${x.hdkp_pdf ? 'checked' : ''}><button class="hdkp-btn ${x.hdkp_pdf ? '' : 'hidden'} btn-tertiary px-2 py-1 text-xs" type="button" data-dps-id="${x.action_id || ""}">&#x0110;i&#x1EC1;n H&#x0110;KP</button><a class="hdkp-view ${x.hdkp_pdf ? '' : 'hidden'} btn btn-sm btn-success" href="${x.hdkp_pdf || "#"}" target="_blank"><i class="fas fa-file-pdf"></i> Xem</a></div></div>
+                </div>`).join('');
+
+            const rate = (r.rate_percent ?? 0).toFixed(1);
+            const target = r.target_percent != null ? `${r.target_percent}%` : '--';
+            const massRows = (r.mass_list || []).map(x => `
+                <div class="grid grid-cols-4 gap-3 text-sm items-center py-3 px-4 bg-surface-lowest rounded-xl shadow-sm hover:shadow-cloud transition">
+                    <div class="font-semibold text-on-surface">${x.ma_loi} - ${x.vi_tri}</div>
+                    <div class="font-semibold text-on-surface">${x.qty}</div>
+                    <div class="space-y-2"><button class="btn-primary px-4 py-2 text-xs font-semibold open-action-form" data-title="${x.ma_loi} - ${x.vi_tri}" data-plan-id="${r.plan_id}" data-date="${r.date}" data-time-bucket="${r.time_bucket}" data-station="${r.station || ''}" data-bo-phan="${r.bo_phan || ''}" data-loai-loi="L&#x1ED7;i &#x0111;&#x1EA1;i tr&#x00E0;" data-ma-loi="${x.ma_loi}" data-vi-tri="${x.vi_tri}" data-images="${encodeURIComponent(JSON.stringify(x.images || []))}">${x.action_done ? 'Theo d&#x00F5;i nguy&#x00EA;n nh&#x00E2;n &amp; H&#x00E0;nh &#x0111;&#x1ED9;ng' : 'Nguy&#x00EA;n nh&#x00E2;n &amp; H&#x00E0;nh &#x0111;&#x1ED9;ng'}</button>
+                        ${renderThumbs(x.images || [])}
+                    </div>
+                    <div class="pl-4"><div class="hdkp-control flex items-center gap-2"><input type="checkbox" class="hdkp-toggle h-4 w-4 rounded text-primary focus:ring-primary cursor-pointer accent-primary" ${x.hdkp_pdf ? 'checked' : ''}><button class="hdkp-btn ${x.hdkp_pdf ? '' : 'hidden'} btn-tertiary px-2 py-1 text-xs" type="button" data-dps-id="${x.action_id || ""}">&#x0110;i&#x1EC1;n H&#x0110;KP</button><a class="hdkp-view ${x.hdkp_pdf ? '' : 'hidden'} btn btn-sm btn-success" href="${x.hdkp_pdf || "#"}" target="_blank"><i class="fas fa-file-pdf"></i> Xem</a></div></div>
+                </div>`).join('');
+
+            const massBlock = hasMass ? `<div class="space-y-3 pt-2">
+                <div class="alert-title alert-mass font-bold text-[#900B09]">
+                    <span class="material-symbols-outlined text-sm">warning</span> Lỗi đại trà
+                </div>
+                <div class="grid grid-cols-4 gap-3 text-xs uppercase tracking-widest text-on-surface-variant font-semibold px-4 py-2 bg-surface-high/60 rounded-xl mt-1">
+                    <div>Mã lỗi - Vị trí</div>
+                    <div>Số lượng</div>
+                    <div>Nguyên nhân &amp; Hành động</div>
+                    <div>Mở hành động phòng ngừa</div>
+                </div>
+                <div class="space-y-2">
+                    ${massRows || ''}
+                </div>
+            </div>` : '';
+
+            const overBlock = hasOver ? `<div class="space-y-3 pt-2">
+                    <div class="alert-title alert-over font-bold text-[#900B09]">
+                        <span class="material-symbols-outlined text-sm">trending_up</span> Lỗi vượt mục tiêu
+                    </div>
+                    <div class="flex flex-wrap items-center gap-6 py-3 px-4 bg-surface-lowest rounded-xl shadow-sm shrink-0 hover:shadow-cloud transition">
+                        <p class="text-sm font-semibold text-on-surface shrink-0">Mục tiêu: ${target} <span class="text-surface-high mx-2">|</span> Tỷ lệ thực tế: <span class="text-[#900B09]">${rate}%</span></p>
+                        <button class="btn-primary px-4 py-2 text-xs font-semibold open-action-form shrink-0" data-title="Vượt mục tiêu (${r.don_vi} - ${r.bo_phan}${r.station ? ' - ' + r.station : ''})" data-plan-id="${r.plan_id}" data-date="${r.date}" data-time-bucket="${r.time_bucket}" data-station="${r.station || ''}" data-bo-phan="${r.bo_phan || ''}" data-loai-loi="L&#x1ED7;i v&#x01B0;&#x1EE3;t m&#x1EE5;c ti&#x00EA;u" data-images="${encodeURIComponent(JSON.stringify(r.over_images || []))}">${r.over_action_done ? 'Theo d&#x00F5;i nguy&#x00EA;n nh&#x00E2;n &amp; H&#x00E0;nh &#x0111;&#x1ED9;ng' : 'Nguy&#x00EA;n nh&#x00E2;n &amp; H&#x00E0;nh &#x0111;&#x1ED9;ng'}</button>
+                        ${renderThumbs(r.over_images || [])}
+                        <div class="hdkp-control flex items-center gap-2 ml-auto shrink-0"><label class="text-sm font-semibold text-on-surface flex items-center gap-2 cursor-pointer"><input type="checkbox" class="hdkp-toggle h-4 w-4 rounded text-primary focus:ring-primary cursor-pointer accent-primary" ${r.over_hdkp_pdf ? 'checked' : ''}> M&#x1EDF; h&#x00E0;nh &#x0111;&#x1ED9;ng ph&#x00F2;ng ng&#x1EEB;a</label><button class="hdkp-btn ${r.over_hdkp_pdf ? '' : 'hidden'} btn-tertiary px-2 py-1 text-xs" type="button" data-dps-id="${r.over_action_id || ""}">&#x0110;i&#x1EC1;n H&#x0110;KP</button><a class="hdkp-view ${r.over_hdkp_pdf ? '' : 'hidden'} btn btn-sm btn-success" href="${r.over_hdkp_pdf || "#"}" target="_blank"><i class="fas fa-file-pdf"></i> Xem</a></div>
+                    </div>
+               </div>` : '';
+
+            return `
+                <div class="space-y-6 pt-4 pb-6 border-b border-surface-high/50 last:border-0 last:pb-0">
+                    ${unitHeader}
+                    ${seriousRows ? `<div class="space-y-3">
+                        <div class="alert-title alert-serious font-bold text-[#900B09]">
+                            <span class="material-symbols-outlined text-sm">error</span> Lỗi nghiêm trọng
+                        </div>
+                        <div class="grid grid-cols-4 gap-3 text-xs uppercase tracking-widest text-on-surface-variant font-semibold px-4 py-2 bg-surface-high/60 rounded-xl mt-1">
+                            <div>Mã lỗi - Vị trí</div>
+                            <div>Số lượng</div>
+                            <div>Nguyên nhân & Hành động</div>
+                            <div>Mở hành động phòng ngừa</div>
+                        </div>
+                        <div class="space-y-2">
+                            ${seriousRows}
+                        </div>
+                    </div>` : ''}
+                    
+                    ${multiRows ? `<div class="space-y-3 pt-2">
+                        <div class="alert-title alert-multi font-bold text-[#900B09]">
+                            <span class="material-symbols-outlined text-sm">warning_amber</span> Lỗi nguy cơ hàng loạt
+                        </div>
+                        <div class="grid grid-cols-4 gap-3 text-xs uppercase tracking-widest text-on-surface-variant font-semibold px-4 py-2 bg-surface-high/60 rounded-xl mt-1">
+                            <div>Mã lỗi - Vị trí</div>
+                            <div>Số chiếc liên tiếp</div>
+                            <div>Nguyên nhân & Hành động</div>
+                            <div>Mở hành động phòng ngừa</div>
+                        </div>
+                        <div class="space-y-2">
+                            ${multiRows}
+                        </div>
+                    </div>` : ''}
+                    
+                    ${massBlock}
+                    ${overBlock}
+                </div>`;
+        }
+
+        function bindToggle() {
+            document.querySelectorAll('.toggle-detail').forEach(btn => {
+                if (btn.dataset.bound) return;
+                btn.dataset.bound = '1';
+                btn.addEventListener('click', () => {
+                    const target = document.getElementById(btn.dataset.target);
+                    const icon = btn.querySelector('.material-symbols-outlined');
+                    if (target.classList.contains('hidden')) {
+                        target.classList.remove('hidden');
+                        icon.textContent = 'expand_less';
+                    } else {
+                        target.classList.add('hidden');
+                        icon.textContent = 'expand_more';
+                    }
+                });
+            });
+        }
+
+        const modal = document.getElementById('modal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalBody = document.getElementById('modalBody');
+
+        function openModalFrom(btn) {
+            modalTitle.innerHTML = btn.dataset.title;
+            modalBody.innerHTML = btn.dataset.body;
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        const tooltip = document.getElementById('tooltip');
+
+        function showTooltip(btn) {
+            tooltip.innerHTML = `<div class="font-semibold mb-1">${btn.dataset.title}</div><div class="text-on-surface-variant">${btn.dataset.body}</div>`;
+            tooltip.classList.remove('hidden');
+        }
+
+        function moveTooltip(e) {
+            const offset = 12;
+            const rect = tooltip.getBoundingClientRect();
+            let x = e.clientX + offset;
+            let y = e.clientY + offset;
+            if (x + rect.width > window.innerWidth - 12) x = e.clientX - rect.width - offset;
+            if (y + rect.height > window.innerHeight - 12) y = e.clientY - rect.height - offset;
+            tooltip.style.left = `${x}px`;
+            tooltip.style.top = `${y}px`;
+        }
+
+        function hideTooltip() {
+            tooltip.classList.add('hidden');
+        }
+
+        function bindPopups() {
+            document.querySelectorAll('.popup-trigger').forEach(btn => {
+                if (btn.dataset.bound) return;
+                btn.dataset.bound = '1';
+                btn.addEventListener('mouseenter', (e) => {
+                    showTooltip(btn);
+                    moveTooltip(e);
+                });
+                btn.addEventListener('mousemove', moveTooltip);
+                btn.addEventListener('mouseleave', hideTooltip);
+                btn.addEventListener('click', () => openModalFrom(btn));
+            });
+        }
+
+        function closeModal() {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal || e.target.classList.contains('modal-backdrop')) closeModal();
+        });
+
+        const actionModal = document.getElementById('actionModal');
+        const actionTitle = document.getElementById('actionTitle');
+        const saveActionBtn = document.getElementById('saveActionBtn');
+
+        function setActionForm(row) {
+            if (!row || !actionModal) return;
+            actionModal.querySelectorAll('[data-field]').forEach(el => {
+                const key = el.dataset.field;
+                if (!key) return;
+                let value = row[key];
+                if (key === 'tien_do' && value === 'Hoàn thành') value = 'Đã hoàn thành'; // Map historical data
+                if (el.type === 'checkbox') el.checked = !!value;
+                else el.value = value ?? '';
+            });
+            updateTienDo();
+        }
+
+        async function loadActionData() {
+            const planId = actionModal.dataset.planId || '';
+            const date = actionModal.dataset.date || '';
+            const timeBucket = actionModal.dataset.timeBucket || '';
+            const station = actionModal.dataset.station || '';
+            const boPhan = actionModal.dataset.boPhan || '';
+            const loaiLoi = actionModal.dataset.loaiLoi || '';
+            if (!planId || !date || !timeBucket || !loaiLoi) return;
+            const params = new URLSearchParams({
+                plan_id: planId,
+                date: date,
+                time_bucket: timeBucket,
+                loai_loi: loaiLoi,
+            });
+            if (station) params.set('station', station);
+            if (boPhan) params.set('bo_phan', boPhan);
+            if (actionModal.dataset.maLoi) params.set('ma_loi', actionModal.dataset.maLoi);
+            if (actionModal.dataset.viTri) params.set('vi_tri', actionModal.dataset.viTri);
+            try {
+                const res = await fetch(`/api/qc/cap/action?${params.toString()}`);
+                if (!res.ok) return;
+                const data = await res.json();
+                if (data.status === 'ok' && data.row) setActionForm(data.row);
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function renderActionImages(images) {
+            const wrap = document.getElementById('actionImages');
+            if (!wrap) return;
+            if (!images || images.length === 0) {
+                wrap.classList.add('hidden');
+                wrap.innerHTML = '';
+                return;
+            }
+            wrap.classList.remove('hidden');
+            const thumbs = images.map(url => `
+                <a href="${url}" target="_blank" class="block">
+                    <img src="${url}" class="w-24 h-24 object-cover rounded-xl border border-surface-high" />
+                </a>`).join('');
+            wrap.innerHTML = `
+                <div class="text-xs uppercase tracking-widest text-on-surface-variant font-semibold">H?nh ?nh l?i</div>
+                <div class="mt-2 flex flex-wrap gap-2">${thumbs}</div>`;
+        }
+
+        function clearActionForm() {
+            if (!actionModal) return;
+            actionModal.querySelectorAll('[data-field]').forEach(el => {
+                if (el.type === 'checkbox') {
+                    el.checked = false;
+                } else {
+                    el.value = '';
+                }
+            });
+            updateTienDo();
+        }
+
+        function updateTienDo() {
+            if (!actionModal) return;
+            const ngayHoanThanh = actionModal.querySelector('[data-field="ngay_hoan_thanh"]').value;
+            const tienDoEl = actionModal.querySelector('[data-field="tien_do"]');
+            
+            if (ngayHoanThanh) {
+                tienDoEl.value = 'Đã hoàn thành';
+                return;
+            }
+            
+            let hasInput = false;
+            actionModal.querySelectorAll('[data-field]').forEach(el => {
+                const key = el.dataset.field;
+                if (key === 'tien_do' || key === 'ngay_hoan_thanh') return;
+                
+                if (el.type === 'checkbox') {
+                    if (el.checked) hasInput = true;
+                } else {
+                    if ((el.value || '').trim() !== '') hasInput = true;
+                }
+            });
+            
+            if (hasInput) {
+                tienDoEl.value = 'Đang thực hiện';
+            } else {
+                tienDoEl.value = 'Chưa thực hiện';
+            }
+        }
+
+        if (actionModal) {
+            actionModal.addEventListener('input', updateTienDo);
+            actionModal.addEventListener('change', updateTienDo);
+        }
+
+
+        function bindActionForms() {
+            document.querySelectorAll('.open-action-form').forEach(btn => {
+                if (btn.dataset.bound) return;
+                btn.dataset.bound = '1';
+                btn.addEventListener('click', () => {
+                    actionTitle.textContent = `Nguyên nhân & Hành động - ${btn.dataset.title}`;
+                    actionModal.dataset.planId = btn.dataset.planId || '';
+                    actionModal.dataset.date = btn.dataset.date || '';
+                    actionModal.dataset.timeBucket = btn.dataset.timeBucket || '';
+                    actionModal.dataset.station = btn.dataset.station || '';
+                    actionModal.dataset.boPhan = btn.dataset.boPhan || '';
+                    actionModal.dataset.loaiLoi = btn.dataset.loaiLoi || '';
+                    actionModal.dataset.maLoi = btn.dataset.maLoi || '';
+                    actionModal.dataset.viTri = btn.dataset.viTri || '';
+                    clearActionForm();
+                    const imgs = btn.dataset.images ? JSON.parse(decodeURIComponent(btn.dataset.images)) : [];
+                    renderActionImages(imgs);
+                    loadActionData();
+                    actionModal.classList.remove('hidden');
+                    actionModal.classList.add('flex');
+                });
+            });
+        }
+
+        function bindHdkpToggles() {
+            document.querySelectorAll('.hdkp-toggle').forEach(input => {
+                if (input.dataset.bound) return;
+                input.dataset.bound = '1';
+                input.addEventListener('change', () => {
+                    const wrap = input.closest('.hdkp-control');
+                    if (!wrap) return;
+                    const btn = wrap.querySelector('.hdkp-btn');
+                    if (!btn) return;
+                    btn.classList.toggle('hidden', !input.checked);
+                });
+            });
+        }
+
+        function bindHdkpButtons() {
+            document.querySelectorAll('.hdkp-btn').forEach(btn => {
+                if (btn.dataset.bound) return;
+                btn.dataset.bound = '1';
+                btn.addEventListener('click', () => {
+                    const id = btn.dataset.dpsId;
+                    if (!id) {
+                        alert('Chua co DPS ID.');
+                        return;
+                    }
+                    window.location.href = `/hdkp-form-endline/${id}`;
+                });
+            });
+        }
+
+        async function saveAction() {
+            const planId = Number(actionModal.dataset.planId || 0);
+            const date = actionModal.dataset.date || '';
+            const timeBucket = actionModal.dataset.timeBucket || '';
+            const loaiLoi = actionModal.dataset.loaiLoi || '';
+            if (!planId || !date || !timeBucket || !loaiLoi) {
+                alert('Thieu thong tin dinh danh loi.');
+                return;
+            }
+
+            const payload = {
+                plan_id: planId,
+                date: date,
+                time_bucket: timeBucket,
+                station: actionModal.dataset.station || null,
+                bo_phan: actionModal.dataset.boPhan || null,
+                loai_loi: loaiLoi,
+                ma_loi: actionModal.dataset.maLoi || null,
+                vi_tri: actionModal.dataset.viTri || null,
+            };
+
+            actionModal.querySelectorAll('[data-field]').forEach(el => {
+                const key = el.dataset.field;
+                if (!key) return;
+                if (el.type === 'checkbox') {
+                    payload[key] = !!el.checked;
+                } else {
+                    const val = (el.value || '').trim();
+                    payload[key] = val === '' ? null : val;
+                }
+            });
+
+            try {
+                const res = await fetch('/api/qc/cap/action', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    alert(err.detail || 'Luu that bai.');
+                    return;
+                }
+                closeActionModal();
+            } catch (e) {
+                console.error(e);
+                alert('Khong the luu du lieu.');
+            }
+        }
+
+        if (saveActionBtn) {
+            saveActionBtn.addEventListener('click', saveAction);
+        }
+
+        function closeActionModal() {
+            actionModal.classList.add('hidden');
+            actionModal.classList.remove('flex');
+        }
+
+        actionModal.addEventListener('click', (e) => {
+            if (e.target === actionModal || e.target.classList.contains('modal-backdrop')) closeActionModal();
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const input = document.getElementById('capDateInput');
+            const today = getTodayStr();
+            if (input) input.value = today;
+            const todayBtn = document.getElementById('capTodayBtn');
+            const refreshBtn = document.getElementById('capRefreshBtn');
+            const donViSelect = document.getElementById('capDonVi');
+            const boPhanSelect = document.getElementById('capBoPhan');
+            const stationSelect = document.getElementById('capStation');
+            const sidebarToggle = document.getElementById('sidebarToggle');
+            if (input) input.addEventListener('change', () => loadCap());
+            if (todayBtn) todayBtn.addEventListener('click', () => {
+                if (input) input.value = today;
+                loadCap(today);
+            });
+            if (refreshBtn) refreshBtn.addEventListener('click', () => loadCap());
+            if (donViSelect) donViSelect.addEventListener('change', onDonViChange);
+            if (boPhanSelect) boPhanSelect.addEventListener('change', () => loadCap());
+            if (stationSelect) stationSelect.addEventListener('change', () => loadCap());
+            if (sidebarToggle) sidebarToggle.addEventListener('click', toggleSidebar);
+            applySidebarState();
+            loadCapFilters().then(() => loadCap());
+        });
+    </script>
+</body>
+</html>
+
+
+
+

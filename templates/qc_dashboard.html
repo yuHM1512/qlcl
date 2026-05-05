@@ -1,0 +1,1054 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard QC - QLCL</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@500;700;800&display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet" />
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Manrope', 'sans-serif'],
+                    },
+                    colors: {
+                        surface: '#f8f9fa',
+                        'surface-lowest': '#ffffff',
+                        'surface-low': '#f3f4f6',
+                        'surface-high': '#e7e8e9',
+                        'on-surface': '#191c1d',
+                        'on-surface-variant': '#424654',
+                        primary: '#0040a1',
+                        'primary-container': '#0056d2',
+                        'secondary-container': '#9cb4fe',
+                        error: '#b91c1c',
+                    },
+                    boxShadow: {
+                        'cloud': '0px 20px 40px rgba(25, 28, 29, 0.05)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #f8f9fa;
+            color: #191c1d;
+        }
+
+        .glass-header {
+            background: rgba(248, 249, 250, 0.8);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #0040a1 0%, #0056d2 100%);
+            color: #ffffff;
+            border-radius: 0.75rem;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0px 8px 16px rgba(0, 64, 161, 0.2);
+        }
+
+        .btn-tertiary {
+            background: transparent;
+            color: #0040a1;
+            border-radius: 0.75rem;
+            transition: all 0.3s ease;
+        }
+
+        .btn-tertiary:hover {
+            background-color: #f3f4f6;
+        }
+
+        .input-field {
+            width: 100%;
+            background-color: #f3f4f6;
+            border: 2px solid transparent;
+            border-radius: 0.75rem;
+            padding: 0.65rem 0.9rem;
+            color: #191c1d;
+            font-size: 0.875rem;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        .input-field:focus {
+            background-color: #ffffff;
+            border-color: rgba(0, 64, 161, 0.4);
+            box-shadow: 0px 4px 12px rgba(0, 64, 161, 0.08);
+        }
+
+        .input-field::placeholder {
+            color: rgba(66, 70, 84, 0.5);
+        }
+
+        @media (min-width: 1024px) {
+            body.sidebar-collapsed aside {
+                width: 72px;
+            }
+
+            body.sidebar-collapsed aside a,
+            body.sidebar-collapsed aside button {
+                justify-content: center;
+                padding-left: 0.75rem;
+                padding-right: 0.75rem;
+                font-size: 0;
+            }
+
+            body.sidebar-collapsed aside span:not(.material-symbols-outlined) {
+                display: none;
+            }
+
+            body.sidebar-collapsed aside .material-symbols-outlined {
+                margin-right: 0;
+                font-size: 20px;
+            }
+
+            body.sidebar-collapsed aside #submenu-settings {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+
+<body class="min-h-screen">
+    <header class="glass-header sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-8 py-6 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <button id="sidebarToggle"
+                    class="w-9 h-9 rounded-full bg-surface-lowest shadow-sm flex items-center justify-center text-on-surface-variant hover:text-primary transition"
+                    title="Thu gọn / Mở rộng menu">
+                    <span class="material-symbols-outlined">menu</span>
+                </button>
+                <a href="/qc" class="text-on-surface-variant hover:text-on-surface transition">
+                    <span class="material-symbols-outlined">arrow_back</span>
+                </a>
+                <div>
+                    <h1 class="font-display text-2xl font-bold">QC Inline/Endline</h1>
+                    <p class="text-xs text-on-surface-variant font-medium">Dashboard tỉ lệ lỗi</p>
+                </div>
+            </div>
+            <button onclick="logout()" class="btn-tertiary px-4 py-2 flex items-center gap-2">
+                <span class="material-symbols-outlined text-sm">logout</span> Đăng xuất
+            </button>
+        </div>
+    </header>
+
+    <div class="max-w-7xl mx-auto px-8 py-10 flex flex-col lg:flex-row gap-10">
+        <aside class="w-full lg:w-64 shrink-0">
+            <div class="rounded-2xl bg-surface-high/70 p-4 space-y-2 sticky top-28">
+                <a href="/qc"
+                    class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-low transition font-semibold">
+                    <span class="material-symbols-outlined">inventory_2</span>
+                    Kế hoạch sản xuất
+                </a>
+                <a href="/qc/dashboard"
+                    class="flex items-center gap-3 px-4 py-3 rounded-xl bg-surface-lowest text-primary font-semibold">
+                    <span class="material-symbols-outlined">dashboard</span>
+                    Dashboard
+                </a>
+                <a href="/qc/cap"
+                    class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-low transition font-semibold">
+                    <span class="material-symbols-outlined">task_alt</span>
+                    Hành động khắc phục
+                </a>
+                <a href="/qc/settings/details"
+                    class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-low transition font-semibold">
+                    <span class="material-symbols-outlined">settings</span>
+                    Cài đặt danh mục
+                </a>
+            </div>
+        </aside>
+
+        <main class="flex-1 space-y-8">
+            <!-- Filters -->
+            <section class="bg-surface-lowest rounded-2xl p-6 shadow-cloud space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    <div>
+                        <label class="text-xs font-semibold text-on-surface-variant">Từ ngày</label>
+                        <input id="fDateFrom" type="date" class="input-field" />
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold text-on-surface-variant">Đến ngày</label>
+                        <input id="fDateTo" type="date" class="input-field" />
+                    </div>
+                    <div class="flex items-end">
+                        <div class="flex w-full gap-3">
+                            <button id="btnToday" class="btn-primary px-4 py-2 flex-1">Hôm nay</button>
+                            <button id="btnPrevDay" class="btn-primary px-4 py-2 flex-1">Ngày trước</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
+                    <div>
+                        <label class="text-xs font-semibold text-on-surface-variant">Xí nghiệp</label>
+                        <select id="fDonVi" class="input-field"></select>
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold text-on-surface-variant">Tổ</label>
+                        <select id="fBoPhan" class="input-field"></select>
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold text-on-surface-variant">Trạm</label>
+                        <select id="fStation" class="input-field"></select>
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold text-on-surface-variant">Mã hàng</label>
+                        <select id="fMaHang" class="input-field"></select>
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold text-on-surface-variant">Loại hàng</label>
+                        <select id="fType" class="input-field"></select>
+                    </div>
+                </div>
+            </section>
+
+            <!-- KPI Cards -->
+            <section class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+                <div class="bg-surface-lowest p-8 rounded-2xl flex flex-col justify-between h-44 shadow-cloud">
+                    <div class="flex justify-between items-start">
+                        <span class="text-on-surface-variant text-xs font-black tracking-widest uppercase">Tỉ lệ lỗi</span>
+                        <span class="material-symbols-outlined text-primary/40">percent</span>
+                    </div>
+                    <div class="mt-4">
+                        <span id="kpiRate" class="text-4xl font-display font-bold text-on-surface">0%</span>
+                        <p class="text-xs text-on-surface-variant mt-2">Theo bộ lọc hiện tại</p>
+                    </div>
+                </div>
+                <div class="bg-surface-lowest p-8 rounded-2xl flex flex-col justify-between h-44 shadow-cloud">
+                    <div class="flex justify-between items-start">
+                        <span class="text-on-surface-variant text-xs font-black tracking-widest uppercase">Tổng SP kiểm</span>
+                        <span class="material-symbols-outlined text-primary/40">inventory_2</span>
+                    </div>
+                    <div class="mt-4">
+                        <span id="kpiInspected" class="text-4xl font-display font-bold text-on-surface">0</span>
+                        <p class="text-xs text-on-surface-variant mt-2">Tổng sản phẩm kiểm</p>
+                    </div>
+                </div>
+                <div class="bg-surface-lowest p-8 rounded-2xl flex flex-col justify-between h-44 shadow-cloud">
+                    <div class="flex justify-between items-start">
+                        <span class="text-on-surface-variant text-xs font-black tracking-widest uppercase">Tổng SP lỗi</span>
+                        <span class="material-symbols-outlined text-primary/40">report</span>
+                    </div>
+                    <div class="mt-4">
+                        <span id="kpiDefect" class="text-4xl font-display font-bold text-on-surface">0</span>
+                        <p class="text-xs text-on-surface-variant mt-2">Tổng lỗi ghi nhận</p>
+                    </div>
+                </div>
+                <div class="bg-surface-lowest p-8 rounded-2xl flex flex-col justify-between h-44 shadow-cloud border-l-4 border-primary">
+                    <div class="flex justify-between items-start">
+                        <span class="text-on-surface-variant text-xs font-black tracking-widest uppercase">Tỉ lệ tái chế</span>
+                        <span class="material-symbols-outlined text-primary/50">recycling</span>
+                    </div>
+                    <div class="mt-4">
+                        <span id="kpiRecycle" class="text-4xl font-display font-bold text-on-surface">0%</span>
+                        <p id="kpiRecycleHint" class="text-xs text-on-surface-variant mt-2">0/0 SP lỗi</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- A. Mixed Chart + Station Summary -->
+            <section class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                <div class="xl:col-span-2 bg-surface-lowest rounded-2xl p-6 shadow-cloud">
+                    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+                        <div>
+                            <div class="inline-flex items-center px-4 py-2 rounded-xl bg-primary-container text-white font-display font-extrabold tracking-tight">
+                                A. Tỉ lệ lỗi theo ngày
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-4 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">
+                            <div class="flex items-center gap-2">
+                                <span class="w-3 h-3 rounded-full bg-primary-container/80"></span>
+                                <span>Defect Rate</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="w-8 h-0.5" style="background:#FF8C00;"></span>
+                                <span>Target</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="relative h-64 w-full">
+                        <canvas id="dailyChart"></canvas>
+                    </div>
+                </div>
+                <div class="bg-surface-lowest rounded-2xl p-6 shadow-cloud">
+                    <div class="inline-flex items-center px-4 py-2 rounded-xl bg-primary-container text-white font-display font-extrabold tracking-tight mb-4">
+                        Theo các trạm chính
+                    </div>
+                    <div>
+                        <table class="w-full text-sm">
+                            <thead class="text-left text-on-surface-variant bg-surface-low/70">
+                                <tr>
+                                    <th class="py-2 px-3 rounded-l-lg">Trạm</th>
+                                    <th class="py-2 px-3 text-right">SP kiểm</th>
+                                    <th class="py-2 px-3 text-right rounded-r-lg">Tỉ lệ lỗi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="stationBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- B. By Time Buckets + Position Stats -->
+            <section class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                <div class="xl:col-span-2 bg-surface-lowest rounded-2xl p-6 shadow-cloud">
+                    <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-4">
+                        <div class="inline-flex items-center px-4 py-2 rounded-xl bg-primary-container text-white font-display font-extrabold tracking-tight">
+                            B. Tỉ lệ lỗi theo mốc
+                        </div>
+                        <div class="min-w-[220px]">
+                            <label class="text-xs font-semibold text-on-surface-variant">Ngày xem theo mốc giờ</label>
+                            <input id="fFocusDate" type="date" class="input-field" />
+                        </div>
+                    </div>
+
+                    <div class="relative h-44 w-full">
+                        <canvas id="bucketChart"></canvas>
+                    </div>
+
+                    <div class="mt-3 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">
+                        <div class="flex items-center gap-2">
+                            <span class="w-3 h-3 rounded-full bg-primary-container/80"></span>
+                            <span>Defect Rate</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="w-8 h-0.5" style="background:#FF8C00;"></span>
+                            <span>Target</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-surface-lowest rounded-2xl p-6 shadow-cloud">
+                    <div class="inline-flex items-center px-4 py-2 rounded-xl bg-primary-container text-white font-display font-extrabold tracking-tight mb-4">
+                        Thống kê theo vị trí
+                    </div>
+                    <div class="text-sm text-on-surface-variant mb-3">Bộ phận / Chi tiết (theo ngày xem)</div>
+                    <div class="max-h-[220px] overflow-auto pr-1">
+                        <table class="w-full text-sm">
+                            <thead class="text-left text-on-surface-variant bg-surface-low/70">
+                                <tr>
+                                    <th class="py-2 px-3 rounded-l-lg">Bộ phận</th>
+                                    <th class="py-2 px-3 text-right rounded-r-lg">Số lần gặp lỗi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="posStatsBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+            <section class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                <div class="xl:col-span-2 bg-surface-lowest rounded-2xl p-6 shadow-cloud space-y-6">
+                    <div class="space-y-4">
+                        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                            <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+                                <div class="inline-flex items-center px-4 py-2 rounded-xl bg-primary-container text-white font-display font-extrabold tracking-tight">
+                                    C. Phân bố lỗi
+                                </div>
+                                <div class="text-sm text-on-surface-variant">Top vị trí thường gặp lỗi (Bộ phận / Chi tiết).</div>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="text-xs font-semibold text-on-surface-variant">Bộ phận</label>
+                                <select id="cBoPhan" class="input-field"></select>
+                            </div>
+                            <div>
+                                <label class="text-xs font-semibold text-on-surface-variant">Chi tiết</label>
+                                <select id="cChiTiet" class="input-field"></select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col lg:flex-row lg:items-center gap-8">
+                        <div class="relative w-56 h-56 shrink-0 mx-auto lg:mx-0">
+                            <canvas id="posChart"></canvas>
+                            <div class="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
+                                <span id="posCenterValue" class="block text-3xl font-display font-extrabold text-on-surface">0</span>
+                                <span id="posCenterLabel" class="text-[10px] uppercase font-bold tracking-widest text-on-surface-variant">Tổng</span>
+                            </div>
+                        </div>
+                        <div id="posLegend" class="w-full space-y-3"></div>
+                    </div>
+                </div>
+
+                <div class="bg-surface-lowest rounded-2xl p-6 shadow-cloud space-y-4">
+                    <div>
+                        <div class="inline-flex items-center px-4 py-2 rounded-xl bg-primary-container text-white font-display font-extrabold tracking-tight">
+                            D. Mã lỗi thường gặp
+                        </div>
+                        <p class="text-sm text-on-surface-variant mt-1">Theo bộ phận - chi tiết</p>
+                    </div>
+                    <div id="maLoiList" class="space-y-3 max-h-[360px] overflow-auto pr-1"></div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        const sidebarKey = 'qlcl_sidebar_collapsed';
+        let dailyChart;
+        let bucketChart;
+        let posChart;
+
+        function applySidebarState() {
+            const collapsed = localStorage.getItem(sidebarKey) === '1';
+            document.body.classList.toggle('sidebar-collapsed', collapsed);
+            const icon = document.querySelector('#sidebarToggle .material-symbols-outlined');
+            if (icon) icon.textContent = collapsed ? 'menu_open' : 'menu';
+        }
+
+        function toggleSidebar() {
+            const collapsed = localStorage.getItem(sidebarKey) === '1';
+            localStorage.setItem(sidebarKey, collapsed ? '0' : '1');
+            applySidebarState();
+        }
+
+        function logout() {
+            fetch('/logout', { method: 'POST' }).then(() => (window.location.href = '/login'));
+        }
+
+        function buildSelect(el, items, placeholder, keepValue = '') {
+            if (!el) return;
+            el.innerHTML = '';
+            const opAll = document.createElement('option');
+            opAll.value = '';
+            opAll.textContent = placeholder;
+            el.appendChild(opAll);
+            (items || []).forEach((x) => {
+                const op = document.createElement('option');
+                op.value = x;
+                op.textContent = x;
+                el.appendChild(op);
+            });
+            if (keepValue && [...el.options].some((o) => o.value === keepValue)) {
+                el.value = keepValue;
+            }
+        }
+
+        function fmtNum(v) {
+            return Number(v || 0).toLocaleString('vi-VN');
+        }
+
+        function fmtPct(v) {
+            return `${Number(v || 0).toFixed(2)}%`;
+        }
+
+        function fmtPct1(v) {
+            return `${Number(v || 0).toFixed(1)}%`;
+        }
+
+        function fmtDdMm(yyyyMmDd) {
+            if (!yyyyMmDd || typeof yyyyMmDd !== 'string') return '';
+            const parts = yyyyMmDd.split('-');
+            if (parts.length !== 3) return yyyyMmDd;
+            return `${parts[2]}-${parts[1]}`;
+        }
+
+        // Top-5 palette (as requested) + neutral gray for "Khác".
+        const CHART_COLORS = [
+            '#1E3A8A', // Deep Indigo
+            '#1D4ED8', // Royal Blue
+            '#3B82F6', // Bright Azure
+            '#93C5FD', // Soft Sky
+            '#DBEAFE', // Pale Frost
+        ];
+        const OTHER_COLOR = '#e5e7eb';
+
+        function donutColorsForLabels(labels) {
+            return (labels || []).map((l, idx) => (l === 'Khác' ? OTHER_COLOR : CHART_COLORS[idx % CHART_COLORS.length]));
+        }
+
+        function donutPercentLabelPlugin(opts = {}) {
+            const color = opts.color || '#ffffff';
+            const minPercent = Number.isFinite(opts.minPercent) ? opts.minPercent : 5;
+            return {
+                id: 'donutPercentLabelPlugin',
+                afterDatasetsDraw(chart) {
+                    const meta = chart.getDatasetMeta(0);
+                    const data = (chart.data?.datasets?.[0]?.data || []).map((x) => Number(x || 0));
+                    const total = data.reduce((a, b) => a + b, 0);
+                    if (!meta || !meta.data || !total) return;
+
+                    const ctx = chart.ctx;
+                    ctx.save();
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillStyle = color;
+                    ctx.font = '800 11px Inter, sans-serif';
+
+                    meta.data.forEach((el, idx) => {
+                        const v = data[idx] || 0;
+                        if (!v) return;
+                        const pct = (v * 100.0) / total;
+                        if (pct < minPercent) return;
+                        const text = `${Math.round(pct)}%`;
+                        const pos = (typeof el.getCenterPoint === 'function') ? el.getCenterPoint() : el.tooltipPosition();
+                        ctx.fillText(text, pos.x, pos.y);
+                    });
+
+                    ctx.restore();
+                }
+            };
+        }
+
+        function donutConfig(labels, values, opts = {}) {
+            const cutout = opts.cutout || '72%';
+            const pctLabels = opts.pct_labels !== false;
+            const pctMin = opts.pct_min ?? 5;
+            return {
+                type: 'doughnut',
+                data: {
+                    labels,
+                    datasets: [{
+                        data: values,
+                        backgroundColor: donutColorsForLabels(labels),
+                        borderColor: '#ffffff',
+                        borderWidth: 2,
+                        hoverOffset: 3,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => {
+                                    const label = ctx.label || '';
+                                    const v = Number(ctx.parsed || 0);
+                                    const total = (ctx.dataset.data || []).reduce((a, b) => a + Number(b || 0), 0);
+                                    const pct = total ? (v * 100.0 / total) : 0;
+                                    return `${label}: ${fmtNum(v)} (${pct.toFixed(1)}%)`;
+                                }
+                            }
+                        }
+                    }
+                },
+                plugins: pctLabels ? [donutPercentLabelPlugin({ color: '#ffffff', minPercent: pctMin })] : [],
+            };
+        }
+
+        function donutSeriesWithOther(items, total) {
+            const topLabels = (items || []).map((x) => x.name);
+            const topCounts = (items || []).map((x) => Number(x.count || 0));
+            const sumTop = topCounts.reduce((a, b) => a + b, 0);
+            const remainder = Math.max(0, Number(total || 0) - sumTop);
+            const labels = topLabels.slice();
+            const values = topCounts.slice();
+            if (remainder > 0) {
+                labels.push('Khác');
+                values.push(remainder);
+            }
+            return { labels, values };
+        }
+
+        function upsertChart(inst, ctx, config) {
+            if (inst) inst.destroy();
+            return new Chart(ctx, config);
+        }
+
+        function readFilters() {
+            const cBoPhanVal = document.getElementById('cBoPhan')?.value || '';
+            const cChiTietVal = document.getElementById('cChiTiet')?.value || '';
+            return {
+                date_from: document.getElementById('fDateFrom').value,
+                date_to: document.getElementById('fDateTo').value,
+                focus_date: document.getElementById('fFocusDate').value,
+                don_vi: document.getElementById('fDonVi').value,
+                bo_phan: document.getElementById('fBoPhan').value,
+                station: document.getElementById('fStation').value,
+                ma_hang: document.getElementById('fMaHang').value,
+                type_name: document.getElementById('fType').value,
+                detail_bo_phan: cBoPhanVal,
+                ma_loi_bo_phan: cBoPhanVal,
+                ma_loi_chi_tiet: cChiTietVal,
+            };
+        }
+
+        async function loadFilters() {
+            const keep = {
+                don_vi: document.getElementById('fDonVi').value,
+                bo_phan: document.getElementById('fBoPhan').value,
+                station: document.getElementById('fStation').value,
+                ma_hang: document.getElementById('fMaHang').value,
+                type_name: document.getElementById('fType').value,
+            };
+            const params = new URLSearchParams();
+            if (keep.don_vi) params.set('don_vi', keep.don_vi);
+            const res = await fetch(`/api/qc/dashboard/filters?${params.toString()}`);
+            const data = await res.json();
+            if (!keep.type_name && (data.type || []).includes('Thường')) keep.type_name = 'Thường';
+            buildSelect(document.getElementById('fDonVi'), data.don_vi || [], 'Tất cả', keep.don_vi);
+            buildSelect(document.getElementById('fBoPhan'), data.bo_phan || [], 'Tất cả', keep.bo_phan);
+            // Default business rule: if station is not chosen, calculations use "Trạm sau seam".
+            buildSelect(document.getElementById('fStation'), data.station || [], 'Trạm sau seam (mặc định)', keep.station);
+            buildSelect(document.getElementById('fMaHang'), data.ma_hang || [], 'Tất cả', keep.ma_hang);
+            buildSelect(document.getElementById('fType'), data.type || [], 'Tất cả', keep.type_name);
+        }
+
+        function toYmd(d) {
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const dd = String(d.getDate()).padStart(2, '0');
+            return `${yyyy}-${mm}-${dd}`;
+        }
+
+        function setSingleDay(ymd) {
+            document.getElementById('fDateFrom').value = ymd;
+            document.getElementById('fDateTo').value = ymd;
+            document.getElementById('fFocusDate').value = ymd;
+        }
+
+        let _loadTimer = null;
+        function scheduleLoad(delayMs = 150) {
+            if (_loadTimer) clearTimeout(_loadTimer);
+            _loadTimer = setTimeout(() => loadDashboard(), delayMs);
+        }
+
+        async function applyToday() {
+            const today = toYmd(new Date());
+            setSingleDay(today);
+            await loadDashboard();
+        }
+
+        async function applyPrevDay() {
+            const dateBefore = toYmd(new Date());
+            const params = new URLSearchParams();
+            params.set('date_before', dateBefore);
+            const don_vi = document.getElementById('fDonVi')?.value || '';
+            const bo_phan = document.getElementById('fBoPhan')?.value || '';
+            const station = document.getElementById('fStation')?.value || '';
+            const ma_hang = document.getElementById('fMaHang')?.value || '';
+            const type_name = document.getElementById('fType')?.value || '';
+            if (don_vi) params.set('don_vi', don_vi);
+            if (bo_phan) params.set('bo_phan', bo_phan);
+            if (station) params.set('station', station);
+            if (ma_hang) params.set('ma_hang', ma_hang);
+            if (type_name) params.set('type_name', type_name);
+
+            const res = await fetch(`/api/qc/dashboard/prev-date?${params.toString()}`);
+            const data = await res.json();
+            if (!data?.date) {
+                alert('Không tìm thấy ngày trước có dữ liệu theo bộ lọc hiện tại.');
+                return;
+            }
+            setSingleDay(data.date);
+            await loadDashboard();
+        }
+
+        async function loadDashboard() {
+            const f = readFilters();
+            const params = new URLSearchParams();
+            Object.entries(f).forEach(([k, v]) => {
+                if (v) params.set(k, v);
+            });
+            const res = await fetch(`/api/qc/dashboard?${params.toString()}`);
+            const data = await res.json();
+
+            document.getElementById('kpiInspected').textContent = fmtNum(data.totals.inspected_total);
+            document.getElementById('kpiDefect').textContent = fmtNum(data.totals.defect_total);
+            document.getElementById('kpiRate').textContent = fmtPct1(data.totals.defect_rate);
+            document.getElementById('kpiRecycle').textContent = fmtPct1(data.totals.recycle_rate);
+            document.getElementById('kpiRecycleHint').textContent = `${fmtNum(data.totals.rework_done_total)}/${fmtNum(data.totals.defect_sp_total)} SP lỗi`;
+
+            // If a specific type is selected, highlight defect rate vs target.
+            const selectedType = document.getElementById('fType')?.value || '';
+            const targetRates = (data.daily || []).map((x) => Number(x.target_rate || 0)).filter((v) => isFinite(v) && v > 0);
+            const targetAvg = targetRates.length ? (targetRates.reduce((a, b) => a + b, 0) / targetRates.length) : 0;
+            const highlightOver = !!selectedType && targetAvg > 0;
+            const okColor = '#0040a1';
+            const targetColor = '#FF8C00';
+            const overColor = '#b91c1c';
+
+            const kpiRateEl = document.getElementById('kpiRate');
+            if (kpiRateEl) {
+                // Use inline style to avoid Tailwind CDN class generation issues.
+                kpiRateEl.style.color = '';
+                if (highlightOver) {
+                    const defectRate = Number(data.totals.defect_rate || 0);
+                    const over = defectRate > (targetAvg + 1e-6);
+                    kpiRateEl.style.color = over ? overColor : okColor;
+                    kpiRateEl.title = `Target ~ ${targetAvg.toFixed(1)}%`;
+                } else {
+                    kpiRateEl.title = '';
+                }
+            }
+
+            const stationBody = document.getElementById('stationBody');
+            stationBody.innerHTML = (data.station_summary || []).map((r) => {
+                const v = Number(r.defect_rate || 0);
+                const over = highlightOver && v > (targetAvg + 1e-6);
+                const color = highlightOver ? (over ? overColor : okColor) : '';
+                return `
+                    <tr class="border-b border-surface-low">
+                        <td class="py-2 px-3">${r.station}</td>
+                        <td class="py-2 px-3 text-right">${fmtNum(r.inspected_total)}</td>
+                        <td class="py-2 px-3 text-right" style="${color ? `color:${color}; font-weight:700;` : ''}">${fmtPct1(v)}</td>
+                    </tr>
+                `;
+            }).join('') || '<tr><td colspan="3" class="py-3 text-on-surface-variant">Không có dữ liệu</td></tr>';
+
+            const valueLabelPlugin = {
+                id: 'valueLabelPlugin',
+                afterDatasetsDraw(chart) {
+                    const ctx = chart.ctx;
+                    ctx.save();
+                    ctx.font = '700 10px Inter, sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'bottom';
+
+                    // Keep labels inside the chart area so they never get clipped.
+                    const topGuard = (chart.chartArea?.top ?? 0) + 12;
+
+                    const barDatasetIndex = 0;
+                    const lineDatasetIndex = 1;
+
+                    const barMeta = chart.getDatasetMeta(barDatasetIndex);
+                    if (barMeta && !barMeta.hidden) {
+                        barMeta.data.forEach((el, i) => {
+                            const v = Number(chart.data.datasets[barDatasetIndex].data[i] || 0);
+                            if (!isFinite(v) || v <= 0) return;
+                            const t = Number(chart.data.datasets[lineDatasetIndex]?.data?.[i] || 0);
+                            const over = highlightOver && t > 0 && v > (t + 1e-6);
+                            ctx.fillStyle = highlightOver ? (over ? overColor : okColor) : '#181c22';
+                            const pos = el.tooltipPosition();
+                            const y = Math.max(pos.y - 6, topGuard);
+                            ctx.fillText(v.toFixed(1), pos.x, y);
+                        });
+                    }
+
+                    // Label target only once (usually a flat line for selected Type)
+                    const lineMeta = chart.getDatasetMeta(lineDatasetIndex);
+                    if (lineMeta && !lineMeta.hidden && lineMeta.data && lineMeta.data.length) {
+                        const lastIdx = lineMeta.data.length - 1;
+                        const v = Number(chart.data.datasets[lineDatasetIndex].data[lastIdx] || 0);
+                        const pos = lineMeta.data[lastIdx].tooltipPosition();
+                        ctx.fillStyle = targetColor;
+                        ctx.textAlign = 'left';
+                        const y = Math.max(pos.y - 2, topGuard);
+                        ctx.fillText(`Target ${v.toFixed(1)}`, pos.x + 8, y);
+                    }
+
+                    ctx.restore();
+                }
+            };
+
+            // A. Mixed chart (daily)
+            const dLabels = (data.daily || []).map((x) => fmtDdMm(x.date));
+            const dRate = (data.daily || []).map((x) => Number(Number(x.defect_rate || 0).toFixed(1)));
+            const dTarget = (data.daily || []).map((x) => Number(Number(x.target_rate || 0).toFixed(1)));
+            dailyChart = upsertChart(dailyChart, document.getElementById('dailyChart').getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: dLabels,
+                    datasets: [
+                        {
+                            type: 'bar',
+                            label: 'Defect Rate',
+                            data: dRate,
+                            backgroundColor: 'rgba(0, 86, 210, 0.28)',
+                            borderRadius: 10,
+                            borderSkipped: false,
+                            maxBarThickness: 18,
+                            categoryPercentage: 0.78,
+                            barPercentage: 0.55,
+                        },
+                        {
+                            type: 'line',
+                            label: 'Target',
+                            data: dTarget,
+                            borderColor: targetColor,
+                            borderWidth: 2,
+                            pointRadius: 0,
+                            tension: 0,
+                        },
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => {
+                                    const label = ctx.dataset.label || '';
+                                    return `${label}: ${Number(ctx.parsed.y || 0).toFixed(1)}%`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#6b7280', font: { family: 'Manrope, Inter, sans-serif', size: 11, weight: '700' }, maxRotation: 0, autoSkipPadding: 12 }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grace: '16%',
+                            grid: { display: false },
+                            ticks: { display: false }
+                        }
+                    },
+                    animation: { duration: 450 },
+                    layout: { padding: { top: 24 } }
+                },
+                plugins: [valueLabelPlugin],
+            });
+
+            // B. Mixed chart (time buckets)
+            const bLabels = (data.by_bucket || []).map((x) => x.time_bucket);
+            const bRate = (data.by_bucket || []).map((x) => Number(x.defect_rate || 0));
+            const bTargetRaw = (data.by_bucket || []).map((x) => Number(x.target_rate || 0));
+            const bTargetNonZero = bTargetRaw.filter((v) => isFinite(v) && v > 0);
+            const bTargetAvg = bTargetNonZero.length ? (bTargetNonZero.reduce((a, b) => a + b, 0) / bTargetNonZero.length) : 0;
+            const hasTypeFilter = !!document.getElementById('fType')?.value;
+            const bTargetRange = bTargetNonZero.length ? (Math.max(...bTargetNonZero) - Math.min(...bTargetNonZero)) : 0;
+            const useFlatTarget = hasTypeFilter || bTargetRange < 0.05;
+            const bTarget = useFlatTarget ? bLabels.map(() => Number(bTargetAvg.toFixed(1))) : bTargetRaw.map((v) => Number(Number(v || 0).toFixed(1)));
+            bucketChart = upsertChart(bucketChart, document.getElementById('bucketChart').getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: bLabels,
+                    datasets: [
+                        {
+                            type: 'bar',
+                            label: 'Defect Rate',
+                            data: bRate,
+                            backgroundColor: 'rgba(156, 180, 254, 0.55)',
+                            borderRadius: 10,
+                            borderSkipped: false,
+                            maxBarThickness: 24,
+                            categoryPercentage: 0.75,
+                            barPercentage: 0.6,
+                        },
+                        {
+                            type: 'line',
+                            label: 'Target',
+                            data: bTarget,
+                            borderColor: targetColor,
+                            borderWidth: 2,
+                            pointRadius: 0,
+                            tension: 0,
+                        },
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { color: '#6b7280', font: { family: 'Manrope, Inter, sans-serif', size: 11, weight: '700' }, maxRotation: 0, autoSkipPadding: 12 } },
+                        y: { beginAtZero: true, grace: '16%', grid: { display: false }, ticks: { display: false } }
+                    },
+                    animation: { duration: 450 },
+                    layout: { padding: { top: 24 } }
+                },
+                plugins: [valueLabelPlugin],
+            });
+
+            // "Thống kê theo vị trí" (B-side panel)
+            const posStatsBody = document.getElementById('posStatsBody');
+            if (posStatsBody) {
+                const items = data.pos_stats?.items || [];
+                if (!items.length) {
+                    posStatsBody.innerHTML = '<tr><td colspan="2" class="py-3 px-3 text-on-surface-variant">Không có dữ liệu</td></tr>';
+                } else {
+                    posStatsBody.innerHTML = items.map((x, idx) => {
+                        const details = (x.details || []);
+                        const detailsRows = details.length
+                            ? details.map((d) => `
+                                <tr class="border-t border-surface-low/70">
+                                    <td class="py-1.5 px-2">${d.chi_tiet}</td>
+                                    <td class="py-1.5 px-2 text-right font-semibold tabular-nums">${fmtNum(d.count)}</td>
+                                </tr>
+                            `).join('')
+                            : '<tr><td colspan="2" class="py-2 px-2 text-on-surface-variant">Không có chi tiết</td></tr>';
+
+                        return `
+                            <tr class="border-b border-surface-low">
+                                <td class="py-2 px-3">
+                                    <button type="button" class="w-full inline-flex items-center gap-2 text-left" data-pos-toggle="${idx}">
+                                        <span class="material-symbols-outlined text-on-surface-variant text-[18px]" data-pos-arrow="${idx}" style="transition: transform .15s ease;">expand_more</span>
+                                        <span class="truncate font-medium">${x.bo_phan}</span>
+                                    </button>
+                                </td>
+                                <td class="py-2 px-3 text-right font-bold tabular-nums">${fmtNum(x.count)}</td>
+                            </tr>
+                            <tr id="posDetailsRow-${idx}" class="hidden">
+                                <td colspan="2" class="px-3 pb-3">
+                                    <div class="bg-surface-low/70 rounded-xl p-3">
+                                        <table class="w-full text-xs">
+                                            <thead class="text-left text-on-surface-variant">
+                                                <tr>
+                                                    <th class="py-1 px-2">Chi tiết</th>
+                                                    <th class="py-1 px-2 text-right">Số lần</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                ${detailsRows}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </td>
+                            </tr>
+                        `;
+                    }).join('');
+
+                    posStatsBody.querySelectorAll('button[data-pos-toggle]').forEach((btn) => {
+                        btn.addEventListener('click', () => {
+                            const idx = btn.getAttribute('data-pos-toggle');
+                            const row = document.getElementById(`posDetailsRow-${idx}`);
+                            const arrow = posStatsBody.querySelector(`[data-pos-arrow="${idx}"]`);
+                            if (!row) return;
+                            const isOpen = !row.classList.contains('hidden');
+                            if (isOpen) {
+                                row.classList.add('hidden');
+                                if (arrow) arrow.style.transform = 'rotate(0deg)';
+                            } else {
+                                row.classList.remove('hidden');
+                                if (arrow) arrow.style.transform = 'rotate(180deg)';
+                            }
+                        });
+                    });
+                }
+            }
+
+            // C/D shared aggregates
+            const bpItems = data.top_bo_phan?.items || [];
+            const bpTotal = Number(data.top_bo_phan?.total || 0);
+            const bpSeries = donutSeriesWithOther(bpItems, bpTotal);
+
+            const ctItems = data.top_chi_tiet?.items || [];
+            const ctTotal = Number(data.top_chi_tiet?.total || 0);
+            const ctSeries = donutSeriesWithOther(ctItems, ctTotal);
+
+            // C filters (shared with D)
+            const cBoPhan = document.getElementById('cBoPhan');
+            const cChiTiet = document.getElementById('cChiTiet');
+            const currentCBoPhan = cBoPhan?.value || '';
+            buildSelect(cBoPhan, data.defect_filters?.bo_phan || [], 'Tất cả bộ phận', currentCBoPhan);
+
+            const keepChiTiet = cChiTiet?.value || '';
+            const chiTietOptions = currentCBoPhan ? (data.defect_filters?.chi_tiet || []) : [];
+            buildSelect(cChiTiet, chiTietOptions, currentCBoPhan ? 'Tất cả chi tiết' : 'Chọn bộ phận trước', keepChiTiet);
+            if (cChiTiet) cChiTiet.disabled = !currentCBoPhan;
+
+            const series = currentCBoPhan ? ctSeries : bpSeries;
+            const totalCount = currentCBoPhan ? ctTotal : bpTotal;
+            document.getElementById('posCenterValue').textContent = fmtNum(totalCount);
+            document.getElementById('posCenterLabel').textContent = 'Tổng lỗi';
+            posChart = upsertChart(
+                posChart,
+                document.getElementById('posChart').getContext('2d'),
+                donutConfig(series.labels, series.values, { cutout: '68%', pct_min: 6 })
+            );
+
+            const legendItems = (currentCBoPhan ? ctItems : bpItems) || [];
+            const posLegend = document.getElementById('posLegend');
+            if (!legendItems.length) {
+                posLegend.innerHTML = '<div class="text-on-surface-variant text-sm">Không có dữ liệu</div>';
+            } else {
+                posLegend.innerHTML = legendItems.slice(0, 5).map((x, idx) => `
+                    <div class="flex justify-between items-center text-xs">
+                        <span class="flex items-center gap-2 min-w-0">
+                            <span class="w-2 h-2 rounded-full" style="background:${CHART_COLORS[idx]};"></span>
+                            <span class="truncate font-medium">${x.name}</span>
+                        </span>
+                        <span class="font-bold text-on-surface">${fmtPct1(x.percent_total)}</span>
+                    </div>
+                `).join('');
+            }
+
+            // D list: color blocks + sparkline bars
+            const mlItems = data.top_ma_loi?.items || [];
+            const maLoiWrap = document.getElementById('maLoiList');
+            if (!mlItems.length) {
+                maLoiWrap.innerHTML = '<div class="text-on-surface-variant text-sm">Không có dữ liệu</div>';
+            } else {
+                const top = mlItems.slice(0, 12);
+                const maxPct = top.reduce((m, x) => Math.max(m, Number(x.percent_total || 0)), 0) || 1;
+                maLoiWrap.innerHTML = top.map((x, idx) => {
+                    const pct = Number(x.percent_total || 0);
+                    const rel = Math.max(0, Math.min(100, (pct / maxPct) * 100));
+                    const color = CHART_COLORS[idx % CHART_COLORS.length];
+                    return `
+                        <div class="flex items-center justify-between gap-3">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <span class="w-2 h-2 rounded-full shrink-0" style="background:${color};"></span>
+                                <span class="truncate text-sm font-medium">${x.name}</span>
+                            </div>
+                            <div class="flex items-center gap-2 shrink-0">
+                                <div class="w-[90px] h-2 bg-surface-low rounded-full overflow-hidden">
+                                    <div class="h-full" style="width:${rel}%; background:${color};"></div>
+                                </div>
+                                <span class="text-xs font-bold text-on-surface-variant tabular-nums">${fmtPct1(pct)}</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+
+        function initDates() {
+            const today = new Date();
+            const dateTo = new Date(today);
+            const dateFrom = new Date(today);
+            dateFrom.setDate(dateFrom.getDate() - 7);
+
+            const focusDate = new Date(today);
+
+            document.getElementById('fDateFrom').value = toYmd(dateFrom);
+            document.getElementById('fDateTo').value = toYmd(dateTo);
+            document.getElementById('fFocusDate').value = toYmd(focusDate);
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            initDates();
+            applySidebarState();
+            document.getElementById('sidebarToggle')?.addEventListener('click', toggleSidebar);
+
+            await loadFilters();
+            await loadDashboard();
+
+            document.getElementById('fDonVi')?.addEventListener('change', async () => {
+                await loadFilters();
+                scheduleLoad(0);
+            });
+
+            // Auto-load when any filter changes (no need for an Apply button).
+            document.getElementById('fDateFrom')?.addEventListener('change', () => scheduleLoad());
+            document.getElementById('fDateTo')?.addEventListener('change', () => scheduleLoad());
+            document.getElementById('fBoPhan')?.addEventListener('change', () => scheduleLoad());
+            document.getElementById('fStation')?.addEventListener('change', () => scheduleLoad());
+            document.getElementById('fMaHang')?.addEventListener('change', () => scheduleLoad());
+            document.getElementById('fType')?.addEventListener('change', () => scheduleLoad());
+            document.getElementById('fFocusDate')?.addEventListener('change', () => scheduleLoad(0));
+            document.getElementById('cBoPhan')?.addEventListener('change', () => scheduleLoad(0));
+            document.getElementById('cChiTiet')?.addEventListener('change', () => scheduleLoad(0));
+
+            document.getElementById('btnToday')?.addEventListener('click', applyToday);
+            document.getElementById('btnPrevDay')?.addEventListener('click', applyPrevDay);
+        });
+    </script>
+</body>
+
+</html>

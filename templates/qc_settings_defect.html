@@ -1,0 +1,384 @@
+﻿﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Phân loại lỗi - QC Settings</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@500;700;800&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Manrope', 'sans-serif'],
+                    },
+                    colors: {
+                        surface: '#f8f9fa',
+                        'surface-lowest': '#ffffff',
+                        'surface-low': '#f3f4f6', 
+                        'surface-high': '#e7e8e9',
+                        'on-surface': '#191c1d',
+                        'on-surface-variant': '#424654',
+                        primary: '#0040a1',
+                        'primary-container': '#0056d2',
+                        'secondary-container': '#9cb4fe',
+                        'error-container': '#ffdad6',
+                    },
+                    boxShadow: {
+                        'cloud': '0px 20px 40px rgba(25, 28, 29, 0.05)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #f8f9fa; color: #191c1d; }
+        .glass-header { background: rgba(248, 249, 250, 0.8); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); }
+        .btn-primary { background: linear-gradient(135deg, #0040a1 0%, #0056d2 100%); color: #ffffff; border-radius: 0.75rem; transition: all 0.3s ease; }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0px 8px 16px rgba(0, 64, 161, 0.2); }
+        .btn-tertiary { background: transparent; color: #0040a1; border-radius: 0.75rem; transition: all 0.3s ease; }
+        .btn-tertiary:hover { background-color: #f3f4f6; }
+        .input-field { background-color: #f3f4f6; border: none; border-radius: 0.75rem; padding: 12px 16px; font-size: 14px; color: #191c1d; transition: all 0.2s; width: 100%; }
+        .input-field:focus { outline: none; background-color: #ffffff; box-shadow: 0 0 0 1px rgba(0, 64, 161, 0.3); }
+        select.input-field { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23424654' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 16px center; padding-right: 40px; }
+        .toast { position: fixed; bottom: 32px; right: 32px; z-index: 200; padding: 16px 24px; border-radius: 0.75rem; font-size: 14px; font-weight: 500; color: #191c1d; transform: translateY(80px); opacity: 0; transition: all .3s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 0px 20px 40px rgba(25, 28, 29, 0.1); }
+        .toast.show { transform: translateY(0); opacity: 1; }
+        .toast-success { background: #9cb4fe; }
+        .toast-error { background: #ffdad6; }
+        
+        .list-container {
+            max-height: 500px; overflow-y: auto; 
+            padding-right: 8px;
+        }
+        .list-container::-webkit-scrollbar { width: 6px; }
+        .list-container::-webkit-scrollbar-thumb { background: #e7e8e9; border-radius: 4px; }
+        @media (min-width: 768px) {
+            body.sidebar-collapsed aside {
+                width: 72px;
+            }
+            body.sidebar-collapsed aside a,
+            body.sidebar-collapsed aside button {
+                justify-content: center;
+                padding-left: 0.75rem;
+                padding-right: 0.75rem;
+                font-size: 0;
+            }
+            body.sidebar-collapsed aside span:not(.material-symbols-outlined) {
+                display: none;
+            }
+            body.sidebar-collapsed aside .material-symbols-outlined {
+                margin-right: 0;
+                font-size: 20px;
+            }
+            body.sidebar-collapsed aside #submenu-settings {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body class="font-sans antialiased min-h-screen pb-16">
+    <header class="glass-header sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 py-6 flex items-center justify-between">
+            <div class="flex items-center gap-6">
+                <button id="sidebarToggle" class="flex items-center justify-center w-10 h-10 rounded-full bg-surface-lowest shadow-sm hover:shadow-cloud transition text-on-surface-variant" title="Thu gọn / Mở rộng menu">
+                    <span class="material-symbols-outlined">menu</span>
+                </button>
+                <a href="/" class="flex items-center justify-center w-10 h-10 rounded-full bg-surface-lowest shadow-sm hover:shadow-cloud transition text-on-surface-variant">
+                    <span class="material-symbols-outlined">arrow_back</span>
+                </a>
+                <div>
+                    <h1 class="text-2xl font-display font-bold tracking-tight text-on-surface">QC Inline/Endline</h1>
+                    <p class="text-sm font-medium text-on-surface-variant mt-1">Cài đặt danh mục</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <button onclick="logout()" class="btn-tertiary px-4 py-2 font-semibold text-sm flex items-center gap-2" title="Đăng xuất">
+                    <span class="material-symbols-outlined text-sm">logout</span> Đăng xuất
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div class="max-w-7xl mx-auto px-6 mt-12 flex flex-col md:flex-row gap-12">
+        <aside class="w-full md:w-64 shrink-0">
+            <div class="bg-surface-lowest rounded-2xl p-4 sticky top-32 shadow-cloud">
+                <a href="/qc" class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-low font-semibold transition mb-2">
+                    <span class="material-symbols-outlined">inventory_2</span>
+                    Kế hoạch sản xuất
+                </a>
+                <a href="/qc/dashboard" class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-low font-semibold transition mb-2">
+                    <span class="material-symbols-outlined">dashboard</span>
+                    Dashboard
+                </a>
+<a href="/qc/cap" class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-low font-semibold transition mb-2">
+    <span class="material-symbols-outlined">task_alt</span>
+    Hành động khắc phục
+</a>
+                <div>
+                    <button class="w-full flex items-center justify-between px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-low font-semibold transition">
+                        <div class="flex items-center gap-3">
+                            <span class="material-symbols-outlined text-primary">settings</span>
+                            <span class="text-primary">Cài đặt danh mục</span>
+                        </div>
+                        <span class="material-symbols-outlined text-sm text-primary">expand_more</span>
+                    </button>
+                    <div id="submenu-settings" class="flex flex-col pl-11 pr-4 py-2 space-y-2 mt-1">
+                        <a href="/qc/settings/customer" class="block py-1.5 text-sm font-medium text-on-surface-variant hover:text-primary transition">Khách hàng - Mã hàng</a>
+                        <a href="/qc/settings/details" class="block py-1.5 text-sm font-medium text-on-surface-variant hover:text-primary transition">Bộ phận - Chi tiết</a>
+                        <a href="/qc/settings/qc-list" class="block py-1.5 text-sm font-medium text-on-surface-variant hover:text-primary transition">Danh sách QC</a>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <main class="flex-1 min-w-0">
+            <div class="flex flex-col items-start gap-6 mb-12">
+                <div>
+                    <h2 class="text-3xl font-display font-bold text-on-surface tracking-tight mb-2">Phân loại lỗi</h2>
+                    <p class="text-base text-on-surface-variant line-height-[1.6]">Thiết lập hệ thống nhóm lỗi, mã lỗi và mô tả chi tiết.</p>
+                </div>
+            </div>
+
+            <div class="bg-surface-lowest rounded-2xl p-8 shadow-cloud">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div class="bg-surface rounded-2xl p-6 space-y-6">
+                        <h4 class="text-xs font-bold text-on-surface-variant tracking-wide">1. NHÓM LỖI</h4>
+                        <div class="space-y-4">
+                            <div class="flex gap-2">
+                                <input type="text" id="newNL" class="input-field" placeholder="Thêm nhóm lỗi...">
+                                <button onclick="addMasterItem('nhom-loi', 'newNL')" class="btn-primary w-12 flex-shrink-0 flex items-center justify-center rounded-xl"><span class="material-symbols-outlined">add</span></button>
+                            </div>
+                        </div>
+                        <div id="listNL" class="list-container space-y-2 mt-4"></div>
+                    </div>
+                    
+                    <div class="bg-surface rounded-2xl p-6 space-y-6">
+                        <h4 class="text-xs font-bold text-on-surface-variant tracking-wide">2. MÃ LỖI THEO NHÓM</h4>
+                        <div class="space-y-4">
+                            <select id="selNL" class="input-field" onchange="loadMasterSubItems('ma-loi', this.value, 'listML')">
+                                <option value="">-- Chọn nhóm lỗi --</option>
+                            </select>
+                            <div class="flex gap-2">
+                                <input type="text" id="newML" class="input-field" placeholder="Thêm mã lỗi...">
+                                <button onclick="addMasterSubItem('ma-loi', 'selNL', 'newML')" class="btn-primary w-12 flex-shrink-0 flex items-center justify-center rounded-xl"><span class="material-symbols-outlined">add</span></button>
+                            </div>
+                        </div>
+                        <div id="listML" class="list-container space-y-2 mt-4"></div>
+                    </div>
+                    
+                    <div class="bg-surface rounded-2xl p-6 space-y-6">
+                        <h4 class="text-xs font-bold text-on-surface-variant tracking-wide">3. MÔ TẢ ĐI KÈM MÃ</h4>
+                        <div class="space-y-4">
+                            <select id="selML" class="input-field" onchange="loadMasterSubItems('mo-ta-loi', this.value, 'listMTL')">
+                                <option value="">-- Chọn mã lỗi --</option>
+                            </select>
+                            <div class="flex gap-2">
+                                <input type="text" id="newMTL" class="input-field" placeholder="Thêm mô tả...">
+                                <button onclick="addMasterSubItem('mo-ta-loi', 'selML', 'newMTL')" class="btn-primary w-12 flex-shrink-0 flex items-center justify-center rounded-xl"><span class="material-symbols-outlined">add</span></button>
+                            </div>
+                        </div>
+                        <div id="listMTL" class="list-container space-y-2 mt-4"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="toast flex items-center gap-3">
+        <span class="material-symbols-outlined" id="toastIcon">info</span>
+        <span id="toastMessage"></span>
+    </div>
+
+    <script>
+        const sidebarKey = 'qlcl_sidebar_collapsed';
+        function applySidebarState() {
+            const collapsed = localStorage.getItem(sidebarKey) === '1';
+            document.body.classList.toggle('sidebar-collapsed', collapsed);
+            const icon = document.querySelector('#sidebarToggle .material-symbols-outlined');
+            if (icon) icon.textContent = collapsed ? 'menu_open' : 'menu';
+        }
+        function toggleSidebar() {
+            const collapsed = localStorage.getItem(sidebarKey) === '1';
+            localStorage.setItem(sidebarKey, collapsed ? '0' : '1');
+            applySidebarState();
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const sidebarToggle = document.getElementById('sidebarToggle');
+            if (sidebarToggle) sidebarToggle.addEventListener('click', toggleSidebar);
+            applySidebarState();
+            loadMasterNL();
+        });
+
+        async function logout() {
+            try {
+                const res = await fetch('/logout', { method: 'POST' });
+                if (res.redirected) window.location.href = res.url;
+                else window.location.href = '/login';
+            } catch (e) {
+                window.location.href = '/login';
+            }
+        }
+
+        function showToast(msg, type = 'success') {
+            const t = document.getElementById('toast');
+            const msgEl = document.getElementById('toastMessage');
+            const iconEl = document.getElementById('toastIcon');
+            
+            msgEl.textContent = msg;
+            
+            if(type === 'success') {
+                t.className = 'toast toast-success show flex items-center gap-3';
+                iconEl.textContent = 'check_circle';
+            } else {
+                t.className = 'toast toast-error show flex items-center gap-3';
+                iconEl.textContent = 'error';
+            }
+            
+            setTimeout(() => { t.classList.remove('show'); }, 3000);
+        }
+
+        async function loadMasterNL() {
+            try {
+                const res = await fetch('/api/dm/nhom-loi');
+                const data = await res.json();
+                renderMasterList('listNL', data.rows, 'nhom-loi', () => loadMasterNL());
+                
+                const sel = document.getElementById('selNL');
+                const prevVal = sel.value;
+                sel.innerHTML = '<option value="">-- Chọn nhóm --</option>';
+                data.rows.forEach(r => {
+                    const opt = document.createElement('option');
+                    opt.value = r.id; opt.textContent = r.ten_nhom;
+                    sel.appendChild(opt);
+                });
+                sel.value = prevVal;
+
+                // Clear next levels
+                document.getElementById('listML').innerHTML = '';
+                document.getElementById('listMTL').innerHTML = '';
+                document.getElementById('selML').innerHTML = '<option value="">-- Chọn mã --</option>';
+            } catch (e) { console.error(e); }
+        }
+
+        async function loadMasterSubItems(apiType, parentId, listElementId) {
+            const list = document.getElementById(listElementId);
+            if (!parentId) {
+                list.innerHTML = `<p class="p-4 text-center text-sm font-medium text-on-surface-variant">Vui lòng chọn mục cha</p>`;
+                return;
+            }
+            
+            let url = `/api/dm/${apiType}?`;
+            if (apiType === 'ma-loi') url += `nhom_loi_id=${parentId}`;
+            if (apiType === 'mo-ta-loi') url += `ma_loi_id=${parentId}`;
+
+            try {
+                const res = await fetch(url);
+                const data = await res.json();
+                renderMasterList(listElementId, data.rows, apiType, () => loadMasterSubItems(apiType, parentId, listElementId));
+                
+                if (apiType === 'ma-loi') {
+                    const sel = document.getElementById('selML');
+                    sel.innerHTML = '<option value="">-- Chọn mã --</option>';
+                    data.rows.forEach(r => {
+                        const opt = document.createElement('option');
+                        opt.value = r.id; opt.textContent = r.ten_ma;
+                        sel.appendChild(opt);
+                    });
+                    document.getElementById('listMTL').innerHTML = '';
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        function renderMasterList(elemId, rows, type, onUpdatedSource) {
+            const container = document.getElementById(elemId);
+            if (!rows || rows.length === 0) {
+                container.innerHTML = '<p class="p-4 text-center text-sm font-medium text-on-surface-variant">Chưa có dữ liệu</p>';
+                return;
+            }
+
+            const nameKey = type === 'nhom-loi' ? 'ten_nhom' :
+                          type === 'ma-loi' ? 'ten_ma' : 'ten_mo_ta';
+
+            container.innerHTML = rows.map(r => `
+                <div class="flex items-center justify-between px-4 py-3 bg-surface-lowest rounded-xl group transition-all hover:shadow-[0_2px_8px_rgba(25,28,29,0.04)]">
+                    <span class="font-semibold text-on-surface text-sm break-words trumcate max-w-[80%]">${r[nameKey]}</span>
+                    <button onclick="deleteMasterItem('${type}', ${r.id}, '${elemId}')" class="h-8 w-8 text-on-surface-variant hover:text-[crimson] hover:bg-error-container rounded-full opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                        <span class="material-symbols-outlined text-[18px]">delete</span>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        async function addMasterItem(type, inputId) {
+            const input = document.getElementById(inputId);
+            const val = input.value.trim();
+            if (!val) return;
+
+            const nameKey = 'ten_nhom';
+            try {
+                const res = await fetch(`/api/dm/${type}`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ [nameKey]: val })
+                });
+                if (res.ok) {
+                    input.value = '';
+                    loadMasterNL();
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        async function addMasterSubItem(type, selParentId, inputId) {
+            const parentId = document.getElementById(selParentId).value;
+            const input = document.getElementById(inputId);
+            const val = input.value.trim();
+            if (!parentId || !val) {
+                showToast('Vui lòng chọn mục cha và nhập tên', 'error');
+                return;
+            }
+
+            const payload = {};
+            if (type === 'ma-loi') { payload.nhom_loi_id = parentId; payload.ten_ma = val; }
+            if (type === 'mo-ta-loi') { payload.ma_loi_id = parentId; payload.ten_mo_ta = val; }
+
+            try {
+                const res = await fetch(`/api/dm/${type}`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(payload)
+                });
+                if (res.ok) {
+                    input.value = '';
+                    const listId = type === 'ma-loi' ? 'listML' : 'listMTL';
+                    loadMasterSubItems(type, parentId, listId);
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        async function deleteMasterItem(type, id, listElementId) {
+            if (!confirm('Bạn có chắc chắn muốn xoá mục này không? Các dữ liệu liên quan có thể bị ảnh hưởng.')) return;
+            try {
+                const res = await fetch(`/api/dm/${type}/${id}`, { method: 'DELETE' });
+                if (res.ok) {
+                    showToast('Đã xoá thành công!');
+                    if (type === 'nhom-loi') loadMasterNL();
+                    else if (type === 'ma-loi') loadMasterSubItems(type, document.getElementById('selNL').value, 'listML');
+                    else loadMasterSubItems(type, document.getElementById('selML').value, 'listMTL');
+                } else {
+                    const err = await res.json();
+                    showToast(err.detail || 'Lỗi khi xoá', 'error');
+                }
+            } catch (e) { 
+                showToast('Lỗi kết nối', 'error');
+            }
+        }
+    </script>
+</body>
+</html>
+
+

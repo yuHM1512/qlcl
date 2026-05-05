@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tổng hợp Dashboard - QLCL KPI</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f5f6fa; }
+        .navbar-brand img { height: 32px; }
+        .page-header {
+            background: linear-gradient(135deg, #2c3e50 0%, #3498db 50%, #9b59b6 100%);
+            color: #fff;
+            padding: 32px 0;
+            margin-bottom: 24px;
+        }
+        .page-header h1 {
+            font-size: 1.7rem;
+            font-weight: 700;
+            margin-bottom: 0.4rem;
+        }
+        .page-header p {
+            margin-bottom: 0;
+            opacity: 0.9;
+        }
+        .dashboard-card {
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+            background: #ffffff;
+        }
+        .dashboard-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 32px rgba(0,0,0,0.12);
+        }
+        .dashboard-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+        .badge-tag {
+            font-size: 0.7rem;
+            letter-spacing: .03em;
+        }
+        .dashboard-text {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .dashboard-text-main {
+            flex: 1;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="/">
+                <img src="/templates/Logo.png" alt="Logo" class="me-2"/>
+                KPI QLCL
+            </a>
+            <div class="d-flex gap-2">
+                <a class="btn btn-outline-light btn-sm" href="/kpi-input">
+                    <i class="fa fa-edit me-1"></i>Nhập dữ liệu KPI
+                </a>
+                <a class="btn btn-outline-light btn-sm" href="/view-kpi">
+                    <i class="fa fa-chart-line me-1"></i>Dashboard KPI
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <section class="page-header">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1><i class="fas fa-layer-group me-2"></i>Tổng hợp Dashboard Phòng QLCL</h1>
+                    <p>Danh sách tổng hợp các Dashboard liên quan đến Phòng QLCL.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="container mb-4">
+        <!-- Gợi ý: Bạn chỉnh lại href của từng nút "Mở Dashboard" tới link Power BI / Excel Online thực tế -->
+
+        <h5 class="text-muted mb-3">Danh sách Dashboard</h5>
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="card dashboard-card h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-start">
+                            <div class="dashboard-icon bg-primary-subtle text-primary me-3">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                            <div class="dashboard-text">
+                                <div class="dashboard-text-main">
+                                    <span class="badge bg-primary-subtle text-primary badge-tag mb-1">DAILY</span>
+                                    <h5 class="card-title mb-1">Dashboard chỉ số chất lượng</h5>
+                                    <p class="card-text small text-muted mb-0">
+                                        Theo dõi các chỉ số: Endline/ Final cùng các chỉ số chất lượng của khách hàng Decathlon.
+                                    </p>
+                                </div>
+                                <div class="mt-2">
+                                    <a href="https://app.powerbi.com/view?r=eyJrIjoiNmJjYWNjNjYtMzlmYS00YTdjLTg5OTQtY2IxNTgzNzE4OWQxIiwidCI6IjIwOGMwNDNiLWJiMjMtNDc2NS04YWI3LTJmMmY1NWI2ZmY0OSIsImMiOjEwfQ%3D%3D" class="btn btn-sm btn-primary" target="_blank" rel="noopener noreferrer">
+                                        <i class="fa fa-arrow-up-right-from-square me-1"></i>Mở Dashboard
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card dashboard-card h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-start">
+                            <div class="dashboard-icon bg-primary-subtle text-primary me-3">
+                                <i class="fas fa-bullseye"></i>
+                            </div>
+                            <div class="dashboard-text">
+                                <div class="dashboard-text-main">
+                                    <span class="badge bg-primary-subtle text-primary badge-tag mb-1">DAILY</span>
+                                    <h5 class="card-title mb-1">Dashboard thực hiện KPI phòng</h5>
+                                    <p class="card-text small text-muted mb-0">
+                                        Tỷ lệ hoàn thành các KPI của phòng theo nhóm công việc.
+                                    </p>
+                                </div>
+                                <div class="mt-2">
+                                    <a href="https://qlcl.hachibavn.com/view-kpi" class="btn btn-sm btn-primary" target="_blank" rel="noopener noreferrer">
+                                        <i class="fa fa-arrow-up-right-from-square me-1"></i>Mở Dashboard
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card dashboard-card h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-start">
+                            <div class="dashboard-icon bg-primary-subtle text-primary me-3">
+                                <i class="fas fa-triangle-exclamation"></i>
+                            </div>
+                            <div class="dashboard-text">
+                                <div class="dashboard-text-main">
+                                    <span class="badge bg-primary-subtle text-primary badge-tag mb-1">WEEKLY</span>
+                                    <h5 class="card-title mb-1">Dashboard KPI Gemba Control Plan</h5>
+                                    <p class="card-text small text-muted mb-0">
+                                        Theo dõi & đánh giá hiệu quả của việc thực hiện Control Plan.
+                                    </p>
+                                </div>
+                                <div class="mt-2">
+                                    <a href="/gemba-control-plan" class="btn btn-sm btn-primary">
+                                        <i class="fa fa-arrow-up-right-from-square me-1"></i>Mở Dashboard
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="card dashboard-card h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-start">
+                            <div class="dashboard-icon bg-primary-subtle text-primary me-3">
+                                <i class="fas fa-calendar-alt"></i>
+                            </div>
+                            <div class="dashboard-text">
+                                <div class="dashboard-text-main">
+                                    <span class="badge bg-primary-subtle text-primary badge-tag mb-1">DAILY</span>
+                                    <h5 class="card-title mb-1">Dashboard Giải quyết vấn đề</h5>
+                                    <p class="card-text small text-muted mb-0">
+                                        Tổng hợp các vấn đề ghi nhận tại công ty; các khiếu nại và các hành động giải quyết.
+                                    </p>
+                                </div>
+                                <div class="mt-2">
+                                    <a href="https://app.powerbi.com/view?r=eyJrIjoiYmM4M2UwNDEtZDg3NC00ZmI2LWIzNDAtZDY1OWQwMjZjNWE5IiwidCI6IjIwOGMwNDNiLWJiMjMtNDc2NS04YWI3LTJmMmY1NWI2ZmY0OSIsImMiOjEwfQ%3D%3D" class="btn btn-sm btn-primary" target="_blank" rel="noopener noreferrer">
+                                        <i class="fa fa-arrow-up-right-from-square me-1"></i>Mở Dashboard
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card dashboard-card h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-start">
+                            <div class="dashboard-icon bg-primary-subtle text-primary me-3">
+                                <i class="fas fa-file-signature"></i>
+                            </div>
+                            <div class="dashboard-text">
+                                <div class="dashboard-text-main">
+                                    <span class="badge bg-primary-subtle text-primary badge-tag mb-1">2 LẦN/NĂM</span>
+                                    <h5 class="card-title mb-1">Dashboard Khảo sát nội bộ/ bên ngoài</h5>
+                                    <p class="card-text small text-muted mb-0">
+                                        Ghi nhận kết quả của các lần khảo sát nội bộ và khảo sát khách hàng tại công ty.
+                                    </p>
+                                </div>
+                                <div class="mt-2">
+                                    <a href="https://app.powerbi.com/view?r=eyJrIjoiODUxMWIyNDctYWE5Ny00Njc1LWFkM2UtY2QwZGFlNDU0ZThhIiwidCI6IjIwOGMwNDNiLWJiMjMtNDc2NS04YWI3LTJmMmY1NWI2ZmY0OSIsImMiOjEwfQ%3D%3D&pageName=94f4b6f04da0e0075e40" class="btn btn-sm btn-primary" target="_blank" rel="noopener noreferrer">
+                                        <i class="fa fa-arrow-up-right-from-square me-1"></i>Mở Dashboard
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card dashboard-card h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-start">
+                            <div class="dashboard-icon bg-primary-subtle text-primary me-3">
+                                <i class="fas fa-clipboard-check"></i>
+                            </div>
+                            <div class="dashboard-text">
+                                <div class="dashboard-text-main">
+                                    <span class="badge bg-primary-subtle text-primary badge-tag mb-1">DAILY</span>
+                                    <h5 class="card-title mb-1">Dashboard sản xuất toàn Công ty</h5>
+                                    <p class="card-text small text-muted mb-0">
+                                        Tổng quan theo dõi tình hình sản xuất và tiến độ thực hiện mục doanh thu toàn công ty.
+                                    </p>
+                                </div>
+                                <div class="mt-2">
+                                    <a href="https://app.powerbi.com/view?r=eyJrIjoiOTBiZGQ4ZWUtYmM2Zi00MTI0LTk5NDktYWNlNDIyN2I2ZTQ4IiwidCI6IjIwOGMwNDNiLWJiMjMtNDc2NS04YWI3LTJmMmY1NWI2ZmY0OSIsImMiOjEwfQ%3D%3D" class="btn btn-sm btn-primary" target="_blank" rel="noopener noreferrer">
+                                        <i class="fa fa-arrow-up-right-from-square me-1"></i>Mở Dashboard
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+
+
