@@ -5,7 +5,20 @@
 BEGIN;
 
 -- 1. Rename table
-ALTER TABLE public.ds_qa RENAME TO quality_employees;
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM information_schema.tables
+        WHERE table_schema = 'public' AND table_name = 'ds_qa'
+    ) AND NOT EXISTS (
+        SELECT 1
+        FROM information_schema.tables
+        WHERE table_schema = 'public' AND table_name = 'quality_employees'
+    ) THEN
+        EXECUTE 'ALTER TABLE public.ds_qa RENAME TO quality_employees';
+    END IF;
+END $$;
 
 -- 2. Drop old CHECK constraint on chuc_vu (to allow QC roles in the future)
 ALTER TABLE public.quality_employees DROP CONSTRAINT IF EXISTS ds_qa_chuc_vu_check;

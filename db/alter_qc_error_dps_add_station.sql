@@ -8,7 +8,22 @@ ALTER TABLE public.qc_error_dps
 
 DROP INDEX IF EXISTS uq_qc_error_dps_key;
 
-CREATE UNIQUE INDEX IF NOT EXISTS uq_qc_error_dps_key
-ON public.qc_error_dps(plan_id, date, time_bucket, station, loai_loi, COALESCE(ma_loi, ''), COALESCE(vi_tri, ''));
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM (
+            SELECT plan_id, date, time_bucket, station, loai_loi, COALESCE(ma_loi, ''), COALESCE(vi_tri, '')
+            FROM public.qc_error_dps
+            GROUP BY 1, 2, 3, 4, 5, 6, 7
+            HAVING COUNT(*) > 1
+        ) dup
+    ) THEN
+        CREATE UNIQUE INDEX IF NOT EXISTS uq_qc_error_dps_key
+        ON public.qc_error_dps(plan_id, date, time_bucket, station, loai_loi, COALESCE(ma_loi, ''), COALESCE(vi_tri, ''));
+    ELSE
+        RAISE NOTICE 'Skipping uq_qc_error_dps_key with station because duplicate qc_error_dps keys already exist.';
+    END IF;
+END $$;
 
 COMMIT;

@@ -29,12 +29,22 @@ ALTER TABLE public.qc_defect
 ALTER TABLE public.qc_defect
     ALTER COLUMN error_log_id DROP NOT NULL;
 
-ALTER TABLE public.qc_defect
-    ADD CONSTRAINT IF NOT EXISTS chk_qc_defect_log_ref
-    CHECK (
-        (error_log_id IS NOT NULL AND error_log_sp_id IS NULL)
-        OR (error_log_id IS NULL AND error_log_sp_id IS NOT NULL)
-    );
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_constraint
+        WHERE conname = 'chk_qc_defect_log_ref'
+          AND conrelid = 'public.qc_defect'::regclass
+    ) THEN
+        ALTER TABLE public.qc_defect
+            ADD CONSTRAINT chk_qc_defect_log_ref
+            CHECK (
+                (error_log_id IS NOT NULL AND error_log_sp_id IS NULL)
+                OR (error_log_id IS NULL AND error_log_sp_id IS NOT NULL)
+            );
+    END IF;
+END $$;
 
 CREATE INDEX IF NOT EXISTS idx_qc_defect_sp_log_id ON public.qc_defect(error_log_sp_id);
 CREATE INDEX IF NOT EXISTS idx_qc_defect_sp_index ON public.qc_defect(error_log_sp_id, sp_index);

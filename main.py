@@ -59,6 +59,7 @@ IMAGES_STORAGE_DIR = os.getenv("IMAGES_STORAGE_DIR")
 if not IMAGES_STORAGE_DIR:
     raise ValueError("IMAGES_STORAGE_DIR environment variable is required. Please set it in .env file or environment variables.")
 
+DB_SCRIPTS_DIR = PathLib(__file__).resolve().parent / "db"
 GEMBA_CP_BASE_DIR = PathLib(__file__).resolve().parent / "gemba_cp"
 GEMBA_CP_STATIC_DIR = GEMBA_CP_BASE_DIR / "static"
 GEMBA_CP_TEMPLATES_DIR = GEMBA_CP_BASE_DIR / "templates"
@@ -69,6 +70,32 @@ from gemba_cp.routers import admin as gemba_admin_router, dashboard as gemba_das
 
 gemba_cp_settings = get_gemba_settings()
 
+SCHEMA_BOOTSTRAP_FILES = [
+    "initialize_qlcl.sql",
+    "migrate_ds_qa_to_quality_employees.sql",
+    "alter_quality_employees_add_station.sql",
+    "create_customer_hierarchy.sql",
+    "create_error_classification.sql",
+    "create_hdkp_tables.sql",
+    "create_prod_plan.sql",
+    "migrate_prod_plan_bo_phan_json.sql",
+    "create_qc_output_sp_log.sql",
+    "migrate_qc_output_sp_log_status.sql",
+    "create_qc_error_hierarchy.sql",
+    "migrate_dm_loai_hang_type.sql",
+    "create_qc_error_log_sp.sql",
+    "alter_qc_output_sp_log_add_station.sql",
+    "alter_qc_sp_add_ma_nv.sql",
+    "create_qc_defect_multi.sql",
+    "alter_qc_defect_multi_add_station.sql",
+    "alter_qc_defect_add_image_path.sql",
+    "create_qc_error_dps.sql",
+    "alter_qc_error_dps_add_keys.sql",
+    "alter_qc_error_dps_add_station.sql",
+    "alter_qc_error_dps_add_bo_phan.sql",
+    "create_qc_hdkp_endline.sql",
+]
+
 # Tạo thư mục lưu PDF và images nếu chưa có
 os.makedirs(PDF_STORAGE_DIR, exist_ok=True)
 os.makedirs(IMAGES_STORAGE_DIR, exist_ok=True)
@@ -77,6 +104,42 @@ os.makedirs(os.path.join(IMAGES_STORAGE_DIR, "qc_sp"), exist_ok=True)
 
 def get_db_connection():
     return psycopg2.connect(DATABASE_URL)
+
+
+def bootstrap_qlcl_schema():
+    """Run bundled idempotent SQL scripts so a fresh environment can self-bootstrap."""
+    with get_db_connection() as conn:
+        conn.autocommit = True
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS public.app_schema_bootstrap (
+                    script_name TEXT PRIMARY KEY,
+                    executed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                )
+                """
+            )
+            for script_name in SCHEMA_BOOTSTRAP_FILES:
+                script_path = DB_SCRIPTS_DIR / script_name
+                if not script_path.exists():
+                    raise FileNotFoundError(f"Missing schema bootstrap script: {script_path}")
+                cur.execute(
+                    "SELECT 1 FROM public.app_schema_bootstrap WHERE script_name = %s",
+                    (script_name,),
+                )
+                if cur.fetchone():
+                    continue
+                logger.info("Bootstrapping schema with %s", script_name)
+                sql_text = script_path.read_text(encoding="utf-8-sig")
+                cur.execute(sql_text)
+                cur.execute(
+                    """
+                    INSERT INTO public.app_schema_bootstrap (script_name)
+                    VALUES (%s)
+                    ON CONFLICT (script_name) DO NOTHING
+                    """,
+                    (script_name,),
+                )
 
 
 def generate_ma_nv_variants(ma_nv: str) -> List[str]:
@@ -932,6 +995,7 @@ app.mount("/api/pdf", StaticFiles(directory=PDF_STORAGE_DIR), name="pdf")
 app.mount("/api/images", StaticFiles(directory=IMAGES_STORAGE_DIR), name="images")
 app.mount("/static", StaticFiles(directory=str(GEMBA_CP_STATIC_DIR)), name="gemba-static")
 
+bootstrap_qlcl_schema()
 GembaCPBase.metadata.create_all(bind=gemba_cp_engine)
 app.include_router(gemba_dashboard_router.router, dependencies=[Depends(require_authenticated_api_user)])
 app.include_router(gemba_admin_router.router, dependencies=[Depends(require_authenticated_api_user)])

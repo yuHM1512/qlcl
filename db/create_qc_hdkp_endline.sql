@@ -60,13 +60,34 @@ CREATE TABLE IF NOT EXISTS public.qc_hdkp_chitiet (
 CREATE INDEX IF NOT EXISTS idx_qc_hdkp_chitiet_dps_id ON public.qc_hdkp_chitiet (qc_error_dps_id);
 
 -- Triggers cập nhật updated_at (reuse function update_updated_at_column)
-CREATE TRIGGER update_qc_hdkp_mota_updated_at BEFORE UPDATE ON public.qc_hdkp_mota
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_trigger WHERE tgname = 'update_qc_hdkp_mota_updated_at'
+    ) THEN
+        CREATE TRIGGER update_qc_hdkp_mota_updated_at BEFORE UPDATE ON public.qc_hdkp_mota
+            FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+    END IF;
+END $$;
 
-CREATE TRIGGER update_qc_hdkp_kehoach_updated_at BEFORE UPDATE ON public.qc_hdkp_kehoach
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_trigger WHERE tgname = 'update_qc_hdkp_kehoach_updated_at'
+    ) THEN
+        CREATE TRIGGER update_qc_hdkp_kehoach_updated_at BEFORE UPDATE ON public.qc_hdkp_kehoach
+            FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+    END IF;
+END $$;
 
-CREATE TRIGGER update_qc_hdkp_chitiet_updated_at BEFORE UPDATE ON public.qc_hdkp_chitiet
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_trigger WHERE tgname = 'update_qc_hdkp_chitiet_updated_at'
+    ) THEN
+        CREATE TRIGGER update_qc_hdkp_chitiet_updated_at BEFORE UPDATE ON public.qc_hdkp_chitiet
+            FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+    END IF;
+END $$;
 
 COMMIT;

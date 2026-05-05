@@ -69,14 +69,35 @@ END;
 $$ language 'plpgsql';
 
 -- Triggers để tự động cập nhật updated_at
-CREATE TRIGGER update_cap_mota_updated_at BEFORE UPDATE ON public.cap_mota
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_trigger WHERE tgname = 'update_cap_mota_updated_at'
+    ) THEN
+        CREATE TRIGGER update_cap_mota_updated_at BEFORE UPDATE ON public.cap_mota
+            FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+    END IF;
+END $$;
 
-CREATE TRIGGER update_cap_kehoach_updated_at BEFORE UPDATE ON public.cap_kehoach
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_trigger WHERE tgname = 'update_cap_kehoach_updated_at'
+    ) THEN
+        CREATE TRIGGER update_cap_kehoach_updated_at BEFORE UPDATE ON public.cap_kehoach
+            FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+    END IF;
+END $$;
 
-CREATE TRIGGER update_cap_chitiet_updated_at BEFORE UPDATE ON public.cap_chitiet
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_trigger WHERE tgname = 'update_cap_chitiet_updated_at'
+    ) THEN
+        CREATE TRIGGER update_cap_chitiet_updated_at BEFORE UPDATE ON public.cap_chitiet
+            FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+    END IF;
+END $$;
 
 COMMIT;
 

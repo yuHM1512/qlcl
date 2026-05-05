@@ -3,32 +3,43 @@
 
 BEGIN;
 
--- 1) Add temp jsonb column
-ALTER TABLE public.prod_plan
-    ADD COLUMN IF NOT EXISTS bo_phan_json JSONB;
+DO $$
+DECLARE
+    bo_phan_data_type TEXT;
+BEGIN
+    SELECT data_type
+    INTO bo_phan_data_type
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'prod_plan'
+      AND column_name = 'bo_phan';
 
--- 2) Backfill from existing text values
-UPDATE public.prod_plan
-SET bo_phan_json = CASE
-    WHEN bo_phan IS NULL OR btrim(bo_phan) = '' THEN '[]'::jsonb
-    ELSE (
-        SELECT to_jsonb(
-            array_remove(
-                array_agg(trim(x)),
-                ''
+    IF bo_phan_data_type IS NOT NULL AND bo_phan_data_type <> 'jsonb' THEN
+        ALTER TABLE public.prod_plan
+            ADD COLUMN IF NOT EXISTS bo_phan_json JSONB;
+
+        UPDATE public.prod_plan
+        SET bo_phan_json = CASE
+            WHEN bo_phan IS NULL OR btrim(bo_phan) = '' THEN '[]'::jsonb
+            ELSE (
+                SELECT to_jsonb(
+                    array_remove(
+                        array_agg(trim(x)),
+                        ''
+                    )
+                )
+                FROM regexp_split_to_table(
+                    replace(bo_phan, ';', ','),
+                    ','
+                ) AS x
             )
-        )
-        FROM regexp_split_to_table(
-            replace(bo_phan, ';', ','),
-            ','
-        ) AS x
-    )
-END
-WHERE bo_phan_json IS NULL;
+        END
+        WHERE bo_phan_json IS NULL;
 
--- 3) Replace old column
-ALTER TABLE public.prod_plan DROP COLUMN IF EXISTS bo_phan;
-ALTER TABLE public.prod_plan RENAME COLUMN bo_phan_json TO bo_phan;
+        ALTER TABLE public.prod_plan DROP COLUMN IF EXISTS bo_phan;
+        ALTER TABLE public.prod_plan RENAME COLUMN bo_phan_json TO bo_phan;
+    END IF;
+END $$;
 
 -- 4) Indexes
 CREATE INDEX IF NOT EXISTS idx_prod_plan_don_vi ON public.prod_plan (don_vi);
