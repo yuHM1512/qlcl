@@ -5,6 +5,36 @@ const state = {
   unit: "",
 };
 
+const LOWER_BETTER_KEYS = new Set(["ncr", "ncr_ratio", "ncr_rate", "defect_ratio", "defect_rate", "ncr_ratio_4w"]);
+
+const KPI_CARD_ICONS = {
+  ncr_ratio_4w: `
+    <svg viewBox="0 0 24 24" fill="none" class="h-5 w-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 12h4l2-5 4 10 2-5h4" />
+      <path d="M7 4v2" />
+      <path d="M17 18v2" />
+    </svg>
+  `,
+  ncr_ratio: `
+    <svg viewBox="0 0 24 24" fill="none" class="h-5 w-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 19h16" />
+      <path d="M7 15l4-4 3 3 4-6" />
+      <path d="M18 8h-3V5" />
+    </svg>
+  `,
+  on_time_ratio: `
+    <svg viewBox="0 0 24 24" fill="none" class="h-5 w-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="8" />
+      <path d="M12 8v5l3 2" />
+    </svg>
+  `,
+  cap_completion_ratio: `
+    <svg viewBox="0 0 24 24" fill="none" class="h-5 w-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M20 7L9 18l-5-5" />
+    </svg>
+  `,
+};
+
 function safeText(value) {
   return String(value ?? "")
     .replaceAll("&", "&amp;")
@@ -40,15 +70,13 @@ function buildChart(containerId, title, subtitle, legendLabel, legendTarget, ite
     return;
   }
 
-  // Dùng cùng 1 maxScale cho cả bar lẫn target line: khi actual = target thì bar đụng đúng đỉnh đường line
   const targetVal = Number(items[0]?.target || 0);
-  const maxActual = Math.max(...items.map((i) => Number(i.actual || 0)), 0);
+  const maxActual = Math.max(...items.map((item) => Number(item.actual || 0)), 0);
   const maxScale = Math.max(maxActual, targetVal, 0.01);
   const linePercent = Math.min(99, (targetVal / maxScale) * 100);
 
   const chart = document.createElement("section");
   chart.className = "rounded-2xl bg-white p-6 shadow-[0px_20px_40px_rgba(25,28,29,0.05)] overflow-hidden";
-
   chart.innerHTML = `
     <div class="flex flex-wrap items-start justify-between gap-3">
       <div>
@@ -87,26 +115,23 @@ function buildChart(containerId, title, subtitle, legendLabel, legendTarget, ite
   const labelsEl = chart.querySelector(`#${containerId}-labels`);
 
   items.forEach((item) => {
-    // Cùng công thức (actual / maxScale * 100) như đường line → khi actual = target thì đỉnh bar chạm đúng đường
     const pct = Number(item.actual) > 0 ? Math.max(2, (Number(item.actual) / maxScale) * 100) : 0;
     const tone = chartTone(item.actual, item.target, mode);
 
     const bar = document.createElement("div");
-    bar.className = "relative flex-1 h-full mx-1" + (items.length <= 6 ? " max-w-[3.5rem]" : " max-w-[2.5rem]");
+    bar.className = `relative mx-1 h-full flex-1 ${items.length <= 6 ? "max-w-[3.5rem]" : "max-w-[2.5rem]"}`;
     const tooltip = `${item.unit}: ${item.actual_label}`;
     bar.innerHTML = `
       <div
-        class="absolute bottom-0 inset-x-0 h-full rounded-lg bg-surface-container-low cursor-help"
+        class="absolute inset-x-0 bottom-0 h-full cursor-help rounded-lg bg-surface-container-low"
         title="${safeAttr(tooltip)}"
       ></div>
       <div
-        class="absolute bottom-0 inset-x-0 ${tone} rounded-lg transition-all duration-500 cursor-help"
+        class="absolute inset-x-0 bottom-0 cursor-help rounded-lg ${tone} transition-all duration-500"
         style="height:${pct}%"
         title="${safeAttr(tooltip)}"
       ></div>
-      <div
-        class="pointer-events-none absolute inset-x-1 bottom-1 rounded-md bg-white/90 px-1 py-0.5 text-center text-[10px] font-semibold text-on-surface shadow-sm"
-      >
+      <div class="pointer-events-none absolute inset-x-1 bottom-1 rounded-md bg-white/90 px-1 py-0.5 text-center text-[10px] font-semibold text-on-surface shadow-sm">
         ${safeText(item.actual_label)}
       </div>
     `;
@@ -119,14 +144,14 @@ function buildChart(containerId, title, subtitle, legendLabel, legendTarget, ite
   });
 }
 
-const LOWER_BETTER_KEYS = new Set(["ncr", "ncr_ratio", "ncr_rate", "defect_ratio", "defect_rate"]);
-
 function kpiTone(card) {
-  if (!card.value && card.value !== 0) return { text: "text-on-surface", dot: "bg-slate-300" };
-  const v = Number(card.value);
-  const t = Number(card.target);
+  if (!card.value && card.value !== 0) {
+    return { text: "text-on-surface", dot: "bg-slate-300" };
+  }
+  const value = Number(card.value);
+  const target = Number(card.target);
   const isLowerBetter = card.mode === "lower-better" || LOWER_BETTER_KEYS.has(card.key);
-  const good = isLowerBetter ? v <= t : v >= t;
+  const good = isLowerBetter ? value <= target : value >= target;
   return good
     ? { text: "text-emerald-600", dot: "bg-emerald-400" }
     : { text: "text-rose-600", dot: "bg-rose-400" };
@@ -138,17 +163,23 @@ function renderCards(cards) {
 
   cards.forEach((card) => {
     const tone = kpiTone(card);
+    const iconMarkup = KPI_CARD_ICONS[card.key] || KPI_CARD_ICONS.ncr_ratio;
     const node = document.createElement("article");
-    node.className = "rounded-2xl bg-white p-6 shadow-[0px_20px_40px_rgba(25,28,29,0.05)] flex flex-col justify-between h-44";
+    node.className = "flex min-h-[14rem] flex-col justify-between rounded-[1.75rem] border border-white/70 bg-white p-6 shadow-[0px_20px_40px_rgba(25,28,29,0.05)]";
     node.innerHTML = `
-      <div class="flex items-start justify-between gap-2">
-        <span class="text-[10px] font-black tracking-widest uppercase text-on-surface-variant leading-snug">${safeText(card.label)}</span>
-        <span class="mt-0.5 flex h-2 w-2 flex-none rounded-full ${tone.dot}"></span>
+      <div class="flex items-start justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <span class="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#eef4ff] text-primary shadow-[0px_10px_24px_rgba(0,86,210,0.12)]">
+            ${iconMarkup}
+          </span>
+          <span class="text-[10px] font-black uppercase leading-snug tracking-widest text-on-surface-variant">${safeText(card.label)}</span>
+        </div>
+        <span class="mt-1 flex h-2.5 w-2.5 flex-none rounded-full ${tone.dot}"></span>
       </div>
-      <div class="font-manrope text-4xl font-bold ${tone.text}">${safeText(card.formatted_value)}</div>
-      <div class="flex items-center justify-between border-t border-slate-100 pt-3">
+      <div class="mt-5 font-manrope text-4xl font-bold ${tone.text}">${safeText(card.formatted_value)}</div>
+      <div class="mt-5 flex items-center justify-between border-t border-slate-100 pt-3">
         <span class="text-xs text-on-surface-variant">Mục tiêu</span>
-        <span class="text-sm font-bold text-on-surface">${safeText(card.target_label)}</span>
+        <span class="rounded-full bg-amber-500 px-3 py-1 text-sm font-bold text-white shadow-[0px_10px_24px_rgba(245,158,11,0.25)]">${safeText(card.target_label)}</span>
       </div>
     `;
     wrap.appendChild(node);
@@ -202,19 +233,18 @@ async function loadMeta() {
     option.textContent = item.label;
     unitSelect.appendChild(option);
   });
-
-  // (lastSync display removed — no UI element)
 }
 
 async function loadDashboard() {
   const query = buildQuery();
   const overview = await fetchJson(`/api/dashboard/overview${query ? `?${query}` : ""}`);
+  const subtitle = state.dimension === "month" ? "Theo tháng" : "Theo đơn vị";
 
   renderCards(overview.cards);
   buildChart(
     "ncrChart",
     "1. Tỷ lệ Gemba Plan không đạt (NCR)",
-    state.dimension === "month" ? "Theo tháng" : "Theo đơn vị",
+    subtitle,
     "Tỷ lệ GB không đạt (NCR)",
     "Mục tiêu: 5%",
     overview.ncr_by_unit,
@@ -223,7 +253,7 @@ async function loadDashboard() {
   buildChart(
     "onTimeChart",
     "2. Tỷ lệ thực hiện Gemba đúng kế hoạch",
-    state.dimension === "month" ? "Theo tháng" : "Theo đơn vị",
+    subtitle,
     "%Thực hiện GB đúng kế hoạch",
     "Mục tiêu: 100%",
     overview.on_time_by_unit,
@@ -232,8 +262,8 @@ async function loadDashboard() {
   buildChart(
     "capChart",
     "3. Tỷ lệ hoàn thành HĐKP",
-    state.dimension === "month" ? "Theo tháng" : "Theo đơn vị",
-    "Tỉ lệ đóng CAP",
+    subtitle,
+    "Tỷ lệ đóng CAP",
     "Mục tiêu: 100%",
     overview.cap_completion_by_unit,
     "higher-better",
@@ -251,7 +281,6 @@ function setDimension(dimension) {
   state.dimension = dimension;
   const monthButton = document.getElementById("dimensionMonth");
   const unitButton = document.getElementById("dimensionUnit");
-  const unitFilterWrap = document.getElementById("unitFilterWrap");
 
   const activeClasses = ["bg-white", "text-primary", "shadow-[0px_8px_20px_rgba(25,28,29,0.1)]"];
   const inactiveClasses = ["bg-white/10", "text-white"];
@@ -265,14 +294,6 @@ function setDimension(dimension) {
   activeButton.classList.remove(...inactiveClasses);
   activeButton.classList.add(...activeClasses);
 
-  if (dimension === "unit") {
-    unitFilterWrap.classList.remove("hidden");
-  } else {
-    unitFilterWrap.classList.add("hidden");
-    document.getElementById("unitFilter").value = "";
-    state.unit = "";
-  }
-
   loadDashboard().catch(console.error);
 }
 
@@ -281,7 +302,10 @@ async function syncSheet() {
   const icon = document.getElementById("syncIcon");
   button.disabled = true;
   button.classList.add("opacity-70");
-  if (icon) icon.style.animation = "spin 0.8s linear infinite";
+  if (icon) {
+    icon.style.animation = "spin 0.8s linear infinite";
+  }
+
   try {
     await fetchJson("/api/admin/sync-sheet", { method: "POST" });
     await loadMeta();
@@ -289,13 +313,14 @@ async function syncSheet() {
   } finally {
     button.disabled = false;
     button.classList.remove("opacity-70");
-    if (icon) icon.style.animation = "";
+    if (icon) {
+      icon.style.animation = "";
+    }
   }
 }
 
 window.addEventListener("DOMContentLoaded", async () => {
   await loadMeta();
-  await loadDashboard();
   document.getElementById("yearFilter").addEventListener("change", applyFilters);
   document.getElementById("monthFilter").addEventListener("change", applyFilters);
   document.getElementById("unitFilter").addEventListener("change", applyFilters);
