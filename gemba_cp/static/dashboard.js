@@ -277,6 +277,15 @@ async function applyFilters() {
   await loadDashboard();
 }
 
+function ensureUnitFilterVisible() {
+  const unitFilterWrap = document.getElementById("unitFilterWrap");
+  if (!unitFilterWrap) {
+    return;
+  }
+  unitFilterWrap.classList.remove("hidden");
+  unitFilterWrap.style.display = "block";
+}
+
 function setDimension(dimension) {
   state.dimension = dimension;
   const monthButton = document.getElementById("dimensionMonth");
@@ -294,6 +303,7 @@ function setDimension(dimension) {
   activeButton.classList.remove(...inactiveClasses);
   activeButton.classList.add(...activeClasses);
 
+  ensureUnitFilterVisible();
   loadDashboard().catch(console.error);
 }
 
@@ -320,6 +330,7 @@ async function syncSheet() {
 }
 
 window.addEventListener("DOMContentLoaded", async () => {
+  ensureUnitFilterVisible();
   await loadMeta();
   document.getElementById("yearFilter").addEventListener("change", applyFilters);
   document.getElementById("monthFilter").addEventListener("change", applyFilters);
