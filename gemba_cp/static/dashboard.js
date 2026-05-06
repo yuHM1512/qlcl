@@ -57,6 +57,10 @@ function chartTone(value, target, mode = "higher-better") {
   return value >= target ? "bg-emerald-400" : "bg-rose-600";
 }
 
+function formatPercentValue(value, decimals = 1) {
+  return `${(Number(value || 0) * 100).toFixed(decimals)}%`;
+}
+
 function buildChart(containerId, title, subtitle, legendLabel, legendTarget, items, mode = "higher-better") {
   const wrap = document.getElementById(containerId);
   wrap.innerHTML = "";
@@ -247,7 +251,11 @@ async function loadDashboard() {
     subtitle,
     "Tỷ lệ GB không đạt (NCR)",
     "Mục tiêu: 5%",
-    overview.ncr_by_unit,
+    overview.ncr_by_unit.map((item) => ({
+      ...item,
+      actual_label: formatPercentValue(item.actual, 2),
+      target_label: formatPercentValue(item.target, 2),
+    })),
     "lower-better",
   );
   buildChart(

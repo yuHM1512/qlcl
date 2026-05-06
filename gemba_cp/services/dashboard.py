@@ -20,8 +20,8 @@ from gemba_cp.schemas.dashboard import (
 GEMBA_CONTROL_PLAN_AUDIT_TYPE = "GEMBA CONTROL PLAN"
 
 
-def format_percent(value: float) -> str:
-    return f"{value * 100:.1f}%"
+def format_percent(value: float, decimals: int = 1) -> str:
+    return f"{value * 100:.{decimals}f}%"
 
 
 def build_base_query(
@@ -176,7 +176,7 @@ def get_overview(
             key="ncr_ratio_4w",
             label="Tỉ lệ NCR - YTD (4 tuần gần nhất)",
             value=recent_ncr_ratio,
-            formatted_value=format_percent(recent_ncr_ratio),
+            formatted_value=format_percent(recent_ncr_ratio, 2),
             target=0.05,
             target_label="5%",
             tone="green",
@@ -185,7 +185,7 @@ def get_overview(
             key="ncr_ratio",
             label="Tỉ lệ Gemba Plan không đạt (NCR)",
             value=ncr_ratio,
-            formatted_value=format_percent(ncr_ratio),
+            formatted_value=format_percent(ncr_ratio, 2),
             target=0.05,
             target_label="5%",
             tone="green",
