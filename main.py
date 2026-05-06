@@ -221,6 +221,14 @@ def require_authenticated_api_user(request: Request) -> Dict:
     return user
 
 
+def build_static_asset_version(asset_path: PathLib) -> str:
+    """Use file mtime as a simple cache-busting version for static assets."""
+    try:
+        return str(int(asset_path.stat().st_mtime))
+    except FileNotFoundError:
+        return "0"
+
+
 def _is_merged_cell(ws, cell):
     """
     Kiểm tra xem cell có phải là merged cell không.
@@ -1035,12 +1043,14 @@ def dashboard_summary(request: Request):
 
 @app.get("/gemba-control-plan")
 def gemba_control_plan_dashboard(request: Request):
+    dashboard_js_version = build_static_asset_version(GEMBA_CP_STATIC_DIR / "dashboard.js")
     return gemba_cp_templates.TemplateResponse(
         "index.html",
         {
             "request": request,
             "app_name": gemba_cp_settings.app_name,
             "sheet_name": gemba_cp_settings.google_sheets_worksheet,
+            "dashboard_js_version": dashboard_js_version,
         },
     )
 
