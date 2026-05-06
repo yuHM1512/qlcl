@@ -997,7 +997,7 @@ app.mount("/static", StaticFiles(directory=str(GEMBA_CP_STATIC_DIR)), name="gemb
 
 bootstrap_qlcl_schema()
 GembaCPBase.metadata.create_all(bind=gemba_cp_engine)
-app.include_router(gemba_dashboard_router.router, dependencies=[Depends(require_authenticated_api_user)])
+app.include_router(gemba_dashboard_router.router)
 app.include_router(gemba_admin_router.router, dependencies=[Depends(require_authenticated_api_user)])
 
 
@@ -1035,8 +1035,6 @@ def dashboard_summary(request: Request):
 
 @app.get("/gemba-control-plan")
 def gemba_control_plan_dashboard(request: Request):
-    if not get_authenticated_user(request):
-        return RedirectResponse(url="/login", status_code=303)
     return gemba_cp_templates.TemplateResponse(
         "index.html",
         {
