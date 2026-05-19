@@ -33,6 +33,7 @@
     <script>
         async function doLogin() {
             const code = document.getElementById('loginEmployeeCode').value.trim().toUpperCase();
+            const nextUrl = {{ (next_url or '')|tojson }};
             if (!code) {
                 alert('Vui lòng nhập mã nhân viên');
                 return;
@@ -40,6 +41,7 @@
             try {
                 const formData = new FormData();
                 formData.append('ma_nv', code);
+                formData.append('next_url', nextUrl);
                 const endpoint = '{{ "/qc-login" if qc_mode else "/login" }}';
                 const redirectUrl = '{{ "/qc-input" if qc_mode else "/kpi-input" }}';
                 const res = await fetch(endpoint, { method: 'POST', body: formData });

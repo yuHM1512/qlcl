@@ -1044,7 +1044,7 @@ def dashboard_summary(request: Request):
 @app.get("/gemba-control-plan")
 def gemba_control_plan_dashboard(request: Request):
     if not get_authenticated_user(request):
-        return RedirectResponse(url="/login", status_code=303)
+        return RedirectResponse(url=f"/login?next={quote(str(request.url.path), safe='/')}", status_code=303)
     dashboard_js_version = build_static_asset_version(GEMBA_CP_STATIC_DIR / "dashboard.js")
     return gemba_cp_templates.TemplateResponse(
         "index.html",
@@ -1059,9 +1059,11 @@ def gemba_control_plan_dashboard(request: Request):
 
 @app.get("/login")
 def login_page(request: Request):
+    next_url = (request.query_params.get("next") or "").strip()
     if get_authenticated_user(request):
-        return RedirectResponse(url="/", status_code=303)
-    return templates.TemplateResponse("login.html", {"request": request})
+        redirect_target = next_url if next_url.startswith("/") else "/"
+        return RedirectResponse(url=redirect_target, status_code=303)
+    return templates.TemplateResponse("login.html", {"request": request, "next_url": next_url})
 
 
 @app.get("/kpi-input")
@@ -1094,10 +1096,16 @@ def kpi_input(request: Request):
 
 
 @app.post("/login")
-def login(request: Request, ma_nv: str = Form(...)):
+def login(request: Request, ma_nv: str = Form(...), next_url: str = Form("")):
     ma_nv = (ma_nv or "").strip()
+    next_url = (next_url or "").strip()
+    redirect_target = next_url if next_url.startswith("/") else "/"
     if not ma_nv:
-        return templates.TemplateResponse("login.html", {"request": request, "error": "Vui lòng nhập mã nhân viên"}, status_code=400)
+        return templates.TemplateResponse(
+            "login.html",
+            {"request": request, "error": "Vui lòng nhập mã nhân viên", "next_url": next_url},
+            status_code=400,
+        )
     ma_nv_upper = ma_nv.upper()
     ma_nv_variants = generate_ma_nv_variants(ma_nv)
     with get_db_connection() as conn:
@@ -1114,9 +1122,13 @@ def login(request: Request, ma_nv: str = Form(...)):
             )
             user_row = cur.fetchone()
             if not user_row:
-                return templates.TemplateResponse("login.html", {"request": request, "error": "Mã nhân viên không tồn tại"}, status_code=401)
+                return templates.TemplateResponse(
+                    "login.html",
+                    {"request": request, "error": "Mã nhân viên không tồn tại", "next_url": next_url},
+                    status_code=401,
+                )
 
-    response = RedirectResponse(url="/", status_code=303)
+    response = RedirectResponse(url=redirect_target, status_code=303)
     response.set_cookie(
         key="ma_nv",
         value=encode_ma_nv_cookie(user_row["ma_nv"]),
