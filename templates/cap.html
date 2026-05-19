@@ -627,7 +627,7 @@
         function renderRow(r) {
             const rate = (r.rate_percent ?? 0).toFixed(1);
             const target = r.target_percent != null ? `${r.target_percent}%` : '--';
-            const overBody = `Mục tiêu: ${target}<br>Tỷ lệ thực tế: ${rate}%`;
+            const overBody = (r.over_target_list || []).map(x => `${x.ma_loi} - ${x.vi_tri} - ${x.rate_percent.toFixed(1)}%`).join('<br>') || `Mục tiêu: ${target}<br>Tỷ lệ thực tế: ${rate}%`;
             const massBody = (r.mass_list || []).map(x => `${x.ma_loi} - ${x.vi_tri} - ${x.qty}`).join('<br>') || 'Không có';
             const seriousBody = (r.serious_list || []).map(x => `${x.ma_loi} - ${x.vi_tri} - ${x.qty}`).join('<br>') || 'Không có';
             const multiBody = (r.multi_list || []).map(x => `${x.ma_loi} - ${x.vi_tri} - ${x.consecutive}`).join('<br>') || 'Không có';
@@ -652,8 +652,9 @@
             const hasMulti = r.multi_list && r.multi_list.length > 0;
             const hasOver = !!r.over_target;
             const hasMass = r.mass_list && r.mass_list.length > 0;
+            const hasComboRate = r.combo_rate_top3 && r.combo_rate_top3.length > 0;
             
-            if (!hasSerious && !hasMulti && !hasOver && !hasMass) return '';
+            if (!hasSerious && !hasMulti && !hasOver && !hasMass && !hasComboRate) return '';
 
             const unitHeader = `<div class="font-display text-base font-bold text-primary mb-2 flex items-center gap-2">
                 <span class="material-symbols-outlined text-sm">location_on</span>
@@ -664,7 +665,7 @@
                 <div class="grid grid-cols-4 gap-3 text-sm items-center py-3 px-4 bg-surface-lowest rounded-xl shadow-sm hover:shadow-cloud transition">
                     <div class="font-semibold text-on-surface">${x.ma_loi} - ${x.vi_tri}</div>
                     <div class="font-semibold text-on-surface">${x.qty}</div>
-                    <div class="space-y-2"><button class="btn-primary px-4 py-2 text-xs font-semibold open-action-form" data-title="${x.ma_loi} - ${x.vi_tri}" data-plan-id="${r.plan_id}" data-date="${r.date}" data-time-bucket="${r.time_bucket}" data-station="${r.station || ''}" data-bo-phan="${r.bo_phan || ''}" data-loai-loi="L&#x1ED7;i nguy c&#x1A1; h&#x00E0;ng lo&#x1EA1;t" data-ma-loi="${x.ma_loi}" data-vi-tri="${x.vi_tri}" data-images="${encodeURIComponent(JSON.stringify(x.images || []))}">${x.action_done ? 'Theo d&#x00F5;i nguy&#x00EA;n nh&#x00E2;n &amp; H&#x00E0;nh &#x0111;&#x1ED9;ng' : 'Nguy&#x00EA;n nh&#x00E2;n &amp; H&#x00E0;nh &#x0111;&#x1ED9;ng'}</button>
+                    <div class="space-y-2"><button class="btn-primary px-4 py-2 text-xs font-semibold open-action-form" data-title="${x.ma_loi} - ${x.vi_tri}" data-plan-id="${r.plan_id}" data-date="${r.date}" data-time-bucket="${r.time_bucket}" data-station="${r.station || ''}" data-bo-phan="${r.qc_bo_phan || r.bo_phan || ''}" data-loai-loi="L&#x1ED7;i nguy c&#x1A1; h&#x00E0;ng lo&#x1EA1;t" data-ma-loi="${x.ma_loi}" data-vi-tri="${x.vi_tri}" data-images="${encodeURIComponent(JSON.stringify(x.images || []))}">${x.action_done ? 'Theo d&#x00F5;i nguy&#x00EA;n nh&#x00E2;n &amp; H&#x00E0;nh &#x0111;&#x1ED9;ng' : 'Nguy&#x00EA;n nh&#x00E2;n &amp; H&#x00E0;nh &#x0111;&#x1ED9;ng'}</button>
                         ${renderThumbs(x.images || [])}
                     </div>
                     <div class="pl-4"><div class="hdkp-control flex items-center gap-2"><input type="checkbox" class="hdkp-toggle h-4 w-4 rounded text-primary focus:ring-primary cursor-pointer accent-primary" ${x.hdkp_pdf ? 'checked' : ''}><button class="hdkp-btn ${x.hdkp_pdf ? '' : 'hidden'} btn-tertiary px-2 py-1 text-xs" type="button" data-dps-id="${x.action_id || ""}">&#x0110;i&#x1EC1;n H&#x0110;KP</button><a class="hdkp-view ${x.hdkp_pdf ? '' : 'hidden'} btn btn-sm btn-success" href="${x.hdkp_pdf || "#"}" target="_blank"><i class="fas fa-file-pdf"></i> Xem</a></div></div>
@@ -674,7 +675,7 @@
                 <div class="grid grid-cols-4 gap-3 text-sm items-center py-3 px-4 bg-surface-lowest rounded-xl shadow-sm hover:shadow-cloud transition">
                     <div class="font-semibold text-on-surface">${x.ma_loi} - ${x.vi_tri}</div>
                     <div class="font-semibold text-on-surface">${x.consecutive}</div>
-                    <div class="space-y-2"><button class="btn-primary px-4 py-2 text-xs font-semibold open-action-form" data-title="${x.ma_loi} - ${x.vi_tri}" data-plan-id="${r.plan_id}" data-date="${r.date}" data-time-bucket="${r.time_bucket}" data-station="${r.station || ''}" data-bo-phan="${r.bo_phan || ''}" data-loai-loi="L&#x1ED7;i nguy c&#x1A1; h&#x00E0;ng lo&#x1EA1;t" data-ma-loi="${x.ma_loi}" data-vi-tri="${x.vi_tri}" data-images="${encodeURIComponent(JSON.stringify(x.images || []))}">${x.action_done ? 'Theo d&#x00F5;i nguy&#x00EA;n nh&#x00E2;n &amp; H&#x00E0;nh &#x0111;&#x1ED9;ng' : 'Nguy&#x00EA;n nh&#x00E2;n &amp; H&#x00E0;nh &#x0111;&#x1ED9;ng'}</button>
+                    <div class="space-y-2"><button class="btn-primary px-4 py-2 text-xs font-semibold open-action-form" data-title="${x.ma_loi} - ${x.vi_tri}" data-plan-id="${r.plan_id}" data-date="${r.date}" data-time-bucket="${r.time_bucket}" data-station="${r.station || ''}" data-bo-phan="${r.qc_bo_phan || r.bo_phan || ''}" data-loai-loi="L&#x1ED7;i nguy c&#x1A1; h&#x00E0;ng lo&#x1EA1;t" data-ma-loi="${x.ma_loi}" data-vi-tri="${x.vi_tri}" data-images="${encodeURIComponent(JSON.stringify(x.images || []))}">${x.action_done ? 'Theo d&#x00F5;i nguy&#x00EA;n nh&#x00E2;n &amp; H&#x00E0;nh &#x0111;&#x1ED9;ng' : 'Nguy&#x00EA;n nh&#x00E2;n &amp; H&#x00E0;nh &#x0111;&#x1ED9;ng'}</button>
                         ${renderThumbs(x.images || [])}
                     </div>
                     <div class="pl-4"><div class="hdkp-control flex items-center gap-2"><input type="checkbox" class="hdkp-toggle h-4 w-4 rounded text-primary focus:ring-primary cursor-pointer accent-primary" ${x.hdkp_pdf ? 'checked' : ''}><button class="hdkp-btn ${x.hdkp_pdf ? '' : 'hidden'} btn-tertiary px-2 py-1 text-xs" type="button" data-dps-id="${x.action_id || ""}">&#x0110;i&#x1EC1;n H&#x0110;KP</button><a class="hdkp-view ${x.hdkp_pdf ? '' : 'hidden'} btn btn-sm btn-success" href="${x.hdkp_pdf || "#"}" target="_blank"><i class="fas fa-file-pdf"></i> Xem</a></div></div>
@@ -682,11 +683,20 @@
 
             const rate = (r.rate_percent ?? 0).toFixed(1);
             const target = r.target_percent != null ? `${r.target_percent}%` : '--';
+            const overRows = (r.over_target_list || []).map(x => `
+                <div class="grid grid-cols-4 gap-3 text-sm items-center py-3 px-4 bg-surface-lowest rounded-xl shadow-sm hover:shadow-cloud transition">
+                    <div class="font-semibold text-on-surface">${x.ma_loi} - ${x.vi_tri}</div>
+                    <div class="font-semibold text-on-surface">${x.rate_percent.toFixed(1)}%</div>
+                    <div class="space-y-2"><button class="btn-primary px-4 py-2 text-xs font-semibold open-action-form" data-title="${x.ma_loi} - ${x.vi_tri}" data-plan-id="${r.plan_id}" data-date="${r.date}" data-time-bucket="${r.time_bucket}" data-station="${r.station || ''}" data-bo-phan="${r.qc_bo_phan || r.bo_phan || ''}" data-loai-loi="L&#x1ED7;i v&#x01B0;&#x1EE3;t m&#x1EE5;c ti&#x00EA;u" data-ma-loi="${x.ma_loi}" data-vi-tri="${x.vi_tri}" data-images="${encodeURIComponent(JSON.stringify(x.images || []))}">${x.action_done ? 'Theo d&#x00F5;i nguy&#x00EA;n nh&#x00E2;n &amp; H&#x00E0;nh &#x0111;&#x1ED9;ng' : 'Nguy&#x00EA;n nh&#x00E2;n &amp; H&#x00E0;nh &#x0111;&#x1ED9;ng'}</button>
+                        ${renderThumbs(x.images || [])}
+                    </div>
+                    <div class="pl-4"><div class="hdkp-control flex items-center gap-2"><input type="checkbox" class="hdkp-toggle h-4 w-4 rounded text-primary focus:ring-primary cursor-pointer accent-primary" ${x.hdkp_pdf ? 'checked' : ''}><button class="hdkp-btn ${x.hdkp_pdf ? '' : 'hidden'} btn-tertiary px-2 py-1 text-xs" type="button" data-dps-id="${x.action_id || ""}">&#x0110;i&#x1EC1;n H&#x0110;KP</button><a class="hdkp-view ${x.hdkp_pdf ? '' : 'hidden'} btn btn-sm btn-success" href="${x.hdkp_pdf || "#"}" target="_blank"><i class="fas fa-file-pdf"></i> Xem</a></div></div>
+                </div>`).join('');
             const massRows = (r.mass_list || []).map(x => `
                 <div class="grid grid-cols-4 gap-3 text-sm items-center py-3 px-4 bg-surface-lowest rounded-xl shadow-sm hover:shadow-cloud transition">
                     <div class="font-semibold text-on-surface">${x.ma_loi} - ${x.vi_tri}</div>
                     <div class="font-semibold text-on-surface">${x.qty}</div>
-                    <div class="space-y-2"><button class="btn-primary px-4 py-2 text-xs font-semibold open-action-form" data-title="${x.ma_loi} - ${x.vi_tri}" data-plan-id="${r.plan_id}" data-date="${r.date}" data-time-bucket="${r.time_bucket}" data-station="${r.station || ''}" data-bo-phan="${r.bo_phan || ''}" data-loai-loi="L&#x1ED7;i &#x0111;&#x1EA1;i tr&#x00E0;" data-ma-loi="${x.ma_loi}" data-vi-tri="${x.vi_tri}" data-images="${encodeURIComponent(JSON.stringify(x.images || []))}">${x.action_done ? 'Theo d&#x00F5;i nguy&#x00EA;n nh&#x00E2;n &amp; H&#x00E0;nh &#x0111;&#x1ED9;ng' : 'Nguy&#x00EA;n nh&#x00E2;n &amp; H&#x00E0;nh &#x0111;&#x1ED9;ng'}</button>
+                    <div class="space-y-2"><button class="btn-primary px-4 py-2 text-xs font-semibold open-action-form" data-title="${x.ma_loi} - ${x.vi_tri}" data-plan-id="${r.plan_id}" data-date="${r.date}" data-time-bucket="${r.time_bucket}" data-station="${r.station || ''}" data-bo-phan="${r.qc_bo_phan || r.bo_phan || ''}" data-loai-loi="L&#x1ED7;i &#x0111;&#x1EA1;i tr&#x00E0;" data-ma-loi="${x.ma_loi}" data-vi-tri="${x.vi_tri}" data-images="${encodeURIComponent(JSON.stringify(x.images || []))}">${x.action_done ? 'Theo d&#x00F5;i nguy&#x00EA;n nh&#x00E2;n &amp; H&#x00E0;nh &#x0111;&#x1ED9;ng' : 'Nguy&#x00EA;n nh&#x00E2;n &amp; H&#x00E0;nh &#x0111;&#x1ED9;ng'}</button>
                         ${renderThumbs(x.images || [])}
                     </div>
                     <div class="pl-4"><div class="hdkp-control flex items-center gap-2"><input type="checkbox" class="hdkp-toggle h-4 w-4 rounded text-primary focus:ring-primary cursor-pointer accent-primary" ${x.hdkp_pdf ? 'checked' : ''}><button class="hdkp-btn ${x.hdkp_pdf ? '' : 'hidden'} btn-tertiary px-2 py-1 text-xs" type="button" data-dps-id="${x.action_id || ""}">&#x0110;i&#x1EC1;n H&#x0110;KP</button><a class="hdkp-view ${x.hdkp_pdf ? '' : 'hidden'} btn btn-sm btn-success" href="${x.hdkp_pdf || "#"}" target="_blank"><i class="fas fa-file-pdf"></i> Xem</a></div></div>
@@ -711,13 +721,44 @@
                     <div class="alert-title alert-over font-bold text-[#900B09]">
                         <span class="material-symbols-outlined text-sm">trending_up</span> Lỗi vượt mục tiêu
                     </div>
-                    <div class="flex flex-wrap items-center gap-6 py-3 px-4 bg-surface-lowest rounded-xl shadow-sm shrink-0 hover:shadow-cloud transition">
-                        <p class="text-sm font-semibold text-on-surface shrink-0">Mục tiêu: ${target} <span class="text-surface-high mx-2">|</span> Tỷ lệ thực tế: <span class="text-[#900B09]">${rate}%</span></p>
-                        <button class="btn-primary px-4 py-2 text-xs font-semibold open-action-form shrink-0" data-title="Vượt mục tiêu (${r.don_vi} - ${r.bo_phan}${r.station ? ' - ' + r.station : ''})" data-plan-id="${r.plan_id}" data-date="${r.date}" data-time-bucket="${r.time_bucket}" data-station="${r.station || ''}" data-bo-phan="${r.bo_phan || ''}" data-loai-loi="L&#x1ED7;i v&#x01B0;&#x1EE3;t m&#x1EE5;c ti&#x00EA;u" data-images="${encodeURIComponent(JSON.stringify(r.over_images || []))}">${r.over_action_done ? 'Theo d&#x00F5;i nguy&#x00EA;n nh&#x00E2;n &amp; H&#x00E0;nh &#x0111;&#x1ED9;ng' : 'Nguy&#x00EA;n nh&#x00E2;n &amp; H&#x00E0;nh &#x0111;&#x1ED9;ng'}</button>
-                        ${renderThumbs(r.over_images || [])}
-                        <div class="hdkp-control flex items-center gap-2 ml-auto shrink-0"><label class="text-sm font-semibold text-on-surface flex items-center gap-2 cursor-pointer"><input type="checkbox" class="hdkp-toggle h-4 w-4 rounded text-primary focus:ring-primary cursor-pointer accent-primary" ${r.over_hdkp_pdf ? 'checked' : ''}> M&#x1EDF; h&#x00E0;nh &#x0111;&#x1ED9;ng ph&#x00F2;ng ng&#x1EEB;a</label><button class="hdkp-btn ${r.over_hdkp_pdf ? '' : 'hidden'} btn-tertiary px-2 py-1 text-xs" type="button" data-dps-id="${r.over_action_id || ""}">&#x0110;i&#x1EC1;n H&#x0110;KP</button><a class="hdkp-view ${r.over_hdkp_pdf ? '' : 'hidden'} btn btn-sm btn-success" href="${r.over_hdkp_pdf || "#"}" target="_blank"><i class="fas fa-file-pdf"></i> Xem</a></div>
+                    <div class="px-4 text-sm font-semibold text-on-surface">Mục tiêu loại hàng: <span class="text-[#900B09]">${target}</span> <span class="text-surface-high mx-2">|</span> Tỷ lệ lỗi chung bucket: ${rate}%</div>
+                    <div class="grid grid-cols-4 gap-3 text-xs uppercase tracking-widest text-on-surface-variant font-semibold px-4 py-2 bg-surface-high/60 rounded-xl mt-1">
+                        <div>Mã lỗi - Vị trí</div>
+                        <div>Tỷ lệ / tổng kiểm</div>
+                        <div>Nguyên nhân &amp; Hành động</div>
+                        <div>Mở hành động phòng ngừa</div>
+                    </div>
+                    <div class="space-y-2">
+                        ${overRows}
                     </div>
                </div>` : '';
+
+            const comboRateRows = (r.combo_rate_top3 || []).map(x => `
+                <tr class="border-t border-surface-high/40">
+                    <td class="px-4 py-3 font-semibold text-on-surface">${x.ma_loi} - ${x.vi_tri}</td>
+                    <td class="px-4 py-3 text-right font-semibold text-[#900B09]">${x.ratio_percent.toFixed(1)}%</td>
+                    <td class="px-4 py-3 text-right text-on-surface-variant">[${x.qty} / ${x.total_qty}]</td>
+                </tr>`).join('');
+
+            const comboRateBlock = hasComboRate ? `<div class="space-y-3 pt-2">
+                <div class="alert-title font-bold text-[#900B09]">
+                    <span class="material-symbols-outlined text-sm">analytics</span> Tỉ lệ theo dạng lỗi
+                </div>
+                <div class="overflow-hidden rounded-xl border border-surface-high/50 bg-surface-lowest shadow-sm">
+                    <table class="w-full text-sm">
+                        <thead class="bg-surface-high/40 text-xs uppercase tracking-widest text-on-surface-variant">
+                            <tr>
+                                <th class="px-4 py-3 text-left">Combo lỗi</th>
+                                <th class="px-4 py-3 text-right">Tỉ lệ %</th>
+                                <th class="px-4 py-3 text-right">Công thức</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${comboRateRows}
+                        </tbody>
+                    </table>
+                </div>
+            </div>` : '';
 
             return `
                 <div class="space-y-6 pt-4 pb-6 border-b border-surface-high/50 last:border-0 last:pb-0">
@@ -754,6 +795,7 @@
                     
                     ${massBlock}
                     ${overBlock}
+                    ${comboRateBlock}
                 </div>`;
         }
 

@@ -94,6 +94,11 @@ def get_recent_ncr_ratio(db: Session, unit: str | None = None) -> float:
     return compute_ncr_ratio(recent_records)
 
 
+def filter_recent_records(records: Iterable[GembaCPRecordORM]) -> list[GembaCPRecordORM]:
+    since_date = date.today() - timedelta(days=28)
+    return [row for row in records if row.evaluation_date is not None and row.evaluation_date >= since_date]
+
+
 def get_meta(db: Session) -> MetaResponse:
     month_expr = func.to_char(GembaCPRecordORM.kpi_month, "MM").label("month_key")
     year_expr = extract("year", GembaCPRecordORM.kpi_month).label("year_key")
@@ -159,31 +164,24 @@ def group_records(
 def get_overview(
     db: Session,
     dimension: str = "unit",
+    scope: str = "recent",
     year: int | None = None,
     month: int | None = None,
     unit: str | None = None,
 ) -> OverviewResponse:
-    records = db.execute(
+    all_records = db.execute(
         build_base_query(year=year, month=month, unit=unit).order_by(GembaCPRecordORM.evaluation_date.asc())
     ).scalars().all()
 
+    records = filter_recent_records(all_records) if scope == "recent" else all_records
     ncr_ratio = compute_ncr_ratio(records)
-    recent_ncr_ratio = get_recent_ncr_ratio(db, unit=unit)
     on_time_ratio = compute_on_time_ratio(records)
     cap_completion_ratio = compute_cap_completion_ratio(records)
+    label_suffix = "(4 tuần gần nhất)" if scope == "recent" else "(Tất cả)"
     cards = [
         KpiCard(
-            key="ncr_ratio_4w",
-            label="Tỉ lệ NCR - YTD (4 tuần gần nhất)",
-            value=recent_ncr_ratio,
-            formatted_value=format_percent(recent_ncr_ratio, 2),
-            target=0.05,
-            target_label="5%",
-            tone="green",
-        ),
-        KpiCard(
             key="ncr_ratio",
-            label="Tỉ lệ Gemba Plan không đạt (NCR)",
+            label=f"Tỷ lệ Gemba Plan không đạt (NCR) {label_suffix}",
             value=ncr_ratio,
             formatted_value=format_percent(ncr_ratio, 2),
             target=0.05,
@@ -192,7 +190,7 @@ def get_overview(
         ),
         KpiCard(
             key="on_time_ratio",
-            label="Tỉ lệ thực hiện Gemba đúng kế hoạch",
+            label=f"Tỷ lệ thực hiện Gemba đúng kế hoạch {label_suffix}",
             value=on_time_ratio,
             formatted_value=format_percent(on_time_ratio),
             target=1.0,
@@ -201,7 +199,7 @@ def get_overview(
         ),
         KpiCard(
             key="cap_completion_ratio",
-            label="Tỉ lệ hoàn thành HĐKP",
+            label=f"Tỷ lệ hoàn thành HĐKP {label_suffix}",
             value=cap_completion_ratio,
             formatted_value=format_percent(cap_completion_ratio),
             target=1.0,
@@ -210,7 +208,7 @@ def get_overview(
         ),
     ]
 
-    grouped = group_records(records, dimension=dimension)
+    grouped = group_records(all_records, dimension=dimension)
     ncr_by_unit = [build_unit_metric(group_name, compute_ncr_ratio(rows), 0.05, len(rows)) for group_name, rows in grouped]
     on_time_by_unit = [build_unit_metric(group_name, compute_on_time_ratio(rows), 1.0, len(rows)) for group_name, rows in grouped]
     cap_by_unit = [build_unit_metric(group_name, compute_cap_completion_ratio(rows), 1.0, len(rows)) for group_name, rows in grouped]

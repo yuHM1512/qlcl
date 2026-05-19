@@ -129,7 +129,32 @@
     </header>
 
     <main class="mx-auto w-full max-w-[1600px] px-4 py-8 md:px-10 xl:px-16">
-      <section id="kpiCards" class="grid gap-6 md:grid-cols-2 2xl:grid-cols-4"></section>
+      <section class="flex flex-col gap-4">
+        <div class="flex flex-wrap items-center justify-between gap-3 rounded-[1.75rem] bg-white px-5 py-4 shadow-[0px_20px_40px_rgba(25,28,29,0.05)]">
+          <div>
+            <div class="text-[10px] font-black uppercase tracking-[0.28em] text-on-surface-variant">KPI chính</div>
+            <h2 class="mt-1 font-manrope text-xl font-extrabold text-on-surface">Tổng quan Gemba Control Plan</h2>
+          </div>
+          <div class="inline-flex rounded-2xl bg-slate-100 p-1">
+            <button
+              id="kpiScopeRecent"
+              type="button"
+              class="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-primary shadow-[0px_8px_20px_rgba(25,28,29,0.08)] transition"
+            >
+              4 tuần gần nhất
+            </button>
+            <button
+              id="kpiScopeAll"
+              type="button"
+              class="rounded-xl px-4 py-2 text-sm font-semibold text-on-surface-variant transition"
+            >
+              Tất cả
+            </button>
+          </div>
+        </div>
+
+        <section id="kpiCards" class="grid gap-6 md:grid-cols-2 2xl:grid-cols-3"></section>
+      </section>
 
       <section class="mt-6 grid gap-6 xl:grid-cols-2">
         <div id="ncrChart"></div>

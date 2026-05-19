@@ -1,5 +1,6 @@
 const state = {
   dimension: "unit",
+  kpiScope: "recent",
   year: "",
   month: "",
   unit: "",
@@ -35,6 +36,14 @@ const KPI_CARD_ICONS = {
   `,
 };
 
+const KPI_CARD_NOTES = {
+  on_time_ratio: "Đúng kế hoạch = Không quá 7 ngày kể từ ngày lập KH",
+};
+
+const CHART_NOTES = {
+  onTimeChart: "Đúng kế hoạch = Không quá 7 ngày kể từ ngày lập KH",
+};
+
 function safeText(value) {
   return String(value ?? "")
     .replaceAll("&", "&amp;")
@@ -64,6 +73,7 @@ function formatPercentValue(value, decimals = 1) {
 function buildChart(containerId, title, subtitle, legendLabel, legendTarget, items, mode = "higher-better") {
   const wrap = document.getElementById(containerId);
   wrap.innerHTML = "";
+  const helperNote = CHART_NOTES[containerId];
 
   if (!items.length) {
     wrap.innerHTML = `
@@ -86,6 +96,7 @@ function buildChart(containerId, title, subtitle, legendLabel, legendTarget, ite
       <div>
         <div class="inline-flex items-center rounded-xl bg-[#0056d2] px-4 py-2 font-manrope text-sm font-extrabold tracking-tight text-white">${safeText(title)}</div>
         <div class="mt-1.5 text-[10px] uppercase tracking-widest text-on-surface-variant">${safeText(subtitle)}</div>
+        ${helperNote ? `<div class="mt-2 text-xs text-on-surface-variant">${safeText(helperNote)}</div>` : ""}
       </div>
       <div class="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">
         <div class="flex items-center gap-1.5">
@@ -168,6 +179,7 @@ function renderCards(cards) {
   cards.forEach((card) => {
     const tone = kpiTone(card);
     const iconMarkup = KPI_CARD_ICONS[card.key] || KPI_CARD_ICONS.ncr_ratio;
+    const helperNote = KPI_CARD_NOTES[card.key];
     const node = document.createElement("article");
     node.className = "flex min-h-[14rem] flex-col justify-between rounded-[1.75rem] border border-white/70 bg-white p-6 shadow-[0px_20px_40px_rgba(25,28,29,0.05)]";
     node.innerHTML = `
@@ -181,6 +193,7 @@ function renderCards(cards) {
         <span class="mt-1 flex h-2.5 w-2.5 flex-none rounded-full ${tone.dot}"></span>
       </div>
       <div class="mt-5 font-manrope text-4xl font-bold ${tone.text}">${safeText(card.formatted_value)}</div>
+      ${helperNote ? `<div class="mt-3 text-sm leading-6 text-on-surface-variant">${safeText(helperNote)}</div>` : ""}
       <div class="mt-5 flex items-center justify-between border-t border-slate-100 pt-3">
         <span class="text-xs text-on-surface-variant">Mục tiêu</span>
         <span class="rounded-full bg-amber-500 px-3 py-1 text-sm font-bold text-white shadow-[0px_10px_24px_rgba(245,158,11,0.25)]">${safeText(card.target_label)}</span>
@@ -192,6 +205,10 @@ function renderCards(cards) {
 
 async function fetchJson(url, options) {
   const response = await fetch(url, options);
+  if (response.status === 401) {
+    window.location.href = "/login";
+    throw new Error("Unauthorized");
+  }
   if (!response.ok) {
     throw new Error(`Request failed: ${response.status}`);
   }
@@ -201,6 +218,7 @@ async function fetchJson(url, options) {
 function buildQuery() {
   const params = new URLSearchParams();
   if (state.dimension) params.set("dimension", state.dimension);
+  if (state.kpiScope) params.set("scope", state.kpiScope);
   if (state.year) params.set("year", state.year);
   if (state.month) params.set("month", state.month);
   if (state.unit) params.set("unit", state.unit);
@@ -315,6 +333,25 @@ function setDimension(dimension) {
   loadDashboard().catch(console.error);
 }
 
+function setKpiScope(scope) {
+  state.kpiScope = scope;
+  const recentButton = document.getElementById("kpiScopeRecent");
+  const allButton = document.getElementById("kpiScopeAll");
+  const activeClasses = ["bg-white", "text-primary", "shadow-[0px_8px_20px_rgba(25,28,29,0.08)]"];
+  const inactiveClasses = ["text-on-surface-variant"];
+
+  [recentButton, allButton].forEach((button) => {
+    button.classList.remove(...activeClasses, ...inactiveClasses);
+    button.classList.add(...inactiveClasses);
+  });
+
+  const activeButton = scope === "recent" ? recentButton : allButton;
+  activeButton.classList.remove(...inactiveClasses);
+  activeButton.classList.add(...activeClasses);
+
+  loadDashboard().catch(console.error);
+}
+
 async function syncSheet() {
   const button = document.getElementById("syncButton");
   const icon = document.getElementById("syncIcon");
@@ -346,5 +383,8 @@ window.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("syncButton").addEventListener("click", syncSheet);
   document.getElementById("dimensionMonth").addEventListener("click", () => setDimension("month"));
   document.getElementById("dimensionUnit").addEventListener("click", () => setDimension("unit"));
+  document.getElementById("kpiScopeRecent").addEventListener("click", () => setKpiScope("recent"));
+  document.getElementById("kpiScopeAll").addEventListener("click", () => setKpiScope("all"));
+  setKpiScope("recent");
   setDimension("unit");
 });

@@ -1005,7 +1005,7 @@ app.mount("/static", StaticFiles(directory=str(GEMBA_CP_STATIC_DIR)), name="gemb
 
 bootstrap_qlcl_schema()
 GembaCPBase.metadata.create_all(bind=gemba_cp_engine)
-app.include_router(gemba_dashboard_router.router)
+app.include_router(gemba_dashboard_router.router, dependencies=[Depends(require_authenticated_api_user)])
 app.include_router(gemba_admin_router.router, dependencies=[Depends(require_authenticated_api_user)])
 
 
@@ -1043,6 +1043,8 @@ def dashboard_summary(request: Request):
 
 @app.get("/gemba-control-plan")
 def gemba_control_plan_dashboard(request: Request):
+    if not get_authenticated_user(request):
+        return RedirectResponse(url="/login", status_code=303)
     dashboard_js_version = build_static_asset_version(GEMBA_CP_STATIC_DIR / "dashboard.js")
     return gemba_cp_templates.TemplateResponse(
         "index.html",
@@ -3635,24 +3637,6 @@ def api_qc_cap(
             """, (date_from, date_to))
             image_rows = cur.fetchall()
 
-            # Ảnh tổng theo plan/date/bucket (cho lỗi đại trà)
-            cur.execute(f"""
-                SELECT
-                    sp.plan_id,
-                    sp.date,
-                    sp.station,
-                    COALESCE(qe.bo_phan, '') AS qc_bo_phan,
-                    {_bucket_case("timezone('Asia/Bangkok', d.created_at)::time")} AS time_bucket,
-                    ARRAY_REMOVE(ARRAY_AGG(DISTINCT d.image_path), NULL) AS images
-                FROM public.qc_defect d
-                JOIN public.qc_error_log_sp sp ON sp.id = d.error_log_sp_id
-                LEFT JOIN public.quality_employees qe ON qe.ma_nv = sp.ma_nv
-                WHERE sp.date BETWEEN %s AND %s
-                  AND d.image_path IS NOT NULL
-                GROUP BY sp.plan_id, sp.date, sp.station, qc_bo_phan, time_bucket
-            """, (date_from, date_to))
-            bucket_image_rows = cur.fetchall()
-
             # Lỗi nguy cơ hàng loạt
             cur.execute(f"""
                 SELECT
@@ -3734,12 +3718,6 @@ def api_qc_cap(
         images = [f"/api/images/{p}" for p in (r.get("images") or []) if p]
         image_map[key] = images
 
-    bucket_image_map = {}
-    for r in bucket_image_rows:
-        key = (r["plan_id"], str(r["date"]), r["time_bucket"], r.get("station") or "", r.get("qc_bo_phan") or "")
-        images = [f"/api/images/{p}" for p in (r.get("images") or []) if p]
-        bucket_image_map[key] = images
-
     multi_map = {}
     for r in multi_rows:
         key = _cap_key(r)
@@ -3776,21 +3754,48 @@ def api_qc_cap(
         defect_total = int(r["defect_total"] or 0)
         rate = (defect_total / output_total * 100) if output_total > 0 else 0
         target_percent = target_map.get(r.get("loai_hang"))
-        over_target = target_percent is not None and output_total > 0 and rate > float(target_percent)
+        target_percent_float = float(target_percent) if target_percent is not None else None
 
+        combo_items = list(mass_combo_map.get(key) or [])
         mass_list = []
-        for item in (mass_combo_map.get(key) or []):
+        over_target_list = []
+        total_combo_qty = 0
+        for item in combo_items:
             qty = int(item.get("qty") or 0)
-            if output_total <= 0 or qty <= 0:
+            if qty <= 0:
+                continue
+            total_combo_qty += qty
+            combo_rate = (qty * 100.0 / output_total) if output_total > 0 else 0.0
+            combo_entry = {
+                "ma_loi": item.get("ma_loi") or "--",
+                "vi_tri": item.get("vi_tri") or "--",
+                "qty": qty,
+                "rate_percent": combo_rate,
+            }
+            if output_total <= 0:
                 continue
             if (qty / output_total) >= 0.15:
-                mass_list.append({
+                mass_list.append(dict(combo_entry))
+            if target_percent_float is not None and combo_rate > target_percent_float:
+                over_target_list.append(dict(combo_entry))
+        mass_list.sort(key=lambda x: (-int(x.get("qty") or 0), str(x.get("ma_loi") or ""), str(x.get("vi_tri") or "")))
+        over_target_list.sort(key=lambda x: (-float(x.get("rate_percent") or 0), -int(x.get("qty") or 0), str(x.get("ma_loi") or ""), str(x.get("vi_tri") or "")))
+
+        combo_rate_list = []
+        if defect_total > 0:
+            for item in combo_items:
+                qty = int(item.get("qty") or 0)
+                if qty <= 0:
+                    continue
+                combo_rate_list.append({
                     "ma_loi": item.get("ma_loi") or "--",
                     "vi_tri": item.get("vi_tri") or "--",
                     "qty": qty,
-                    "rate_percent": (qty * 100.0 / output_total) if output_total > 0 else 0.0,
+                    "total_qty": defect_total,
+                    "ratio_percent": (qty * 100.0 / defect_total),
                 })
-        mass_list.sort(key=lambda x: (-int(x.get("qty") or 0), str(x.get("ma_loi") or ""), str(x.get("vi_tri") or "")))
+        combo_rate_list.sort(key=lambda x: (-float(x.get("ratio_percent") or 0), -int(x.get("qty") or 0), str(x.get("ma_loi") or ""), str(x.get("vi_tri") or "")))
+        combo_rate_top3 = combo_rate_list[:3]
 
         row = {
             "plan_id": plan_id,
@@ -3805,10 +3810,12 @@ def api_qc_cap(
             "defect_total": defect_total,
             "rework_done_count": rework_map.get(key, 0),
             "rate_percent": rate,
-            "target_percent": float(target_percent) if target_percent is not None else None,
-            "over_target": over_target,
+            "target_percent": target_percent_float,
+            "over_target": len(over_target_list) > 0,
+            "over_target_list": over_target_list,
             "is_mass": len(mass_list) > 0,
             "mass_list": mass_list,
+            "combo_rate_top3": combo_rate_top3,
             "serious_list": serious_map.get(key, []),
             "multi_list": multi_map.get(key, []),
             "has_serious": len(serious_map.get(key, [])) > 0,
@@ -3845,7 +3852,7 @@ def api_qc_cap(
                             item.get("ma_loi") or None,
                             item.get("vi_tri") or None,
                         ))
-                if r.get("over_target"):
+                for item in (r.get("over_target_list") or []):
                     precreate_keys.add((
                         r["plan_id"],
                         date_key,
@@ -3853,8 +3860,8 @@ def api_qc_cap(
                         r.get("station") or "",
                         bo_phan_key,
                         "Lỗi vượt mục tiêu",
-                        None,
-                        None,
+                        item.get("ma_loi") or None,
+                        item.get("vi_tri") or None,
                     ))
                 for item in (r.get("mass_list") or []):
                     precreate_keys.add((
@@ -3985,20 +3992,30 @@ def api_qc_cap(
                     )
                     item["images"] = image_map.get(img_key, [])
 
-                over_key = (
-                    row["plan_id"],
-                    date_key,
-                    bucket,
-                    row.get("station") or "",
-                    bo_phan_key,
-                    "Lỗi vượt mục tiêu",
-                    "",
-                    "",
-                )
-                row["over_action_done"] = action_map.get(over_key, {}).get("has_input", False)
-                row["over_action_id"] = action_map.get(over_key, {}).get("id")
-                row["over_hdkp_pdf"] = action_map.get(over_key, {}).get("hdkp_pdf")
-                row["over_images"] = bucket_image_map.get((row["plan_id"], date_key, bucket, row.get("station") or "", bo_phan_key), [])
+                for item in row.get("over_target_list", []):
+                    key = (
+                        row["plan_id"],
+                        date_key,
+                        bucket,
+                        row.get("station") or "",
+                        bo_phan_key,
+                        "Lỗi vượt mục tiêu",
+                        item.get("ma_loi") or "",
+                        item.get("vi_tri") or "",
+                    )
+                    item["action_done"] = action_map.get(key, {}).get("has_input", False)
+                    item["action_id"] = action_map.get(key, {}).get("id")
+                    item["hdkp_pdf"] = action_map.get(key, {}).get("hdkp_pdf")
+                    img_key = (
+                        row["plan_id"],
+                        date_key,
+                        bucket,
+                        row.get("station") or "",
+                        bo_phan_key,
+                        item.get("ma_loi") or "--",
+                        item.get("vi_tri") or "--",
+                    )
+                    item["images"] = image_map.get(img_key, [])
 
     return {"dates": result}
 
