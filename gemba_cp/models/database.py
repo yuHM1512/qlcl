@@ -45,3 +45,20 @@ class GembaCPRecordORM(Base):
     is_on_time: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False, index=True)
     source_sheet: Mapped[str] = mapped_column(String(128), default="GEMBACP", nullable=False)
     synced_at: Mapped[datetime] = mapped_column(DateTime(timezone=False), nullable=False, index=True)
+
+
+class GembaPlanRecordORM(Base):
+    __tablename__ = "gemba_plan_records"
+
+    record_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    plan_no: Mapped[str | None] = mapped_column(String(64), index=True)
+    plan_name: Mapped[str | None] = mapped_column(String(255))
+    unit_name: Mapped[str | None] = mapped_column(String(255), index=True)
+    gemba_date: Mapped[date | None] = mapped_column(Date, index=True)
+    submitted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=False), index=True)
+    submitted_date: Mapped[date | None] = mapped_column(Date, index=True)
+    submitted_month: Mapped[date | None] = mapped_column(Date, index=True)
+    is_recreated_plan: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False, index=True)
+    is_created_on_time: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False, index=True)
+    source_sheet: Mapped[str] = mapped_column(String(128), default="0.1 KẾ HOẠCH GEMBA", nullable=False)
+    synced_at: Mapped[datetime] = mapped_column(DateTime(timezone=False), nullable=False, index=True)

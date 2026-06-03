@@ -13,6 +13,8 @@ def sync_sheet(db: Session = Depends(get_db)) -> dict[str, object]:
     result = sync_sheet_to_database(db)
     return {
         "ok": True,
-        "inserted": result.inserted,
+        "inserted": result.inserted_gemba_cp + result.inserted_plan,
+        "inserted_gemba_cp": result.inserted_gemba_cp,
+        "inserted_plan": result.inserted_plan,
         "synced_at": result.synced_at.isoformat(),
     }

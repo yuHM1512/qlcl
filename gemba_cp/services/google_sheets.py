@@ -18,15 +18,19 @@ def build_sheets_service():
     return build("sheets", "v4", credentials=credentials, cache_discovery=False)
 
 
-def fetch_sheet_values() -> list[list[str]]:
+def fetch_sheet_values(
+    worksheet: str | None = None,
+    value_range: str | None = None,
+) -> list[list[str]]:
     settings = get_settings()
     service = build_sheets_service()
+    target_range = value_range or settings.build_sheet_range(worksheet or settings.google_sheets_worksheet, None)
     response = (
         service.spreadsheets()
         .values()
         .get(
             spreadsheetId=settings.google_sheets_spreadsheet_id,
-            range=settings.sheet_range,
+            range=target_range,
         )
         .execute()
     )

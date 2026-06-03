@@ -30,6 +30,8 @@ class Settings(BaseSettings):
         alias="GEMBA_CP_GOOGLE_SERVICE_ACCOUNT_FILE",
     )
     google_sheets_range: str | None = Field(default=None, alias="GEMBA_CP_GOOGLE_SHEETS_RANGE")
+    google_plan_worksheet: str = Field(default="0.1 KẾ HOẠCH GEMBA", alias="GEMBA_CP_GOOGLE_PLAN_WORKSHEET")
+    google_plan_range: str | None = Field(default=None, alias="GEMBA_CP_GOOGLE_PLAN_RANGE")
 
     @property
     def credentials_path(self) -> Path:
@@ -40,10 +42,18 @@ class Settings(BaseSettings):
 
     @property
     def sheet_range(self) -> str:
-        if self.google_sheets_range:
-            return self.google_sheets_range
-        worksheet = self.google_sheets_worksheet.replace("'", "''")
-        return f"'{worksheet}'!A:AZ"
+        return self.build_sheet_range(self.google_sheets_worksheet, self.google_sheets_range)
+
+    @property
+    def plan_sheet_range(self) -> str:
+        return self.build_sheet_range(self.google_plan_worksheet, self.google_plan_range)
+
+    @staticmethod
+    def build_sheet_range(worksheet: str, explicit_range: str | None) -> str:
+        if explicit_range:
+            return explicit_range
+        safe_worksheet = worksheet.replace("'", "''")
+        return f"'{safe_worksheet}'!A:AZ"
 
 
 @lru_cache(maxsize=1)

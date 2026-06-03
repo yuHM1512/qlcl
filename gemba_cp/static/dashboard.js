@@ -44,6 +44,10 @@ const CHART_NOTES = {
   onTimeChart: "Đúng kế hoạch = Không quá 7 ngày kể từ ngày lập KH",
 };
 
+const CHART_TITLE_NOTES = {
+  planCreateOnTimeChart: "Từ ngày 1 - ngày 5 hàng tháng",
+};
+
 function safeText(value) {
   return String(value ?? "")
     .replaceAll("&", "&amp;")
@@ -70,14 +74,19 @@ function formatPercentValue(value, decimals = 1) {
   return `${(Number(value || 0) * 100).toFixed(decimals)}%`;
 }
 
+function formatNumberValue(value, decimals = 2) {
+  return (Number(value || 0) * 100).toFixed(decimals);
+}
+
 function buildChart(containerId, title, subtitle, legendLabel, legendTarget, items, mode = "higher-better") {
   const wrap = document.getElementById(containerId);
   wrap.innerHTML = "";
   const helperNote = CHART_NOTES[containerId];
+  const titleNote = CHART_TITLE_NOTES[containerId];
 
   if (!items.length) {
     wrap.innerHTML = `
-      <div class="rounded-[1.75rem] bg-surface-container-lowest p-8 shadow-[0px_20px_40px_rgba(25,28,29,0.05)]">
+      <div class="h-full rounded-[1.75rem] bg-surface-container-lowest p-8 shadow-[0px_20px_40px_rgba(25,28,29,0.05)]">
         <div class="text-sm text-on-surface-variant">Chưa có dữ liệu.</div>
       </div>
     `;
@@ -90,15 +99,21 @@ function buildChart(containerId, title, subtitle, legendLabel, legendTarget, ite
   const linePercent = Math.min(99, (targetVal / maxScale) * 100);
 
   const chart = document.createElement("section");
-  chart.className = "rounded-2xl bg-white p-6 shadow-[0px_20px_40px_rgba(25,28,29,0.05)] overflow-hidden";
+  chart.className = "flex h-full flex-col rounded-2xl bg-white p-6 shadow-[0px_20px_40px_rgba(25,28,29,0.05)] overflow-hidden";
   chart.innerHTML = `
-    <div class="flex flex-wrap items-start justify-between gap-3">
-      <div>
-        <div class="inline-flex items-center rounded-xl bg-[#0056d2] px-4 py-2 font-manrope text-sm font-extrabold tracking-tight text-white">${safeText(title)}</div>
-        <div class="mt-1.5 text-[10px] uppercase tracking-widest text-on-surface-variant">${safeText(subtitle)}</div>
-        ${helperNote ? `<div class="mt-2 text-xs text-on-surface-variant">${safeText(helperNote)}</div>` : ""}
+    <div class="grid grid-cols-1 gap-3">
+      <div class="grid min-h-[5.25rem] grid-cols-1 gap-2 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
+        <div class="flex flex-col">
+          <div class="flex h-[2.25rem] items-center gap-2">
+          <div class="inline-flex items-center rounded-xl bg-[#0056d2] px-4 py-2 font-manrope text-sm font-extrabold tracking-tight text-white">${safeText(title)}</div>
+          ${titleNote ? `<span class="whitespace-nowrap text-xs font-semibold text-on-surface-variant">${safeText(titleNote)}</span>` : ""}
+          </div>
+          <div class="mt-1.5 h-[0.875rem] text-[10px] uppercase tracking-widest text-on-surface-variant">${safeText(subtitle)}</div>
+          <div class="mt-2 h-[1.25rem] text-xs leading-5 text-on-surface-variant">${helperNote ? safeText(helperNote) : "&nbsp;"}</div>
+        </div>
+        <div class="hidden lg:block"></div>
       </div>
-      <div class="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">
+      <div class="flex h-[1.25rem] flex-wrap items-center gap-x-4 gap-y-1.5 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">
         <div class="flex items-center gap-1.5">
           <span class="h-2.5 w-2.5 rounded-full bg-emerald-400"></span>
           <span class="h-2.5 w-2.5 -ml-1 rounded-full bg-rose-500"></span>
@@ -110,7 +125,7 @@ function buildChart(containerId, title, subtitle, legendLabel, legendTarget, ite
         </div>
       </div>
     </div>
-    <div class="mt-4">
+    <div class="mt-4 flex-1">
       <div class="relative h-44 border-b border-slate-100">
         <div
           class="absolute inset-x-0 z-20 cursor-help border-t-[3px] border-amber-400"
@@ -271,7 +286,7 @@ async function loadDashboard() {
     "Mục tiêu: 5%",
     overview.ncr_by_unit.map((item) => ({
       ...item,
-      actual_label: formatPercentValue(item.actual, 2),
+      actual_label: formatNumberValue(item.actual, 2),
       target_label: formatPercentValue(item.target, 2),
     })),
     "lower-better",
@@ -282,7 +297,10 @@ async function loadDashboard() {
     subtitle,
     "%Thực hiện GB đúng kế hoạch",
     "Mục tiêu: 100%",
-    overview.on_time_by_unit,
+    overview.on_time_by_unit.map((item) => ({
+      ...item,
+      actual_label: formatNumberValue(item.actual, 2),
+    })),
     "higher-better",
   );
   buildChart(
@@ -291,7 +309,22 @@ async function loadDashboard() {
     subtitle,
     "Tỷ lệ đóng CAP",
     "Mục tiêu: 100%",
-    overview.cap_completion_by_unit,
+    overview.cap_completion_by_unit.map((item) => ({
+      ...item,
+      actual_label: formatNumberValue(item.actual, 2),
+    })),
+    "higher-better",
+  );
+  buildChart(
+    "planCreateOnTimeChart",
+    "4. Tỷ lệ lập kế hoạch đúng hạn",
+    subtitle,
+    "Tỷ lệ lập KH đúng hạn",
+    "Mục tiêu: 100%",
+    overview.plan_submission_on_time_by_unit.map((item) => ({
+      ...item,
+      actual_label: formatNumberValue(item.actual, 2),
+    })),
     "higher-better",
   );
 }

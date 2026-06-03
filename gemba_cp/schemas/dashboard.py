@@ -52,6 +52,7 @@ class OverviewResponse(BaseModel):
     ncr_by_unit: list[UnitMetric]
     on_time_by_unit: list[UnitMetric]
     cap_completion_by_unit: list[UnitMetric]
+    plan_submission_on_time_by_unit: list[UnitMetric]
 
 
 class RecordsResponse(BaseModel):

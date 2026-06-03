@@ -7,14 +7,16 @@ from sqlalchemy import delete
 from sqlalchemy.orm import Session
 
 from gemba_cp.config import get_settings
-from gemba_cp.models.database import GembaCPRecordORM
+from gemba_cp.models.database import GembaCPRecordORM, GembaPlanRecordORM
+from gemba_cp.models.plan_sheet_row import GembaPlanRecordInput
 from gemba_cp.models.sheet_row import GembaCPRecordInput
 from gemba_cp.services.google_sheets import fetch_sheet_values
 
 
 @dataclass
 class SyncResult:
-    inserted: int
+    inserted_gemba_cp: int
+    inserted_plan: int
     synced_at: datetime
 
 
@@ -81,21 +83,55 @@ def map_row_to_orm(record: GembaCPRecordInput, synced_at: datetime) -> GembaCPRe
     )
 
 
-def sync_sheet_to_database(db: Session) -> SyncResult:
-    values = fetch_sheet_values()
-    synced_at = datetime.utcnow().replace(microsecond=0)
-    rows = values_to_dicts(values)
-    parsed: list[GembaCPRecordORM] = []
+def map_plan_row_to_orm(record: GembaPlanRecordInput, synced_at: datetime) -> GembaPlanRecordORM:
+    settings = get_settings()
+    return GembaPlanRecordORM(
+        record_id=record.record_id,
+        plan_no=record.plan_no,
+        plan_name=record.plan_name,
+        unit_name=record.unit_name,
+        gemba_date=record.gemba_date,
+        submitted_at=record.submitted_at,
+        submitted_date=record.submitted_date,
+        submitted_month=record.submitted_month,
+        is_recreated_plan=record.is_recreated_plan,
+        is_created_on_time=record.is_created_on_time,
+        source_sheet=settings.google_plan_worksheet,
+        synced_at=synced_at,
+    )
 
-    for row in rows:
+
+def sync_sheet_to_database(db: Session) -> SyncResult:
+    synced_at = datetime.utcnow().replace(microsecond=0)
+    settings = get_settings()
+
+    gemba_cp_rows = values_to_dicts(fetch_sheet_values(settings.google_sheets_worksheet, settings.sheet_range))
+    parsed_gemba_cp: list[GembaCPRecordORM] = []
+    for row in gemba_cp_rows:
         record_id = (row.get("id") or "").strip()
         if not record_id:
             continue
         parsed_record = GembaCPRecordInput.model_validate(row)
-        parsed.append(map_row_to_orm(parsed_record, synced_at))
+        parsed_gemba_cp.append(map_row_to_orm(parsed_record, synced_at))
+
+    plan_rows = values_to_dicts(fetch_sheet_values(settings.google_plan_worksheet, settings.plan_sheet_range))
+    parsed_plan: list[GembaPlanRecordORM] = []
+    for row in plan_rows:
+        record_id = (row.get("ID") or "").strip()
+        if not record_id:
+            continue
+        parsed_record = GembaPlanRecordInput.model_validate(row)
+        parsed_plan.append(map_plan_row_to_orm(parsed_record, synced_at))
 
     db.execute(delete(GembaCPRecordORM))
-    if parsed:
-        db.add_all(parsed)
+    db.execute(delete(GembaPlanRecordORM))
+    if parsed_gemba_cp:
+        db.add_all(parsed_gemba_cp)
+    if parsed_plan:
+        db.add_all(parsed_plan)
     db.commit()
-    return SyncResult(inserted=len(parsed), synced_at=synced_at)
+    return SyncResult(
+        inserted_gemba_cp=len(parsed_gemba_cp),
+        inserted_plan=len(parsed_plan),
+        synced_at=synced_at,
+    )
