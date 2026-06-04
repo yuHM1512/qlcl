@@ -74,4 +74,4 @@ class GembaPlanRecordInput(BaseModel):
         submitted_date = self.submitted_date
         if submitted_date is None or self.is_recreated_plan:
             return False
-        return 1 < submitted_date.day <= 5
+        return 1 <= submitted_date.day <= 5
