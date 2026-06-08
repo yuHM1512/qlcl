@@ -3253,6 +3253,21 @@ class QcErrorDpsPayload(BaseModel):
     ket_luan: Optional[str] = None
     ghi_chu: Optional[str] = None
 
+
+COMBO_SHARED_CAP_TYPES = {
+    "Lỗi đại trà",
+    "Lỗi vượt mục tiêu",
+    "Tỉ lệ theo dạng lỗi",
+    "CAP theo combo lỗi",
+}
+
+
+def normalize_qc_cap_loai_loi(loai_loi: Optional[str], ma_loi: Optional[str], vi_tri: Optional[str]) -> str:
+    normalized = (loai_loi or "").strip()
+    if normalized in COMBO_SHARED_CAP_TYPES and ((ma_loi or "").strip() or (vi_tri or "").strip()):
+        return "CAP theo combo lỗi"
+    return normalized
+
 @app.get("/api/qc/employees")
 def get_qc_employees():
     with get_db_connection() as conn:
@@ -3283,7 +3298,7 @@ def upsert_qc_employee(payload: QCEmployee):
 
 @app.post("/api/qc/cap/action")
 def upsert_qc_cap_action(payload: QcErrorDpsPayload):
-    loai_loi = (payload.loai_loi or "").strip()
+    loai_loi = normalize_qc_cap_loai_loi(payload.loai_loi, payload.ma_loi, payload.vi_tri)
     if not loai_loi:
         raise HTTPException(status_code=400, detail="Loai loi khong duoc de trong")
     time_bucket = (payload.time_bucket or "").strip()
@@ -3401,6 +3416,7 @@ def get_qc_cap_action(
     ma_loi: Optional[str] = Query(None),
     vi_tri: Optional[str] = Query(None),
 ):
+    loai_loi = normalize_qc_cap_loai_loi(loai_loi, ma_loi, vi_tri)
     with get_db_connection() as conn:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute(
@@ -3767,16 +3783,19 @@ def api_qc_cap(
         rate = (defect_total / output_total * 100) if output_total > 0 else 0
         target_percent = target_map.get(r.get("loai_hang"))
         target_percent_float = float(target_percent) if target_percent is not None else None
+        bucket_over_target = (
+            output_total > 0
+            and target_percent_float is not None
+            and rate > target_percent_float
+        )
 
         combo_items = list(mass_combo_map.get(key) or [])
         mass_list = []
         over_target_list = []
-        total_combo_qty = 0
         for item in combo_items:
             qty = int(item.get("qty") or 0)
             if qty <= 0:
                 continue
-            total_combo_qty += qty
             combo_rate = (qty * 100.0 / output_total) if output_total > 0 else 0.0
             combo_entry = {
                 "ma_loi": item.get("ma_loi") or "--",
@@ -3791,7 +3810,6 @@ def api_qc_cap(
             if target_percent_float is not None and combo_rate > target_percent_float:
                 over_target_list.append(dict(combo_entry))
         mass_list.sort(key=lambda x: (-int(x.get("qty") or 0), str(x.get("ma_loi") or ""), str(x.get("vi_tri") or "")))
-        over_target_list.sort(key=lambda x: (-float(x.get("rate_percent") or 0), -int(x.get("qty") or 0), str(x.get("ma_loi") or ""), str(x.get("vi_tri") or "")))
 
         combo_rate_list = []
         if defect_total > 0:
@@ -3805,9 +3823,13 @@ def api_qc_cap(
                     "qty": qty,
                     "total_qty": defect_total,
                     "ratio_percent": (qty * 100.0 / defect_total),
+                    "product_rate_percent": rate,
+                    "needs_cap": bucket_over_target,
+                    "cap_status_text": "Cần làm CAP" if bucket_over_target else "Không cần làm CAP",
                 })
         combo_rate_list.sort(key=lambda x: (-float(x.get("ratio_percent") or 0), -int(x.get("qty") or 0), str(x.get("ma_loi") or ""), str(x.get("vi_tri") or "")))
         combo_rate_top3 = combo_rate_list[:3]
+        over_target_list.sort(key=lambda x: (-float(x.get("rate_percent") or 0), -int(x.get("qty") or 0), str(x.get("ma_loi") or ""), str(x.get("vi_tri") or "")))
 
         row = {
             "plan_id": plan_id,
@@ -3823,7 +3845,7 @@ def api_qc_cap(
             "rework_done_count": rework_map.get(key, 0),
             "rate_percent": rate,
             "target_percent": target_percent_float,
-            "over_target": len(over_target_list) > 0,
+            "over_target": (len(over_target_list) > 0) or bucket_over_target,
             "over_target_list": over_target_list,
             "is_mass": len(mass_list) > 0,
             "mass_list": mass_list,
@@ -3852,18 +3874,28 @@ def api_qc_cap(
         for bucket, rows in buckets.items():
             for r in rows:
                 bo_phan_key = r.get("qc_bo_phan") or r.get("bo_phan") or ""
-                if r.get("has_serious") or r.get("has_multi"):
-                    for item in (r.get("serious_list") or []) + (r.get("multi_list") or []):
-                        precreate_keys.add((
-                            r["plan_id"],
-                            date_key,
-                            bucket,
-                            r.get("station") or "",
-                            bo_phan_key,
-                            "Lỗi nguy cơ hàng loạt",
-                            item.get("ma_loi") or None,
-                            item.get("vi_tri") or None,
-                        ))
+                for item in (r.get("serious_list") or []):
+                    precreate_keys.add((
+                        r["plan_id"],
+                        date_key,
+                        bucket,
+                        r.get("station") or "",
+                        bo_phan_key,
+                        "Lỗi nghiêm trọng",
+                        item.get("ma_loi") or None,
+                        item.get("vi_tri") or None,
+                    ))
+                for item in (r.get("multi_list") or []):
+                    precreate_keys.add((
+                        r["plan_id"],
+                        date_key,
+                        bucket,
+                        r.get("station") or "",
+                        bo_phan_key,
+                        "Lỗi nguy cơ hàng loạt",
+                        item.get("ma_loi") or None,
+                        item.get("vi_tri") or None,
+                    ))
                 for item in (r.get("over_target_list") or []):
                     precreate_keys.add((
                         r["plan_id"],
@@ -3871,7 +3903,7 @@ def api_qc_cap(
                         bucket,
                         r.get("station") or "",
                         bo_phan_key,
-                        "Lỗi vượt mục tiêu",
+                        "CAP theo combo lỗi",
                         item.get("ma_loi") or None,
                         item.get("vi_tri") or None,
                     ))
@@ -3882,7 +3914,7 @@ def api_qc_cap(
                         bucket,
                         r.get("station") or "",
                         bo_phan_key,
-                        "Lỗi đại trà",
+                        "CAP theo combo lỗi",
                         item.get("ma_loi") or None,
                         item.get("vi_tri") or None,
                     ))
@@ -3934,13 +3966,14 @@ def api_qc_cap(
                 (date_from, date_to),
             )
             for r in cur.fetchall():
+                normalized_loai_loi = normalize_qc_cap_loai_loi(r["loai_loi"], r.get("ma_loi"), r.get("vi_tri"))
                 key = (
                     r["plan_id"],
                     str(r["date"]),
                     r["time_bucket"],
                     r.get("station") or "",
                     r.get("bo_phan") or "",
-                    r["loai_loi"],
+                    normalized_loai_loi,
                     r.get("ma_loi") or "",
                     r.get("vi_tri") or "",
                 )
@@ -3955,7 +3988,31 @@ def api_qc_cap(
         for bucket, rows in buckets.items():
             for row in rows:
                 bo_phan_key = row.get("qc_bo_phan") or row.get("bo_phan") or ""
-                for item in row.get("serious_list", []) + row.get("multi_list", []):
+                for item in row.get("serious_list", []):
+                    key = (
+                        row["plan_id"],
+                        date_key,
+                        bucket,
+                        row.get("station") or "",
+                        bo_phan_key,
+                        "Lỗi nghiêm trọng",
+                        item.get("ma_loi") or "",
+                        item.get("vi_tri") or "",
+                    )
+                    item["action_done"] = action_map.get(key, {}).get("has_input", False)
+                    item["action_id"] = action_map.get(key, {}).get("id")
+                    item["hdkp_pdf"] = action_map.get(key, {}).get("hdkp_pdf")
+                    img_key = (
+                        row["plan_id"],
+                        date_key,
+                        bucket,
+                        row.get("station") or "",
+                        bo_phan_key,
+                        item.get("ma_loi") or "--",
+                        item.get("vi_tri") or "--",
+                    )
+                    item["images"] = image_map.get(img_key, [])
+                for item in row.get("multi_list", []):
                     key = (
                         row["plan_id"],
                         date_key,
@@ -3986,7 +4043,7 @@ def api_qc_cap(
                         bucket,
                         row.get("station") or "",
                         bo_phan_key,
-                        "Lỗi đại trà",
+                        "CAP theo combo lỗi",
                         item.get("ma_loi") or "",
                         item.get("vi_tri") or "",
                     )
@@ -4011,7 +4068,32 @@ def api_qc_cap(
                         bucket,
                         row.get("station") or "",
                         bo_phan_key,
-                        "Lỗi vượt mục tiêu",
+                        "CAP theo combo lỗi",
+                        item.get("ma_loi") or "",
+                        item.get("vi_tri") or "",
+                    )
+                    item["action_done"] = action_map.get(key, {}).get("has_input", False)
+                    item["action_id"] = action_map.get(key, {}).get("id")
+                    item["hdkp_pdf"] = action_map.get(key, {}).get("hdkp_pdf")
+                    img_key = (
+                        row["plan_id"],
+                        date_key,
+                        bucket,
+                        row.get("station") or "",
+                        bo_phan_key,
+                        item.get("ma_loi") or "--",
+                        item.get("vi_tri") or "--",
+                    )
+                    item["images"] = image_map.get(img_key, [])
+
+                for item in row.get("combo_rate_top3", []):
+                    key = (
+                        row["plan_id"],
+                        date_key,
+                        bucket,
+                        row.get("station") or "",
+                        bo_phan_key,
+                        "CAP theo combo lỗi",
                         item.get("ma_loi") or "",
                         item.get("vi_tri") or "",
                     )
@@ -4489,6 +4571,77 @@ def api_dm_chi_tiet_delete(id: int):
             cur.execute("DELETE FROM public.dm_chi_tiet WHERE id = %s", (id,))
             conn.commit()
     return {"status": "ok"}
+
+
+# Visual position picker: returns nhóm -> khối (image) -> hotspots (codes).
+# Used by /qc-input for loại hàng that has been "số hoá" (e.g. Áo vest).
+NHOM_LABELS = {"chinh": "Chính", "lot": "Lót", "nhan_dien": "Nhận diện"}
+
+@app.get("/api/qc/visual-picker")
+def api_qc_visual_picker(loai_hang_id: int = Query(...)):
+    with get_db_connection() as conn:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(
+                """
+                SELECT bp.id AS bo_phan_id, bp.ten_bo_phan, bp.nhom, bp.image_png, bp.image_svg, bp.sort_order,
+                       ct.id AS chi_tiet_id, ct.ma_vi_tri, ct.ten_chi_tiet,
+                       ct.x_pct, ct.y_pct, ct.w_pct, ct.h_pct, ct.rotation
+                FROM public.dm_bo_phan bp
+                LEFT JOIN public.dm_chi_tiet ct ON ct.bo_phan_id = bp.id
+                WHERE bp.loai_hang_id = %s
+                ORDER BY bp.sort_order, bp.id, ct.ma_vi_tri NULLS LAST, ct.id
+                """,
+                (loai_hang_id,),
+            )
+            rows = cur.fetchall()
+
+    has_picker = any(r["image_png"] and r["nhom"] for r in rows)
+    if not has_picker:
+        return {"has_visual_picker": False, "nhoms": []}
+
+    by_nhom: Dict[str, Dict[int, dict]] = {}
+    for r in rows:
+        nhom = r["nhom"] or "khac"
+        bp_id = r["bo_phan_id"]
+        if nhom not in by_nhom:
+            by_nhom[nhom] = {}
+        if bp_id not in by_nhom[nhom]:
+            by_nhom[nhom][bp_id] = {
+                "bo_phan_id": bp_id,
+                "ten_khoi": r["ten_bo_phan"],
+                "image_png": f"/api/images/{r['image_png']}" if r["image_png"] else None,
+                "image_svg": f"/api/images/{r['image_svg']}" if r["image_svg"] else None,
+                "sort_order": r["sort_order"],
+                "hotspots": [],
+            }
+        if r["chi_tiet_id"] is not None:
+            by_nhom[nhom][bp_id]["hotspots"].append({
+                "chi_tiet_id": r["chi_tiet_id"],
+                "ma_vi_tri": r["ma_vi_tri"],
+                "label": r["ten_chi_tiet"],
+                "x_pct": float(r["x_pct"]) if r["x_pct"] is not None else None,
+                "y_pct": float(r["y_pct"]) if r["y_pct"] is not None else None,
+                "w_pct": float(r["w_pct"]) if r["w_pct"] is not None else None,
+                "h_pct": float(r["h_pct"]) if r["h_pct"] is not None else None,
+                "rotation": float(r["rotation"]) if r["rotation"] is not None else 0.0,
+            })
+
+    nhom_order = ["chinh", "lot", "nhan_dien"]
+    nhoms = []
+    for key in nhom_order:
+        if key not in by_nhom:
+            continue
+        khoi_list = sorted(by_nhom[key].values(), key=lambda x: (x["sort_order"], x["bo_phan_id"]))
+        nhoms.append({"nhom": key, "label": NHOM_LABELS.get(key, key), "khoi": khoi_list})
+    # Any other nhom (e.g. NULL) goes last
+    for key, bps in by_nhom.items():
+        if key in nhom_order:
+            continue
+        khoi_list = sorted(bps.values(), key=lambda x: (x["sort_order"], x["bo_phan_id"]))
+        nhoms.append({"nhom": key, "label": NHOM_LABELS.get(key, key.title()), "khoi": khoi_list})
+
+    return {"has_visual_picker": True, "nhoms": nhoms}
+
 
 @app.get("/api/dm/khach-hang")
 def api_dm_khach_hang():

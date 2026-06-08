@@ -270,6 +270,167 @@
             font-weight: 700;
             color: #2563eb;
         }
+
+        /* ============== Visual Picker (Áo vest pilot) ============== */
+        .vp-wrap { display: flex; flex-direction: column; gap: 0.6rem; }
+        .vp-nhom-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+        .vp-nhom-tab {
+            border: 1.5px solid #cbd5f5;
+            background: #eef2ff;
+            color: #1e40af;
+            font-weight: 700;
+            border-radius: 999px;
+            padding: 6px 14px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .vp-nhom-tab.active {
+            background: #1d4ed8;
+            color: #fff;
+            border-color: #1d4ed8;
+            box-shadow: 0 6px 14px rgba(29, 78, 216, 0.25);
+        }
+        .vp-khoi-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+        }
+        @media (min-width: 480px) { .vp-khoi-grid { grid-template-columns: repeat(4, 1fr); } }
+        .vp-khoi-card {
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            background: #fff;
+            padding: 6px 4px 4px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .vp-khoi-card:hover { border-color: #93c5fd; }
+        .vp-khoi-card.active {
+            border-color: #1d4ed8;
+            background: #eff6ff;
+            box-shadow: 0 6px 14px rgba(29, 78, 216, 0.18);
+        }
+        .vp-khoi-card img {
+            width: 100%;
+            height: 56px;
+            object-fit: contain;
+            background: #f8fafc;
+            border-radius: 6px;
+        }
+        .vp-khoi-card .vp-khoi-name {
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin-top: 4px;
+            line-height: 1.1;
+        }
+        .vp-stage {
+            position: relative;
+            background: #f8fafc;
+            border: 1.5px solid var(--border);
+            border-radius: 12px;
+            padding: 18px;
+            overflow: visible;        /* so hotspots placed outside the image still render */
+        }
+        .vp-stage-empty {
+            min-height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #64748b;
+            font-size: 0.85rem;
+            background: #f8fafc;
+            border: 1.5px dashed var(--border);
+            border-radius: 12px;
+        }
+        .vp-img-holder {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+        .vp-img-holder img {
+            display: block;
+            width: 100%;
+            height: auto;
+            user-select: none;
+            -webkit-user-drag: none;
+        }
+        .vp-hotspot {
+            position: absolute;
+            min-width: 28px;
+            height: 22px;
+            padding: 0 6px;
+            border-radius: 999px;
+            background: rgba(239, 68, 68, 0.92);
+            color: #fff;
+            font-size: 0.7rem;
+            font-weight: 800;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.18);
+            border: 1.5px solid #fff;
+            transition: transform 0.12s ease, box-shadow 0.12s ease;
+            white-space: nowrap;
+            z-index: 5;
+            transform-origin: center;
+        }
+        .vp-hotspot:hover {
+            transform: scale(1.12);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+        }
+        .vp-hotspot.active {
+            background: #f59e0b;
+            color: #111827;
+            box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.4), 0 6px 14px rgba(245, 158, 11, 0.45);
+            animation: vp-pulse 1.2s ease-in-out infinite;
+            z-index: 10;
+        }
+        @keyframes vp-pulse {
+            0%, 100% { box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.40), 0 6px 14px rgba(245, 158, 11, 0.45); }
+            50%      { box-shadow: 0 0 0 10px rgba(245, 158, 11, 0.10), 0 6px 14px rgba(245, 158, 11, 0.45); }
+        }
+        .vp-selection-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-radius: 10px;
+            border: 1px solid #fbbf24;
+            font-size: 0.85rem;
+            color: #92400e;
+            font-weight: 700;
+        }
+        .vp-selection-bar .vp-sel-code {
+            background: #b45309;
+            color: #fff;
+            border-radius: 999px;
+            padding: 2px 9px;
+            font-size: 0.72rem;
+            font-weight: 800;
+        }
+        .vp-selection-bar .vp-sel-clear {
+            margin-left: auto;
+            background: transparent;
+            border: none;
+            color: #92400e;
+            cursor: pointer;
+        }
+        .vp-toggle-row { display: flex; align-items: center; gap: 6px; }
+        .vp-toggle-row .vp-toggle-zoom {
+            margin-left: auto;
+            font-size: 0.72rem;
+            border: 1px solid var(--border);
+            background: #fff;
+            border-radius: 999px;
+            padding: 3px 9px;
+            color: #475569;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -385,6 +546,8 @@
     let masterMaLoiOptions = [];
     let chiTietOptionsByBlock = {};
     let selectedPlanId = null;
+    let visualPickerData = null;     // { has_visual_picker, nhoms: [...] } when loại hàng đã số hoá
+    let vpBlockState = {};           // blockId -> { nhom, bo_phan_id }
     let outputTotal = 0;
     let outputFailed = 0;
     let pendingFailedCount = 0;
@@ -579,9 +742,15 @@
             const lhData = await lhRes.json();
             const lh = lhData.rows.find(l => l.ten_loai === plan.loai_hang);
             if (lh) {
-                const bpRes = await fetch(`/api/dm/bo-phan?loai_hang_id=${lh.id}`);
+                const [bpRes, vpRes] = await Promise.all([
+                    fetch(`/api/dm/bo-phan?loai_hang_id=${lh.id}`),
+                    fetch(`/api/qc/visual-picker?loai_hang_id=${lh.id}`)
+                ]);
                 const bpData = await bpRes.json();
                 masterBoPhan = bpData.rows || [];
+                const vpData = await vpRes.json();
+                visualPickerData = vpData && vpData.has_visual_picker ? vpData : null;
+                vpBlockState = {};
                 if (getActiveStation()) {
                     await loadExistingEntry();
                     await fetchOutputTotal();
@@ -589,6 +758,7 @@
                 }
             } else {
                 masterBoPhan = [];
+                visualPickerData = null;
                 alert('Cảnh báo: Loại hàng này chưa được định nghĩa trong danh mục master!');
             }
         } catch (e) { console.error(e); }
@@ -928,7 +1098,45 @@
         block.className = 'defect-item bo-phan-block';
         block.dataset.blockId = blockId;
         block.dataset.displayIndex = displayIndex;
-        block.innerHTML = `
+        const useVisual = !!(visualPickerData && visualPickerData.has_visual_picker);
+        block.innerHTML = useVisual
+            ? renderVpBlockHTML(blockId, productId, displayIndex)
+            : renderComboBlockHTML(blockId, productId, displayIndex);
+        list.appendChild(block);
+
+        if (useVisual) {
+            initVpBlock(block, blockId);
+            if (prefill && prefill.bo_phan_id) {
+                const prefillNhom = vpFindNhomByBoPhanId(prefill.bo_phan_id);
+                if (prefillNhom) {
+                    vpSelectNhom(blockId, prefillNhom);
+                }
+                vpSelectKhoi(blockId, prefill.bo_phan_id);
+                if (prefill.chi_tiet_id) {
+                    const khoi = vpGetKhoi((vpBlockState[blockId] || {}).nhom, prefill.bo_phan_id);
+                    const hotspot = khoi ? (khoi.hotspots || []).find(h => h.chi_tiet_id === prefill.chi_tiet_id) : null;
+                    if (hotspot) {
+                        vpSelectHotspot(blockId, prefill.bo_phan_id, hotspot);
+                    }
+                }
+            }
+        } else {
+            initCombo(block);
+            if (prefill && prefill.bo_phan_id) {
+                selectComboValue(block.querySelector('.combo-dropdown[data-type="bo-phan"]'), String(prefill.bo_phan_id));
+                loadChiTietOptions(block, prefill.bo_phan_id, prefill.chi_tiet_id || null);
+            }
+        }
+
+        if (prefill && prefill.defects && prefill.defects.length) {
+            prefill.defects.forEach(d => addDefectItem(blockId, d));
+        } else {
+            addDefectItem(blockId);
+        }
+    }
+
+    function renderComboBlockHTML(blockId, productId, displayIndex) {
+        return `
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <div class="label mb-0">Bộ phận #${displayIndex}</div>
                 <button class="btn btn-sm btn-outline-secondary" onclick="removeBoPhanBlock(${productId}, ${blockId})">Xóa</button>
@@ -971,21 +1179,269 @@
             <div class="text-end mt-2">
                 <button class="btn btn-sm btn-primary" onclick="addDefectItem(${blockId})"><i class="fas fa-plus me-1"></i>Thêm lỗi</button>
             </div>
-            <!-- Camera capture temporarily disabled -->
         `;
-        list.appendChild(block);
+    }
+
+    // ============== Visual Picker (Áo vest pilot) ==============
+    function vpFindNhomByBoPhanId(boPhanId) {
+        if (!visualPickerData || !Array.isArray(visualPickerData.nhoms)) return null;
+        for (const nhom of visualPickerData.nhoms) {
+            const found = (nhom.khoi || []).find(k => k.bo_phan_id === boPhanId);
+            if (found) return nhom.nhom;
+        }
+        return null;
+    }
+
+    function vpGetHotspotOptions(blockId) {
+        const state = vpBlockState[blockId] || {};
+        const khoi = vpGetKhoi(state.nhom, state.bo_phan_id);
+        if (!khoi) return [];
+        return (khoi.hotspots || []).map(h => ({
+            value: String(h.chi_tiet_id),
+            label: `${h.ma_vi_tri || ''}. ${h.label || ''}`.trim()
+        }));
+    }
+
+    function renderVpBlockHTML(blockId, productId, displayIndex) {
+        const nhomTabs = (visualPickerData.nhoms || []).map((n, idx) => `
+            <button type="button" class="vp-nhom-tab${idx === 0 ? ' active' : ''}"
+                    data-nhom-key="${n.nhom}"
+                    onclick="vpSelectNhom(${blockId}, '${n.nhom}')">${n.label}</button>
+        `).join('');
+        return `
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <div class="label mb-0">Bộ phận #${displayIndex}</div>
+                <button class="btn btn-sm btn-outline-secondary" onclick="removeBoPhanBlock(${productId}, ${blockId})">Xóa</button>
+            </div>
+            <div class="vp-wrap">
+                <div class="vp-nhom-tabs" data-vp-tabs>${nhomTabs}</div>
+                <div class="vp-selection-bar" data-vp-selection style="display:none;">
+                    <span class="vp-sel-code" data-vp-sel-code></span>
+                    <span data-vp-sel-label></span>
+                    <button class="vp-sel-clear" type="button" onclick="vpClearSelection(${blockId})">
+                        <i class="fas fa-times-circle me-1"></i>Đổi vị trí
+                    </button>
+                </div>
+                <div class="vp-khoi-grid" data-vp-grid></div>
+                <div class="d-flex align-items-center justify-content-between">
+                    <label class="label mb-0">Mã vị trí</label>
+                    <button type="button" class="btn-mic-inline" onclick="startVoiceField('chi_tiet', { blockId: ${blockId} })" title="Voice Mã vị trí">
+                        <i class="fas fa-microphone"></i>
+                    </button>
+                </div>
+                <div class="combo-dropdown" data-type="vp-chi-tiet" data-block-id="${blockId}">
+                    <button type="button" class="combo-trigger" onclick="toggleCombo(this)">-- Chọn Mã vị trí --</button>
+                    <div class="combo-panel">
+                        <input type="text" class="combo-search" placeholder="Tìm mã vị trí / tên..." oninput="filterCombo(this)">
+                        <div class="combo-list"></div>
+                    </div>
+                    <select class="sel-vp-chi-tiet" style="display:none;"></select>
+                </div>
+                <div class="vp-stage" data-vp-stage>
+                    <div class="vp-stage-empty">Chọn 1 khối phía dưới để chọn vị trí lỗi</div>
+                </div>
+                <select class="sel-bo-phan" style="display:none;"></select>
+                <select class="sel-chi-tiet" style="display:none;"></select>
+            </div>
+            <div class="defect-items d-flex flex-column gap-2 mt-2"></div>
+            <div class="text-end mt-2">
+                <button class="btn btn-sm btn-primary" onclick="addDefectItem(${blockId})"><i class="fas fa-plus me-1"></i>Thêm lỗi</button>
+            </div>
+        `;
+    }
+
+    function initVpBlock(block, blockId) {
+        // Default to first nhom and render khoi grid
+        const firstNhom = (visualPickerData.nhoms && visualPickerData.nhoms[0]) ? visualPickerData.nhoms[0].nhom : null;
+        vpBlockState[blockId] = { nhom: firstNhom, bo_phan_id: null, chi_tiet_id: null };
         initCombo(block);
+        if (firstNhom) renderVpKhoiGrid(block, blockId, firstNhom);
+    }
 
-        if (prefill && prefill.bo_phan_id) {
-            selectComboValue(block.querySelector('.combo-dropdown[data-type="bo-phan"]'), String(prefill.bo_phan_id));
-            loadChiTietOptions(block, prefill.bo_phan_id, prefill.chi_tiet_id || null);
-        }
+    function vpGetNhom(nhomKey) {
+        return (visualPickerData.nhoms || []).find(n => n.nhom === nhomKey);
+    }
 
-        if (prefill && prefill.defects && prefill.defects.length) {
-            prefill.defects.forEach(d => addDefectItem(blockId, d));
-        } else {
-            addDefectItem(blockId);
+    function vpGetKhoi(nhomKey, boPhanId) {
+        const n = vpGetNhom(nhomKey);
+        if (!n) return null;
+        return n.khoi.find(k => k.bo_phan_id === boPhanId);
+    }
+
+    function renderVpKhoiGrid(block, blockId, nhomKey) {
+        const grid = block.querySelector('[data-vp-grid]');
+        if (!grid) return;
+        const n = vpGetNhom(nhomKey);
+        if (!n) { grid.innerHTML = ''; return; }
+        const currentBp = (vpBlockState[blockId] || {}).bo_phan_id;
+        grid.innerHTML = n.khoi.map(k => `
+            <div class="vp-khoi-card${k.bo_phan_id === currentBp ? ' active' : ''}"
+                 data-bo-phan-id="${k.bo_phan_id}"
+                 onclick="vpSelectKhoi(${blockId}, ${k.bo_phan_id})">
+                <img src="${k.image_png}" alt="${k.ten_khoi}" loading="lazy">
+                <div class="vp-khoi-name">${k.ten_khoi}</div>
+            </div>
+        `).join('');
+    }
+
+    function vpSelectNhom(blockId, nhomKey) {
+        const block = document.querySelector(`.bo-phan-block[data-block-id="${blockId}"]`);
+        if (!block) return;
+        // Update tab active state
+        block.querySelectorAll('.vp-nhom-tab').forEach(b => {
+            b.classList.toggle('active', b.dataset.nhomKey === nhomKey);
+        });
+        vpBlockState[blockId] = vpBlockState[blockId] || {};
+        vpBlockState[blockId].nhom = nhomKey;
+        renderVpKhoiGrid(block, blockId, nhomKey);
+        // If switching nhom away from a selected khoi, keep selection but stage may not match — just leave selection bar
+    }
+
+    function vpSelectKhoi(blockId, boPhanId) {
+        const block = document.querySelector(`.bo-phan-block[data-block-id="${blockId}"]`);
+        if (!block) return;
+        const state = vpBlockState[blockId] = vpBlockState[blockId] || {};
+        state.bo_phan_id = boPhanId;
+        const khoi = vpGetKhoi(state.nhom, boPhanId);
+        if (!khoi) return;
+        const selectedStillExists = (khoi.hotspots || []).some(h => h.chi_tiet_id === state.chi_tiet_id);
+        if (!selectedStillExists) {
+            state.chi_tiet_id = null;
         }
+        // Update active card
+        block.querySelectorAll('.vp-khoi-card').forEach(c => {
+            c.classList.toggle('active', parseInt(c.dataset.boPhanId) === boPhanId);
+        });
+        const selBp = block.querySelector('.sel-bo-phan');
+        const selCt = block.querySelector('.sel-chi-tiet');
+        if (selBp) {
+            selBp.innerHTML = `<option value="${boPhanId}" selected>${boPhanId}</option>`;
+            selBp.value = String(boPhanId);
+        }
+        if (selCt && !state.chi_tiet_id) {
+            selCt.innerHTML = '';
+            selCt.value = '';
+        }
+        vpRefreshChiTietCombo(blockId);
+        if (!state.chi_tiet_id) {
+            const bar = block.querySelector('[data-vp-selection]');
+            if (bar) bar.style.display = 'none';
+        }
+        // Render stage
+        const stage = block.querySelector('[data-vp-stage]');
+        const imgSrc = khoi.image_svg || khoi.image_png;
+        stage.innerHTML = `
+            <div class="vp-img-holder" data-vp-holder>
+                <img src="${imgSrc}" alt="${khoi.ten_khoi}" data-vp-img>
+            </div>
+        `;
+        // After image loads, position hotspots (so we have its rendered width/height)
+        const img = stage.querySelector('img');
+        const placeHotspots = () => positionVpHotspots(block, blockId, khoi);
+        if (img.complete) placeHotspots();
+        else img.addEventListener('load', placeHotspots, { once: true });
+        // Re-layout on resize
+        if (!block._vpResizeBound) {
+            block._vpResizeBound = true;
+            const handler = () => {
+                const cur = vpBlockState[blockId];
+                if (!cur || !cur.bo_phan_id) return;
+                const k = vpGetKhoi(cur.nhom, cur.bo_phan_id);
+                if (k) positionVpHotspots(block, blockId, k);
+            };
+            window.addEventListener('resize', handler);
+        }
+    }
+
+    function positionVpHotspots(block, blockId, khoi) {
+        const holder = block.querySelector('[data-vp-holder]');
+        if (!holder) return;
+        // Clear previous hotspots (keep image)
+        holder.querySelectorAll('.vp-hotspot').forEach(h => h.remove());
+        const state = vpBlockState[blockId] || {};
+        (khoi.hotspots || []).forEach(h => {
+            const dot = document.createElement('button');
+            dot.type = 'button';
+            dot.className = 'vp-hotspot';
+            dot.textContent = h.ma_vi_tri;
+            dot.title = h.label || '';
+            // x_pct / y_pct là tọa độ TOP-LEFT của text box (đã normalize 0..1 theo image bbox).
+            // Đặt hotspot tại tâm của text box: left = x + w/2, top = y + h/2
+            const cx = (h.x_pct + (h.w_pct || 0) / 2) * 100;
+            const cy = (h.y_pct + (h.h_pct || 0) / 2) * 100;
+            dot.style.left = `calc(${cx}% - 14px)`;
+            dot.style.top = `calc(${cy}% - 11px)`;
+            if (state.chi_tiet_id === h.chi_tiet_id) dot.classList.add('active');
+            dot.addEventListener('click', () => vpSelectHotspot(blockId, khoi.bo_phan_id, h));
+            holder.appendChild(dot);
+        });
+    }
+
+    function vpSelectHotspot(blockId, boPhanId, hotspot) {
+        const block = document.querySelector(`.bo-phan-block[data-block-id="${blockId}"]`);
+        if (!block) return;
+        const state = vpBlockState[blockId] = vpBlockState[blockId] || {};
+        state.bo_phan_id = boPhanId;
+        state.chi_tiet_id = hotspot.chi_tiet_id;
+        // Set values on hidden selects (so submitReport reads them as before)
+        const selBp = block.querySelector('.sel-bo-phan');
+        const selCt = block.querySelector('.sel-chi-tiet');
+        selBp.innerHTML = `<option value="${boPhanId}" selected>${boPhanId}</option>`;
+        selCt.innerHTML = `<option value="${hotspot.chi_tiet_id}" selected>${hotspot.chi_tiet_id}</option>`;
+        selBp.value = String(boPhanId);
+        selCt.value = String(hotspot.chi_tiet_id);
+        selectComboValue(block.querySelector('.combo-dropdown[data-type="vp-chi-tiet"]'), String(hotspot.chi_tiet_id));
+        // Update hotspot active class
+        block.querySelectorAll('.vp-hotspot').forEach(d => d.classList.remove('active'));
+        const dots = block.querySelectorAll('.vp-hotspot');
+        dots.forEach(d => {
+            if (d.textContent === hotspot.ma_vi_tri) d.classList.add('active');
+        });
+        // Show selection bar
+        const bar = block.querySelector('[data-vp-selection]');
+        bar.style.display = 'flex';
+        bar.querySelector('[data-vp-sel-code]').textContent = hotspot.ma_vi_tri || '';
+        bar.querySelector('[data-vp-sel-label]').textContent = hotspot.label || '';
+        // Subtle confirmation
+        block.classList.add('pulse-success');
+        setTimeout(() => block.classList.remove('pulse-success'), 600);
+    }
+
+    function vpRefreshChiTietCombo(blockId) {
+        const block = document.querySelector(`.bo-phan-block[data-block-id="${blockId}"]`);
+        if (!block) return;
+        const combo = block.querySelector('.combo-dropdown[data-type="vp-chi-tiet"]');
+        if (!combo) return;
+        const options = vpGetHotspotOptions(blockId);
+        setComboOptions(combo, options, options.length ? '-- Chọn Mã vị trí --' : '-- Chưa có Mã vị trí --');
+        const state = vpBlockState[blockId] || {};
+        if (state.chi_tiet_id) {
+            selectComboValue(combo, String(state.chi_tiet_id));
+        }
+    }
+
+    function onVpChiTietChange(blockId, selectElem) {
+        const state = vpBlockState[blockId] || {};
+        if (!state.bo_phan_id || !selectElem.value) return;
+        const khoi = vpGetKhoi(state.nhom, state.bo_phan_id);
+        if (!khoi) return;
+        const hotspot = (khoi.hotspots || []).find(h => String(h.chi_tiet_id) === String(selectElem.value));
+        if (hotspot) {
+            vpSelectHotspot(blockId, state.bo_phan_id, hotspot);
+        }
+    }
+
+    function vpClearSelection(blockId) {
+        const block = document.querySelector(`.bo-phan-block[data-block-id="${blockId}"]`);
+        if (!block) return;
+        const state = vpBlockState[blockId] = vpBlockState[blockId] || {};
+        state.chi_tiet_id = null;
+        block.querySelector('.sel-bo-phan').innerHTML = '';
+        block.querySelector('.sel-chi-tiet').innerHTML = '';
+        selectComboValue(block.querySelector('.combo-dropdown[data-type="vp-chi-tiet"]'), '');
+        block.querySelectorAll('.vp-hotspot.active').forEach(d => d.classList.remove('active'));
+        const bar = block.querySelector('[data-vp-selection]');
+        bar.style.display = 'none';
     }
 
     function removeBoPhanBlock(productId, blockId) {
@@ -1082,6 +1538,9 @@
             if (type === 'chi-tiet') {
                 setComboOptions(combo, [], '-- Chọn Chi tiết --');
             }
+            if (type === 'vp-chi-tiet') {
+                setComboOptions(combo, [], '-- Chọn Mã vị trí --');
+            }
         });
 
         // no-op for voice context in this mode
@@ -1141,6 +1600,8 @@
             const blockId = combo.dataset.blockId;
             const raw = chiTietOptionsByBlock[blockId] || [];
             list = raw.map(ct => ({ value: String(ct.id), label: ct.ten_chi_tiet }));
+        } else if (type === 'vp-chi-tiet') {
+            list = vpGetHotspotOptions(combo.dataset.blockId);
         } else if (type === 'ma-loi') {
             list = masterMaLoiOptions.map(opt => ({ value: `${opt.ma_loi_id}|${opt.mo_ta_loi_id}`, label: opt.label }));
         }
@@ -1155,6 +1616,7 @@
         const trigger = combo.querySelector('.combo-trigger');
         list.innerHTML = '';
         sel.innerHTML = '';
+        combo.dataset.placeholder = placeholder;
         if (resetTrigger) trigger.textContent = placeholder;
         options.forEach(o => {
             const opt = document.createElement('option');
@@ -1171,6 +1633,8 @@
                 combo.querySelector('.combo-panel').classList.remove('open');
                 if (combo.dataset.type === 'bo-phan') {
                     onBoPhanChange(combo.dataset.blockId, sel);
+                } else if (combo.dataset.type === 'vp-chi-tiet') {
+                    onVpChiTietChange(combo.dataset.blockId, sel);
                 } else if (combo.dataset.type === 'ma-loi') {
                     onMaLoiChange(combo.dataset.itemId, sel);
                 }
@@ -1185,7 +1649,7 @@
         const trigger = combo.querySelector('.combo-trigger');
         sel.value = value;
         const option = Array.from(sel.options).find(o => o.value === value);
-        if (option) trigger.textContent = option.textContent;
+        trigger.textContent = option ? option.textContent : (combo.dataset.placeholder || '-- Chọn --');
     }
 
     document.addEventListener('click', (e) => {

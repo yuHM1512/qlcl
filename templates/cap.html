@@ -660,12 +660,13 @@
                 <span class="material-symbols-outlined text-sm">location_on</span>
                 ${r.don_vi} - ${r.bo_phan}${r.station ? ' - ' + r.station : ''}
             </div>`;
+            const capButtonText = (item) => item.action_done ? 'Xem CAP' : 'Tạo CAP';
 
             const seriousRows = (r.serious_list || []).map(x => `
                 <div class="grid grid-cols-4 gap-3 text-sm items-center py-3 px-4 bg-surface-lowest rounded-xl shadow-sm hover:shadow-cloud transition">
                     <div class="font-semibold text-on-surface">${x.ma_loi} - ${x.vi_tri}</div>
                     <div class="font-semibold text-on-surface">${x.qty}</div>
-                    <div class="space-y-2"><button class="btn-primary px-4 py-2 text-xs font-semibold open-action-form" data-title="${x.ma_loi} - ${x.vi_tri}" data-plan-id="${r.plan_id}" data-date="${r.date}" data-time-bucket="${r.time_bucket}" data-station="${r.station || ''}" data-bo-phan="${r.qc_bo_phan || r.bo_phan || ''}" data-loai-loi="L&#x1ED7;i nguy c&#x1A1; h&#x00E0;ng lo&#x1EA1;t" data-ma-loi="${x.ma_loi}" data-vi-tri="${x.vi_tri}" data-images="${encodeURIComponent(JSON.stringify(x.images || []))}">${x.action_done ? 'Theo d&#x00F5;i nguy&#x00EA;n nh&#x00E2;n &amp; H&#x00E0;nh &#x0111;&#x1ED9;ng' : 'Nguy&#x00EA;n nh&#x00E2;n &amp; H&#x00E0;nh &#x0111;&#x1ED9;ng'}</button>
+                    <div class="space-y-2"><button class="btn-primary px-4 py-2 text-xs font-semibold open-action-form" data-title="${x.ma_loi} - ${x.vi_tri}" data-plan-id="${r.plan_id}" data-date="${r.date}" data-time-bucket="${r.time_bucket}" data-station="${r.station || ''}" data-bo-phan="${r.qc_bo_phan || r.bo_phan || ''}" data-loai-loi="L&#x1ED7;i nghi&#x00EAm tr&#x1ECD;ng" data-ma-loi="${x.ma_loi}" data-vi-tri="${x.vi_tri}" data-images="${encodeURIComponent(JSON.stringify(x.images || []))}">${capButtonText(x)}</button>
                         ${renderThumbs(x.images || [])}
                     </div>
                     <div class="pl-4"><div class="hdkp-control flex items-center gap-2"><input type="checkbox" class="hdkp-toggle h-4 w-4 rounded text-primary focus:ring-primary cursor-pointer accent-primary" ${x.hdkp_pdf ? 'checked' : ''}><button class="hdkp-btn ${x.hdkp_pdf ? '' : 'hidden'} btn-tertiary px-2 py-1 text-xs" type="button" data-dps-id="${x.action_id || ""}">&#x0110;i&#x1EC1;n H&#x0110;KP</button><a class="hdkp-view ${x.hdkp_pdf ? '' : 'hidden'} btn btn-sm btn-success" href="${x.hdkp_pdf || "#"}" target="_blank"><i class="fas fa-file-pdf"></i> Xem</a></div></div>
@@ -675,7 +676,7 @@
                 <div class="grid grid-cols-4 gap-3 text-sm items-center py-3 px-4 bg-surface-lowest rounded-xl shadow-sm hover:shadow-cloud transition">
                     <div class="font-semibold text-on-surface">${x.ma_loi} - ${x.vi_tri}</div>
                     <div class="font-semibold text-on-surface">${x.consecutive}</div>
-                    <div class="space-y-2"><button class="btn-primary px-4 py-2 text-xs font-semibold open-action-form" data-title="${x.ma_loi} - ${x.vi_tri}" data-plan-id="${r.plan_id}" data-date="${r.date}" data-time-bucket="${r.time_bucket}" data-station="${r.station || ''}" data-bo-phan="${r.qc_bo_phan || r.bo_phan || ''}" data-loai-loi="L&#x1ED7;i nguy c&#x1A1; h&#x00E0;ng lo&#x1EA1;t" data-ma-loi="${x.ma_loi}" data-vi-tri="${x.vi_tri}" data-images="${encodeURIComponent(JSON.stringify(x.images || []))}">${x.action_done ? 'Theo d&#x00F5;i nguy&#x00EA;n nh&#x00E2;n &amp; H&#x00E0;nh &#x0111;&#x1ED9;ng' : 'Nguy&#x00EA;n nh&#x00E2;n &amp; H&#x00E0;nh &#x0111;&#x1ED9;ng'}</button>
+                    <div class="space-y-2"><button class="btn-primary px-4 py-2 text-xs font-semibold open-action-form" data-title="${x.ma_loi} - ${x.vi_tri}" data-plan-id="${r.plan_id}" data-date="${r.date}" data-time-bucket="${r.time_bucket}" data-station="${r.station || ''}" data-bo-phan="${r.qc_bo_phan || r.bo_phan || ''}" data-loai-loi="L&#x1ED7;i nguy c&#x1A1; h&#x00E0;ng lo&#x1EA1;t" data-ma-loi="${x.ma_loi}" data-vi-tri="${x.vi_tri}" data-images="${encodeURIComponent(JSON.stringify(x.images || []))}">${capButtonText(x)}</button>
                         ${renderThumbs(x.images || [])}
                     </div>
                     <div class="pl-4"><div class="hdkp-control flex items-center gap-2"><input type="checkbox" class="hdkp-toggle h-4 w-4 rounded text-primary focus:ring-primary cursor-pointer accent-primary" ${x.hdkp_pdf ? 'checked' : ''}><button class="hdkp-btn ${x.hdkp_pdf ? '' : 'hidden'} btn-tertiary px-2 py-1 text-xs" type="button" data-dps-id="${x.action_id || ""}">&#x0110;i&#x1EC1;n H&#x0110;KP</button><a class="hdkp-view ${x.hdkp_pdf ? '' : 'hidden'} btn btn-sm btn-success" href="${x.hdkp_pdf || "#"}" target="_blank"><i class="fas fa-file-pdf"></i> Xem</a></div></div>
@@ -687,7 +688,7 @@
                 <div class="grid grid-cols-4 gap-3 text-sm items-center py-3 px-4 bg-surface-lowest rounded-xl shadow-sm hover:shadow-cloud transition">
                     <div class="font-semibold text-on-surface">${x.ma_loi} - ${x.vi_tri}</div>
                     <div class="font-semibold text-on-surface">${x.rate_percent.toFixed(1)}%</div>
-                    <div class="space-y-2"><button class="btn-primary px-4 py-2 text-xs font-semibold open-action-form" data-title="${x.ma_loi} - ${x.vi_tri}" data-plan-id="${r.plan_id}" data-date="${r.date}" data-time-bucket="${r.time_bucket}" data-station="${r.station || ''}" data-bo-phan="${r.qc_bo_phan || r.bo_phan || ''}" data-loai-loi="L&#x1ED7;i v&#x01B0;&#x1EE3;t m&#x1EE5;c ti&#x00EA;u" data-ma-loi="${x.ma_loi}" data-vi-tri="${x.vi_tri}" data-images="${encodeURIComponent(JSON.stringify(x.images || []))}">${x.action_done ? 'Theo d&#x00F5;i nguy&#x00EA;n nh&#x00E2;n &amp; H&#x00E0;nh &#x0111;&#x1ED9;ng' : 'Nguy&#x00EA;n nh&#x00E2;n &amp; H&#x00E0;nh &#x0111;&#x1ED9;ng'}</button>
+                    <div class="space-y-2"><button class="btn-primary px-4 py-2 text-xs font-semibold open-action-form" data-title="${x.ma_loi} - ${x.vi_tri}" data-plan-id="${r.plan_id}" data-date="${r.date}" data-time-bucket="${r.time_bucket}" data-station="${r.station || ''}" data-bo-phan="${r.qc_bo_phan || r.bo_phan || ''}" data-loai-loi="L&#x1ED7;i v&#x01B0;&#x1EE3;t m&#x1EE5;c ti&#x00EA;u" data-ma-loi="${x.ma_loi}" data-vi-tri="${x.vi_tri}" data-images="${encodeURIComponent(JSON.stringify(x.images || []))}">${capButtonText(x)}</button>
                         ${renderThumbs(x.images || [])}
                     </div>
                     <div class="pl-4"><div class="hdkp-control flex items-center gap-2"><input type="checkbox" class="hdkp-toggle h-4 w-4 rounded text-primary focus:ring-primary cursor-pointer accent-primary" ${x.hdkp_pdf ? 'checked' : ''}><button class="hdkp-btn ${x.hdkp_pdf ? '' : 'hidden'} btn-tertiary px-2 py-1 text-xs" type="button" data-dps-id="${x.action_id || ""}">&#x0110;i&#x1EC1;n H&#x0110;KP</button><a class="hdkp-view ${x.hdkp_pdf ? '' : 'hidden'} btn btn-sm btn-success" href="${x.hdkp_pdf || "#"}" target="_blank"><i class="fas fa-file-pdf"></i> Xem</a></div></div>
@@ -696,7 +697,7 @@
                 <div class="grid grid-cols-4 gap-3 text-sm items-center py-3 px-4 bg-surface-lowest rounded-xl shadow-sm hover:shadow-cloud transition">
                     <div class="font-semibold text-on-surface">${x.ma_loi} - ${x.vi_tri}</div>
                     <div class="font-semibold text-on-surface">${x.qty}</div>
-                    <div class="space-y-2"><button class="btn-primary px-4 py-2 text-xs font-semibold open-action-form" data-title="${x.ma_loi} - ${x.vi_tri}" data-plan-id="${r.plan_id}" data-date="${r.date}" data-time-bucket="${r.time_bucket}" data-station="${r.station || ''}" data-bo-phan="${r.qc_bo_phan || r.bo_phan || ''}" data-loai-loi="L&#x1ED7;i &#x0111;&#x1EA1;i tr&#x00E0;" data-ma-loi="${x.ma_loi}" data-vi-tri="${x.vi_tri}" data-images="${encodeURIComponent(JSON.stringify(x.images || []))}">${x.action_done ? 'Theo d&#x00F5;i nguy&#x00EA;n nh&#x00E2;n &amp; H&#x00E0;nh &#x0111;&#x1ED9;ng' : 'Nguy&#x00EA;n nh&#x00E2;n &amp; H&#x00E0;nh &#x0111;&#x1ED9;ng'}</button>
+                    <div class="space-y-2"><button class="btn-primary px-4 py-2 text-xs font-semibold open-action-form" data-title="${x.ma_loi} - ${x.vi_tri}" data-plan-id="${r.plan_id}" data-date="${r.date}" data-time-bucket="${r.time_bucket}" data-station="${r.station || ''}" data-bo-phan="${r.qc_bo_phan || r.bo_phan || ''}" data-loai-loi="L&#x1ED7;i &#x0111;&#x1EA1;i tr&#x00E0;" data-ma-loi="${x.ma_loi}" data-vi-tri="${x.vi_tri}" data-images="${encodeURIComponent(JSON.stringify(x.images || []))}">${capButtonText(x)}</button>
                         ${renderThumbs(x.images || [])}
                     </div>
                     <div class="pl-4"><div class="hdkp-control flex items-center gap-2"><input type="checkbox" class="hdkp-toggle h-4 w-4 rounded text-primary focus:ring-primary cursor-pointer accent-primary" ${x.hdkp_pdf ? 'checked' : ''}><button class="hdkp-btn ${x.hdkp_pdf ? '' : 'hidden'} btn-tertiary px-2 py-1 text-xs" type="button" data-dps-id="${x.action_id || ""}">&#x0110;i&#x1EC1;n H&#x0110;KP</button><a class="hdkp-view ${x.hdkp_pdf ? '' : 'hidden'} btn btn-sm btn-success" href="${x.hdkp_pdf || "#"}" target="_blank"><i class="fas fa-file-pdf"></i> Xem</a></div></div>
@@ -733,17 +734,25 @@
                     </div>
                </div>` : '';
 
+            const comboRateStatus = `Tỉ lệ lỗi = ${rate}% - ${r.rate_percent > 0 && r.target_percent != null && r.rate_percent > r.target_percent ? 'Cần làm CAP' : 'Không cần làm CAP'}`;
             const comboRateRows = (r.combo_rate_top3 || []).map(x => `
                 <tr class="border-t border-surface-high/40">
                     <td class="px-4 py-3 font-semibold text-on-surface">${x.ma_loi} - ${x.vi_tri}</td>
                     <td class="px-4 py-3 text-right font-semibold text-[#900B09]">${x.ratio_percent.toFixed(1)}%</td>
                     <td class="px-4 py-3 text-right text-on-surface-variant">[${x.qty} / ${x.total_qty}]</td>
+                    <td class="px-4 py-3 text-sm text-on-surface">
+                        ${x.needs_cap ? `<div class="space-y-2">
+                            <button class="btn-primary px-4 py-2 text-xs font-semibold open-action-form" data-title="${x.ma_loi} - ${x.vi_tri}" data-plan-id="${r.plan_id}" data-date="${r.date}" data-time-bucket="${r.time_bucket}" data-station="${r.station || ''}" data-bo-phan="${r.qc_bo_phan || r.bo_phan || ''}" data-loai-loi="Tỉ lệ theo dạng lỗi" data-ma-loi="${x.ma_loi}" data-vi-tri="${x.vi_tri}" data-images="${encodeURIComponent(JSON.stringify(x.images || []))}">${capButtonText(x)}</button>
+                            ${renderThumbs(x.images || [])}
+                        </div>` : `<span class="text-on-surface-variant">--</span>`}
+                    </td>
                 </tr>`).join('');
 
             const comboRateBlock = hasComboRate ? `<div class="space-y-3 pt-2">
                 <div class="alert-title font-bold text-[#900B09]">
                     <span class="material-symbols-outlined text-sm">analytics</span> Tỉ lệ theo dạng lỗi
                 </div>
+                <div class="px-4 text-sm font-semibold ${r.rate_percent > 0 && r.target_percent != null && r.rate_percent > r.target_percent ? 'text-[#900B09]' : 'text-on-surface-variant'}">${comboRateStatus}</div>
                 <div class="overflow-hidden rounded-xl border border-surface-high/50 bg-surface-lowest shadow-sm">
                     <table class="w-full text-sm">
                         <thead class="bg-surface-high/40 text-xs uppercase tracking-widest text-on-surface-variant">
@@ -751,6 +760,7 @@
                                 <th class="px-4 py-3 text-left">Combo lỗi</th>
                                 <th class="px-4 py-3 text-right">Tỉ lệ %</th>
                                 <th class="px-4 py-3 text-right">Công thức</th>
+                                <th class="px-4 py-3 text-left">Nguyên nhân &amp; Hành động</th>
                             </tr>
                         </thead>
                         <tbody>
