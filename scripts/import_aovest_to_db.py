@@ -32,6 +32,24 @@ SRC_JSON = Path(__file__).resolve().parent / "out" / "aovest_visual_picker.json"
 SRC_IMG_BASE = Path(__file__).resolve().parent / "out"
 
 
+def reset_serial_sequence(cur, table_name: str, id_column: str = "id") -> None:
+    cur.execute("SELECT pg_get_serial_sequence(%s, %s) AS seq_name", (table_name, id_column))
+    row = cur.fetchone()
+    seq_name = row["seq_name"] if row else None
+    if not seq_name:
+        return
+    cur.execute(
+        f"""
+        SELECT setval(
+            %s,
+            COALESCE((SELECT MAX({id_column}) FROM {table_name}), 0) + 1,
+            false
+        )
+        """,
+        (seq_name,),
+    )
+
+
 def main() -> None:
     if not SRC_JSON.exists():
         print(f"Missing {SRC_JSON} — run parse_aovest_excel.py first", file=sys.stderr)
@@ -89,6 +107,9 @@ def main() -> None:
                     (old_bp_ids,),
                 )
                 print(f"Deleted dm_bo_phan (cascade chi_tiet): {cur.rowcount} bo_phan rows")
+
+            reset_serial_sequence(cur, "public.dm_bo_phan")
+            reset_serial_sequence(cur, "public.dm_chi_tiet")
 
             # 4. Insert new bo_phan + chi_tiet from JSON
             sort_counter = 0
