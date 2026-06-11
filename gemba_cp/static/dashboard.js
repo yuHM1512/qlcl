@@ -36,6 +36,14 @@ const KPI_CARD_ICONS = {
   `,
 };
 
+const INFO_ICON = `
+  <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <circle cx="12" cy="12" r="9"></circle>
+    <path d="M12 10v6"></path>
+    <path d="M12 7h.01"></path>
+  </svg>
+`;
+
 const KPI_CARD_NOTES = {
   on_time_ratio: "Đúng kế hoạch = Không quá 7 ngày kể từ ngày lập KH",
 };
@@ -195,6 +203,17 @@ function renderCards(cards) {
     const tone = kpiTone(card);
     const iconMarkup = KPI_CARD_ICONS[card.key] || KPI_CARD_ICONS.ncr_ratio;
     const helperNote = KPI_CARD_NOTES[card.key];
+    const tooltipMarkup = card.tooltip
+      ? `
+        <span
+          class="mt-0.5 inline-flex h-7 w-7 flex-none items-center justify-center rounded-full bg-slate-100 text-on-surface-variant cursor-help"
+          title="${safeAttr(card.tooltip)}"
+          aria-label="${safeAttr(card.tooltip)}"
+        >
+          ${INFO_ICON}
+        </span>
+      `
+      : "";
     const node = document.createElement("article");
     node.className = "flex min-h-[14rem] flex-col justify-between rounded-[1.75rem] border border-white/70 bg-white p-6 shadow-[0px_20px_40px_rgba(25,28,29,0.05)]";
     node.innerHTML = `
@@ -205,7 +224,10 @@ function renderCards(cards) {
           </span>
           <span class="text-[10px] font-black uppercase leading-snug tracking-widest text-on-surface-variant">${safeText(card.label)}</span>
         </div>
-        <span class="mt-1 flex h-2.5 w-2.5 flex-none rounded-full ${tone.dot}"></span>
+        <div class="flex items-start gap-2">
+          ${tooltipMarkup}
+          <span class="mt-2 flex h-2.5 w-2.5 flex-none rounded-full ${tone.dot}"></span>
+        </div>
       </div>
       <div class="mt-5 font-manrope text-4xl font-bold ${tone.text}">${safeText(card.formatted_value)}</div>
       ${helperNote ? `<div class="mt-3 text-sm leading-6 text-on-surface-variant">${safeText(helperNote)}</div>` : ""}

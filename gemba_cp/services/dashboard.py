@@ -73,6 +73,21 @@ def compute_on_time_ratio(records: Iterable[GembaCPRecordORM]) -> float:
     return on_time / len(rows)
 
 
+def build_on_time_tooltip(records: Iterable[GembaCPRecordORM]) -> str | None:
+    late_rows = [row for row in records if (row.gb_time or "").strip() and not row.is_on_time]
+    if not late_rows:
+        return None
+
+    unit_counts: dict[str, int] = {}
+    for row in late_rows:
+        unit = (row.issue_department or row.dashboard_unit or "").strip() or "Chưa xác định"
+        unit_counts[unit] = unit_counts.get(unit, 0) + 1
+
+    sorted_units = sorted(unit_counts.items(), key=lambda item: (-item[1], item[0]))
+    details = "\n".join(f"- {unit} ({count})" for unit, count in sorted_units)
+    return f"Chưa đạt 100% do các đơn vị:\n{details}"
+
+
 def compute_cap_completion_ratio(records: Iterable[GembaCPRecordORM]) -> float:
     done = 0
     open_items = 0
@@ -253,6 +268,7 @@ def get_overview(
     records = filter_recent_records(all_records) if scope == "recent" else all_records
     ncr_ratio = compute_ncr_ratio(records)
     on_time_ratio = compute_on_time_ratio(records)
+    on_time_tooltip = build_on_time_tooltip(records) if on_time_ratio < 1.0 else None
     cap_completion_ratio = compute_cap_completion_ratio(records)
     label_suffix = "(4 tuần gần nhất)" if scope == "recent" else "(Tất cả)"
     cards = [
@@ -273,6 +289,7 @@ def get_overview(
             target=1.0,
             target_label="100%",
             tone="red",
+            tooltip=on_time_tooltip,
         ),
         KpiCard(
             key="cap_completion_ratio",

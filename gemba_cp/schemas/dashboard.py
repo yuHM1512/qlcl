@@ -24,6 +24,7 @@ class KpiCard(BaseModel):
     target: float
     target_label: str
     tone: str
+    tooltip: str | None = None
 
 
 class UnitMetric(BaseModel):
