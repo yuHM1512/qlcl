@@ -170,9 +170,9 @@
     <div class="max-w-7xl mx-auto px-8 py-10 flex flex-col lg:flex-row gap-10">
         <aside class="w-full lg:w-64 shrink-0">
             <div class="rounded-2xl bg-surface-high/70 p-4 space-y-2">
-                <a href="/qc" class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-low transition font-semibold">
+                <a href="{{ '/qc-input' if is_qc_role else '/qc' }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-low transition font-semibold">
                     <span class="material-symbols-outlined">inventory_2</span>
-                    K&#x1EBF; ho&#x1EA1;ch s&#x1EA3;n xu&#x1EA5;t
+                    {{ 'Nhập liệu' if is_qc_role else 'Kế hoạch sản xuất' }}
                 </a>
                 <a href="/qc/dashboard" class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-low transition font-semibold">
                     <span class="material-symbols-outlined">dashboard</span>
@@ -182,10 +182,16 @@
                     <span class="material-symbols-outlined">task_alt</span>
                     H&#x00E0;nh &#x0111;&#x1ED9;ng kh&#x1EAF;c ph&#x1EE5;c
                 </a>
+                {% if is_qaqt_role %}
                 <a href="/qc/settings/details" class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-low transition font-semibold">
                     <span class="material-symbols-outlined">settings</span>
                     C&#x00E0;i &#x0111;&#x1EB7;t danh m&#x1EE5;c
                 </a>
+                <a href="/qc/settings/visual-picker" class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-low transition font-semibold">
+                    <span class="material-symbols-outlined">my_location</span>
+                    Sắp xếp vị trí
+                </a>
+                {% endif %}
             </div>
         </aside>
 
@@ -253,7 +259,7 @@
                         </div>
                         <div>
                             <h4 id="actionTitle" class="font-display text-xl md:text-2xl font-bold tracking-tight text-on-surface">Nguyên nhân & Hành động</h4>
-                            <p class="text-sm text-on-surface-variant font-medium mt-0.5">Cập nhật thông tin chi tiết và hướng xử lý phòng ngừa</p>
+                            <p id="actionSubtitle" class="text-sm text-on-surface-variant font-medium mt-0.5">{{ 'Cập nhật thông tin chi tiết và hướng xử lý phòng ngừa' if is_qaqt_role else 'Chế độ xem dành cho QC: chỉ lọc, xem và theo dõi CAP.' }}</p>
                         </div>
                     </div>
                 </div>
@@ -414,16 +420,20 @@
             
             <!-- Footer -->
             <div class="p-6 md:px-8 md:py-5 border-t border-surface-high/60 shrink-0 flex items-center justify-end gap-3 bg-surface-lowest backdrop-blur-xl z-10">
-                <button type="button" class="btn-tertiary px-6 py-2.5 font-bold hover:bg-surface-low rounded-xl" onclick="closeActionModal()">Hủy</button>
+                <button type="button" class="btn-tertiary px-6 py-2.5 font-bold hover:bg-surface-low rounded-xl" onclick="closeActionModal()">{{ 'Hủy' if is_qaqt_role else 'Đóng' }}</button>
+                {% if is_qaqt_role %}
                 <button type="button" class="btn-primary px-8 py-2.5 font-bold tracking-wide flex items-center gap-2 shadow-lg shadow-primary/20 rounded-xl" id="saveActionBtn">
                     <span class="material-symbols-outlined text-[18px]">save</span>
                     Lưu cập nhật
                 </button>
+                {% endif %}
             </div>
         </div>
     </div>
 
     <script>
+        const canEditCap = {{ 'true' if is_qaqt_role else 'false' }};
+
         function logout() {
             fetch('/logout', { method: 'POST' }).then((res) => {
                 if (res.redirected) window.location.href = res.url;
@@ -660,7 +670,10 @@
                 <span class="material-symbols-outlined text-sm">location_on</span>
                 ${r.don_vi} - ${r.bo_phan}${r.station ? ' - ' + r.station : ''}
             </div>`;
-            const capButtonText = (item) => item.action_done ? 'Xem CAP' : 'Tạo CAP';
+            const capButtonText = (item) => {
+                if (!canEditCap) return 'Xem chi tiết';
+                return item.action_done ? 'Xem CAP' : 'Tạo CAP';
+            };
 
             const seriousRows = (r.serious_list || []).map(x => `
                 <div class="grid grid-cols-4 gap-3 text-sm items-center py-3 px-4 bg-surface-lowest rounded-xl shadow-sm hover:shadow-cloud transition">
@@ -887,6 +900,25 @@
         const actionTitle = document.getElementById('actionTitle');
         const saveActionBtn = document.getElementById('saveActionBtn');
 
+        function applyActionMode() {
+            if (!actionModal) return;
+            actionModal.querySelectorAll('[data-field]').forEach(el => {
+                if (el.dataset.field === 'tien_do') return;
+                if (canEditCap) {
+                    el.disabled = false;
+                    el.readOnly = false;
+                } else {
+                    el.disabled = true;
+                    el.readOnly = true;
+                }
+            });
+            const tienDoEl = actionModal.querySelector('[data-field="tien_do"]');
+            if (tienDoEl) {
+                tienDoEl.disabled = true;
+                tienDoEl.readOnly = true;
+            }
+        }
+
         function setActionForm(row) {
             if (!row || !actionModal) return;
             actionModal.querySelectorAll('[data-field]').forEach(el => {
@@ -898,6 +930,7 @@
                 else el.value = value ?? '';
             });
             updateTienDo();
+            applyActionMode();
         }
 
         async function loadActionData() {
@@ -956,6 +989,7 @@
                 }
             });
             updateTienDo();
+            applyActionMode();
         }
 
         function updateTienDo() {
@@ -1047,6 +1081,10 @@
         }
 
         async function saveAction() {
+            if (!canEditCap) {
+                closeActionModal();
+                return;
+            }
             const planId = Number(actionModal.dataset.planId || 0);
             const date = actionModal.dataset.date || '';
             const timeBucket = actionModal.dataset.timeBucket || '';
@@ -1130,6 +1168,7 @@
             if (stationSelect) stationSelect.addEventListener('change', () => loadCap());
             if (sidebarToggle) sidebarToggle.addEventListener('click', toggleSidebar);
             applySidebarState();
+            applyActionMode();
             loadCapFilters().then(() => loadCap());
         });
     </script>

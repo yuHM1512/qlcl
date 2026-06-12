@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tinh chỉnh vị trí lỗi - QC Settings</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #2563eb; --bg: #f8fafb; --card: #fff; --border: #e2e8f0; }
+        body { background: var(--bg); font-family: 'Roboto', system-ui, sans-serif; }
+        .container-wrap { max-width: 1400px; margin: 0 auto; padding: 1.5rem; }
+        .glass-header { position: sticky; top: 0; z-index: 1000; background: rgba(248, 250, 251, 0.95); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); padding: 1rem 1.5rem; display: flex; align-items: center; justify-content: space-between; }
+        .header-title { font-weight: 800; font-size: 1.15rem; color: var(--primary); margin: 0; }
+        .card-lite { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 1rem; box-shadow: 0 6px 16px rgba(15, 23, 42, 0.04); }
+        .label { font-size: 0.75rem; letter-spacing: 0.04em; text-transform: uppercase; color: #64748b; font-weight: 700; }
+        .vp-nhom-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+        .vp-nhom-tab {
+            border: 1.5px solid #cbd5f5; background: #eef2ff; color: #1e40af;
+            font-weight: 700; border-radius: 999px; padding: 6px 14px; font-size: 0.85rem;
+            cursor: pointer; transition: all 0.15s ease;
+        }
+        .vp-nhom-tab.active { background: #1d4ed8; color: #fff; border-color: #1d4ed8; box-shadow: 0 6px 14px rgba(29, 78, 216, 0.25); }
+        .vp-khoi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; }
+        .vp-khoi-card {
+            border: 1.5px solid var(--border); border-radius: 10px; background: #fff;
+            padding: 6px 4px 4px; text-align: center; cursor: pointer; transition: all 0.15s ease;
+        }
+        .vp-khoi-card:hover { border-color: #93c5fd; }
+        .vp-khoi-card.active { border-color: #1d4ed8; background: #eff6ff; box-shadow: 0 6px 14px rgba(29, 78, 216, 0.18); }
+        .vp-khoi-card img { width: 100%; height: 72px; object-fit: contain; background: #f8fafc; border-radius: 6px; }
+        .vp-khoi-card .vp-khoi-name { font-size: 0.75rem; font-weight: 700; color: #0f172a; margin-top: 4px; line-height: 1.15; }
+
+        .stage-wrap { position: relative; background: #f8fafc; border: 1.5px solid var(--border); border-radius: 14px; padding: 20px; }
+        .vp-img-holder { position: relative; display: inline-block; width: 100%; user-select: none; }
+        .vp-img-holder img { display: block; width: 100%; height: auto; user-select: none; -webkit-user-drag: none; }
+
+        .vp-hotspot {
+            position: absolute; min-width: 32px; height: 26px; padding: 0 8px;
+            border-radius: 999px; background: rgba(239, 68, 68, 0.95); color: #fff;
+            font-size: 0.78rem; font-weight: 800; display: inline-flex; align-items: center; justify-content: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.22); border: 2px solid #fff;
+            cursor: grab; touch-action: none; user-select: none; z-index: 5;
+            transition: transform 0.08s ease, box-shadow 0.12s ease;
+        }
+        .vp-hotspot:hover { transform: scale(1.08); }
+        .vp-hotspot.dragging { cursor: grabbing; background: #f59e0b; color: #111827; box-shadow: 0 0 0 5px rgba(245, 158, 11, 0.35), 0 6px 14px rgba(245, 158, 11, 0.5); z-index: 10; transform: scale(1.12); }
+        .vp-hotspot.dirty { background: #10b981; }
+        .vp-hotspot.dirty.dragging { background: #f59e0b; }
+
+        .stage-empty { min-height: 200px; display: flex; align-items: center; justify-content: center; color: #64748b; font-size: 0.95rem; }
+        .save-bar {
+            position: sticky; bottom: 0; background: rgba(248, 250, 251, 0.97); backdrop-filter: blur(12px);
+            border-top: 1px solid var(--border); padding: 0.85rem 1rem; display: flex; align-items: center;
+            gap: 1rem; justify-content: space-between; margin-top: 1.25rem; border-radius: 14px;
+        }
+        .dirty-pill { background: #fef3c7; color: #92400e; border-radius: 999px; padding: 4px 10px; font-size: 0.78rem; font-weight: 700; }
+        .btn-save { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: #fff; border: none; border-radius: 12px; padding: 0.55rem 1.2rem; font-weight: 800; font-size: 0.9rem; box-shadow: 0 8px 16px rgba(37, 99, 235, 0.22); }
+        .btn-save:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
+        .hint { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; padding: 0.6rem 0.85rem; border-radius: 10px; font-size: 0.85rem; }
+        .toast {
+            position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+            background: #0f172a; color: #fff; padding: 0.65rem 1rem; border-radius: 999px;
+            font-size: 0.88rem; box-shadow: 0 10px 24px rgba(15, 23, 42, 0.3); display: none; z-index: 1200;
+        }
+    </style>
+</head>
+<body>
+    <div class="glass-header">
+        <a href="/qc" class="text-secondary text-decoration-none"><i class="fas fa-arrow-left fa-lg"></i></a>
+        <h1 class="header-title"><i class="fas fa-crosshairs me-2"></i>TINH CHỈNH VỊ TRÍ HOTSPOT</h1>
+        <div style="width: 24px;"></div>
+    </div>
+
+    {% if forbidden %}
+    <div class="container-wrap">
+        <div class="card-lite" style="max-width: 560px; margin: 4rem auto; text-align: center;">
+            <i class="fas fa-lock fa-3x text-danger mb-3"></i>
+            <h5 class="fw-bold mb-2">Không có quyền truy cập</h5>
+            <p class="text-muted mb-1">Trang này dành riêng cho tài khoản <strong>QAQT</strong>.</p>
+            <p class="text-muted small">Tài khoản hiện tại: {{ user.name }} ({{ user.department }})</p>
+            <a href="/qc" class="btn btn-outline-primary mt-3"><i class="fas fa-arrow-left me-1"></i>Về trang QC</a>
+        </div>
+    </div>
+    {% else %}
+    <div class="container-wrap">
+        <div class="row g-3">
+            <div class="col-12 col-lg-4">
+                <div class="card-lite mb-3">
+                    <div class="label mb-2">Loại hàng</div>
+                    <select id="loaiHangSelect" class="form-select">
+                        <option value="">-- Chọn loại hàng --</option>
+                    </select>
+                </div>
+
+                <div class="card-lite mb-3" id="nhomCard" style="display: none;">
+                    <div class="label mb-2">Nhóm</div>
+                    <div id="nhomTabs" class="vp-nhom-tabs"></div>
+                </div>
+
+                <div class="card-lite mb-3" id="khoiCard" style="display: none;">
+                    <div class="label mb-2">Khối (chọn để chỉnh sửa)</div>
+                    <div id="khoiGrid" class="vp-khoi-grid"></div>
+                </div>
+
+                <div class="hint">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Bấm và <strong>kéo thả</strong> các hotspot trên ảnh đến vị trí thực tế. Bấm <strong>Lưu</strong> để cập nhật vào hệ thống.
+                </div>
+            </div>
+
+            <div class="col-12 col-lg-8">
+                <div class="card-lite">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div class="label" id="stageTitle">Chọn 1 khối để bắt đầu</div>
+                        <div id="koiHotspotCount" class="text-muted small"></div>
+                    </div>
+                    <div class="stage-wrap">
+                        <div id="stage" class="stage-empty">
+                            Chọn loại hàng → nhóm → khối phía bên trái để hiển thị ảnh và hotspot.
+                        </div>
+                    </div>
+                    <div class="save-bar" id="saveBar" style="display: none;">
+                        <div>
+                            <span class="dirty-pill" id="dirtyPill"><i class="fas fa-circle-dot me-1"></i><span id="dirtyCount">0</span> thay đổi chưa lưu</span>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-outline-secondary btn-sm" id="resetBtn">
+                                <i class="fas fa-rotate-left me-1"></i>Hoàn tác
+                            </button>
+                            <button class="btn-save" id="saveBtn">
+                                <i class="fas fa-save me-2"></i>LƯU VỊ TRÍ
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% endif %}
+
+    <div class="toast" id="toast"></div>
+
+    {% if not forbidden %}
+    <script>
+        let visualPickerData = null;     // {has_visual_picker, nhoms: [...]}
+        let currentNhomKey = null;
+        let currentBoPhanId = null;
+        let originalHotspots = {};        // chi_tiet_id -> {x_pct, y_pct} (snapshot of current khoi for reset)
+        let dirtyHotspots = {};           // chi_tiet_id -> {x_pct, y_pct} (current modified values)
+        let draggingState = null;         // {chi_tiet_id, startX, startY, baseLeftPx, baseTopPx, holderRect}
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadLoaiHangList();
+            document.getElementById('loaiHangSelect').addEventListener('change', onLoaiHangChange);
+            document.getElementById('saveBtn').addEventListener('click', saveDirtyHotspots);
+            document.getElementById('resetBtn').addEventListener('click', resetCurrentKhoi);
+            window.addEventListener('resize', () => {
+                if (currentBoPhanId) repositionHotspots();
+            });
+        });
+
+        async function loadLoaiHangList() {
+            try {
+                const res = await fetch('/api/qc/visual-picker/loai-hang-list');
+                const data = await res.json();
+                const sel = document.getElementById('loaiHangSelect');
+                (data.rows || []).forEach(r => {
+                    const opt = document.createElement('option');
+                    opt.value = r.id;
+                    opt.textContent = r.ten_loai;
+                    sel.appendChild(opt);
+                });
+            } catch (e) {
+                console.error(e);
+                showToast('Lỗi tải danh sách loại hàng');
+            }
+        }
+
+        async function onLoaiHangChange(e) {
+            const loaiHangId = e.target.value;
+            visualPickerData = null;
+            currentNhomKey = null;
+            currentBoPhanId = null;
+            originalHotspots = {};
+            dirtyHotspots = {};
+            document.getElementById('nhomCard').style.display = 'none';
+            document.getElementById('khoiCard').style.display = 'none';
+            document.getElementById('saveBar').style.display = 'none';
+            resetStage();
+            if (!loaiHangId) return;
+            try {
+                const res = await fetch(`/api/qc/visual-picker?loai_hang_id=${loaiHangId}`);
+                const data = await res.json();
+                if (!data.has_visual_picker) {
+                    showToast('Loại hàng này chưa có dữ liệu visual picker.');
+                    return;
+                }
+                visualPickerData = data;
+                renderNhomTabs();
+            } catch (err) {
+                console.error(err);
+                showToast('Lỗi tải dữ liệu loại hàng');
+            }
+        }
+
+        function renderNhomTabs() {
+            const card = document.getElementById('nhomCard');
+            const wrap = document.getElementById('nhomTabs');
+            wrap.innerHTML = '';
+            (visualPickerData.nhoms || []).forEach((n, idx) => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'vp-nhom-tab' + (idx === 0 ? ' active' : '');
+                btn.textContent = n.label;
+                btn.dataset.nhomKey = n.nhom;
+                btn.addEventListener('click', () => selectNhom(n.nhom));
+                wrap.appendChild(btn);
+            });
+            card.style.display = 'block';
+            const first = (visualPickerData.nhoms || [])[0];
+            if (first) selectNhom(first.nhom);
+        }
+
+        function selectNhom(nhomKey) {
+            if (hasUnsavedAndConfirm() === false) return;
+            currentNhomKey = nhomKey;
+            document.querySelectorAll('.vp-nhom-tab').forEach(b => {
+                b.classList.toggle('active', b.dataset.nhomKey === nhomKey);
+            });
+            renderKhoiGrid();
+        }
+
+        function renderKhoiGrid() {
+            const card = document.getElementById('khoiCard');
+            const grid = document.getElementById('khoiGrid');
+            const nhom = (visualPickerData.nhoms || []).find(n => n.nhom === currentNhomKey);
+            if (!nhom) { card.style.display = 'none'; return; }
+            grid.innerHTML = '';
+            nhom.khoi.forEach(k => {
+                const card = document.createElement('div');
+                card.className = 'vp-khoi-card' + (k.bo_phan_id === currentBoPhanId ? ' active' : '');
+                card.dataset.boPhanId = k.bo_phan_id;
+                card.innerHTML = `
+                    <img src="${k.image_png}" alt="${k.ten_khoi}" loading="lazy">
+                    <div class="vp-khoi-name">${k.ten_khoi}</div>
+                `;
+                card.addEventListener('click', () => selectKhoi(k.bo_phan_id));
+                grid.appendChild(card);
+            });
+            card.style.display = 'block';
+        }
+
+        function getCurrentKhoi() {
+            if (!visualPickerData || !currentNhomKey || !currentBoPhanId) return null;
+            const nhom = visualPickerData.nhoms.find(n => n.nhom === currentNhomKey);
+            if (!nhom) return null;
+            return nhom.khoi.find(k => k.bo_phan_id === currentBoPhanId);
+        }
+
+        function selectKhoi(boPhanId) {
+            if (hasUnsavedAndConfirm() === false) return;
+            currentBoPhanId = boPhanId;
+            dirtyHotspots = {};
+            originalHotspots = {};
+            document.querySelectorAll('.vp-khoi-card').forEach(c => {
+                c.classList.toggle('active', parseInt(c.dataset.boPhanId) === boPhanId);
+            });
+            const khoi = getCurrentKhoi();
+            if (!khoi) return;
+            (khoi.hotspots || []).forEach(h => {
+                originalHotspots[h.chi_tiet_id] = { x_pct: h.x_pct, y_pct: h.y_pct };
+            });
+            renderStage(khoi);
+        }
+
+        function resetStage() {
+            const stage = document.getElementById('stage');
+            stage.className = 'stage-empty';
+            stage.innerHTML = 'Chọn loại hàng → nhóm → khối phía bên trái để hiển thị ảnh và hotspot.';
+            document.getElementById('stageTitle').textContent = 'Chọn 1 khối để bắt đầu';
+            document.getElementById('koiHotspotCount').textContent = '';
+            document.getElementById('saveBar').style.display = 'none';
+        }
+
+        function renderStage(khoi) {
+            const stage = document.getElementById('stage');
+            stage.className = '';
+            const imgSrc = khoi.image_svg || khoi.image_png;
+            stage.innerHTML = `
+                <div class="vp-img-holder" data-holder>
+                    <img src="${imgSrc}" alt="${khoi.ten_khoi}" data-img>
+                </div>
+            `;
+            document.getElementById('stageTitle').textContent = `Khối: ${khoi.ten_khoi}`;
+            document.getElementById('koiHotspotCount').textContent = `${(khoi.hotspots || []).length} vị trí`;
+            document.getElementById('saveBar').style.display = 'flex';
+            updateDirtyCount();
+            const img = stage.querySelector('img');
+            const placeAll = () => repositionHotspots();
+            if (img.complete) placeAll();
+            else img.addEventListener('load', placeAll, { once: true });
+        }
+
+        function repositionHotspots() {
+            const khoi = getCurrentKhoi();
+            if (!khoi) return;
+            const holder = document.querySelector('[data-holder]');
+            if (!holder) return;
+            holder.querySelectorAll('.vp-hotspot').forEach(h => h.remove());
+            (khoi.hotspots || []).forEach(h => {
+                const cur = dirtyHotspots[h.chi_tiet_id] || { x_pct: h.x_pct, y_pct: h.y_pct };
+                const dot = document.createElement('div');
+                dot.className = 'vp-hotspot';
+                if (dirtyHotspots[h.chi_tiet_id]) dot.classList.add('dirty');
+                dot.dataset.chiTietId = h.chi_tiet_id;
+                dot.textContent = h.ma_vi_tri || '';
+                dot.title = h.label || '';
+                const cx = (cur.x_pct + (h.w_pct || 0) / 2) * 100;
+                const cy = (cur.y_pct + (h.h_pct || 0) / 2) * 100;
+                dot.style.left = `calc(${cx}% - 16px)`;
+                dot.style.top = `calc(${cy}% - 13px)`;
+                dot.dataset.wPct = h.w_pct || 0;
+                dot.dataset.hPct = h.h_pct || 0;
+                attachDragHandlers(dot, h);
+                holder.appendChild(dot);
+            });
+        }
+
+        function attachDragHandlers(dot, hotspot) {
+            const onStart = (clientX, clientY, e) => {
+                const holder = dot.closest('[data-holder]');
+                const holderRect = holder.getBoundingClientRect();
+                draggingState = {
+                    chi_tiet_id: hotspot.chi_tiet_id,
+                    startX: clientX,
+                    startY: clientY,
+                    holderRect,
+                    wPct: parseFloat(dot.dataset.wPct) || 0,
+                    hPct: parseFloat(dot.dataset.hPct) || 0,
+                    dot,
+                };
+                dot.classList.add('dragging');
+                e.preventDefault();
+            };
+            const onMove = (clientX, clientY) => {
+                if (!draggingState || draggingState.chi_tiet_id !== hotspot.chi_tiet_id) return;
+                const { holderRect, wPct, hPct, dot } = draggingState;
+                const cxPct = (clientX - holderRect.left) / holderRect.width;
+                const cyPct = (clientY - holderRect.top) / holderRect.height;
+                const clampedCx = Math.max(0, Math.min(1, cxPct));
+                const clampedCy = Math.max(0, Math.min(1, cyPct));
+                const newXPct = Math.max(0, Math.min(1 - wPct, clampedCx - wPct / 2));
+                const newYPct = Math.max(0, Math.min(1 - hPct, clampedCy - hPct / 2));
+                dirtyHotspots[hotspot.chi_tiet_id] = { x_pct: newXPct, y_pct: newYPct };
+                const cx = (newXPct + wPct / 2) * 100;
+                const cy = (newYPct + hPct / 2) * 100;
+                dot.style.left = `calc(${cx}% - 16px)`;
+                dot.style.top = `calc(${cy}% - 13px)`;
+            };
+            const onEnd = () => {
+                if (!draggingState) return;
+                draggingState.dot.classList.remove('dragging');
+                draggingState.dot.classList.add('dirty');
+                draggingState = null;
+                updateDirtyCount();
+            };
+            dot.addEventListener('mousedown', e => onStart(e.clientX, e.clientY, e));
+            dot.addEventListener('touchstart', e => {
+                const t = e.touches[0];
+                onStart(t.clientX, t.clientY, e);
+            }, { passive: false });
+        }
+
+        // Window-level move/end to keep dragging smooth when cursor leaves the hotspot
+        window.addEventListener('mousemove', e => {
+            if (draggingState) {
+                e.preventDefault();
+                draggingState && document.querySelector(`.vp-hotspot[data-chi-tiet-id="${draggingState.chi_tiet_id}"]`);
+                const h = getCurrentKhoi()?.hotspots?.find(x => x.chi_tiet_id === draggingState.chi_tiet_id);
+                if (h) {
+                    const { holderRect, wPct, hPct, dot } = draggingState;
+                    const cxPct = (e.clientX - holderRect.left) / holderRect.width;
+                    const cyPct = (e.clientY - holderRect.top) / holderRect.height;
+                    const clampedCx = Math.max(0, Math.min(1, cxPct));
+                    const clampedCy = Math.max(0, Math.min(1, cyPct));
+                    const newXPct = Math.max(0, Math.min(1 - wPct, clampedCx - wPct / 2));
+                    const newYPct = Math.max(0, Math.min(1 - hPct, clampedCy - hPct / 2));
+                    dirtyHotspots[h.chi_tiet_id] = { x_pct: newXPct, y_pct: newYPct };
+                    const cx = (newXPct + wPct / 2) * 100;
+                    const cy = (newYPct + hPct / 2) * 100;
+                    dot.style.left = `calc(${cx}% - 16px)`;
+                    dot.style.top = `calc(${cy}% - 13px)`;
+                }
+            }
+        });
+        window.addEventListener('mouseup', () => {
+            if (draggingState) {
+                draggingState.dot.classList.remove('dragging');
+                draggingState.dot.classList.add('dirty');
+                draggingState = null;
+                updateDirtyCount();
+            }
+        });
+        window.addEventListener('touchmove', e => {
+            if (draggingState && e.touches[0]) {
+                e.preventDefault();
+                const t = e.touches[0];
+                const { holderRect, wPct, hPct, dot, chi_tiet_id } = draggingState;
+                const cxPct = (t.clientX - holderRect.left) / holderRect.width;
+                const cyPct = (t.clientY - holderRect.top) / holderRect.height;
+                const clampedCx = Math.max(0, Math.min(1, cxPct));
+                const clampedCy = Math.max(0, Math.min(1, cyPct));
+                const newXPct = Math.max(0, Math.min(1 - wPct, clampedCx - wPct / 2));
+                const newYPct = Math.max(0, Math.min(1 - hPct, clampedCy - hPct / 2));
+                dirtyHotspots[chi_tiet_id] = { x_pct: newXPct, y_pct: newYPct };
+                const cx = (newXPct + wPct / 2) * 100;
+                const cy = (newYPct + hPct / 2) * 100;
+                dot.style.left = `calc(${cx}% - 16px)`;
+                dot.style.top = `calc(${cy}% - 13px)`;
+            }
+        }, { passive: false });
+        window.addEventListener('touchend', () => {
+            if (draggingState) {
+                draggingState.dot.classList.remove('dragging');
+                draggingState.dot.classList.add('dirty');
+                draggingState = null;
+                updateDirtyCount();
+            }
+        });
+
+        function updateDirtyCount() {
+            const n = Object.keys(dirtyHotspots).length;
+            document.getElementById('dirtyCount').textContent = n;
+            document.getElementById('saveBtn').disabled = (n === 0);
+            document.getElementById('dirtyPill').style.display = n > 0 ? 'inline-block' : 'none';
+        }
+
+        function resetCurrentKhoi() {
+            if (Object.keys(dirtyHotspots).length === 0) return;
+            if (!confirm('Bỏ tất cả thay đổi chưa lưu trong khối này?')) return;
+            dirtyHotspots = {};
+            const khoi = getCurrentKhoi();
+            if (khoi) renderStage(khoi);
+        }
+
+        async function saveDirtyHotspots() {
+            const items = Object.entries(dirtyHotspots).map(([cid, p]) => ({
+                chi_tiet_id: parseInt(cid),
+                x_pct: p.x_pct,
+                y_pct: p.y_pct,
+            }));
+            if (items.length === 0) return;
+            const btn = document.getElementById('saveBtn');
+            const orig = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>ĐANG LƯU...';
+            try {
+                const res = await fetch('/api/qc/visual-picker/hotspots-batch', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ items }),
+                });
+                if (!res.ok) throw new Error('Save failed');
+                const data = await res.json();
+                // Merge saved values into the canonical visualPickerData so reload không cần
+                const khoi = getCurrentKhoi();
+                if (khoi) {
+                    items.forEach(it => {
+                        const h = khoi.hotspots.find(x => x.chi_tiet_id === it.chi_tiet_id);
+                        if (h) { h.x_pct = it.x_pct; h.y_pct = it.y_pct; }
+                    });
+                }
+                dirtyHotspots = {};
+                updateDirtyCount();
+                if (khoi) renderStage(khoi);
+                showToast(`Đã lưu ${data.updated || items.length} vị trí.`);
+            } catch (e) {
+                console.error(e);
+                showToast('Lỗi khi lưu — vui lòng thử lại.');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = orig;
+            }
+        }
+
+        function hasUnsavedAndConfirm() {
+            if (Object.keys(dirtyHotspots).length === 0) return true;
+            return confirm('Có thay đổi chưa lưu trong khối hiện tại. Bỏ và tiếp tục?');
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.style.display = 'block';
+            clearTimeout(t._timer);
+            t._timer = setTimeout(() => { t.style.display = 'none'; }, 2400);
+        }
+    </script>
+    {% endif %}
+</body>
+</html>

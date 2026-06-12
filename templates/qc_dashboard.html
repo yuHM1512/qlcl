@@ -151,10 +151,10 @@
     <div class="max-w-7xl mx-auto px-8 py-10 flex flex-col lg:flex-row gap-10">
         <aside class="w-full lg:w-64 shrink-0">
             <div class="rounded-2xl bg-surface-high/70 p-4 space-y-2 sticky top-28">
-                <a href="/qc"
+                <a href="{{ '/qc-input' if is_qc_role else '/qc' }}"
                     class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-low transition font-semibold">
                     <span class="material-symbols-outlined">inventory_2</span>
-                    Kế hoạch sản xuất
+                    {{ 'Nhập liệu' if is_qc_role else 'Kế hoạch sản xuất' }}
                 </a>
                 <a href="/qc/dashboard"
                     class="flex items-center gap-3 px-4 py-3 rounded-xl bg-surface-lowest text-primary font-semibold">
@@ -166,11 +166,18 @@
                     <span class="material-symbols-outlined">task_alt</span>
                     Hành động khắc phục
                 </a>
+                {% if is_qaqt_role %}
                 <a href="/qc/settings/details"
                     class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-low transition font-semibold">
                     <span class="material-symbols-outlined">settings</span>
                     Cài đặt danh mục
                 </a>
+                <a href="/qc/settings/visual-picker"
+                    class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-low transition font-semibold">
+                    <span class="material-symbols-outlined">my_location</span>
+                    Sắp xếp vị trí
+                </a>
+                {% endif %}
             </div>
         </aside>
 

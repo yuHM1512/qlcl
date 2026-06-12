@@ -221,6 +221,29 @@ def require_authenticated_api_user(request: Request) -> Dict:
     return user
 
 
+def require_qaqt_api_user(request: Request) -> Dict:
+    """Dependency chỉ cho QAQT (admin QA) — dùng cho thao tác tinh chỉnh master data."""
+    user = get_authenticated_user(request)
+    if not user:
+        raise HTTPException(status_code=401, detail="Chưa đăng nhập")
+    if (user.get("department") or "").upper() != "QAQT":
+        raise HTTPException(status_code=403, detail="Chỉ tài khoản QAQT mới có quyền thao tác này.")
+    return user
+
+
+def build_qc_template_context(request: Request, user: Optional[Dict], **extra) -> Dict[str, Any]:
+    role = ((user or {}).get("department") or "").upper()
+    context: Dict[str, Any] = {
+        "request": request,
+        "user": user,
+        "qc_role": role,
+        "is_qc_role": role == "QC",
+        "is_qaqt_role": role == "QAQT",
+    }
+    context.update(extra)
+    return context
+
+
 def build_static_asset_version(asset_path: PathLib) -> str:
     """Use file mtime as a simple cache-busting version for static assets."""
     try:
@@ -2491,11 +2514,12 @@ def qc_page(request: Request):
     user_data = get_authenticated_user(request)
     if not user_data:
         return RedirectResponse(url="/login", status_code=303)
-    return templates.TemplateResponse("qc.html", {
-        "request": request,
-        "user": user_data,
-        "don_vi_options": DON_VI_OPTIONS
-    })
+    if (user_data.get("department") or "").upper() == "QC":
+        return RedirectResponse(url="/qc-input", status_code=303)
+    return templates.TemplateResponse(
+        "qc.html",
+        build_qc_template_context(request, user_data, don_vi_options=DON_VI_OPTIONS),
+    )
 
 
 @app.get("/qc-login")
@@ -2545,11 +2569,10 @@ def qc_input_page(request: Request):
         # Require login if missing or not QC
         return RedirectResponse(url="/qc-login", status_code=303)
 
-    return templates.TemplateResponse("qc_input_sp.html", {
-        "request": request,
-        "user": user_data,
-        "don_vi_options": DON_VI_OPTIONS
-    })
+    return templates.TemplateResponse(
+        "qc_input_sp.html",
+        build_qc_template_context(request, user_data, don_vi_options=DON_VI_OPTIONS),
+    )
 
 
 @app.get("/qc-input-2")
@@ -2558,23 +2581,53 @@ def qc_input_sp_page(request: Request):
 
 @app.get("/qc/settings/customer")
 def qc_settings_customer(request: Request):
-    return templates.TemplateResponse("qc_settings_customer.html", {"request": request})
+    user = get_authenticated_user(request)
+    if not user:
+        return RedirectResponse(url="/login", status_code=303)
+    if (user.get("department") or "").upper() != "QAQT":
+        return RedirectResponse(url="/qc", status_code=303)
+    return templates.TemplateResponse(
+        "qc_settings_customer.html",
+        build_qc_template_context(request, user),
+    )
 
 @app.get("/qc/settings/details")
 def qc_settings_details(request: Request):
-    return templates.TemplateResponse("qc_settings_details.html", {"request": request})
+    user = get_authenticated_user(request)
+    if not user:
+        return RedirectResponse(url="/login", status_code=303)
+    if (user.get("department") or "").upper() != "QAQT":
+        return RedirectResponse(url="/qc", status_code=303)
+    return templates.TemplateResponse(
+        "qc_settings_details.html",
+        build_qc_template_context(request, user),
+    )
 
 @app.get("/qc/settings/qc-list")
 def qc_settings_qc_list(request: Request):
-    return templates.TemplateResponse("qc_settings_qcs.html", {"request": request, "don_vi_options": DON_VI_OPTIONS})
+    user = get_authenticated_user(request)
+    if not user:
+        return RedirectResponse(url="/login", status_code=303)
+    if (user.get("department") or "").upper() != "QAQT":
+        return RedirectResponse(url="/qc", status_code=303)
+    return templates.TemplateResponse(
+        "qc_settings_qcs.html",
+        build_qc_template_context(request, user, don_vi_options=DON_VI_OPTIONS),
+    )
 
 @app.get("/qc/cap")
 def qc_cap_page(request: Request):
-    return templates.TemplateResponse("cap.html", {"request": request})
+    user = get_authenticated_user(request)
+    if not user:
+        return RedirectResponse(url="/login", status_code=303)
+    return templates.TemplateResponse("cap.html", build_qc_template_context(request, user))
 
 @app.get("/qc/dashboard")
 def qc_dashboard_page(request: Request):
-    return templates.TemplateResponse("qc_dashboard.html", {"request": request})
+    user = get_authenticated_user(request)
+    if not user:
+        return RedirectResponse(url="/login", status_code=303)
+    return templates.TemplateResponse("qc_dashboard.html", build_qc_template_context(request, user))
 
 @app.get("/api/qc/dashboard/filters")
 def api_qc_dashboard_filters(don_vi: Optional[str] = Query(None)):
@@ -3297,7 +3350,10 @@ def upsert_qc_employee(payload: QCEmployee):
     return {"status": "ok"}
 
 @app.post("/api/qc/cap/action")
-def upsert_qc_cap_action(payload: QcErrorDpsPayload):
+def upsert_qc_cap_action(
+    payload: QcErrorDpsPayload,
+    _user: Dict = Depends(require_qaqt_api_user),
+):
     loai_loi = normalize_qc_cap_loai_loi(payload.loai_loi, payload.ma_loi, payload.vi_tri)
     if not loai_loi:
         raise HTTPException(status_code=400, detail="Loai loi khong duoc de trong")
@@ -4643,6 +4699,66 @@ def api_qc_visual_picker(loai_hang_id: int = Query(...)):
     return {"has_visual_picker": True, "nhoms": nhoms}
 
 
+@app.get("/api/qc/visual-picker/loai-hang-list")
+def api_qc_visual_picker_loai_hang_list():
+    """Liệt kê loại hàng có visual picker để hiển thị trong selector admin."""
+    with get_db_connection() as conn:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(
+                """
+                SELECT DISTINCT lh.id, lh.ten_loai
+                FROM public.dm_loai_hang lh
+                JOIN public.dm_bo_phan bp ON bp.loai_hang_id = lh.id
+                WHERE bp.image_png IS NOT NULL AND bp.nhom IS NOT NULL
+                ORDER BY lh.ten_loai
+                """
+            )
+            return {"rows": cur.fetchall()}
+
+
+@app.patch("/api/qc/visual-picker/hotspots-batch")
+async def api_qc_visual_picker_update_hotspots(
+    request: Request,
+    _user: Dict = Depends(require_qaqt_api_user),
+):
+    """Bulk update x_pct/y_pct cho 1 nhóm chi_tiet (1 khoi). Chỉ QAQT.
+    Body: {"items": [{"chi_tiet_id": int, "x_pct": float, "y_pct": float}, ...]}
+    """
+    body = await request.json()
+    items = body.get("items") or []
+    if not items:
+        return {"status": "ok", "updated": 0}
+    with get_db_connection() as conn:
+        with conn.cursor() as cur:
+            for it in items:
+                cid = int(it["chi_tiet_id"])
+                x = max(0.0, min(1.0, float(it["x_pct"])))
+                y = max(0.0, min(1.0, float(it["y_pct"])))
+                cur.execute(
+                    "UPDATE public.dm_chi_tiet SET x_pct = %s, y_pct = %s WHERE id = %s",
+                    (x, y, cid),
+                )
+            conn.commit()
+    return {"status": "ok", "updated": len(items)}
+
+
+@app.get("/qc/settings/visual-picker")
+def qc_settings_visual_picker_page(request: Request):
+    user = get_authenticated_user(request)
+    if not user:
+        return RedirectResponse(url="/qc-login", status_code=303)
+    if (user.get("department") or "").upper() != "QAQT":
+        return templates.TemplateResponse(
+            "qc_settings_visual_picker.html",
+            build_qc_template_context(request, user, forbidden=True),
+            status_code=403,
+        )
+    return templates.TemplateResponse(
+        "qc_settings_visual_picker.html",
+        build_qc_template_context(request, user, forbidden=False),
+    )
+
+
 @app.get("/api/dm/khach-hang")
 def api_dm_khach_hang():
     """Lấy danh sách Khách hàng."""
@@ -5589,8 +5705,6 @@ def healthz():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8008, reload=True)
-
-
 
 
 

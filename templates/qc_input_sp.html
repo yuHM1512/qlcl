@@ -26,6 +26,33 @@
         }
         .glass-header { position: sticky; top: 0; background: #f8fafb; border-bottom: 1px solid var(--border); z-index: 1000; padding: 1rem 1.25rem; margin: -1.25rem -1.25rem 1.5rem -1.25rem; display: flex; align-items: center; justify-content: space-between; }
         .header-title { font-weight: 800; font-size: 1.05rem; color: var(--primary); margin: 0; }
+        .quick-nav {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0.5rem;
+            margin: -0.5rem 0 1rem;
+        }
+        .quick-nav-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.35rem;
+            background: #ffffff;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 0.7rem 0.55rem;
+            color: #475569;
+            font-size: 0.82rem;
+            font-weight: 700;
+            text-decoration: none;
+            box-shadow: 0 6px 16px rgba(15, 23, 42, 0.05);
+        }
+        .quick-nav-link.active {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            border-color: #1d4ed8;
+            color: #fff;
+        }
+        .quick-nav-link i { font-size: 0.85rem; }
         .card-lite { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 1rem; box-shadow: 0 6px 16px rgba(15, 23, 42, 0.05); }
         .fixed-footer { position: fixed; bottom: 0; left: 0; right: 0; padding: 1rem 1.25rem 1.5rem; background: rgba(248, 250, 251, 0.9); border-top: 1px solid var(--border); }
         .btn-save { width: 100%; max-width: 460px; margin: 0 auto; display: block; height: 56px; border-radius: 16px; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: #fff; border: none; font-weight: 800; font-size: 1.05rem; box-shadow: 0 10px 20px rgba(37, 99, 235, 0.25); }
@@ -439,6 +466,21 @@
         <a href="/qc" class="text-secondary"><i class="fas fa-arrow-left fa-lg"></i></a>
         <h1 class="header-title">NHẬP LỖI QC (SP)</h1>
         <button onclick="logout()" class="btn btn-sm text-danger" title="Đăng xuất"><i class="fas fa-sign-out-alt fa-lg"></i></button>
+    </div>
+
+    <div class="quick-nav">
+        <a href="/qc-input" class="quick-nav-link active">
+            <i class="fas fa-keyboard"></i>
+            <span>Nhập liệu</span>
+        </a>
+        <a href="/qc/dashboard" class="quick-nav-link">
+            <i class="fas fa-chart-line"></i>
+            <span>Dashboard</span>
+        </a>
+        <a href="/qc/cap" class="quick-nav-link">
+            <i class="fas fa-clipboard-check"></i>
+            <span>HĐ khắc phục</span>
+        </a>
     </div>
 
     <div class="text-center mb-3">
