@@ -12,6 +12,8 @@ images/*
 images/positions/*
 !images/positions/aovest/
 !images/positions/aovest/**
+!images/positions/quantay/
+!images/positions/quantay/**
 pdf_files/
 
 gemba_cp/templates/credentials_m29.json

@@ -1,0 +1,2250 @@
+{
+  "loai_hangs": {
+    "aovest": {
+      "nhoms": [
+        {
+          "nhom": "chinh",
+          "sheet_name": "AO VEST -CHINH",
+          "khoi": [
+            {
+              "ten_khoi": "Túi sườn",
+              "prefix": "TS",
+              "image_emu": {
+                "off_x": 1900720,
+                "off_y": 26961102,
+                "cx": 3309580,
+                "cy": 3065123
+              },
+              "image_png": "positions/aovest/chinh/chinh_ts_1.png",
+              "image_svg": "positions/aovest/chinh/chinh_ts_1.svg",
+              "hotspots": [
+                {
+                  "ma": "TS1",
+                  "label": "Cạnh túi (sườn)",
+                  "x_pct": 0.04189,
+                  "y_pct": 0.24689,
+                  "w_pct": 0.14267,
+                  "h_pct": 0.0522,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TS2",
+                  "label": "Bọ túi (sườn)",
+                  "x_pct": -0.07232,
+                  "y_pct": 0.34779,
+                  "w_pct": 0.14267,
+                  "h_pct": 0.0522,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TS3",
+                  "label": "Nẹp túi (sườn)",
+                  "x_pct": 0.25949,
+                  "y_pct": 0.18449,
+                  "w_pct": 0.14267,
+                  "h_pct": 0.0522,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TS4",
+                  "label": "Đường ráp nẹp túi (sườn)",
+                  "x_pct": 0.53578,
+                  "y_pct": 0.18547,
+                  "w_pct": 0.14267,
+                  "h_pct": 0.0522,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TS5",
+                  "label": "Nắp túi (sườn)",
+                  "x_pct": 0.28088,
+                  "y_pct": 0.39761,
+                  "w_pct": 0.14267,
+                  "h_pct": 0.05135,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TS6",
+                  "label": "Lót nắp túi (sườn)",
+                  "x_pct": 0.53082,
+                  "y_pct": 0.42383,
+                  "w_pct": 0.14267,
+                  "h_pct": 0.0522,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TS7",
+                  "label": "Đường lược túi (sườn)",
+                  "x_pct": 0.24053,
+                  "y_pct": 0.41018,
+                  "w_pct": 0.14267,
+                  "h_pct": 0.0522,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TS8",
+                  "label": "Bao túi (sườn)",
+                  "x_pct": 0.27121,
+                  "y_pct": 0.68556,
+                  "w_pct": 0.14267,
+                  "h_pct": 0.05135,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TS9",
+                  "label": "Đường may bao túi (sườn)",
+                  "x_pct": 0.71068,
+                  "y_pct": 0.61183,
+                  "w_pct": 0.14267,
+                  "h_pct": 0.05135,
+                  "rotation": 0.0
+                }
+              ]
+            },
+            {
+              "ten_khoi": "Túi ngực",
+              "prefix": "TN",
+              "image_emu": {
+                "off_x": 0,
+                "off_y": 23711647,
+                "cx": 6223000,
+                "cy": 3419073
+              },
+              "image_png": "positions/aovest/chinh/chinh_tn_2.png",
+              "image_svg": "positions/aovest/chinh/chinh_tn_2.svg",
+              "hotspots": [
+                {
+                  "ma": "TN1",
+                  "label": "Cạnh túi (ngực)",
+                  "x_pct": 0.90727,
+                  "y_pct": 0.40205,
+                  "w_pct": 0.08312,
+                  "h_pct": 0.0415,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TN2",
+                  "label": "Nẹp túi (ngực)",
+                  "x_pct": 0.6621,
+                  "y_pct": 0.62588,
+                  "w_pct": 0.09301,
+                  "h_pct": 0.03835,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TN3",
+                  "label": "Đường ráp nẹp túi (ngực)",
+                  "x_pct": 0.61646,
+                  "y_pct": 0.78703,
+                  "w_pct": 0.08462,
+                  "h_pct": 0.06292,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TN4",
+                  "label": "Đắp túi (ngực)",
+                  "x_pct": 0.56908,
+                  "y_pct": 0.38793,
+                  "w_pct": 0.08398,
+                  "h_pct": 0.03596,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TN5",
+                  "label": "Đường ráp đắp túi (ngực)",
+                  "x_pct": 0.6527,
+                  "y_pct": 0.41295,
+                  "w_pct": 0.08199,
+                  "h_pct": 0.04152,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TN6",
+                  "label": "Đường lược túi (ngực)",
+                  "x_pct": 0.48546,
+                  "y_pct": 0.39011,
+                  "w_pct": 0.08477,
+                  "h_pct": 0.03378,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TN7",
+                  "label": "Bao túi (ngực)",
+                  "x_pct": 0.15064,
+                  "y_pct": 0.79942,
+                  "w_pct": 0.07588,
+                  "h_pct": 0.04679,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TN8",
+                  "label": "Đường may bao túi (ngực)",
+                  "x_pct": 0.17639,
+                  "y_pct": 0.67594,
+                  "w_pct": 0.07588,
+                  "h_pct": 0.04679,
+                  "rotation": 0.0
+                }
+              ]
+            },
+            {
+              "ten_khoi": "Tay",
+              "prefix": "T",
+              "image_emu": {
+                "off_x": 565878,
+                "off_y": 15462271,
+                "cx": 6012939,
+                "cy": 3501735
+              },
+              "image_png": "positions/aovest/chinh/chinh_t_3.png",
+              "image_svg": "positions/aovest/chinh/chinh_t_3.svg",
+              "hotspots": [
+                {
+                  "ma": "T1",
+                  "label": "Đỉnh vai",
+                  "x_pct": 0.2324,
+                  "y_pct": 0.17064,
+                  "w_pct": 0.06919,
+                  "h_pct": 0.04377,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "T2",
+                  "label": "Đường tra tay trước",
+                  "x_pct": 0.30074,
+                  "y_pct": 0.39895,
+                  "w_pct": 0.06919,
+                  "h_pct": 0.04437,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "T3",
+                  "label": "Tay lớn",
+                  "x_pct": 0.2356,
+                  "y_pct": 0.6402,
+                  "w_pct": 0.06919,
+                  "h_pct": 0.04327,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "T4",
+                  "label": "Khuy tay",
+                  "x_pct": 0.08735,
+                  "y_pct": 0.6719,
+                  "w_pct": 0.06919,
+                  "h_pct": 0.04327,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "T5",
+                  "label": "Nút tay",
+                  "x_pct": 0.00437,
+                  "y_pct": 0.75895,
+                  "w_pct": 0.06919,
+                  "h_pct": 0.04327,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "T6",
+                  "label": "Khuy tay",
+                  "x_pct": -0.00981,
+                  "y_pct": 0.84631,
+                  "w_pct": 0.06919,
+                  "h_pct": 0.04327,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "T7",
+                  "label": "Xẻ tay",
+                  "x_pct": 0.22957,
+                  "y_pct": 0.91756,
+                  "w_pct": 0.06919,
+                  "h_pct": 0.04352,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "T8",
+                  "label": "Đường tra tay sau",
+                  "x_pct": 0.52649,
+                  "y_pct": 0.29237,
+                  "w_pct": 0.06919,
+                  "h_pct": 0.04372,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "T9",
+                  "label": "Đường sóng tay",
+                  "x_pct": 0.66108,
+                  "y_pct": 0.40416,
+                  "w_pct": 0.06919,
+                  "h_pct": 0.04352,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "T10",
+                  "label": "Tay nhỏ",
+                  "x_pct": 0.59745,
+                  "y_pct": 0.66722,
+                  "w_pct": 0.08128,
+                  "h_pct": 0.04327,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "T11",
+                  "label": "Đường chèn tay",
+                  "x_pct": 0.60638,
+                  "y_pct": 0.78375,
+                  "w_pct": 0.08102,
+                  "h_pct": 0.04352,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "T12",
+                  "label": "Lai tay",
+                  "x_pct": 0.57243,
+                  "y_pct": 0.96552,
+                  "w_pct": 0.08102,
+                  "h_pct": 0.04352,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "T13",
+                  "label": "Chốt xẻ tay",
+                  "x_pct": 0.8228,
+                  "y_pct": 0.54435,
+                  "w_pct": 0.08102,
+                  "h_pct": 0.04432,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "T14",
+                  "label": "Đường khoá góc tay",
+                  "x_pct": 0.85284,
+                  "y_pct": 0.62596,
+                  "w_pct": 0.08102,
+                  "h_pct": 0.04352,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "T15",
+                  "label": "Đường khoá bao thư",
+                  "x_pct": 0.79137,
+                  "y_pct": 0.73901,
+                  "w_pct": 0.08102,
+                  "h_pct": 0.04397,
+                  "rotation": 0.0
+                }
+              ]
+            },
+            {
+              "ten_khoi": "Lưng",
+              "prefix": "L",
+              "image_emu": {
+                "off_x": 2599149,
+                "off_y": 19394466,
+                "cx": 2118988,
+                "cy": 3183300
+              },
+              "image_png": "positions/aovest/chinh/chinh_l_4.png",
+              "image_svg": "positions/aovest/chinh/chinh_l_4.svg",
+              "hotspots": [
+                {
+                  "ma": "L1",
+                  "label": "Vòng cổ",
+                  "x_pct": 0.35053,
+                  "y_pct": 0.07789,
+                  "w_pct": 0.19634,
+                  "h_pct": 0.04869,
+                  "rotation": 357.0
+                },
+                {
+                  "ma": "L2",
+                  "label": "Vai sau",
+                  "x_pct": 0.20533,
+                  "y_pct": 0.10869,
+                  "w_pct": 0.19634,
+                  "h_pct": 0.04906,
+                  "rotation": 357.0
+                },
+                {
+                  "ma": "L3",
+                  "label": "Vòng nách sau",
+                  "x_pct": 0.17641,
+                  "y_pct": 0.1939,
+                  "w_pct": 0.19634,
+                  "h_pct": 0.04906,
+                  "rotation": 315.59
+                },
+                {
+                  "ma": "L4",
+                  "label": "Sườn bên",
+                  "x_pct": 0.07042,
+                  "y_pct": 0.70842,
+                  "w_pct": 0.19634,
+                  "h_pct": 0.04874,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "L5",
+                  "label": "Đường can sườn",
+                  "x_pct": 0.22254,
+                  "y_pct": 0.48382,
+                  "w_pct": 0.19634,
+                  "h_pct": 0.04874,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "L6",
+                  "label": "Xẻ lưng",
+                  "x_pct": 0.3069,
+                  "y_pct": 0.75282,
+                  "w_pct": 0.19634,
+                  "h_pct": 0.04906,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "L7",
+                  "label": "Chốt xẻ lưng",
+                  "x_pct": 0.21862,
+                  "y_pct": 0.86182,
+                  "w_pct": 0.19634,
+                  "h_pct": 0.04906,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "L8",
+                  "label": "Thân sau",
+                  "x_pct": 0.30761,
+                  "y_pct": 0.42609,
+                  "w_pct": 0.19634,
+                  "h_pct": 0.04906,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "L9",
+                  "label": "Đường can sóng lưng",
+                  "x_pct": 0.50524,
+                  "y_pct": 0.29003,
+                  "w_pct": 0.19634,
+                  "h_pct": 0.04985,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "L10",
+                  "label": "Lai thân sau",
+                  "x_pct": 0.55835,
+                  "y_pct": 0.74116,
+                  "w_pct": 0.22283,
+                  "h_pct": 0.04985,
+                  "rotation": 0.0
+                }
+              ]
+            },
+            {
+              "ten_khoi": "Thân trước",
+              "prefix": "TT",
+              "image_emu": {
+                "off_x": 1277644,
+                "off_y": 8334463,
+                "cx": 5899480,
+                "cy": 6614067
+              },
+              "image_png": "positions/aovest/chinh/chinh_tt_5.png",
+              "image_svg": "positions/aovest/chinh/chinh_tt_5.svg",
+              "hotspots": [
+                {
+                  "ma": "TT1",
+                  "label": "Đường can vai",
+                  "x_pct": 0.04184,
+                  "y_pct": 0.05657,
+                  "w_pct": 0.08204,
+                  "h_pct": 0.02707,
+                  "rotation": 334.09
+                },
+                {
+                  "ma": "TT2",
+                  "label": "Vai trước",
+                  "x_pct": 0.01677,
+                  "y_pct": 0.14927,
+                  "w_pct": 0.08204,
+                  "h_pct": 0.02128,
+                  "rotation": 338.67
+                },
+                {
+                  "ma": "TT3",
+                  "label": "Ngực",
+                  "x_pct": 0.05896,
+                  "y_pct": 0.22532,
+                  "w_pct": 0.08204,
+                  "h_pct": 0.02813,
+                  "rotation": 26.32
+                },
+                {
+                  "ma": "TT4",
+                  "label": "Vòng nách trước",
+                  "x_pct": 0.16334,
+                  "y_pct": 0.34879,
+                  "w_pct": 0.08204,
+                  "h_pct": 0.02761,
+                  "rotation": 10.29
+                },
+                {
+                  "ma": "TT5",
+                  "label": "Đường can chèn",
+                  "x_pct": -0.00974,
+                  "y_pct": 0.50392,
+                  "w_pct": 0.08204,
+                  "h_pct": 0.02687,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TT6",
+                  "label": "Đường chít ly",
+                  "x_pct": 0.15602,
+                  "y_pct": 0.52294,
+                  "w_pct": 0.08204,
+                  "h_pct": 0.02813,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TT7",
+                  "label": "Thân trước",
+                  "x_pct": 0.07928,
+                  "y_pct": 0.73091,
+                  "w_pct": 0.08204,
+                  "h_pct": 0.02761,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TT8",
+                  "label": "Tà trước",
+                  "x_pct": 0.21183,
+                  "y_pct": 0.65564,
+                  "w_pct": 0.08204,
+                  "h_pct": 0.02802,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TT9",
+                  "label": "Khuy tà",
+                  "x_pct": 0.69275,
+                  "y_pct": 0.69641,
+                  "w_pct": 0.08204,
+                  "h_pct": 0.04454,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TT10",
+                  "label": "Nút tà",
+                  "x_pct": 0.81981,
+                  "y_pct": 0.74749,
+                  "w_pct": 0.13144,
+                  "h_pct": 0.08981,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TT11",
+                  "label": "Đính nút tà",
+                  "x_pct": 0.84734,
+                  "y_pct": 0.84472,
+                  "w_pct": 0.10067,
+                  "h_pct": 0.02758,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TT12",
+                  "label": "Lai thân trước",
+                  "x_pct": 0.40126,
+                  "y_pct": 0.92698,
+                  "w_pct": 0.10067,
+                  "h_pct": 0.02758,
+                  "rotation": 0.0
+                }
+              ]
+            },
+            {
+              "ten_khoi": "Ve",
+              "prefix": "V",
+              "image_emu": {
+                "off_x": 2278877,
+                "off_y": 3988037,
+                "cx": 2236151,
+                "cy": 3616275
+              },
+              "image_png": "positions/aovest/chinh/chinh_v_6.png",
+              "image_svg": "positions/aovest/chinh/chinh_v_6.svg",
+              "hotspots": [
+                {
+                  "ma": "V1",
+                  "label": "Đường can ve",
+                  "x_pct": 0.70453,
+                  "y_pct": 0.18598,
+                  "w_pct": 0.18605,
+                  "h_pct": 0.04238,
+                  "rotation": 32.22
+                },
+                {
+                  "ma": "V2",
+                  "label": "Đầu ve",
+                  "x_pct": 0.85893,
+                  "y_pct": 0.28704,
+                  "w_pct": 0.18605,
+                  "h_pct": 0.04238,
+                  "rotation": 32.22
+                },
+                {
+                  "ma": "V3",
+                  "label": "Tà ve",
+                  "x_pct": 0.59583,
+                  "y_pct": 0.75894,
+                  "w_pct": 0.18605,
+                  "h_pct": 0.04238,
+                  "rotation": 36.43
+                },
+                {
+                  "ma": "V4",
+                  "label": "Điểm bẻ ve",
+                  "x_pct": 0.4405,
+                  "y_pct": 0.91771,
+                  "w_pct": 0.18605,
+                  "h_pct": 0.04238,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "V5",
+                  "label": "Khuy ve",
+                  "x_pct": 0.83595,
+                  "y_pct": 0.36103,
+                  "w_pct": 0.18605,
+                  "h_pct": 0.04238,
+                  "rotation": 39.52
+                },
+                {
+                  "ma": "V6",
+                  "label": "Huy hiệu",
+                  "x_pct": 0.59911,
+                  "y_pct": 0.37018,
+                  "w_pct": 0.18619,
+                  "h_pct": 0.04238,
+                  "rotation": 306.96
+                },
+                {
+                  "ma": "V7",
+                  "label": "Ve trên",
+                  "x_pct": 0.48703,
+                  "y_pct": 0.57428,
+                  "w_pct": 0.18619,
+                  "h_pct": 0.04238,
+                  "rotation": 294.54
+                },
+                {
+                  "ma": "V8",
+                  "label": "Ve dưới",
+                  "x_pct": 0.24798,
+                  "y_pct": 0.55253,
+                  "w_pct": 0.18251,
+                  "h_pct": 0.04243,
+                  "rotation": 74.34
+                }
+              ]
+            },
+            {
+              "ten_khoi": "Cổ",
+              "prefix": "C",
+              "image_emu": {
+                "off_x": 598022,
+                "off_y": 771645,
+                "cx": 5571229,
+                "cy": 2903316
+              },
+              "image_png": "positions/aovest/chinh/chinh_c_7.png",
+              "image_svg": "positions/aovest/chinh/chinh_c_7.svg",
+              "hotspots": [
+                {
+                  "ma": "C1",
+                  "label": "Lá cổ",
+                  "x_pct": 0.39337,
+                  "y_pct": 0.17534,
+                  "w_pct": 0.07468,
+                  "h_pct": 0.05279,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "C2",
+                  "label": "Đường can chân cổ",
+                  "x_pct": 0.11894,
+                  "y_pct": 0.32427,
+                  "w_pct": 0.07468,
+                  "h_pct": 0.05341,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "C3",
+                  "label": "Mí chân cổ",
+                  "x_pct": 0.23864,
+                  "y_pct": 0.43311,
+                  "w_pct": 0.07468,
+                  "h_pct": 0.05342,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "C4",
+                  "label": "Chân cổ",
+                  "x_pct": 0.47924,
+                  "y_pct": 0.41431,
+                  "w_pct": 0.07468,
+                  "h_pct": 0.05342,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "C5",
+                  "label": "Đường tra cổ lót",
+                  "x_pct": 0.70523,
+                  "y_pct": 0.44128,
+                  "w_pct": 0.07468,
+                  "h_pct": 0.0543,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "C6",
+                  "label": "Diễu mép cổ trên",
+                  "x_pct": 0.56589,
+                  "y_pct": 0.63024,
+                  "w_pct": 0.07468,
+                  "h_pct": 0.0543,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "C7",
+                  "label": "Khoá góc cổ",
+                  "x_pct": -0.00669,
+                  "y_pct": 0.56834,
+                  "w_pct": 0.07468,
+                  "h_pct": 0.0543,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "C8",
+                  "label": "Đường can má cổ",
+                  "x_pct": -0.00346,
+                  "y_pct": 0.7447,
+                  "w_pct": 0.07468,
+                  "h_pct": 0.0543,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "C9",
+                  "label": "Cổ dưới",
+                  "x_pct": 0.39664,
+                  "y_pct": 0.65933,
+                  "w_pct": 0.075,
+                  "h_pct": 0.05398,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "C10",
+                  "label": "Diễu chống giãn",
+                  "x_pct": 0.2376,
+                  "y_pct": 0.73323,
+                  "w_pct": 0.09129,
+                  "h_pct": 0.05398,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "C11",
+                  "label": "Đường tra chính",
+                  "x_pct": 0.67993,
+                  "y_pct": 0.89643,
+                  "w_pct": 0.09129,
+                  "h_pct": 0.05429,
+                  "rotation": 0.0
+                }
+              ]
+            }
+          ],
+          "orphan_textboxes": []
+        },
+        {
+          "nhom": "lot",
+          "sheet_name": "AO VEST - LOT",
+          "khoi": [
+            {
+              "ten_khoi": "Túi lót",
+              "prefix": "TL",
+              "image_emu": {
+                "off_x": 1764631,
+                "off_y": 12039601,
+                "cx": 4443663,
+                "cy": 3320123
+              },
+              "image_png": "positions/aovest/lot/lot_tl_1.png",
+              "image_svg": "positions/aovest/lot/lot_tl_1.svg",
+              "hotspots": [
+                {
+                  "ma": "TL1",
+                  "label": "Góc túi (lót)",
+                  "x_pct": -0.04693,
+                  "y_pct": 0.1588,
+                  "w_pct": 0.10626,
+                  "h_pct": 0.04855,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TL2",
+                  "label": "Nẹp miệng túi (lót)",
+                  "x_pct": 0.17509,
+                  "y_pct": 0.02592,
+                  "w_pct": 0.10626,
+                  "h_pct": 0.04855,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TL3",
+                  "label": "Đường ráp túi (lót)",
+                  "x_pct": 0.44946,
+                  "y_pct": 0.04525,
+                  "w_pct": 0.10626,
+                  "h_pct": 0.04855,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TL4",
+                  "label": "Bọ túi (lót)",
+                  "x_pct": 0.61192,
+                  "y_pct": 0.07907,
+                  "w_pct": 0.10626,
+                  "h_pct": 0.04855,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TL5",
+                  "label": "Nắp túi (lót)",
+                  "x_pct": -0.05054,
+                  "y_pct": 0.31825,
+                  "w_pct": 0.10626,
+                  "h_pct": 0.04855,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TL6",
+                  "label": "Khuy túi (lót)",
+                  "x_pct": 0.77076,
+                  "y_pct": 0.21919,
+                  "w_pct": 0.10626,
+                  "h_pct": 0.04855,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TL7",
+                  "label": "Nút túi (lót)",
+                  "x_pct": 0.93863,
+                  "y_pct": 0.35448,
+                  "w_pct": 0.10626,
+                  "h_pct": 0.04855,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TL8",
+                  "label": "Đính nút túi (lót)",
+                  "x_pct": 0.94585,
+                  "y_pct": 0.43179,
+                  "w_pct": 0.10626,
+                  "h_pct": 0.04855,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TL9",
+                  "label": "Bao túi (sườn)",
+                  "x_pct": 0.1787,
+                  "y_pct": 0.65889,
+                  "w_pct": 0.10626,
+                  "h_pct": 0.04855,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TL10",
+                  "label": "Đường diễu bao túi (sườn)",
+                  "x_pct": 0.50722,
+                  "y_pct": 0.83041,
+                  "w_pct": 0.13153,
+                  "h_pct": 0.03447,
+                  "rotation": 0.0
+                }
+              ]
+            },
+            {
+              "ten_khoi": "Lót lưng",
+              "prefix": "LL",
+              "image_emu": {
+                "off_x": 2109536,
+                "off_y": 8518357,
+                "cx": 2446422,
+                "cy": 3266694
+              },
+              "image_png": "positions/aovest/lot/lot_ll_2.png",
+              "image_svg": "positions/aovest/lot/lot_ll_2.svg",
+              "hotspots": [
+                {
+                  "ma": "LL1",
+                  "label": "Vòng cổ (lót)",
+                  "x_pct": 0.43127,
+                  "y_pct": 0.01218,
+                  "w_pct": 0.19301,
+                  "h_pct": 0.0482,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "LL2",
+                  "label": "Vai sau (lót)",
+                  "x_pct": 0.10811,
+                  "y_pct": 0.02171,
+                  "w_pct": 0.19301,
+                  "h_pct": 0.04873,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "LL3",
+                  "label": "Vòng nách sau (lót)",
+                  "x_pct": 0.05332,
+                  "y_pct": 0.14093,
+                  "w_pct": 0.19301,
+                  "h_pct": 0.0482,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "LL4",
+                  "label": "Chèn (lót)",
+                  "x_pct": -0.06013,
+                  "y_pct": 0.33614,
+                  "w_pct": 0.19301,
+                  "h_pct": 0.0482,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "LL5",
+                  "label": "Đường sườn (lót)",
+                  "x_pct": 0.28694,
+                  "y_pct": 0.50567,
+                  "w_pct": 0.19301,
+                  "h_pct": 0.0482,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "LL6",
+                  "label": "Diễu xẻ lưng",
+                  "x_pct": 0.28197,
+                  "y_pct": 0.61319,
+                  "w_pct": 0.19301,
+                  "h_pct": 0.0482,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "LL7",
+                  "label": "Đường can xẻ lưng",
+                  "x_pct": 0.07629,
+                  "y_pct": 0.7263,
+                  "w_pct": 0.19301,
+                  "h_pct": 0.0482,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "LL8",
+                  "label": "Đường đúp lót (xẻ tà)",
+                  "x_pct": 0.07492,
+                  "y_pct": 0.8298,
+                  "w_pct": 0.19301,
+                  "h_pct": 0.0482,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "LL9",
+                  "label": "Thân sau (lót)",
+                  "x_pct": 0.25536,
+                  "y_pct": 0.34558,
+                  "w_pct": 0.19301,
+                  "h_pct": 0.0482,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "LL10",
+                  "label": "Gập ly lưng (lót)",
+                  "x_pct": 0.55394,
+                  "y_pct": 0.15494,
+                  "w_pct": 0.27002,
+                  "h_pct": 0.0482,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "LL11",
+                  "label": "Đường sóng thân sau (lót)",
+                  "x_pct": 0.49093,
+                  "y_pct": 0.49385,
+                  "w_pct": 0.27002,
+                  "h_pct": 0.0482,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "LL12",
+                  "label": "Lai thân sau (lót)",
+                  "x_pct": 0.29904,
+                  "y_pct": 0.74025,
+                  "w_pct": 0.27002,
+                  "h_pct": 0.0482,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "LL13",
+                  "label": "Đường đúp lót lai (thân sau)",
+                  "x_pct": 0.52602,
+                  "y_pct": 0.82041,
+                  "w_pct": 0.27002,
+                  "h_pct": 0.0482,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "LL14",
+                  "label": "Bạ phối (lót)",
+                  "x_pct": 0.81565,
+                  "y_pct": 0.16191,
+                  "w_pct": 0.27002,
+                  "h_pct": 0.0482,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "LL15",
+                  "label": "Đường can bạ phối (lót)",
+                  "x_pct": 0.57184,
+                  "y_pct": 0.25951,
+                  "w_pct": 0.27002,
+                  "h_pct": 0.0482,
+                  "rotation": 0.0
+                }
+              ]
+            },
+            {
+              "ten_khoi": "Tay lót",
+              "prefix": "TL",
+              "image_emu": {
+                "off_x": 2887579,
+                "off_y": 4411580,
+                "cx": 1941095,
+                "cy": 3235158
+              },
+              "image_png": "positions/aovest/lot/lot_tl_3.png",
+              "image_svg": "positions/aovest/lot/lot_tl_3.svg",
+              "hotspots": [
+                {
+                  "ma": "TL1",
+                  "label": "Đỉnh vai (lót)",
+                  "x_pct": 0.4609,
+                  "y_pct": 0.03709,
+                  "w_pct": 0.24325,
+                  "h_pct": 0.04867,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TL2",
+                  "label": "Đường tra tay trước (lót)",
+                  "x_pct": 0.17609,
+                  "y_pct": 0.22398,
+                  "w_pct": 0.24325,
+                  "h_pct": 0.04867,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TL3",
+                  "label": "Tay lớn (lót)",
+                  "x_pct": 0.44467,
+                  "y_pct": 0.18934,
+                  "w_pct": 0.24325,
+                  "h_pct": 0.04867,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TL4",
+                  "label": "Đường tra tay sau (lót)",
+                  "x_pct": 0.91116,
+                  "y_pct": 0.08061,
+                  "w_pct": 0.24325,
+                  "h_pct": 0.05002,
+                  "rotation": 350.27
+                },
+                {
+                  "ma": "TL5",
+                  "label": "Đường sóng tay (lót)",
+                  "x_pct": 0.7485,
+                  "y_pct": 0.57284,
+                  "w_pct": 0.24325,
+                  "h_pct": 0.05002,
+                  "rotation": 16.8
+                },
+                {
+                  "ma": "TL6",
+                  "label": "Dây câu",
+                  "x_pct": 0.79059,
+                  "y_pct": 0.47698,
+                  "w_pct": 0.24325,
+                  "h_pct": 0.04867,
+                  "rotation": 16.8
+                },
+                {
+                  "ma": "TL7",
+                  "label": "Tay nhỏ (lót)",
+                  "x_pct": 0.36472,
+                  "y_pct": 0.72591,
+                  "w_pct": 0.24325,
+                  "h_pct": 0.05002,
+                  "rotation": 16.8
+                },
+                {
+                  "ma": "TL8",
+                  "label": "Đường sườn tay (lót)",
+                  "x_pct": 0.10445,
+                  "y_pct": 0.45728,
+                  "w_pct": 0.24325,
+                  "h_pct": 0.04867,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TL9",
+                  "label": "Đường khoá bụng tay",
+                  "x_pct": 0.40751,
+                  "y_pct": 0.55803,
+                  "w_pct": 0.24325,
+                  "h_pct": 0.05002,
+                  "rotation": 15.87
+                },
+                {
+                  "ma": "TL10",
+                  "label": "Lai tay (lót)",
+                  "x_pct": 0.46766,
+                  "y_pct": 0.46674,
+                  "w_pct": 0.29278,
+                  "h_pct": 0.04867,
+                  "rotation": 15.87
+                },
+                {
+                  "ma": "TL11",
+                  "label": "Đường đúp lót (tay)",
+                  "x_pct": 0.64878,
+                  "y_pct": 0.2906,
+                  "w_pct": 0.29278,
+                  "h_pct": 0.04867,
+                  "rotation": 15.87
+                }
+              ]
+            },
+            {
+              "ten_khoi": "Lót trước",
+              "prefix": "LT",
+              "image_emu": {
+                "off_x": 2943725,
+                "off_y": 922420,
+                "cx": 1477320,
+                "cy": 3368843
+              },
+              "image_png": "positions/aovest/lot/lot_lt_4.png",
+              "image_svg": "positions/aovest/lot/lot_lt_4.svg",
+              "hotspots": [
+                {
+                  "ma": "LT1",
+                  "label": "Nẹp ve",
+                  "x_pct": -0.18238,
+                  "y_pct": 0.19154,
+                  "w_pct": 0.31961,
+                  "h_pct": 0.04749,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "LT2",
+                  "label": "Đường đột ve",
+                  "x_pct": -0.19924,
+                  "y_pct": 0.2846,
+                  "w_pct": 0.31961,
+                  "h_pct": 0.04749,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "LT3",
+                  "label": "Đường can ve - lót",
+                  "x_pct": -0.17667,
+                  "y_pct": 0.42738,
+                  "w_pct": 0.31961,
+                  "h_pct": 0.04749,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "LT4",
+                  "label": "Đường vai con (lót)",
+                  "x_pct": 0.56411,
+                  "y_pct": 0.01193,
+                  "w_pct": 0.31961,
+                  "h_pct": 0.04828,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "LT5",
+                  "label": "Vai trước (lót)",
+                  "x_pct": 0.63644,
+                  "y_pct": 0.09459,
+                  "w_pct": 0.31961,
+                  "h_pct": 0.04816,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "LT6",
+                  "label": "Vòng nách trước (lót)",
+                  "x_pct": 0.67411,
+                  "y_pct": 0.17284,
+                  "w_pct": 0.31961,
+                  "h_pct": 0.04816,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "LT7",
+                  "label": "Ngực (lót)",
+                  "x_pct": 0.59714,
+                  "y_pct": 0.26024,
+                  "w_pct": 0.31961,
+                  "h_pct": 0.04749,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "LT8",
+                  "label": "Đường chèn (lót)",
+                  "x_pct": 0.70776,
+                  "y_pct": 0.3808,
+                  "w_pct": 0.31961,
+                  "h_pct": 0.04737,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "LT9",
+                  "label": "Thân trước (lót)",
+                  "x_pct": 0.69566,
+                  "y_pct": 0.50337,
+                  "w_pct": 0.31961,
+                  "h_pct": 0.04816,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "LT10",
+                  "label": "Lai thân trước (lót)",
+                  "x_pct": 0.25644,
+                  "y_pct": 0.77242,
+                  "w_pct": 0.38588,
+                  "h_pct": 0.04749,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "LT11",
+                  "label": "Đường đúp lót lai (thân trước)",
+                  "x_pct": 0.40484,
+                  "y_pct": 0.83036,
+                  "w_pct": 0.38588,
+                  "h_pct": 0.04749,
+                  "rotation": 0.0
+                }
+              ]
+            }
+          ],
+          "orphan_textboxes": []
+        },
+        {
+          "nhom": "nhan_dien",
+          "sheet_name": "AO VEST - NHAN DIEN",
+          "khoi": [
+            {
+              "ten_khoi": "Chi tiết nhận diện",
+              "prefix": "ND",
+              "image_emu": {
+                "off_x": 335281,
+                "off_y": 1219200,
+                "cx": 6606539,
+                "cy": 4587874
+              },
+              "image_png": "positions/aovest/nhan_dien/nhan_dien_nd_1.png",
+              "image_svg": "positions/aovest/nhan_dien/nhan_dien_nd_1.svg",
+              "hotspots": [
+                {
+                  "ma": "ND1",
+                  "label": "Nhãn care",
+                  "x_pct": 0.20761,
+                  "y_pct": 0.44844,
+                  "w_pct": 0.08997,
+                  "h_pct": 0.03986,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "ND2",
+                  "label": "Diễu nhãn care",
+                  "x_pct": 0.13149,
+                  "y_pct": 0.28401,
+                  "w_pct": 0.08997,
+                  "h_pct": 0.03986,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "ND3",
+                  "label": "Nhãn chính",
+                  "x_pct": 0.02883,
+                  "y_pct": 0.43682,
+                  "w_pct": 0.08997,
+                  "h_pct": 0.03986,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "ND4",
+                  "label": "Diễu nhãn chính",
+                  "x_pct": -0.04037,
+                  "y_pct": 0.65938,
+                  "w_pct": 0.08997,
+                  "h_pct": 0.03986,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "ND5",
+                  "label": "Nhãn phụ",
+                  "x_pct": 0.11765,
+                  "y_pct": 0.8836,
+                  "w_pct": 0.08997,
+                  "h_pct": 0.03986,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "ND6",
+                  "label": "Diễu nhãn phụ",
+                  "x_pct": -0.03345,
+                  "y_pct": 0.75571,
+                  "w_pct": 0.08997,
+                  "h_pct": 0.03986,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "ND7",
+                  "label": "Nhãn cổ",
+                  "x_pct": 0.68973,
+                  "y_pct": 0.10962,
+                  "w_pct": 0.08997,
+                  "h_pct": 0.03986,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "ND8",
+                  "label": "Diễu nhãn cổ",
+                  "x_pct": 0.83852,
+                  "y_pct": 0.02491,
+                  "w_pct": 0.08997,
+                  "h_pct": 0.03986,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "ND9",
+                  "label": "Nhãn tay",
+                  "x_pct": 0.82468,
+                  "y_pct": 0.70754,
+                  "w_pct": 0.08997,
+                  "h_pct": 0.03986,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "ND10",
+                  "label": "Đính nhãn tay",
+                  "x_pct": 0.89158,
+                  "y_pct": 0.79391,
+                  "w_pct": 0.10265,
+                  "h_pct": 0.02491,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "ND11",
+                  "label": "Hình thêu",
+                  "x_pct": 0.49135,
+                  "y_pct": 0.73744,
+                  "w_pct": 0.10265,
+                  "h_pct": 0.02491,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "ND12",
+                  "label": "Hình in/ép",
+                  "x_pct": 0.33103,
+                  "y_pct": 0.81716,
+                  "w_pct": 0.10265,
+                  "h_pct": 0.02491,
+                  "rotation": 0.0
+                }
+              ]
+            }
+          ],
+          "orphan_textboxes": []
+        }
+      ]
+    },
+    "quantay": {
+      "nhoms": [
+        {
+          "nhom": "chinh",
+          "sheet_name": "QUAN TAY",
+          "khoi": [
+            {
+              "ten_khoi": "Túi sau",
+              "prefix": "TS",
+              "image_emu": {
+                "off_x": 86591,
+                "off_y": 23440157,
+                "cx": 6650181,
+                "cy": 2597727
+              },
+              "image_png": "positions/quantay/chinh/chinh_ts_1.png",
+              "image_svg": "positions/quantay/chinh/chinh_ts_1.svg",
+              "hotspots": [
+                {
+                  "ma": "TS1",
+                  "label": "Góc túi sau",
+                  "x_pct": 0.31414,
+                  "y_pct": 0.05371,
+                  "w_pct": 0.08146,
+                  "h_pct": 0.05169,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TS2",
+                  "label": "Nẹp túi sau",
+                  "x_pct": 0.2999,
+                  "y_pct": 0.3901,
+                  "w_pct": 0.08146,
+                  "h_pct": 0.05169,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TS3",
+                  "label": "Đường can nẹp túi",
+                  "x_pct": 0.13266,
+                  "y_pct": 0.34128,
+                  "w_pct": 0.08146,
+                  "h_pct": 0.05169,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TS4",
+                  "label": "Đáp túi sau",
+                  "x_pct": 0.13831,
+                  "y_pct": -0.0291,
+                  "w_pct": 0.08146,
+                  "h_pct": 0.05169,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TS5",
+                  "label": "Can đáp túi sau",
+                  "x_pct": 0.07804,
+                  "y_pct": 0.04592,
+                  "w_pct": 0.08146,
+                  "h_pct": 0.05169,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TS6",
+                  "label": "Bọ túi sau",
+                  "x_pct": -0.01302,
+                  "y_pct": 0.27458,
+                  "w_pct": 0.08146,
+                  "h_pct": 0.05169,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TS7",
+                  "label": "Khuy túi sau",
+                  "x_pct": 0.11866,
+                  "y_pct": 0.85658,
+                  "w_pct": 0.08146,
+                  "h_pct": 0.05169,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TS8",
+                  "label": "Nút túi sau",
+                  "x_pct": 0.04861,
+                  "y_pct": 0.48392,
+                  "w_pct": 0.08146,
+                  "h_pct": 0.05169,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TS9",
+                  "label": "Đính nút túi sau",
+                  "x_pct": 0.08429,
+                  "y_pct": 0.60525,
+                  "w_pct": 0.08146,
+                  "h_pct": 0.05169,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TS10",
+                  "label": "Bao túi",
+                  "x_pct": 0.94517,
+                  "y_pct": 0.35431,
+                  "w_pct": 0.10301,
+                  "h_pct": 0.04569,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TS11",
+                  "label": "Đường mí đáp túi",
+                  "x_pct": 0.95506,
+                  "y_pct": 0.55964,
+                  "w_pct": 0.10301,
+                  "h_pct": 0.04569,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TS12",
+                  "label": "Đường diễu bao túi",
+                  "x_pct": 0.95454,
+                  "y_pct": 0.68831,
+                  "w_pct": 0.10301,
+                  "h_pct": 0.04569,
+                  "rotation": 0.0
+                }
+              ]
+            },
+            {
+              "ten_khoi": "Túi trước",
+              "prefix": "TT",
+              "image_emu": {
+                "off_x": 1017739,
+                "off_y": 20286947,
+                "cx": 4227533,
+                "cy": 2196121
+              },
+              "image_png": "positions/quantay/chinh/chinh_tt_2.png",
+              "image_svg": "positions/quantay/chinh/chinh_tt_2.svg",
+              "hotspots": [
+                {
+                  "ma": "TT1",
+                  "label": "Bọ miệng túi trước",
+                  "x_pct": 0.27885,
+                  "y_pct": 0.28802,
+                  "w_pct": 0.12814,
+                  "h_pct": 0.06,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TT2",
+                  "label": "Miệng túi trước",
+                  "x_pct": 0.28156,
+                  "y_pct": 0.53091,
+                  "w_pct": 0.12814,
+                  "h_pct": 0.06,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TT3",
+                  "label": "Diễu miệng túi trước",
+                  "x_pct": 0.25959,
+                  "y_pct": 0.4078,
+                  "w_pct": 0.12814,
+                  "h_pct": 0.06,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TT4",
+                  "label": "Đợ túi trước",
+                  "x_pct": 0.13391,
+                  "y_pct": 0.41778,
+                  "w_pct": 0.12814,
+                  "h_pct": 0.06,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TT5",
+                  "label": "Mí đợ túi trước",
+                  "x_pct": 0.12304,
+                  "y_pct": 0.53471,
+                  "w_pct": 0.12814,
+                  "h_pct": 0.06,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TT6",
+                  "label": "Đáp túi trước",
+                  "x_pct": 0.96749,
+                  "y_pct": 0.19486,
+                  "w_pct": 0.12814,
+                  "h_pct": 0.06,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TT7",
+                  "label": "Mí đáp túi trước",
+                  "x_pct": 0.8344,
+                  "y_pct": 0.31654,
+                  "w_pct": 0.12814,
+                  "h_pct": 0.06,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TT8",
+                  "label": "Lót túi",
+                  "x_pct": 0.77662,
+                  "y_pct": 0.4905,
+                  "w_pct": 0.12814,
+                  "h_pct": 0.06,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TT9",
+                  "label": "Diễu lót túi",
+                  "x_pct": 0.77193,
+                  "y_pct": 0.63833,
+                  "w_pct": 0.12814,
+                  "h_pct": 0.06,
+                  "rotation": 0.0
+                }
+              ]
+            },
+            {
+              "ten_khoi": "Barget",
+              "prefix": "B",
+              "image_emu": {
+                "off_x": 40106,
+                "off_y": 16948486,
+                "cx": 6938210,
+                "cy": 2642388
+              },
+              "image_png": "positions/quantay/chinh/chinh_b_3.png",
+              "image_svg": "positions/quantay/chinh/chinh_b_3.svg",
+              "hotspots": [
+                {
+                  "ma": "B1",
+                  "label": "Barget",
+                  "x_pct": 0.19371,
+                  "y_pct": 0.2022,
+                  "w_pct": 0.07808,
+                  "h_pct": 0.05191,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "B2",
+                  "label": "Diễu barget",
+                  "x_pct": 0.17521,
+                  "y_pct": 0.33273,
+                  "w_pct": 0.07808,
+                  "h_pct": 0.05191,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "B3",
+                  "label": "Bọ barget",
+                  "x_pct": 0.05498,
+                  "y_pct": 0.45719,
+                  "w_pct": 0.07808,
+                  "h_pct": 0.05191,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "B4",
+                  "label": "Mí môi đôi",
+                  "x_pct": 0.4596,
+                  "y_pct": 0.21738,
+                  "w_pct": 0.07808,
+                  "h_pct": 0.05191,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "B5",
+                  "label": "Dây kéo barget",
+                  "x_pct": 0.54168,
+                  "y_pct": 0.26899,
+                  "w_pct": 0.07808,
+                  "h_pct": 0.05191,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "B6",
+                  "label": "Môi đôi",
+                  "x_pct": 0.62839,
+                  "y_pct": 0.34184,
+                  "w_pct": 0.07808,
+                  "h_pct": 0.05191,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "B7",
+                  "label": "Đường can môi đôi",
+                  "x_pct": 0.944,
+                  "y_pct": 0.26595,
+                  "w_pct": 0.07808,
+                  "h_pct": 0.05191,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "B8",
+                  "label": "Lót môi đôi",
+                  "x_pct": 0.93475,
+                  "y_pct": 0.51183,
+                  "w_pct": 0.07808,
+                  "h_pct": 0.05191,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "B9",
+                  "label": "Bọ môi đôi",
+                  "x_pct": 0.91394,
+                  "y_pct": 0.64236,
+                  "w_pct": 0.07808,
+                  "h_pct": 0.05191,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "B10",
+                  "label": "Diễu đuôi môi đôi",
+                  "x_pct": 0.89891,
+                  "y_pct": 0.8427,
+                  "w_pct": 0.07808,
+                  "h_pct": 0.05191,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "B11",
+                  "label": "Mí môi chiếc",
+                  "x_pct": 0.56249,
+                  "y_pct": 0.90645,
+                  "w_pct": 0.07808,
+                  "h_pct": 0.05191,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "B12",
+                  "label": "Diễu dây kéo",
+                  "x_pct": 0.65151,
+                  "y_pct": 0.68182,
+                  "w_pct": 0.07808,
+                  "h_pct": 0.05191,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "B13",
+                  "label": "Môi chiếc",
+                  "x_pct": 0.58866,
+                  "y_pct": 0.42941,
+                  "w_pct": 0.07808,
+                  "h_pct": 0.04987,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "B14",
+                  "label": "Viền môi chiếc",
+                  "x_pct": 0.62334,
+                  "y_pct": 0.33537,
+                  "w_pct": 0.07808,
+                  "h_pct": 0.04987,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "B15",
+                  "label": "Mí viền môi chiếc",
+                  "x_pct": 0.69775,
+                  "y_pct": 0.52397,
+                  "w_pct": 0.07808,
+                  "h_pct": 0.05191,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "B16",
+                  "label": "Khuy barget",
+                  "x_pct": 0.64226,
+                  "y_pct": 0.16274,
+                  "w_pct": 0.07808,
+                  "h_pct": 0.05191,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "B17",
+                  "label": "Nút barget",
+                  "x_pct": 0.70792,
+                  "y_pct": 0.36558,
+                  "w_pct": 0.07808,
+                  "h_pct": 0.04987,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "B18",
+                  "label": "Đính nút barget",
+                  "x_pct": 0.74862,
+                  "y_pct": 0.34791,
+                  "w_pct": 0.07808,
+                  "h_pct": 0.05191,
+                  "rotation": 0.0
+                }
+              ]
+            },
+            {
+              "ten_khoi": "Thân",
+              "prefix": "T",
+              "image_emu": {
+                "off_x": 56147,
+                "off_y": 8538229,
+                "cx": 6917231,
+                "cy": 4268879
+              },
+              "image_png": "positions/quantay/chinh/chinh_t_4.png",
+              "image_svg": "positions/quantay/chinh/chinh_t_4.svg",
+              "hotspots": [
+                {
+                  "ma": "T1",
+                  "label": "Thân trước",
+                  "x_pct": -0.00812,
+                  "y_pct": 0.28856,
+                  "w_pct": 0.06014,
+                  "h_pct": 0.03315,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "T2",
+                  "label": "Ống quần trước",
+                  "x_pct": -0.00812,
+                  "y_pct": 0.61611,
+                  "w_pct": 0.06146,
+                  "h_pct": 0.03973,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "T3",
+                  "label": "Đáy trước",
+                  "x_pct": 0.18382,
+                  "y_pct": 0.33322,
+                  "w_pct": 0.06014,
+                  "h_pct": 0.03283,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "T4",
+                  "label": "Thân sau",
+                  "x_pct": 0.3206,
+                  "y_pct": 0.28409,
+                  "w_pct": 0.06014,
+                  "h_pct": 0.03283,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "T5",
+                  "label": "Đáy sau",
+                  "x_pct": 0.39911,
+                  "y_pct": 0.17665,
+                  "w_pct": 0.06014,
+                  "h_pct": 0.03406,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "T6",
+                  "label": "Chít ly thân sau",
+                  "x_pct": 0.50484,
+                  "y_pct": 0.23042,
+                  "w_pct": 0.06014,
+                  "h_pct": 0.03283,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "T7",
+                  "label": "Ống quần sau",
+                  "x_pct": 0.42736,
+                  "y_pct": 0.63195,
+                  "w_pct": 0.06014,
+                  "h_pct": 0.03584,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "T8",
+                  "label": "Đường gập ly ống quần",
+                  "x_pct": 0.44577,
+                  "y_pct": 0.84278,
+                  "w_pct": 0.06014,
+                  "h_pct": 0.04853,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "T9",
+                  "label": "Sườn ngoài",
+                  "x_pct": 0.58811,
+                  "y_pct": 0.50154,
+                  "w_pct": 0.06014,
+                  "h_pct": 0.03315,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "T10",
+                  "label": "Bạ phối sườn",
+                  "x_pct": 0.57747,
+                  "y_pct": 0.0969,
+                  "w_pct": 0.07831,
+                  "h_pct": 0.02912,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "T11",
+                  "label": "Đường can bạ phối sườn",
+                  "x_pct": 0.65127,
+                  "y_pct": 0.21754,
+                  "w_pct": 0.07831,
+                  "h_pct": 0.03181,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "T12",
+                  "label": "Dàn trong",
+                  "x_pct": 0.76709,
+                  "y_pct": 0.37965,
+                  "w_pct": 0.07831,
+                  "h_pct": 0.02912,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "T13",
+                  "label": "Lai",
+                  "x_pct": 0.69131,
+                  "y_pct": 0.7102,
+                  "w_pct": 0.07831,
+                  "h_pct": 0.02912,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "T14",
+                  "label": "Đường vắt sổ lai",
+                  "x_pct": 0.88929,
+                  "y_pct": 0.84494,
+                  "w_pct": 0.07831,
+                  "h_pct": 0.03181,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "T15",
+                  "label": "Xăm lai",
+                  "x_pct": 0.81912,
+                  "y_pct": 0.68177,
+                  "w_pct": 0.07831,
+                  "h_pct": 0.03181,
+                  "rotation": 0.0
+                }
+              ]
+            },
+            {
+              "ten_khoi": "Lót lưng",
+              "prefix": "LL",
+              "image_emu": {
+                "off_x": 56146,
+                "off_y": 4796589,
+                "cx": 7058527,
+                "cy": 2410698
+              },
+              "image_png": "positions/quantay/chinh/chinh_ll_5.png",
+              "image_svg": "positions/quantay/chinh/chinh_ll_5.svg",
+              "hotspots": [
+                {
+                  "ma": "LL1",
+                  "label": "Lót lưng trên",
+                  "x_pct": -0.00795,
+                  "y_pct": 0.05729,
+                  "w_pct": 0.07549,
+                  "h_pct": 0.07032,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "LL2",
+                  "label": "Lót lưng dưới",
+                  "x_pct": -0.00795,
+                  "y_pct": 0.24378,
+                  "w_pct": 0.07549,
+                  "h_pct": 0.07032,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "LL3",
+                  "label": "Đường can lót lưng",
+                  "x_pct": 0.10864,
+                  "y_pct": -0.03438,
+                  "w_pct": 0.07549,
+                  "h_pct": 0.07032,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "LL4",
+                  "label": "Đường diễu lót lưng",
+                  "x_pct": 0.26409,
+                  "y_pct": -0.0565,
+                  "w_pct": 0.07549,
+                  "h_pct": 0.07032,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "LL5",
+                  "label": "Đường đột lót lưng",
+                  "x_pct": 0.35693,
+                  "y_pct": -0.03438,
+                  "w_pct": 0.07549,
+                  "h_pct": 0.07032,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "LL6",
+                  "label": "Viền lót lưng",
+                  "x_pct": 0.41415,
+                  "y_pct": -0.0249,
+                  "w_pct": 0.07549,
+                  "h_pct": 0.07032,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "LL7",
+                  "label": "Đường nối lót lưng",
+                  "x_pct": 0.71966,
+                  "y_pct": -0.05967,
+                  "w_pct": 0.07549,
+                  "h_pct": 0.07032,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "LL8",
+                  "label": "Xăm lót lưng",
+                  "x_pct": 0.8542,
+                  "y_pct": -0.0056,
+                  "w_pct": 0.07549,
+                  "h_pct": 0.07032,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "LL9",
+                  "label": "Chốt lót lưng",
+                  "x_pct": 0.90313,
+                  "y_pct": -0.02539,
+                  "w_pct": 0.07549,
+                  "h_pct": 0.07032,
+                  "rotation": 0.0
+                }
+              ]
+            },
+            {
+              "ten_khoi": "Lưng",
+              "prefix": "L",
+              "image_emu": {
+                "off_x": 0,
+                "off_y": 922421,
+                "cx": 6745705,
+                "cy": 2698282
+              },
+              "image_png": "positions/quantay/chinh/chinh_l_6.png",
+              "image_svg": "positions/quantay/chinh/chinh_l_6.svg",
+              "hotspots": [
+                {
+                  "ma": "L1",
+                  "label": "Bản lưng",
+                  "x_pct": 0.5392,
+                  "y_pct": 0.46492,
+                  "w_pct": 0.06167,
+                  "h_pct": 0.0581,
+                  "rotation": 357.0
+                },
+                {
+                  "ma": "L2",
+                  "label": "Đầu lưng",
+                  "x_pct": 0.14532,
+                  "y_pct": 0.23053,
+                  "w_pct": 0.06167,
+                  "h_pct": 0.0581,
+                  "rotation": 28.35
+                },
+                {
+                  "ma": "L3",
+                  "label": "Diễu đầu lưng",
+                  "x_pct": 0.05216,
+                  "y_pct": 0.26412,
+                  "w_pct": 0.06167,
+                  "h_pct": 0.05721,
+                  "rotation": 357.0
+                },
+                {
+                  "ma": "L4",
+                  "label": "Can đầu lưng",
+                  "x_pct": 0.24063,
+                  "y_pct": 0.26486,
+                  "w_pct": 0.06167,
+                  "h_pct": 0.0581,
+                  "rotation": 14.51
+                },
+                {
+                  "ma": "L5",
+                  "label": "Mí đầu lưng",
+                  "x_pct": 0.15769,
+                  "y_pct": 0.35345,
+                  "w_pct": 0.06167,
+                  "h_pct": 0.0581,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "L6",
+                  "label": "Khoá barget",
+                  "x_pct": 0.18242,
+                  "y_pct": 0.73781,
+                  "w_pct": 0.06167,
+                  "h_pct": 0.0581,
+                  "rotation": 21.9
+                },
+                {
+                  "ma": "L7",
+                  "label": "Đầu quai dê",
+                  "x_pct": 0.25674,
+                  "y_pct": 0.77096,
+                  "w_pct": 0.06167,
+                  "h_pct": 0.0581,
+                  "rotation": 21.87
+                },
+                {
+                  "ma": "L8",
+                  "label": "Móc cài",
+                  "x_pct": 0.11548,
+                  "y_pct": 0.52289,
+                  "w_pct": 0.06167,
+                  "h_pct": 0.0581,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "L9",
+                  "label": "Đường tra lưng",
+                  "x_pct": 0.77035,
+                  "y_pct": 0.48083,
+                  "w_pct": 0.06167,
+                  "h_pct": 0.0581,
+                  "rotation": 357.0
+                },
+                {
+                  "ma": "L10",
+                  "label": "Đường nối lưng",
+                  "x_pct": 0.81701,
+                  "y_pct": 0.49693,
+                  "w_pct": 0.07888,
+                  "h_pct": 0.06936,
+                  "rotation": 357.0
+                },
+                {
+                  "ma": "L11",
+                  "label": "Passant",
+                  "x_pct": 0.97046,
+                  "y_pct": 0.56649,
+                  "w_pct": 0.07472,
+                  "h_pct": 0.06313,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "L12",
+                  "label": "Bọ passant",
+                  "x_pct": 0.91796,
+                  "y_pct": 0.49143,
+                  "w_pct": 0.07448,
+                  "h_pct": 0.06313,
+                  "rotation": 357.0
+                },
+                {
+                  "ma": "L13",
+                  "label": "Khoá chân passant",
+                  "x_pct": 0.92902,
+                  "y_pct": 0.70026,
+                  "w_pct": 0.07448,
+                  "h_pct": 0.06223,
+                  "rotation": 357.0
+                }
+              ]
+            },
+            {
+              "ten_khoi": "Chi tiết nhận diện",
+              "prefix": "ND",
+              "image_emu": {
+                "off_x": 77931,
+                "off_y": 27267477,
+                "cx": 6624205,
+                "cy": 2899188
+              },
+              "image_png": "positions/quantay/chinh/chinh_nd_7.png",
+              "image_svg": "positions/quantay/chinh/chinh_nd_7.svg",
+              "hotspots": [
+                {
+                  "ma": "ND1",
+                  "label": "Nhãn chính",
+                  "x_pct": 0.90308,
+                  "y_pct": 0.16043,
+                  "w_pct": 0.08178,
+                  "h_pct": 0.04631,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "ND2",
+                  "label": "Diễu nhãn chính",
+                  "x_pct": 0.96269,
+                  "y_pct": 0.45492,
+                  "w_pct": 0.08178,
+                  "h_pct": 0.04631,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "ND3",
+                  "label": "Nhãn phụ",
+                  "x_pct": 0.79798,
+                  "y_pct": 0.90592,
+                  "w_pct": 0.08178,
+                  "h_pct": 0.04631,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "ND4",
+                  "label": "Diễu nhãn phụ",
+                  "x_pct": 0.95485,
+                  "y_pct": 0.69386,
+                  "w_pct": 0.08178,
+                  "h_pct": 0.04631,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "ND5",
+                  "label": "Nhãn care",
+                  "x_pct": 0.09289,
+                  "y_pct": 0.48957,
+                  "w_pct": 0.08178,
+                  "h_pct": 0.04631,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "ND6",
+                  "label": "Lược nhãn care",
+                  "x_pct": 0.15511,
+                  "y_pct": 0.33008,
+                  "w_pct": 0.08178,
+                  "h_pct": 0.04631,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "ND7",
+                  "label": "Nhãn size",
+                  "x_pct": 0.20949,
+                  "y_pct": 0.37667,
+                  "w_pct": 0.08178,
+                  "h_pct": 0.04631,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "ND8",
+                  "label": "Lược nhãn size",
+                  "x_pct": 0.21419,
+                  "y_pct": -0.00384,
+                  "w_pct": 0.08178,
+                  "h_pct": 0.04631,
+                  "rotation": 0.0
+                }
+              ]
+            }
+          ],
+          "orphan_textboxes": []
+        }
+      ]
+    }
+  }
+}
