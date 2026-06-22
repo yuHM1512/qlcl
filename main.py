@@ -7,6 +7,8 @@ import re
 import shutil
 import logging
 import json
+import threading
+import time
 from pathlib import Path as PathLib
 import unicodedata
 from urllib.parse import quote, unquote
@@ -63,6 +65,20 @@ IMAGES_STORAGE_DIR = os.getenv("IMAGES_STORAGE_DIR")
 if not IMAGES_STORAGE_DIR:
     raise ValueError("IMAGES_STORAGE_DIR environment variable is required. Please set it in .env file or environment variables.")
 
+
+def env_flag(name: str, default: bool = False) -> bool:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    return str(raw).strip().lower() in {"1", "true", "yes", "on"}
+
+
+QTCN_AUTO_SYNC_ENABLED = env_flag("QTCN_AUTO_SYNC_ENABLED", default=False)
+try:
+    QTCN_AUTO_SYNC_INTERVAL_MINUTES = max(1, int(os.getenv("QTCN_AUTO_SYNC_INTERVAL_MINUTES", "60")))
+except ValueError:
+    QTCN_AUTO_SYNC_INTERVAL_MINUTES = 60
+
 DB_SCRIPTS_DIR = PathLib(__file__).resolve().parent / "db"
 GEMBA_CP_BASE_DIR = PathLib(__file__).resolve().parent / "gemba_cp"
 GEMBA_CP_STATIC_DIR = GEMBA_CP_BASE_DIR / "static"
@@ -99,6 +115,7 @@ SCHEMA_BOOTSTRAP_FILES = [
     "alter_qc_error_dps_add_bo_phan.sql",
     "create_qc_hdkp_endline.sql",
     "alter_prod_plan_add_po_info.sql",
+    "alter_prod_plan_add_sync_fields.sql",
 ]
 
 # Tạo thư mục lưu PDF và images nếu chưa có
@@ -1039,6 +1056,11 @@ bootstrap_qlcl_schema()
 GembaCPBase.metadata.create_all(bind=gemba_cp_engine)
 app.include_router(gemba_dashboard_router.router, dependencies=[Depends(require_authenticated_api_user)])
 app.include_router(gemba_admin_router.router, dependencies=[Depends(require_authenticated_api_user)])
+
+
+@app.on_event("startup")
+def startup_qtcn_auto_sync():
+    start_qtcn_auto_sync_if_enabled()
 
 
 @app.get("/")
@@ -4293,6 +4315,9 @@ QTCN_LOAI_HANG_MAP = {
     "QUANVES": "Quần tây",
 }
 QTCN_SYNC_PLAN_PREFIX = "SYNC-QTCN-XNV2-"
+QTCN_SOURCE_SYSTEM = "prod_factory"
+_qtcn_auto_sync_started = False
+_qtcn_auto_sync_lock = threading.Lock()
 
 
 def normalize_prod_plan_bo_phan_list(raw: Any) -> List[str]:
@@ -4401,11 +4426,243 @@ def build_qtcn_sync_plan_code(source_id: str) -> str:
     return f"{QTCN_SYNC_PLAN_PREFIX}{safe_id}" if safe_id else QTCN_SYNC_PLAN_PREFIX.rstrip("-")
 
 
+def ensure_prod_plan_is_active(plan_id: Any) -> None:
+    try:
+        plan_id_int = int(plan_id)
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="plan_id không hợp lệ")
+
+    with get_db_connection() as conn:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(
+                """
+                SELECT id, COALESCE(is_active, TRUE) AS is_active
+                FROM public.prod_plan
+                WHERE id = %s
+                """,
+                (plan_id_int,),
+            )
+            row = cur.fetchone()
+            if not row:
+                raise HTTPException(status_code=404, detail="Không tìm thấy kế hoạch")
+            if not row.get("is_active"):
+                raise HTTPException(status_code=409, detail="Kế hoạch đã ngừng hiệu lực. Vui lòng chọn lại kế hoạch khác.")
+
+
+def sync_qtcn_prod_plan() -> Dict[str, Any]:
+    synced = 0
+    inserted = 0
+    updated = 0
+    skipped = 0
+    deactivated = 0
+    warnings: List[str] = []
+
+    with get_prod_factory_connection() as prod_conn:
+        with prod_conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as prod_cur:
+            prod_cur.execute(
+                """
+                SELECT id, khach_hang, ma_hang, to_sx, ngay_sx, loai_hang, so_po, sl_ke_hoach, status
+                FROM public.qtcn_input
+                ORDER BY ngay_sx DESC NULLS LAST, created_at DESC
+                """
+            )
+            source_rows = prod_cur.fetchall()
+
+    with get_db_connection() as conn:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            for row in source_rows:
+                source_id = str(row.get("id") or "").strip()
+                if not source_id:
+                    skipped += 1
+                    warnings.append("Bỏ qua 1 record qtcn_input vì thiếu id nguồn")
+                    continue
+
+                bo_phan_list = normalize_qtcn_to_sx_list(row.get("to_sx"))
+                if not bo_phan_list:
+                    skipped += 1
+                    warnings.append(f"Bỏ qua {source_id}: không tách được tổ sản xuất")
+                    continue
+
+                loai_hang_source = (row.get("loai_hang") or "").strip().upper()
+                loai_hang = QTCN_LOAI_HANG_MAP.get(loai_hang_source)
+                if not loai_hang:
+                    skipped += 1
+                    warnings.append(f"Bỏ qua {source_id}: chưa map loại hàng {row.get('loai_hang')}")
+                    continue
+
+                source_status = ((row.get("status") or "active").strip() or "active").lower()
+                is_active = source_status == "active"
+                po_info = normalize_po_info(row.get("so_po"))
+                san_luong = compute_po_info_total(po_info, row.get("sl_ke_hoach"))
+                ke_hoach = build_qtcn_sync_plan_code(source_id)
+
+                synced += 1
+                cur.execute(
+                    """
+                    UPDATE public.prod_plan
+                    SET ke_hoach = %s,
+                        don_vi = %s,
+                        bo_phan = %s::jsonb,
+                        khach_hang = %s,
+                        ma_hang = %s,
+                        loai_hang = %s,
+                        ngay_rc = %s,
+                        san_luong = %s,
+                        mau = COALESCE(mau, ''),
+                        size = COALESCE(size, ''),
+                        po_info = %s::jsonb,
+                        source_status = %s,
+                        is_active = %s,
+                        last_synced_at = NOW(),
+                        updated_at = NOW()
+                    WHERE source_system = %s AND source_record_id = %s
+                    """,
+                    (
+                        ke_hoach,
+                        "XNV2",
+                        json.dumps(bo_phan_list),
+                        (row.get("khach_hang") or "").strip(),
+                        (row.get("ma_hang") or "").strip(),
+                        loai_hang,
+                        row.get("ngay_sx"),
+                        san_luong,
+                        json.dumps(po_info),
+                        source_status,
+                        is_active,
+                        QTCN_SOURCE_SYSTEM,
+                        source_id,
+                    ),
+                )
+                if cur.rowcount:
+                    updated += 1
+                    if not is_active:
+                        deactivated += 1
+                    continue
+
+                # Backward compatibility for earlier synced rows keyed only by ke_hoach.
+                cur.execute(
+                    """
+                    UPDATE public.prod_plan
+                    SET source_system = %s,
+                        source_record_id = %s,
+                        ke_hoach = %s,
+                        don_vi = %s,
+                        bo_phan = %s::jsonb,
+                        khach_hang = %s,
+                        ma_hang = %s,
+                        loai_hang = %s,
+                        ngay_rc = %s,
+                        san_luong = %s,
+                        mau = COALESCE(mau, ''),
+                        size = COALESCE(size, ''),
+                        po_info = %s::jsonb,
+                        source_status = %s,
+                        is_active = %s,
+                        last_synced_at = NOW(),
+                        updated_at = NOW()
+                    WHERE ke_hoach = %s
+                    """,
+                    (
+                        QTCN_SOURCE_SYSTEM,
+                        source_id,
+                        ke_hoach,
+                        "XNV2",
+                        json.dumps(bo_phan_list),
+                        (row.get("khach_hang") or "").strip(),
+                        (row.get("ma_hang") or "").strip(),
+                        loai_hang,
+                        row.get("ngay_sx"),
+                        san_luong,
+                        json.dumps(po_info),
+                        source_status,
+                        is_active,
+                        ke_hoach,
+                    ),
+                )
+                if cur.rowcount:
+                    updated += 1
+                    if not is_active:
+                        deactivated += 1
+                    continue
+
+                cur.execute(
+                    """
+                    INSERT INTO public.prod_plan
+                        (ke_hoach, don_vi, bo_phan, khach_hang, ma_hang, loai_hang,
+                         ngay_rc, san_luong, mau, size, po_info,
+                         source_system, source_record_id, source_status, is_active, last_synced_at)
+                    VALUES (%s, %s, %s::jsonb, %s, %s, %s, %s, %s, %s, %s, %s::jsonb, %s, %s, %s, %s, NOW())
+                    """,
+                    (
+                        ke_hoach,
+                        "XNV2",
+                        json.dumps(bo_phan_list),
+                        (row.get("khach_hang") or "").strip(),
+                        (row.get("ma_hang") or "").strip(),
+                        loai_hang,
+                        row.get("ngay_sx"),
+                        san_luong,
+                        "",
+                        "",
+                        json.dumps(po_info),
+                        QTCN_SOURCE_SYSTEM,
+                        source_id,
+                        source_status,
+                        is_active,
+                    ),
+                )
+                inserted += 1
+                if not is_active:
+                    deactivated += 1
+            conn.commit()
+
+    return {
+        "status": "ok",
+        "synced": synced,
+        "inserted": inserted,
+        "updated": updated,
+        "skipped": skipped,
+        "deactivated": deactivated,
+        "warnings": warnings[:20],
+    }
+
+
+def run_qtcn_auto_sync_loop() -> None:
+    logger.info("QTCN auto-sync started with interval %s minutes", QTCN_AUTO_SYNC_INTERVAL_MINUTES)
+    while True:
+        try:
+            result = sync_qtcn_prod_plan()
+            logger.info(
+                "QTCN auto-sync completed: synced=%s inserted=%s updated=%s deactivated=%s skipped=%s",
+                result.get("synced"),
+                result.get("inserted"),
+                result.get("updated"),
+                result.get("deactivated"),
+                result.get("skipped"),
+            )
+        except Exception:
+            logger.exception("QTCN auto-sync failed")
+        time.sleep(QTCN_AUTO_SYNC_INTERVAL_MINUTES * 60)
+
+
+def start_qtcn_auto_sync_if_enabled() -> None:
+    global _qtcn_auto_sync_started
+    if not QTCN_AUTO_SYNC_ENABLED:
+        return
+    with _qtcn_auto_sync_lock:
+        if _qtcn_auto_sync_started:
+            return
+        thread = threading.Thread(target=run_qtcn_auto_sync_loop, name="qtcn-auto-sync", daemon=True)
+        thread.start()
+        _qtcn_auto_sync_started = True
+
+
 @app.get("/api/prod-plan")
 def api_prod_plan_list(
     request: Request,
     don_vi: Optional[str] = Query(None),
     bo_phan: Optional[str] = Query(None),
+    only_active: bool = Query(False),
 ):
     """List prod_plan rows, optionally filtered by don_vi and bo_phan."""
 
@@ -4424,6 +4681,8 @@ def api_prod_plan_list(
 
             clauses = []
             params = []
+            if only_active:
+                clauses.append("COALESCE(is_active, TRUE) = TRUE")
             if don_vi:
                 clauses.append("don_vi = %s")
                 params.append(don_vi)
@@ -4450,6 +4709,7 @@ def api_prod_plan_list(
                        } AS bo_phan,
                        khach_hang, ma_hang,
                        loai_hang, ngay_rc, san_luong, mau, size, po_info,
+                       source_system, source_record_id, source_status, COALESCE(is_active, TRUE) AS is_active, last_synced_at,
                        created_at, updated_at
                 FROM public.prod_plan
                 {where}
@@ -4577,114 +4837,7 @@ def api_prod_plan_sync_qtcn(request: Request):
     user = get_authenticated_user(request)
     if not user:
         raise HTTPException(status_code=401, detail="Bạn chưa đăng nhập")
-
-    synced = 0
-    inserted = 0
-    updated = 0
-    skipped = 0
-    warnings: List[str] = []
-
-    with get_prod_factory_connection() as prod_conn:
-        with prod_conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as prod_cur:
-            prod_cur.execute(
-                """
-                SELECT id, khach_hang, ma_hang, to_sx, ngay_sx, loai_hang, so_po, sl_ke_hoach, status
-                FROM public.qtcn_input
-                WHERE COALESCE(status, 'active') = 'active'
-                ORDER BY ngay_sx DESC NULLS LAST, created_at DESC
-                """
-            )
-            source_rows = prod_cur.fetchall()
-
-    with get_db_connection() as conn:
-        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            for row in source_rows:
-                bo_phan_list = normalize_qtcn_to_sx_list(row.get("to_sx"))
-                if not bo_phan_list:
-                    skipped += 1
-                    warnings.append(f"Bỏ qua {row.get('id')}: không tách được tổ sản xuất")
-                    continue
-
-                loai_hang_source = (row.get("loai_hang") or "").strip().upper()
-                loai_hang = QTCN_LOAI_HANG_MAP.get(loai_hang_source)
-                if not loai_hang:
-                    skipped += 1
-                    warnings.append(f"Bỏ qua {row.get('id')}: chưa map loại hàng {row.get('loai_hang')}")
-                    continue
-
-                po_info = normalize_po_info(row.get("so_po"))
-                san_luong = compute_po_info_total(po_info, row.get("sl_ke_hoach"))
-                ke_hoach = build_qtcn_sync_plan_code(str(row.get("id") or ""))
-                if not ke_hoach:
-                    skipped += 1
-                    warnings.append("Bỏ qua 1 record qtcn_input vì thiếu id nguồn")
-                    continue
-
-                synced += 1
-                cur.execute(
-                    """
-                    UPDATE public.prod_plan
-                    SET don_vi = %s,
-                        bo_phan = %s::jsonb,
-                        khach_hang = %s,
-                        ma_hang = %s,
-                        loai_hang = %s,
-                        ngay_rc = %s,
-                        san_luong = %s,
-                        mau = COALESCE(mau, ''),
-                        size = COALESCE(size, ''),
-                        po_info = %s::jsonb,
-                        updated_at = NOW()
-                    WHERE ke_hoach = %s
-                    """,
-                    (
-                        "XNV2",
-                        json.dumps(bo_phan_list),
-                        (row.get("khach_hang") or "").strip(),
-                        (row.get("ma_hang") or "").strip(),
-                        loai_hang,
-                        row.get("ngay_sx"),
-                        san_luong,
-                        json.dumps(po_info),
-                        ke_hoach,
-                    ),
-                )
-                if cur.rowcount:
-                    updated += 1
-                    continue
-
-                cur.execute(
-                    """
-                    INSERT INTO public.prod_plan
-                        (ke_hoach, don_vi, bo_phan, khach_hang, ma_hang, loai_hang,
-                         ngay_rc, san_luong, mau, size, po_info)
-                    VALUES (%s, %s, %s::jsonb, %s, %s, %s, %s, %s, %s, %s, %s::jsonb)
-                    """,
-                    (
-                        ke_hoach,
-                        "XNV2",
-                        json.dumps(bo_phan_list),
-                        (row.get("khach_hang") or "").strip(),
-                        (row.get("ma_hang") or "").strip(),
-                        loai_hang,
-                        row.get("ngay_sx"),
-                        san_luong,
-                        "",
-                        "",
-                        json.dumps(po_info),
-                    ),
-                )
-                inserted += 1
-            conn.commit()
-
-    return {
-        "status": "ok",
-        "synced": synced,
-        "inserted": inserted,
-        "updated": updated,
-        "skipped": skipped,
-        "warnings": warnings[:20],
-    }
+    return sync_qtcn_prod_plan()
 
 
 @app.delete("/api/prod-plan/{plan_id}")
@@ -5133,6 +5286,7 @@ async def api_qc_error_log_sp_create(request: Request):
                 if row_nv:
                     ma_nv_db = row_nv.get("ma_nv")
     plan_id = body.get("plan_id")
+    ensure_prod_plan_is_active(plan_id)
     date_str = body.get("date") or datetime.now().strftime("%Y-%m-%d")
     station = (body.get("station") or "").strip()
     defect_products = body.get("defect_products", []) or []
@@ -5448,6 +5602,7 @@ async def api_qc_output_sp_log_create(request: Request):
                 raise HTTPException(status_code=403, detail="Không có quyền (QC only)")
             ma_nv_db = row_nv["ma_nv"]
     plan_id = body.get("plan_id")
+    ensure_prod_plan_is_active(plan_id)
     date_str = body.get("date") or datetime.now().strftime("%Y-%m-%d")
     station = (body.get("station") or "").strip()
     delta = body.get("delta", 1)

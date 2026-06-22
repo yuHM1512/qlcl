@@ -578,7 +578,7 @@
                     showToast(data.detail || 'Lỗi khi đồng bộ', 'error');
                     return;
                 }
-                const msg = `Đồng bộ xong: thêm ${data.inserted || 0}, cập nhật ${data.updated || 0}, bỏ qua ${data.skipped || 0}`;
+                const msg = `Đồng bộ xong: thêm ${data.inserted || 0}, cập nhật ${data.updated || 0}, ngừng hiệu lực ${data.deactivated || 0}, bỏ qua ${data.skipped || 0}`;
                 showToast(msg);
                 loadData();
             } catch (e) {
