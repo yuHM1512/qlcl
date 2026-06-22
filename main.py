@@ -43,6 +43,10 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
     raise ValueError("DATABASE_URL environment variable is required. Please set it in .env file or environment variables.")
 
+PROD_FACTORY_DATABASE_URL = os.getenv("PROD_FACTORY_DATABASE_URL")
+if not PROD_FACTORY_DATABASE_URL:
+    raise ValueError("PROD_FACTORY_DATABASE_URL environment variable is required. Please set it in .env file or environment variables.")
+
 TEMPLATES_DIR = os.getenv("TEMPLATES_DIR")
 if not TEMPLATES_DIR:
     raise ValueError("TEMPLATES_DIR environment variable is required. Please set it in .env file or environment variables.")
@@ -94,6 +98,7 @@ SCHEMA_BOOTSTRAP_FILES = [
     "alter_qc_error_dps_add_station.sql",
     "alter_qc_error_dps_add_bo_phan.sql",
     "create_qc_hdkp_endline.sql",
+    "alter_prod_plan_add_po_info.sql",
 ]
 
 # Tạo thư mục lưu PDF và images nếu chưa có
@@ -104,6 +109,10 @@ os.makedirs(os.path.join(IMAGES_STORAGE_DIR, "qc_sp"), exist_ok=True)
 
 def get_db_connection():
     return psycopg2.connect(DATABASE_URL)
+
+
+def get_prod_factory_connection():
+    return psycopg2.connect(PROD_FACTORY_DATABASE_URL)
 
 
 def bootstrap_qlcl_schema():
@@ -4279,6 +4288,119 @@ def backfill_qc_cap(
     return {"status": "ok", "date_from": date_from or date, "date_to": date_to or date}
 
 
+QTCN_LOAI_HANG_MAP = {
+    "AOVES": "Áo vest",
+    "QUANVES": "Quần tây",
+}
+QTCN_SYNC_PLAN_PREFIX = "SYNC-QTCN-XNV2-"
+
+
+def normalize_prod_plan_bo_phan_list(raw: Any) -> List[str]:
+    if raw is None:
+        return []
+    if isinstance(raw, list):
+        parts = [str(x) for x in raw]
+    else:
+        parts = re.split(r"[;,]|\s+và\s+|\s+&\s+|\s+\+\s+", str(raw), flags=re.IGNORECASE)
+
+    seen = set()
+    out: List[str] = []
+    for item in parts:
+        s = (item or "").strip()
+        if not s:
+            continue
+        num_match = re.search(r"(\d+)", s)
+        if s.isdigit():
+            s = f"Tổ {int(s)}"
+        elif s.lower().startswith(("tổ", "to")) and num_match:
+            s = f"Tổ {int(num_match.group(1))}"
+        s = re.sub(r"\s+", " ", s)
+        if s not in seen:
+            seen.add(s)
+            out.append(s)
+    return out
+
+
+def normalize_qtcn_to_sx_list(raw: Any) -> List[str]:
+    if raw is None:
+        return []
+    if isinstance(raw, list):
+        items = raw
+    elif isinstance(raw, str):
+        text = raw.strip()
+        if not text:
+            return []
+        try:
+            parsed = json.loads(text)
+            if isinstance(parsed, list):
+                items = parsed
+            else:
+                items = [text]
+        except Exception:
+            items = [text]
+    else:
+        items = [raw]
+
+    out: List[str] = []
+    seen = set()
+    for item in items:
+        text = (str(item or "")).strip()
+        if not text:
+            continue
+        match = re.search(r"(\d+)", text)
+        if not match:
+            continue
+        bo_phan = f"Tổ {int(match.group(1))}"
+        if bo_phan not in seen:
+            seen.add(bo_phan)
+            out.append(bo_phan)
+    return out
+
+
+def normalize_po_info(raw: Any) -> List[Any]:
+    if raw is None:
+        return []
+    if isinstance(raw, list):
+        return raw
+    if isinstance(raw, str):
+        text = raw.strip()
+        if not text:
+            return []
+        try:
+            parsed = json.loads(text)
+            return parsed if isinstance(parsed, list) else []
+        except Exception:
+            return []
+    return []
+
+
+def compute_po_info_total(po_info: List[Any], fallback: Any = None) -> Optional[int]:
+    total = 0
+    has_quantity = False
+    for item in po_info:
+        if isinstance(item, dict):
+            qty = item.get("quantity")
+            try:
+                qty_int = int(qty)
+            except (TypeError, ValueError):
+                continue
+            total += qty_int
+            has_quantity = True
+    if has_quantity:
+        return total
+    if fallback is None or fallback == "":
+        return None
+    try:
+        return int(fallback)
+    except (TypeError, ValueError):
+        return None
+
+
+def build_qtcn_sync_plan_code(source_id: str) -> str:
+    safe_id = re.sub(r"[^A-Za-z0-9]+", "", str(source_id or "")).upper()
+    return f"{QTCN_SYNC_PLAN_PREFIX}{safe_id}" if safe_id else QTCN_SYNC_PLAN_PREFIX.rstrip("-")
+
+
 @app.get("/api/prod-plan")
 def api_prod_plan_list(
     request: Request,
@@ -4286,32 +4408,6 @@ def api_prod_plan_list(
     bo_phan: Optional[str] = Query(None),
 ):
     """List prod_plan rows, optionally filtered by don_vi and bo_phan."""
-
-    def parse_bo_phan_list(raw: Optional[str]) -> List[str]:
-        if not raw:
-            return []
-        if isinstance(raw, list):
-            parts = [str(x) for x in raw]
-        else:
-            parts = re.split(r"[;,]|\\s+và\\s+|\\s+&\\s+|\\s+\\+\\s+", str(raw), flags=re.IGNORECASE)
-
-        seen = set()
-        out: List[str] = []
-        for item in parts:
-            s = (item or "").strip()
-            if not s:
-                continue
-            num_match = re.search(r"(\\d+)", s)
-            if s.isdigit():
-                s = f"Tổ {int(s)}"
-            elif s.lower().startswith(("tổ", "to")) and num_match:
-                s = f"Tổ {int(num_match.group(1))}"
-            # normalize spacing
-            s = re.sub(r"\\s+", " ", s)
-            if s not in seen:
-                seen.add(s)
-                out.append(s)
-        return out
 
     with get_db_connection() as conn:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
@@ -4333,7 +4429,7 @@ def api_prod_plan_list(
                 params.append(don_vi)
             if bo_phan:
                 if use_jsonb_bo_phan:
-                    items = parse_bo_phan_list(bo_phan)
+                    items = normalize_prod_plan_bo_phan_list(bo_phan)
                     if items:
                         or_clauses = []
                         for item in items:
@@ -4353,7 +4449,7 @@ def api_prod_plan_list(
                            else "COALESCE(bo_phan, '')"
                        } AS bo_phan,
                        khach_hang, ma_hang,
-                       loai_hang, ngay_rc, san_luong, mau, size,
+                       loai_hang, ngay_rc, san_luong, mau, size, po_info,
                        created_at, updated_at
                 FROM public.prod_plan
                 {where}
@@ -4384,34 +4480,16 @@ async def api_prod_plan_create(request: Request):
     san_luong = body.get("san_luong")
     mau = (body.get("mau") or "").strip()
     size = (body.get("size") or "").strip()
+    po_info = normalize_po_info(body.get("po_info"))
 
     if not don_vi:
         raise HTTPException(status_code=400, detail="Đơn vị không được để trống")
     if don_vi not in DON_VI_OPTIONS:
         raise HTTPException(status_code=400, detail=f"Đơn vị không hợp lệ: {don_vi}")
 
-    def parse_bo_phan_list(raw: str) -> List[str]:
-        parts = re.split(r"[;,]|\\s+và\\s+|\\s+&\\s+|\\s+\\+\\s+", raw, flags=re.IGNORECASE)
-        seen = set()
-        out: List[str] = []
-        for item in parts:
-            s = (item or "").strip()
-            if not s:
-                continue
-            num_match = re.search(r"(\\d+)", s)
-            if s.isdigit():
-                s = f"Tổ {int(s)}"
-            elif s.lower().startswith(("tổ", "to")) and num_match:
-                s = f"Tổ {int(num_match.group(1))}"
-            s = re.sub(r"\\s+", " ", s)
-            if s not in seen:
-                seen.add(s)
-                out.append(s)
-        return out
-
     if not bo_phan_raw:
         raise HTTPException(status_code=400, detail="Bộ phận không được để trống")
-    bo_phan_list = parse_bo_phan_list(bo_phan_raw)
+    bo_phan_list = normalize_prod_plan_bo_phan_list(bo_phan_raw)
     if not bo_phan_list:
         raise HTTPException(status_code=400, detail="Bộ phận không hợp lệ")
 
@@ -4427,12 +4505,12 @@ async def api_prod_plan_create(request: Request):
                 """
                 INSERT INTO public.prod_plan
                     (ke_hoach, don_vi, bo_phan, khach_hang, ma_hang, loai_hang,
-                     ngay_rc, san_luong, mau, size)
-                VALUES (%s, %s, %s::jsonb, %s, %s, %s, %s, %s, %s, %s)
+                     ngay_rc, san_luong, mau, size, po_info)
+                VALUES (%s, %s, %s::jsonb, %s, %s, %s, %s, %s, %s, %s, %s::jsonb)
                 RETURNING id
                 """,
                 (ke_hoach, don_vi, json.dumps(bo_phan_list), khach_hang, ma_hang, loai_hang,
-                 ngay_rc, san_luong, mau, size)
+                 ngay_rc, san_luong, mau, size, json.dumps(po_info))
             )
             new_id = cur.fetchone()["id"]
             conn.commit()
@@ -4469,26 +4547,15 @@ async def api_prod_plan_update(plan_id: int, request: Request):
     if "bo_phan" in body:
         bo_phan_raw = (body["bo_phan"] or "").strip()
         if bo_phan_raw:
-            parts = re.split(r"[;,]|\\s+và\\s+|\\s+&\\s+|\\s+\\+\\s+", bo_phan_raw, flags=re.IGNORECASE)
-            seen = set()
-            out: List[str] = []
-            for item in parts:
-                s = (item or "").strip()
-                if not s:
-                    continue
-                num_match = re.search(r"(\\d+)", s)
-                if s.isdigit():
-                    s = f"Tổ {int(s)}"
-                elif s.lower().startswith(("tổ", "to")) and num_match:
-                    s = f"Tổ {int(num_match.group(1))}"
-                s = re.sub(r"\\s+", " ", s)
-                if s not in seen:
-                    seen.add(s)
-                    out.append(s)
+            out = normalize_prod_plan_bo_phan_list(bo_phan_raw)
             if not out:
                 raise HTTPException(status_code=400, detail="Bộ phận không hợp lệ")
             sets.append("bo_phan = %s::jsonb")
             params.append(json.dumps(out))
+
+    if "po_info" in body:
+        sets.append("po_info = %s::jsonb")
+        params.append(json.dumps(normalize_po_info(body.get("po_info"))))
 
     params.append(plan_id)
 
@@ -4502,6 +4569,122 @@ async def api_prod_plan_update(plan_id: int, request: Request):
                 raise HTTPException(status_code=404, detail="Không tìm thấy kế hoạch")
             conn.commit()
     return {"status": "ok"}
+
+
+@app.post("/api/prod-plan/sync-qtcn")
+def api_prod_plan_sync_qtcn(request: Request):
+    """Sync active XNV2 plans from prod_factory.qtcn_input into qlcl.prod_plan."""
+    user = get_authenticated_user(request)
+    if not user:
+        raise HTTPException(status_code=401, detail="Bạn chưa đăng nhập")
+
+    synced = 0
+    inserted = 0
+    updated = 0
+    skipped = 0
+    warnings: List[str] = []
+
+    with get_prod_factory_connection() as prod_conn:
+        with prod_conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as prod_cur:
+            prod_cur.execute(
+                """
+                SELECT id, khach_hang, ma_hang, to_sx, ngay_sx, loai_hang, so_po, sl_ke_hoach, status
+                FROM public.qtcn_input
+                WHERE COALESCE(status, 'active') = 'active'
+                ORDER BY ngay_sx DESC NULLS LAST, created_at DESC
+                """
+            )
+            source_rows = prod_cur.fetchall()
+
+    with get_db_connection() as conn:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            for row in source_rows:
+                bo_phan_list = normalize_qtcn_to_sx_list(row.get("to_sx"))
+                if not bo_phan_list:
+                    skipped += 1
+                    warnings.append(f"Bỏ qua {row.get('id')}: không tách được tổ sản xuất")
+                    continue
+
+                loai_hang_source = (row.get("loai_hang") or "").strip().upper()
+                loai_hang = QTCN_LOAI_HANG_MAP.get(loai_hang_source)
+                if not loai_hang:
+                    skipped += 1
+                    warnings.append(f"Bỏ qua {row.get('id')}: chưa map loại hàng {row.get('loai_hang')}")
+                    continue
+
+                po_info = normalize_po_info(row.get("so_po"))
+                san_luong = compute_po_info_total(po_info, row.get("sl_ke_hoach"))
+                ke_hoach = build_qtcn_sync_plan_code(str(row.get("id") or ""))
+                if not ke_hoach:
+                    skipped += 1
+                    warnings.append("Bỏ qua 1 record qtcn_input vì thiếu id nguồn")
+                    continue
+
+                synced += 1
+                cur.execute(
+                    """
+                    UPDATE public.prod_plan
+                    SET don_vi = %s,
+                        bo_phan = %s::jsonb,
+                        khach_hang = %s,
+                        ma_hang = %s,
+                        loai_hang = %s,
+                        ngay_rc = %s,
+                        san_luong = %s,
+                        mau = COALESCE(mau, ''),
+                        size = COALESCE(size, ''),
+                        po_info = %s::jsonb,
+                        updated_at = NOW()
+                    WHERE ke_hoach = %s
+                    """,
+                    (
+                        "XNV2",
+                        json.dumps(bo_phan_list),
+                        (row.get("khach_hang") or "").strip(),
+                        (row.get("ma_hang") or "").strip(),
+                        loai_hang,
+                        row.get("ngay_sx"),
+                        san_luong,
+                        json.dumps(po_info),
+                        ke_hoach,
+                    ),
+                )
+                if cur.rowcount:
+                    updated += 1
+                    continue
+
+                cur.execute(
+                    """
+                    INSERT INTO public.prod_plan
+                        (ke_hoach, don_vi, bo_phan, khach_hang, ma_hang, loai_hang,
+                         ngay_rc, san_luong, mau, size, po_info)
+                    VALUES (%s, %s, %s::jsonb, %s, %s, %s, %s, %s, %s, %s, %s::jsonb)
+                    """,
+                    (
+                        ke_hoach,
+                        "XNV2",
+                        json.dumps(bo_phan_list),
+                        (row.get("khach_hang") or "").strip(),
+                        (row.get("ma_hang") or "").strip(),
+                        loai_hang,
+                        row.get("ngay_sx"),
+                        san_luong,
+                        "",
+                        "",
+                        json.dumps(po_info),
+                    ),
+                )
+                inserted += 1
+            conn.commit()
+
+    return {
+        "status": "ok",
+        "synced": synced,
+        "inserted": inserted,
+        "updated": updated,
+        "skipped": skipped,
+        "warnings": warnings[:20],
+    }
 
 
 @app.delete("/api/prod-plan/{plan_id}")
@@ -5705,6 +5888,3 @@ def healthz():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8008, reload=True)
-
-
-

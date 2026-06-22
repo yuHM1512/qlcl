@@ -1,0 +1,6 @@
+BEGIN;
+
+ALTER TABLE public.prod_plan
+    ADD COLUMN IF NOT EXISTS po_info JSONB;
+
+COMMIT;

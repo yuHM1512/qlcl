@@ -271,6 +271,10 @@
                     <p class="text-base text-on-surface-variant line-height-[1.6]">Quản lý và theo dõi tiến độ sản xuất hiện tại.</p>
                 </div>
                 <div class="flex gap-4">
+                    <button onclick="syncQtcnPlans()" class="h-12 px-5 rounded-xl bg-surface-low hover:bg-surface-high font-semibold text-sm text-on-surface flex items-center gap-2 transition">
+                        <span class="material-symbols-outlined text-lg">sync_alt</span>
+                        Đồng bộ XNV2
+                    </button>
                     <button onclick="openCreateModal()" class="btn-primary px-5 py-3 font-semibold text-sm flex items-center gap-2">
                         <span class="material-symbols-outlined text-lg">add</span>
                         Thêm Kế hoạch
@@ -328,9 +332,14 @@
                     </div>
                     <h3 class="text-lg font-display font-bold text-on-surface mb-2">Chưa có kế hoạch</h3>
                     <p class="text-on-surface-variant mb-6 max-w-sm mx-auto">Không tìm thấy kế hoạch sản xuất nào. Bạn có thể thêm kế hoạch tĩnh hoặc đồng bộ hệ thống.</p>
-                    <button onclick="openCreateModal()" class="btn-primary px-6 py-2.5 font-semibold text-sm inline-flex items-center gap-2">
-                        <span class="material-symbols-outlined text-sm">add</span> Thêm Kế hoạch mới
-                    </button>
+                    <div class="flex items-center justify-center gap-3">
+                        <button onclick="syncQtcnPlans()" class="h-11 px-6 rounded-xl bg-surface-low hover:bg-surface-high font-semibold text-sm text-on-surface inline-flex items-center gap-2 transition">
+                            <span class="material-symbols-outlined text-sm">sync_alt</span> Đồng bộ XNV2
+                        </button>
+                        <button onclick="openCreateModal()" class="btn-primary px-6 py-2.5 font-semibold text-sm inline-flex items-center gap-2">
+                            <span class="material-symbols-outlined text-sm">add</span> Thêm Kế hoạch mới
+                        </button>
+                    </div>
                 </div>
             </div>
         </main>
@@ -464,6 +473,34 @@
             setTimeout(() => { t.classList.remove('show'); }, 3000);
         }
 
+        function formatPoInfo(poInfo) {
+            if (!Array.isArray(poInfo) || poInfo.length === 0) return '';
+            return poInfo.map(item => {
+                if (item && typeof item === 'object') {
+                    const po = item.po || item.code || item.name || '--';
+                    const qtyNum = Number(item.quantity);
+                    const qty = item.quantity != null && item.quantity !== '' && Number.isFinite(qtyNum)
+                        ? qtyNum.toLocaleString('vi-VN')
+                        : '--';
+                    return `${po}: ${qty}`;
+                }
+                return String(item || '').trim();
+            }).filter(Boolean).join(' | ');
+        }
+
+        function formatPlanDisplay(row) {
+            if (!row) return '-';
+            const parts = [];
+            if (row.ma_hang) parts.push(row.ma_hang);
+            if (row.ngay_rc) parts.push(fmtDate(row.ngay_rc));
+            if (row.san_luong != null && row.san_luong !== '') {
+                const num = Number(row.san_luong);
+                parts.push(Number.isFinite(num) ? num.toLocaleString('vi-VN') : row.san_luong);
+            }
+            if (parts.length >= 2) return parts.join(' - ');
+            return row.ke_hoach || '-';
+        }
+
         const sidebarKey = 'qlcl_sidebar_collapsed';
         function applySidebarState() {
             const collapsed = localStorage.getItem(sidebarKey) === '1';
@@ -504,12 +541,13 @@
                 body.innerHTML = rows.map((r, i) => `
                     <tr class="table-row">
                         <td class="text-center text-on-surface-variant font-mono text-xs rounded-l-xl">${i + 1}</td>
-                        <td class="font-semibold">${r.ke_hoach || '-'}</td>
+                        <td class="font-semibold">${formatPlanDisplay(r)}</td>
                         <td><span class="badge whitespace-nowrap">${r.don_vi || ''}</span></td>
                         <td><span class="badge badge-active whitespace-nowrap">${r.bo_phan || ''}</span></td>
                         <td>
                             <div class="font-medium text-sm text-primary mb-0.5">${r.khach_hang || '-'}</div>
                             <div class="font-mono text-xs text-on-surface-variant">${r.ma_hang || '-'} <span class="mx-1">·</span> ${r.loai_hang || '-'}</div>
+                            ${formatPoInfo(r.po_info) ? `<div class="text-xs text-on-surface-variant mt-1">PO: ${formatPoInfo(r.po_info)}</div>` : ''}
                             <div class="text-xs text-on-surface-variant mt-1">Màu: ${r.mau || '-'} | Size: ${r.size || '-'}</div>
                         </td>
                         <td class="text-sm">${fmtDate(r.ngay_rc)}</td>
@@ -528,6 +566,23 @@
                 `).join('');
             } catch (e) {
                 body.innerHTML = '<tr><td colspan="8" class="text-center text-error-container font-medium py-16">Lỗi tải dữ liệu</td></tr>';
+            }
+        }
+
+        async function syncQtcnPlans() {
+            try {
+                showToast('Đang đồng bộ kế hoạch từ prod_factory...', 'success');
+                const res = await fetch('/api/prod-plan/sync-qtcn', { method: 'POST' });
+                const data = await res.json();
+                if (!res.ok) {
+                    showToast(data.detail || 'Lỗi khi đồng bộ', 'error');
+                    return;
+                }
+                const msg = `Đồng bộ xong: thêm ${data.inserted || 0}, cập nhật ${data.updated || 0}, bỏ qua ${data.skipped || 0}`;
+                showToast(msg);
+                loadData();
+            } catch (e) {
+                showToast('Lỗi kết nối máy chủ khi đồng bộ!', 'error');
             }
         }
 
@@ -576,6 +631,24 @@
             } catch (e) { console.error(e); }
         }
 
+        function ensureSelectOption(selectEl, value, text, extra = {}) {
+            if (!selectEl || !value) return;
+            let opt = Array.from(selectEl.options).find(o => o.value === value || o.dataset.name === value || o.textContent === text);
+            if (!opt) {
+                opt = document.createElement('option');
+                opt.value = value;
+                opt.textContent = text || value;
+                Object.entries(extra).forEach(([k, v]) => {
+                    if (v != null) opt.dataset[k] = v;
+                });
+                selectEl.appendChild(opt);
+            }
+            if (text && opt.textContent !== text) opt.textContent = text;
+            Object.entries(extra).forEach(([k, v]) => {
+                if (v != null) opt.dataset[k] = v;
+            });
+        }
+
         async function openCreateModal() {
             document.getElementById('modalTitle').textContent = 'Thêm Kế hoạch mới';
             document.getElementById('editId').value = '';
@@ -597,15 +670,23 @@
             await populatePlanMasterData();
 
             const khSelect = document.getElementById('fKhachHang');
-            for(let opt of khSelect.options) {
-                if(opt.dataset.name === row.khach_hang) {
-                    khSelect.value = opt.value;
-                    await onCustomerChange(opt.value);
-                    break;
-                }
+            let matchedKh = Array.from(khSelect.options).find(opt => opt.dataset.name === row.khach_hang);
+            if (!matchedKh && row.khach_hang) {
+                const syntheticValue = `sync:${row.khach_hang}`;
+                ensureSelectOption(khSelect, syntheticValue, row.khach_hang, { name: row.khach_hang });
+                matchedKh = Array.from(khSelect.options).find(opt => opt.value === syntheticValue);
+            }
+            if (matchedKh) {
+                khSelect.value = matchedKh.value;
+                await onCustomerChange(matchedKh.value);
             }
 
-            document.getElementById('fMaHang').value = row.ma_hang || '';
+            const maHangSelect = document.getElementById('fMaHang');
+            if (row.ma_hang) {
+                ensureSelectOption(maHangSelect, row.ma_hang, row.ma_hang);
+                maHangSelect.value = row.ma_hang;
+            }
+
             document.getElementById('fLoaiHang').value = row.loai_hang || '';
             document.getElementById('fNgayRC').value = row.ngay_rc ? row.ngay_rc.split('T')[0] : '';
             document.getElementById('fSanLuong').value = row.san_luong != null ? row.san_luong : '';
