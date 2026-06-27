@@ -161,6 +161,125 @@
         }
         .quick-nav-link i { font-size: 0.85rem; }
         .card-lite { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 1rem; box-shadow: 0 6px 16px rgba(15, 23, 42, 0.05); }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0.65rem;
+            min-width: 320px;
+        }
+        .stat-box {
+            text-align: center;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 0.6rem 0.55rem;
+        }
+        .stat-box.good {
+            background: #ecfdf5;
+            border-color: #bbf7d0;
+        }
+        .stat-box.bad {
+            background: #fef2f2;
+            border-color: #fecaca;
+        }
+        .stat-value {
+            font-weight: 800;
+            font-size: 1.45rem;
+            line-height: 1.1;
+        }
+        .stat-value.good { color: #15803d; }
+        .stat-value.bad { color: #dc2626; }
+        .stat-label {
+            margin-top: 0.28rem;
+            font-size: 0.75rem;
+            color: #64748b;
+            font-weight: 600;
+        }
+        .stat-meta {
+            margin-top: 0.1rem;
+            font-size: 0.68rem;
+            color: #64748b;
+        }
+        .metric-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 0.85rem;
+        }
+        .defect-rate-chip {
+            display: inline-flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 0.45rem;
+            min-width: 0;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 999px;
+            padding: 0.42rem 0.7rem;
+            text-align: right;
+        }
+        .defect-rate-chip.good {
+            background: #ecfdf5;
+            border-color: #bbf7d0;
+        }
+        .defect-rate-chip.bad {
+            background: #fef2f2;
+            border-color: #fecaca;
+        }
+        .defect-rate-chip-label {
+            font-size: 0.78rem;
+            color: #64748b;
+            font-weight: 700;
+        }
+        .defect-rate-chip-value {
+            margin-top: 0;
+            font-size: 0.95rem;
+            font-weight: 800;
+            line-height: 1.1;
+            color: #0f172a;
+        }
+        .defect-rate-chip-value.good { color: #15803d; }
+        .defect-rate-chip-value.bad { color: #dc2626; }
+        .defect-rate-chip-meta {
+            display: none;
+            margin-top: 0;
+            font-size: 0.68rem;
+            color: #64748b;
+        }
+        .output-action-buttons {
+            display: flex;
+            gap: 0.7rem;
+            align-items: center;
+        }
+        .output-action-buttons .btn {
+            min-width: 82px;
+            min-height: 48px;
+            font-size: 0.98rem;
+            font-weight: 800;
+            border-radius: 12px;
+            box-shadow: 0 10px 20px rgba(15, 23, 42, 0.12);
+        }
+        @media (max-width: 900px) {
+            .stats-grid {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                min-width: 0;
+                width: 100%;
+            }
+            .metric-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .defect-rate-chip {
+                width: 100%;
+                justify-content: flex-start;
+                text-align: left;
+                min-width: 0;
+            }
+            .output-action-buttons .btn {
+                min-width: 78px;
+                min-height: 46px;
+            }
+        }
         .fixed-footer { position: fixed; bottom: 0; left: 0; right: 0; padding: 1rem 1.25rem 1.5rem; background: rgba(248, 250, 251, 0.9); border-top: 1px solid var(--border); }
         .btn-save { width: 100%; max-width: 460px; margin: 0 auto; display: block; height: 56px; border-radius: 16px; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: #fff; border: none; font-weight: 800; font-size: 1.05rem; box-shadow: 0 10px 20px rgba(37, 99, 235, 0.25); }
         .label { font-size: 0.75rem; letter-spacing: 0.04em; text-transform: uppercase; color: #64748b; font-weight: 700; }
@@ -238,6 +357,23 @@
             white-space: nowrap;
         }
         .pos-bucket-meta { font-size: 0.78rem; color: #64748b; white-space: nowrap; }
+        .pos-bucket-stats {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+        .pos-stat-chip {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.16rem 0.48rem;
+            border-radius: 999px;
+            background: #eef2ff;
+            color: #475569;
+            font-size: 0.72rem;
+            font-weight: 700;
+        }
         .pos-table th {
             font-size: 0.7rem;
             letter-spacing: 0.06em;
@@ -259,6 +395,24 @@
         .pos-pill.mass { background: rgba(245, 158, 11, 0.14); color: #92400e; }
         .pos-pill.serious { background: rgba(239, 68, 68, 0.14); color: #991b1b; }
         .pos-pill.multi { background: rgba(79, 70, 229, 0.14); color: #312e81; }
+        .hdkp-check {
+            width: 18px;
+            height: 18px;
+            border: 1.5px solid #cbd5e1;
+            border-radius: 4px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #fff;
+        }
+        .hdkp-check.done {
+            border-color: #2563eb;
+            background: #eff6ff;
+            color: #2563eb;
+            font-weight: 900;
+            font-size: 0.85rem;
+            line-height: 1;
+        }
         .pos-empty { color: #64748b; font-size: 0.85rem; }
         .pos-vi-tri { font-size: 0.82rem; line-height: 1.15rem; }
         .pos-toggle {
@@ -404,6 +558,83 @@
             font-weight: 700;
             color: #2563eb;
         }
+        .work-tabs {
+            display: inline-flex;
+            gap: 0.55rem;
+            background: #e2e8f0;
+            border-radius: 999px;
+            padding: 0.25rem;
+            margin-bottom: 1rem;
+        }
+        .work-tab {
+            border: none;
+            background: transparent;
+            color: #475569;
+            border-radius: 999px;
+            padding: 0.7rem 1rem;
+            font-weight: 800;
+            font-size: 0.86rem;
+        }
+        .work-tab.active {
+            background: #2563eb;
+            color: #fff;
+            box-shadow: 0 10px 20px rgba(37, 99, 235, 0.22);
+        }
+        .rework-card {
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.65rem;
+        }
+        .rework-card.pending { background: #fff1f2; border-color: #fecdd3; }
+        .rework-card.done { background: #ecfdf3; border-color: #bbf7d0; }
+        .sp-tag {
+            font-weight: 800;
+            color: #0f172a;
+            background: #e0e7ff;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 0.8rem;
+        }
+        .status-pill {
+            font-weight: 700;
+            border-radius: 999px;
+            padding: 4px 10px;
+            font-size: 0.75rem;
+        }
+        .status-pending { background: #fee2e2; color: #991b1b; }
+        .status-ok { background: #dcfce7; color: #166534; }
+        .meta-grid {
+            display: grid;
+            grid-template-columns: 90px 1fr;
+            row-gap: 6px;
+            column-gap: 10px;
+            font-size: 0.9rem;
+        }
+        .meta-label {
+            color: #64748b;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.7rem;
+            letter-spacing: 0.04em;
+        }
+        .defect-list { display: flex; flex-direction: column; gap: 6px; }
+        .defect-item {
+            background: #fff;
+            border: 1px dashed #cbd5f5;
+            border-radius: 10px;
+            padding: 0.5rem 0.65rem;
+            font-size: 0.9rem;
+        }
+        .action-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        .btn-verify { border-radius: 999px; font-weight: 700; }
 
         /* ============== Visual Picker (Áo vest pilot) ============== */
         .vp-wrap { display: flex; flex-direction: column; gap: 0.6rem; }
@@ -599,14 +830,9 @@
     <div id="planSelectionArea">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h6 class="text-muted fw-bold mb-0 ms-1" style="font-size: 0.85rem; letter-spacing: 0.5px;">KẾ HOẠCH CÓ SẴN</h6>
-            <div class="d-flex gap-2">
-                <button type="button" class="btn btn-sm btn-outline-primary" style="border-radius: 8px; font-weight: 700;" onclick="syncQtcnPlans()">
-                    <i class="fas fa-sync-alt me-1"></i> Đồng bộ
-                </button>
-                <a href="/qc-input/rework" class="btn btn-sm btn-primary" style="border-radius: 8px; font-weight: 700;">
-                    <i class="fas fa-recycle me-1"></i> Tái chế
-                </a>
-            </div>
+            <button type="button" class="btn btn-sm btn-outline-primary" style="border-radius: 8px; font-weight: 700;" onclick="syncQtcnPlans()">
+                <i class="fas fa-sync-alt me-1"></i> Đồng bộ
+            </button>
         </div>
         <div id="plansList" class="d-flex flex-column gap-3">
             <div class="text-center text-muted my-4" id="loadingPlansMsg">
@@ -639,23 +865,39 @@
             </div>
         </div>
 
-        <div class="landscape-split">
+        <div class="work-tabs">
+            <button type="button" class="work-tab active" id="tabQcInput" onclick="switchWorkTab('input')">Nhập liệu KCS</button>
+            <button type="button" class="work-tab" id="tabRework" onclick="switchWorkTab('rework')">Kiểm lại/Tái chế</button>
+        </div>
+
+        <div class="landscape-split" id="qcInputPane">
             <div class="left-panel">
                 <div class="card-lite mb-3">
-                    <div class="label text-primary">Số sản phẩm đã kiểm</div>
+                    <div class="metric-header">
+                        <div class="label text-primary">Số sản phẩm đã kiểm</div>
+                        <div class="defect-rate-chip" id="defectRateBox">
+                            <div class="defect-rate-chip-label">Tỉ lệ lỗi:</div>
+                            <div class="defect-rate-chip-value" id="lblDefectRate">0%</div>
+                            <div class="defect-rate-chip-meta" id="lblDefectRateMeta">Chưa có target</div>
+                        </div>
+                    </div>
                     <div class="d-flex align-items-center justify-content-between mt-2">
-                        <div class="d-flex gap-2 align-items-center">
+                        <div class="output-action-buttons">
                             <button class="btn btn-success btn-sm" onclick="adjustOutputStatus('Passed')">+1 Đạt</button>
                             <button class="btn btn-danger btn-sm" onclick="adjustOutputStatus('Failed')">+1 Lỗi</button>
                         </div>
-                        <div class="d-grid gap-2" style="grid-template-columns: 1fr 1fr; min-width: 200px;">
-                            <div class="text-center">
-                                <div class="fw-bold fs-3" id="lblOutputTotal">0</div>
-                                <div class="text-muted small">Tổng đã kiểm</div>
+                        <div class="stats-grid">
+                            <div class="stat-box">
+                                <div class="stat-value" id="lblOutputTotal">0</div>
+                                <div class="stat-label">Tổng đã kiểm</div>
                             </div>
-                            <div class="text-center">
-                                <div class="fw-bold fs-3 text-danger" id="lblOutputFailed">0</div>
-                                <div class="text-muted small">Tổng lỗi</div>
+                            <div class="stat-box">
+                                <div class="stat-value good" id="lblOutputPassed">0</div>
+                                <div class="stat-label">Tổng đạt</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-value bad" id="lblOutputFailed">0</div>
+                                <div class="stat-label">Tổng lỗi</div>
                             </div>
                         </div>
                     </div>
@@ -672,6 +914,30 @@
                         <div class="label mb-0">Sản phẩm lỗi</div>
                     </div>
                     <div id="defectProducts" class="d-flex flex-column gap-3"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="reworkPane" style="display:none;">
+            <div class="card-lite">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="label mb-0">Sản phẩm lỗi cần kiểm lại</div>
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="text-muted small">Theo kế hoạch đang chọn</div>
+                        <input
+                            type="date"
+                            id="reworkDateFilter"
+                            class="form-control form-control-sm"
+                            style="max-width: 160px; background: #f8fafc; border: 1px solid #e2e8f0; font-weight: 700; color: #2563eb;"
+                            onchange="onReworkDateChange(this.value)"
+                        >
+                    </div>
+                </div>
+                <div id="reworkInlineDataArea">
+                    <div class="text-center text-muted my-4">
+                        <i class="fas fa-clipboard-check fa-2x mb-2 opacity-50"></i>
+                        <p class="mb-0">Chọn kế hoạch để tải danh sách kiểm lại.</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -707,8 +973,10 @@
     let vpBlockState = {};           // blockId -> { nhom, bo_phan_id }
     let outputTotal = 0;
     let outputFailed = 0;
+    let selectedTargetPercent = null;
     let pendingFailedCount = 0;
     let baseSpIndex = 0;
+    let currentWorkTab = 'input';
     let recognition = null;
     let isListening = false;
     let voiceTarget = null;
@@ -721,6 +989,7 @@
         const d = String(now.getDate()).padStart(2, '0');
         return `${y}-${m}-${d}`;
     })();
+    let reworkDateStr = reportDateStr;
 
     function fmtDate(val) {
         if (!val) return '--';
@@ -755,6 +1024,11 @@
         return Array.isArray(poInfo) ? poInfo : [];
     }
 
+    function formatSpIndex(index) {
+        if (!index && index !== 0) return '--';
+        return String(index).padStart(2, '0');
+    }
+
     function renderPoLines(poInfo, emptyText = 'Chưa có PO') {
         const items = normalizePoInfo(poInfo);
         if (!items.length) {
@@ -768,6 +1042,143 @@
             }
             return `<div class="po-line"><span class="po-code">${String(item || '').trim()}</span><span class="po-qty">--</span></div>`;
         }).join('');
+    }
+
+    function switchWorkTab(tab) {
+        currentWorkTab = tab === 'rework' ? 'rework' : 'input';
+        const isRework = currentWorkTab === 'rework';
+        const qcPane = document.getElementById('qcInputPane');
+        const reworkPane = document.getElementById('reworkPane');
+        const tabInput = document.getElementById('tabQcInput');
+        const tabRework = document.getElementById('tabRework');
+        const footerSave = document.getElementById('footerSave');
+        if (qcPane) qcPane.style.display = isRework ? 'none' : '';
+        if (reworkPane) reworkPane.style.display = isRework ? 'block' : 'none';
+        if (tabInput) tabInput.classList.toggle('active', !isRework);
+        if (tabRework) tabRework.classList.toggle('active', isRework);
+        if (footerSave) footerSave.style.display = isRework ? 'none' : 'block';
+        if (isRework) {
+            fetchInlineReworkData();
+        }
+    }
+
+    function renderInlineReworkData(rows) {
+        const container = document.getElementById('reworkInlineDataArea');
+        if (!container) return;
+        container.innerHTML = '';
+
+        if (!rows || rows.length === 0) {
+            container.innerHTML = `
+                <div class="text-center my-4 p-4 bg-white rounded shadow-sm border">
+                    <i class="fas fa-check-circle fa-3x text-success mb-3 opacity-75"></i>
+                    <h6 class="text-muted fw-bold">CHƯA CÓ SẢN PHẨM LỖI</h6>
+                    <p class="small text-muted mb-0">Kế hoạch này chưa có sản phẩm lỗi cần kiểm lại.</p>
+                </div>
+            `;
+            return;
+        }
+
+        const list = document.createElement('div');
+        list.className = 'd-flex flex-column gap-3';
+
+        rows.forEach(r => {
+            const done = !!r.rework_done;
+            const card = document.createElement('div');
+            card.className = `rework-card ${done ? 'done' : 'pending'}`;
+            card.id = `inline-row-${r.error_log_sp_id}-${r.sp_index}`;
+
+            const statusHtml = done
+                ? `<span class="status-pill status-ok">Đã sửa</span>`
+                : `<span class="status-pill status-pending">Chưa sửa</span>`;
+
+            const btnHtml = done
+                ? `<button class="btn btn-sm btn-outline-secondary btn-verify" onclick="updateInlineRework(${r.error_log_sp_id}, ${r.sp_index}, false)"><i class="fas fa-undo me-1"></i> Hoàn tác</button>`
+                : `<button class="btn btn-sm btn-success btn-verify" onclick="updateInlineRework(${r.error_log_sp_id}, ${r.sp_index}, true)"><i class="fas fa-check me-1"></i> Xác nhận</button>`;
+
+            const defects = (r.defect_list || []).filter(Boolean);
+            const defectHtml = defects.length
+                ? defects.map(d => `<div class="defect-item">${d}</div>`).join('')
+                : `<div class="defect-item text-muted">Chưa có mô tả lỗi.</div>`;
+
+            card.innerHTML = `
+                <div class="action-row">
+                    <span class="sp-tag">#SP${formatSpIndex(r.sp_index)}</span>
+                    ${statusHtml}
+                </div>
+                <div class="meta-grid">
+                    <div class="meta-label">Kế hoạch</div>
+                    <div><strong>${r.ke_hoach || '--'}</strong></div>
+                    <div class="meta-label">Mã hàng</div>
+                    <div>${r.ma_hang || '--'}</div>
+                    <div class="meta-label">Lỗi</div>
+                    <div class="defect-list">${defectHtml}</div>
+                </div>
+                <div class="action-row">
+                    <div class="text-muted small">Tổng lỗi: <strong>${r.defect_items || 0}</strong></div>
+                    ${btnHtml}
+                </div>
+            `;
+            list.appendChild(card);
+        });
+
+        container.appendChild(list);
+    }
+
+    async function fetchInlineReworkData() {
+        const container = document.getElementById('reworkInlineDataArea');
+        if (!container) return;
+        if (!selectedPlanId) {
+            container.innerHTML = `
+                <div class="text-center my-4 p-4 bg-white rounded shadow-sm border">
+                    <i class="fas fa-clipboard-check fa-3x text-muted mb-3 opacity-50"></i>
+                    <p class="small text-muted mb-0">Chọn kế hoạch để tải danh sách kiểm lại.</p>
+                </div>
+            `;
+            return;
+        }
+        container.innerHTML = `
+            <div class="text-center text-muted my-5">
+                <i class="fas fa-spinner fa-spin fa-2x mb-3"></i>
+                <p>Đang tải dữ liệu kiểm lại...</p>
+            </div>
+        `;
+        try {
+            const params = new URLSearchParams({ date_str: reworkDateStr, plan_id: selectedPlanId });
+            const res = await fetch(`/api/qc/rework-2?${params.toString()}`);
+            if (!res.ok) throw new Error('API Error');
+            const data = await res.json();
+            renderInlineReworkData(data.rows || []);
+        } catch (e) {
+            console.error(e);
+            container.innerHTML = `
+                <div class="text-center text-danger my-5">
+                    <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
+                    <p>Lỗi tải dữ liệu kiểm lại. Vui lòng thử lại.</p>
+                </div>
+            `;
+        }
+    }
+
+    function onReworkDateChange(value) {
+        reworkDateStr = value || reportDateStr;
+        if (currentWorkTab === 'rework') {
+            fetchInlineReworkData();
+        }
+    }
+
+    async function updateInlineRework(logId, spIndex, done) {
+        try {
+            const res = await fetch(`/api/qc/rework-2/${logId}/${spIndex}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ rework_done: done })
+            });
+            if (!res.ok) throw new Error('Update failed');
+            await fetchInlineReworkData();
+        } catch (e) {
+            console.error(e);
+            alert('Lỗi khi cập nhật trạng thái kiểm lại.');
+        }
     }
 
     async function logout() {
@@ -864,6 +1275,10 @@
     }
 
     document.addEventListener('DOMContentLoaded', async () => {
+        const reworkDateFilter = document.getElementById('reworkDateFilter');
+        if (reworkDateFilter) {
+            reworkDateFilter.value = reworkDateStr;
+        }
         await loadPlans();
         await loadMasterMaLoiOptions();
         initSpeechRecognition();
@@ -973,6 +1388,7 @@
         document.getElementById('lblSelectedBoPhanCompact').textContent = plan.bo_phan || '--';
         document.getElementById('lblSelectedNgayCompact').textContent = fmtDate(plan.ngay_rc);
         document.getElementById('lblSelectedSanLuongCompact').textContent = fmtNumber(plan.san_luong);
+        switchWorkTab(currentWorkTab);
 
         document.getElementById('defectProducts').innerHTML = '';
         chiTietOptionsByBlock = {};
@@ -987,6 +1403,8 @@
             const lhData = await lhRes.json();
             const lh = lhData.rows.find(l => l.ten_loai === plan.loai_hang);
             if (lh) {
+                selectedTargetPercent = lh.target_percent != null ? Number(lh.target_percent) : null;
+                renderOutputDisplay();
                 const [bpRes, vpRes] = await Promise.all([
                     fetch(`/api/dm/bo-phan?loai_hang_id=${lh.id}`),
                     fetch(`/api/qc/visual-picker?loai_hang_id=${lh.id}`)
@@ -1004,6 +1422,8 @@
             } else {
                 masterBoPhan = [];
                 visualPickerData = null;
+                selectedTargetPercent = null;
+                renderOutputDisplay();
                 alert('Cảnh báo: Loại hàng này chưa được định nghĩa trong danh mục master!');
             }
         } catch (e) { console.error(e); }
@@ -1011,10 +1431,14 @@
 
     function backToPlanSelection() {
         document.getElementById('inputDataArea').style.display = 'none';
-        document.getElementById('footerSave').style.display = 'none';
         document.getElementById('planSelectionArea').style.display = 'block';
         selectedPlanId = null;
         selectedStation = '';
+        selectedTargetPercent = null;
+        setOutputDisplay(0, 0);
+        currentWorkTab = 'input';
+        switchWorkTab('input');
+        document.getElementById('footerSave').style.display = 'none';
         const stationCard = document.getElementById('stationCard');
         if (stationCard) stationCard.style.display = 'none';
     }
@@ -1051,9 +1475,29 @@
 
     function renderOutputDisplay() {
         const totalElem = document.getElementById('lblOutputTotal');
+        const passedElem = document.getElementById('lblOutputPassed');
         const failedElem = document.getElementById('lblOutputFailed');
+        const rateElem = document.getElementById('lblDefectRate');
+        const rateMetaElem = document.getElementById('lblDefectRateMeta');
+        const rateBox = document.getElementById('defectRateBox');
+        const passed = Math.max(0, (outputTotal || 0) - (outputFailed || 0));
+        const rate = outputTotal > 0 ? (outputFailed / outputTotal) * 100 : 0;
         if (totalElem) totalElem.textContent = outputTotal;
+        if (passedElem) passedElem.textContent = passed;
         if (failedElem) failedElem.textContent = outputFailed;
+        if (rateElem) rateElem.textContent = `${rate.toFixed(2)}%`;
+        if (rateBox) rateBox.className = 'defect-rate-chip';
+        if (rateElem) rateElem.className = 'defect-rate-chip-value';
+        if (selectedTargetPercent != null) {
+            const isPass = rate <= selectedTargetPercent;
+            if (rateBox) rateBox.classList.add(isPass ? 'good' : 'bad');
+            if (rateElem) rateElem.classList.add(isPass ? 'good' : 'bad');
+            if (rateMetaElem) {
+                rateMetaElem.textContent = `${isPass ? 'Đạt' : 'Không đạt'} • Mục tiêu ${Number(selectedTargetPercent).toFixed(2)}%`;
+            }
+        } else if (rateMetaElem) {
+            rateMetaElem.textContent = 'Chưa có target';
+        }
     }
 
     function setOutputDisplay(total, failed) {
@@ -1146,7 +1590,11 @@
      function renderBucketBlock(b, opts = {}) {
          const items = b.items || [];
          const has = items.length > 0;
-         const meta = `SP kiểm: ${b.output_total || 0} • ${has ? items.length + ' dòng' : 'Không có lỗi'}`;
+         const meta = `
+            <span class="pos-stat-chip">Kiểm ${b.output_total || 0}</span>
+            <span class="pos-stat-chip">Lỗi ${b.defect_total || 0}</span>
+            <span class="pos-stat-chip">TL ${Number(b.defect_rate || 0).toFixed(2)}%</span>
+         `;
          const table = has ? `
              <div class="table-responsive mt-2">
                  <table class="table table-sm mb-0 pos-table">
@@ -1154,6 +1602,7 @@
                          <tr>
                              <th style="width: 160px;">Loại lỗi</th>
                              <th>Vị trí</th>
+                             <th class="text-center" style="width: 64px;">HĐKP</th>
                              <th class="text-end" style="width: 84px;">Số lượng</th>
                          </tr>
                      </thead>
@@ -1162,6 +1611,9 @@
                              <tr>
                                  <td><span class="pos-pill ${loaiPillClass(it.loai_loi)}">${it.loai_loi}</span></td>
                                  <td class="text-muted pos-vi-tri">${it.vi_tri}</td>
+                                 <td class="text-center">
+                                     <span class="hdkp-check ${it.has_hdkp ? 'done' : ''}">${it.has_hdkp ? '✓' : ''}</span>
+                                 </td>
                                  <td class="text-end fw-bold">${it.qty || 0}</td>
                              </tr>
                          `).join('')}
@@ -1173,7 +1625,7 @@
              <div class="pos-bucket">
                  <div class="pos-bucket-header">
                      <span class="pos-badge">${b.time_bucket}</span>
-                     <span class="pos-bucket-meta">${meta}</span>
+                     <span class="pos-bucket-meta pos-bucket-stats">${meta}</span>
                  </div>
                  ${table}
              </div>

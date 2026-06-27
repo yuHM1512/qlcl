@@ -5742,6 +5742,7 @@ def api_qc_input_pos_summary(
             )
             output_rows = cur.fetchall()
             output_by_bucket = {r["time_bucket"]: int(r.get("output_total") or 0) for r in output_rows}
+            failed_by_bucket = {r["time_bucket"]: int(r.get("defect_total") or 0) for r in output_rows}
 
             sp_params: List = [plan_id, date_str]
             sp_where = ["sp.plan_id = %s", "sp.date = %s"]
@@ -5828,6 +5829,9 @@ def api_qc_input_pos_summary(
         vi_tri = _vi_tri(r.get("bo_phan") or "", r.get("chi_tiet") or "")
         bucket_map[bucket].append({
             "loai_loi": "Lỗi nghiêm trọng",
+            "ma_loi": ma_loi,
+            "bo_phan": r.get("bo_phan") or "",
+            "chi_tiet": r.get("chi_tiet") or "",
             "vi_tri": f"{ma_loi} - {vi_tri}",
             "qty": int(r.get("qty") or 0),
         })
@@ -5840,6 +5844,9 @@ def api_qc_input_pos_summary(
         vi_tri = _vi_tri(r.get("bo_phan") or "", r.get("chi_tiet") or "")
         bucket_map[bucket].append({
             "loai_loi": "Lỗi nguy cơ hàng loạt",
+            "ma_loi": ma_loi,
+            "bo_phan": r.get("bo_phan") or "",
+            "chi_tiet": r.get("chi_tiet") or "",
             "vi_tri": f"{ma_loi} - {vi_tri}",
             "qty": int(r.get("occurrences") or 0),
         })
@@ -5860,18 +5867,65 @@ def api_qc_input_pos_summary(
         vi_tri = _vi_tri(r.get("bo_phan") or "", r.get("chi_tiet") or "")
         bucket_map[bucket].append({
             "loai_loi": "Lỗi đại trà",
+            "ma_loi": ma_loi,
+            "bo_phan": r.get("bo_phan") or "",
+            "chi_tiet": r.get("chi_tiet") or "",
             "vi_tri": f"{ma_loi} - {vi_tri}",
             "qty": qty,
         })
+
+    with get_db_connection() as conn:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(
+                """
+                SELECT
+                    dps.time_bucket,
+                    dps.loai_loi,
+                    COALESCE(dps.ma_loi, '') AS ma_loi,
+                    COALESCE(dps.vi_tri, '') AS vi_tri,
+                    CASE WHEN hm.qc_error_dps_id IS NOT NULL THEN TRUE ELSE FALSE END AS has_hdkp
+                FROM public.qc_error_dps dps
+                LEFT JOIN public.qc_hdkp_mota hm ON hm.qc_error_dps_id = dps.id
+                WHERE dps.plan_id = %s
+                  AND dps.date = %s
+                  AND COALESCE(dps.station, '') = COALESCE(%s, '')
+                """,
+                (plan_id, date_str, station),
+            )
+            hdkp_map = {
+                (
+                    r.get("time_bucket") or "",
+                    r.get("loai_loi") or "",
+                    r.get("ma_loi") or "",
+                    r.get("vi_tri") or "",
+                ): bool(r.get("has_hdkp"))
+                for r in cur.fetchall()
+            }
 
     buckets = []
     for b in bucket_order:
         items = bucket_map.get(b) or []
         items = [x for x in items if int(x.get("qty") or 0) > 0]
+        for item in items:
+            raw_vi_tri = " - ".join([p for p in [item.get("bo_phan") or "", item.get("chi_tiet") or ""] if p])
+            item["has_hdkp"] = hdkp_map.get(
+                (
+                    b,
+                    item.get("loai_loi") or "",
+                    item.get("ma_loi") or "",
+                    raw_vi_tri,
+                ),
+                False,
+            )
         items.sort(key=lambda x: (loai_order.get(x.get("loai_loi") or "", 99), -int(x.get("qty") or 0), str(x.get("vi_tri") or "")))
+        output_total = int(output_by_bucket.get(b) or 0)
+        defect_total = int(failed_by_bucket.get(b) or 0)
+        defect_rate = round((defect_total / output_total) * 100, 2) if output_total > 0 else 0.0
         buckets.append({
             "time_bucket": b,
-            "output_total": int(output_by_bucket.get(b) or 0),
+            "output_total": output_total,
+            "defect_total": defect_total,
+            "defect_rate": defect_rate,
             "items": items,
         })
 
@@ -5973,7 +6027,11 @@ def qc_rework_sp_page(request: Request):
 
 
 @app.get("/api/qc/rework-2")
-def api_qc_rework_sp(request: Request, date_str: str = Query(None)):
+def api_qc_rework_sp(
+    request: Request,
+    date_str: str = Query(None),
+    plan_id: Optional[int] = Query(None),
+):
     if not date_str:
         date_str = datetime.now().strftime("%Y-%m-%d")
     ma_nv_cookie = request.cookies.get("ma_nv")
@@ -5981,6 +6039,11 @@ def api_qc_rework_sp(request: Request, date_str: str = Query(None)):
     ma_nv_variants = generate_ma_nv_variants(ma_nv)
     with get_db_connection() as conn:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            params: List[Any] = [date_str, ma_nv_variants]
+            plan_where = ""
+            if plan_id:
+                plan_where = " AND e.plan_id = %s"
+                params.append(plan_id)
             cur.execute("""
                 SELECT 
                     e.id as error_log_sp_id,
@@ -6001,9 +6064,10 @@ def api_qc_rework_sp(request: Request, date_str: str = Query(None)):
                 LEFT JOIN public.dm_ma_loi ml ON d.ma_loi_id = ml.id
                 WHERE e.date = %s
                   AND e.ma_nv = ANY(%s)
+                  {plan_where}
                 GROUP BY e.id, e.plan_id, e.created_at, p.ke_hoach, p.ma_hang, p.loai_hang, d.sp_index
                 ORDER BY e.created_at ASC, d.sp_index ASC
-            """, (date_str, ma_nv_variants))
+            """.format(plan_where=plan_where), tuple(params))
             rows = cur.fetchall()
             for r in rows:
                 if r.get('created_at'):
