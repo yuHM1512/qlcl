@@ -102,6 +102,7 @@ SCHEMA_BOOTSTRAP_FILES = [
     "create_qc_output_sp_log.sql",
     "migrate_qc_output_sp_log_status.sql",
     "create_qc_error_hierarchy.sql",
+    "create_qc_cum.sql",
     "migrate_dm_loai_hang_type.sql",
     "create_qc_error_log_sp.sql",
     "alter_qc_output_sp_log_add_station.sql",
@@ -4916,6 +4917,29 @@ def api_dm_bo_phan(loai_hang_id: int = Query(...)):
     with get_db_connection() as conn:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute("SELECT id, ten_bo_phan FROM public.dm_bo_phan WHERE loai_hang_id = %s ORDER BY ten_bo_phan", (loai_hang_id,))
+            return {"rows": cur.fetchall()}
+
+@app.get("/api/dm/qc-cum")
+def api_dm_qc_cum(
+    loai_hang_id: int = Query(...),
+    active_only: bool = Query(True),
+):
+    """Lấy danh sách cụm QC theo loại hàng."""
+    with get_db_connection() as conn:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            clauses = ["loai_hang_id = %s"]
+            params: List[Any] = [loai_hang_id]
+            if active_only:
+                clauses.append("is_active = TRUE")
+            cur.execute(
+                f"""
+                SELECT id, loai_hang_id, ten_cum, sort_order, is_active
+                FROM public.dm_qc_cum
+                WHERE {" AND ".join(clauses)}
+                ORDER BY sort_order, ten_cum
+                """,
+                tuple(params),
+            )
             return {"rows": cur.fetchall()}
 
 @app.post("/api/dm/bo-phan")
