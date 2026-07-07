@@ -1469,7 +1469,7 @@
 
     function renderQuickComboSelect(productId) {
         return `
-            <div class="quick-combo-row">
+            <div class="quick-combo-row" data-product-id="${productId}">
                 <label class="label text-primary mb-1">Chọn nhanh dạng lỗi</label>
                 <select class="form-select quick-combo-select" onchange="onQuickComboSelect(${productId}, this)" ${quickDefectCombos.length ? '' : 'disabled'}>
                     ${getQuickComboOptionsHtml()}
@@ -1481,11 +1481,50 @@
 
     function refreshQuickComboDropdowns() {
         document.querySelectorAll('.defect-product[data-pending-failed="1"]').forEach(product => {
-            const row = product.querySelector('.quick-combo-row');
-            if (!row) return;
-            const productId = product.dataset.productId;
-            row.outerHTML = renderQuickComboSelect(productId);
+            ensureQuickComboPosition(product, true);
         });
+    }
+
+    function isProductUsingQuickCombo(product) {
+        return product && product.dataset.pendingFailed === '1' && product.dataset.existing !== '1';
+    }
+
+    function ensureQuickComboPosition(productOrId, refresh = false) {
+        const product = typeof productOrId === 'string' || typeof productOrId === 'number'
+            ? document.querySelector(`.defect-product[data-product-id="${productOrId}"]`)
+            : productOrId;
+        if (!isProductUsingQuickCombo(product)) return;
+        const list = product.querySelector('.bo-phan-blocks');
+        if (!list) return;
+        const productId = product.dataset.productId;
+        let row = product.querySelector('.quick-combo-row');
+        if (!row) {
+            const wrap = document.createElement('div');
+            wrap.innerHTML = renderQuickComboSelect(productId).trim();
+            row = wrap.firstElementChild;
+        } else if (refresh) {
+            const wrap = document.createElement('div');
+            wrap.innerHTML = renderQuickComboSelect(productId).trim();
+            row.replaceWith(wrap.firstElementChild);
+            row = product.querySelector('.quick-combo-row');
+        }
+
+        const blocks = Array.from(list.querySelectorAll('.bo-phan-block'));
+        const filledBlocks = blocks.filter(block => !isBlockEmptyForQuickCombo(block));
+        const anchor = filledBlocks[filledBlocks.length - 1] || null;
+        if (anchor) {
+            anchor.insertAdjacentElement('afterend', row);
+        } else if (blocks.length) {
+            list.insertBefore(row, blocks[0]);
+        } else {
+            list.appendChild(row);
+        }
+    }
+
+    function updateQuickComboPositionFromBlock(block) {
+        const product = block?.closest('.defect-product');
+        if (!product) return;
+        ensureQuickComboPosition(product);
     }
 
     async function loadQuickDefectCombos() {
@@ -1557,6 +1596,7 @@
         const block = await getQuickComboTargetBlock(product, combo);
         if (!block) return;
         await fillQuickComboBlock(block, combo, preferredMucDo);
+        ensureQuickComboPosition(product);
 
         block.classList.add('pulse-success');
         block.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -2118,7 +2158,6 @@
                 <div class="label mb-0">Sản phẩm lỗi #${displayIndex}</div>
                 <button class="btn btn-sm btn-outline-danger" onclick="removeDefectProduct(${productId})"><i class="fas fa-trash me-1"></i>Xóa</button>
             </div>
-            ${pendingFailed ? renderQuickComboSelect(productId) : ''}
             <div class="bo-phan-blocks d-flex flex-column gap-2"></div>
             <div class="text-end mt-2">
                 <button class="btn btn-sm btn-primary" onclick="addBoPhanBlock(${productId})"><i class="fas fa-plus me-1"></i>Thêm Bộ phận</button>
@@ -2131,6 +2170,7 @@
         } else {
             addBoPhanBlock(productId);
         }
+        ensureQuickComboPosition(product);
     }
 
     function removeDefectProduct(productId) {
@@ -2195,6 +2235,7 @@
         } else {
             addDefectItem(blockId);
         }
+        ensureQuickComboPosition(product);
     }
 
     function renderComboBlockHTML(blockId, productId, displayIndex) {
@@ -2467,6 +2508,7 @@
         // Subtle confirmation
         block.classList.add('pulse-success');
         setTimeout(() => block.classList.remove('pulse-success'), 600);
+        updateQuickComboPositionFromBlock(block);
     }
 
     function vpRefreshChiTietCombo(blockId) {
@@ -2517,6 +2559,7 @@
             const label = b.querySelector('.label');
             if (label) label.textContent = `Bộ phận #${idx + 1}`;
         });
+        ensureQuickComboPosition(product);
     }
 
     function addDefectItem(blockId, prefill = null) {
@@ -2581,6 +2624,7 @@
             const label = it.querySelector('.label');
             if (label) label.textContent = `Lỗi #${idx + 1}`;
         });
+        updateQuickComboPositionFromBlock(block);
     }
 
     function initCombo(scope) {
@@ -2700,6 +2744,7 @@
                 } else if (combo.dataset.type === 'ma-loi') {
                     onMaLoiChange(combo.dataset.itemId, sel);
                 }
+                updateQuickComboPositionFromBlock(combo.closest('.bo-phan-block'));
             });
             list.appendChild(item);
         });
