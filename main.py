@@ -5956,6 +5956,94 @@ def api_qc_input_pos_summary(
     return {"status": "ok", "plan_id": plan_id, "date": date_str, "station": station or "", "buckets": buckets}
 
 
+@app.get("/api/qc/input/quick-defect-combos")
+def api_qc_input_quick_defect_combos(
+    plan_id: int = Query(...),
+    station: str = Query(...),
+):
+    """Top defect combos by historical count for the selected plan type and QC cluster."""
+    station_clean = (station or "").strip()
+    if not station_clean:
+        return {"status": "ok", "rows": [], "message": "Chưa chọn cụm."}
+
+    with get_db_connection() as conn:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(
+                """
+                WITH selected AS (
+                    SELECT p.id AS plan_id,
+                           p.loai_hang,
+                           lh.id AS loai_hang_id,
+                           qc.ten_cum
+                    FROM public.prod_plan p
+                    JOIN public.dm_loai_hang lh ON lh.ten_loai = p.loai_hang
+                    JOIN public.dm_qc_cum qc
+                      ON qc.loai_hang_id = lh.id
+                     AND qc.ten_cum = %s
+                     AND qc.is_active = TRUE
+                    WHERE p.id = %s
+                    LIMIT 1
+                )
+                SELECT
+                    d.bo_phan_id,
+                    bp.ten_bo_phan,
+                    d.chi_tiet_id,
+                    ct.ten_chi_tiet,
+                    d.ma_loi_id,
+                    ml.ten_ma,
+                    d.mo_ta_loi_id,
+                    mt.ten_mo_ta,
+                    MAX(mt.muc_do::text) AS muc_do_text,
+                    COUNT(*)::int AS defect_qty
+                FROM selected s
+                JOIN public.prod_plan p
+                  ON p.loai_hang = s.loai_hang
+                JOIN public.qc_error_log_sp sp
+                  ON sp.plan_id = p.id
+                 AND COALESCE(sp.station, '') = s.ten_cum
+                JOIN public.qc_defect d
+                  ON d.error_log_sp_id = sp.id
+                JOIN public.dm_bo_phan bp
+                  ON bp.id = d.bo_phan_id
+                 AND bp.loai_hang_id = s.loai_hang_id
+                JOIN public.dm_chi_tiet ct
+                  ON ct.id = d.chi_tiet_id
+                 AND ct.bo_phan_id = bp.id
+                JOIN public.dm_ma_loi ml
+                  ON ml.id = d.ma_loi_id
+                JOIN public.dm_mo_ta_loi mt
+                  ON mt.id = d.mo_ta_loi_id
+                 AND mt.ma_loi_id = ml.id
+                WHERE d.bo_phan_id IS NOT NULL
+                  AND d.chi_tiet_id IS NOT NULL
+                  AND d.ma_loi_id IS NOT NULL
+                  AND d.mo_ta_loi_id IS NOT NULL
+                GROUP BY
+                    d.bo_phan_id, bp.ten_bo_phan,
+                    d.chi_tiet_id, ct.ten_chi_tiet,
+                    d.ma_loi_id, ml.ten_ma,
+                    d.mo_ta_loi_id, mt.ten_mo_ta
+                ORDER BY defect_qty DESC, bp.ten_bo_phan, ct.ten_chi_tiet, ml.ten_ma, mt.ten_mo_ta
+                LIMIT 10
+                """,
+                (station_clean, plan_id),
+            )
+            rows = cur.fetchall()
+
+    for r in rows:
+        muc_do_text = r.pop("muc_do_text", None)
+        try:
+            r["muc_do"] = json.loads(muc_do_text) if muc_do_text else None
+        except (TypeError, ValueError):
+            r["muc_do"] = muc_do_text
+        r["label"] = (
+            f"{r.get('ten_bo_phan') or ''} - "
+            f"{r.get('ten_chi_tiet') or ''} - "
+            f"{r.get('ten_ma') or ''}. {r.get('ten_mo_ta') or ''}"
+        )
+    return {"status": "ok", "rows": rows}
+
+
 @app.get("/api/qc/error-log-sp")
 def api_qc_error_log_sp_get(
     plan_id: int = Query(...),

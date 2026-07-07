@@ -638,6 +638,80 @@
                 min-width: 0;
             }
         }
+        .quick-combo-card {
+            border: 1px solid #dbeafe;
+            background: linear-gradient(135deg, #eff6ff 0%, #ffffff 78%);
+            border-radius: 14px;
+            padding: 0.85rem;
+            margin-bottom: 1rem;
+        }
+        .quick-combo-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+        }
+        .quick-combo-btn {
+            border: none;
+            background: #2563eb;
+            color: #fff;
+            border-radius: 999px;
+            padding: 0.55rem 0.85rem;
+            font-weight: 800;
+            font-size: 0.82rem;
+            box-shadow: 0 8px 18px rgba(37, 99, 235, 0.22);
+        }
+        .quick-combo-panel {
+            display: none;
+            margin-top: 0.75rem;
+        }
+        .quick-combo-panel.open { display: block; }
+        .quick-combo-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.55rem;
+        }
+        .quick-combo-item {
+            width: 100%;
+            border: 1px solid #cbd5e1;
+            background: #fff;
+            border-radius: 12px;
+            padding: 0.7rem 0.75rem;
+            text-align: left;
+            display: flex;
+            gap: 0.7rem;
+            align-items: flex-start;
+            justify-content: space-between;
+        }
+        .quick-combo-item:hover {
+            border-color: #2563eb;
+            background: #f8fbff;
+        }
+        .quick-combo-label {
+            color: #0f172a;
+            font-size: 0.88rem;
+            font-weight: 700;
+            line-height: 1.25;
+        }
+        .quick-combo-count {
+            flex: 0 0 auto;
+            min-width: 36px;
+            text-align: center;
+            border-radius: 999px;
+            background: #e0e7ff;
+            color: #1d4ed8;
+            font-size: 0.76rem;
+            font-weight: 900;
+            padding: 0.18rem 0.45rem;
+        }
+        .quick-combo-empty {
+            color: #64748b;
+            font-size: 0.84rem;
+            background: #fff;
+            border: 1px dashed #cbd5e1;
+            border-radius: 12px;
+            padding: 0.8rem;
+        }
         .rework-card {
             border-radius: 16px;
             border: 1px solid #e2e8f0;
@@ -982,6 +1056,20 @@
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <div class="label mb-0">Sản phẩm lỗi</div>
                     </div>
+                    <div class="quick-combo-card" id="quickComboCard">
+                        <div class="quick-combo-header">
+                            <div>
+                                <div class="label text-primary mb-1">Gợi ý theo lịch sử</div>
+                                <div class="text-muted small" id="quickComboHint">Chọn cụm để tải top combo lỗi.</div>
+                            </div>
+                            <button type="button" class="quick-combo-btn" id="quickComboToggle" onclick="toggleQuickComboPanel()" disabled>
+                                <i class="fas fa-bolt me-1"></i>Chọn nhanh dạng lỗi
+                            </button>
+                        </div>
+                        <div class="quick-combo-panel" id="quickComboPanel">
+                            <div id="quickComboList" class="quick-combo-list"></div>
+                        </div>
+                    </div>
                     <div id="defectProducts" class="d-flex flex-column gap-3"></div>
                 </div>
             </div>
@@ -1055,6 +1143,7 @@
     let stationMode = isFlexibleQcUnit ? 'cluster' : 'legacy';
     let selectedLoaiHangId = null;
     let clusterOptions = [];
+    let quickDefectCombos = [];
     const reportDateStr = (() => {
         const now = new Date();
         const y = now.getFullYear();
@@ -1407,6 +1496,7 @@
         loadExistingEntry();
         fetchOutputTotal();
         loadPosSummary();
+        loadQuickDefectCombos();
     }
 
     function getActiveStation() {
@@ -1429,6 +1519,135 @@
         return true;
     }
 
+    function renderQuickDefectCombos(message = '') {
+        const btn = document.getElementById('quickComboToggle');
+        const panel = document.getElementById('quickComboPanel');
+        const list = document.getElementById('quickComboList');
+        const hint = document.getElementById('quickComboHint');
+        if (!btn || !panel || !list || !hint) return;
+
+        const station = getActiveStation();
+        const needsStation = !station && (stationMode === 'cluster' || stationList.length > 1);
+        btn.disabled = needsStation || quickDefectCombos.length === 0;
+        hint.textContent = message || (
+            needsStation
+                ? `Chọn ${getStationFieldLabel()} để tải top combo lỗi.`
+                : quickDefectCombos.length
+                    ? `Top ${quickDefectCombos.length} combo lỗi theo Loại hàng và ${getStationFieldLabel().toLowerCase()} đã chọn.`
+                    : 'Chưa có lịch sử lỗi phù hợp cho lựa chọn này.'
+        );
+
+        list.innerHTML = '';
+        if (!quickDefectCombos.length) {
+            list.innerHTML = `<div class="quick-combo-empty">${hint.textContent}</div>`;
+            return;
+        }
+
+        quickDefectCombos.forEach((combo, idx) => {
+            const item = document.createElement('button');
+            item.type = 'button';
+            item.className = 'quick-combo-item';
+            item.addEventListener('click', () => applyQuickDefectCombo(idx));
+
+            const label = document.createElement('div');
+            label.className = 'quick-combo-label';
+            label.textContent = combo.label || '--';
+
+            const count = document.createElement('div');
+            count.className = 'quick-combo-count';
+            count.textContent = combo.defect_qty || 0;
+
+            item.appendChild(label);
+            item.appendChild(count);
+            list.appendChild(item);
+        });
+    }
+
+    function toggleQuickComboPanel() {
+        const panel = document.getElementById('quickComboPanel');
+        if (!panel) return;
+        panel.classList.toggle('open');
+    }
+
+    async function loadQuickDefectCombos() {
+        quickDefectCombos = [];
+        const station = getActiveStation();
+        if (!selectedPlanId || (!station && (stationMode === 'cluster' || stationList.length > 1))) {
+            renderQuickDefectCombos();
+            return;
+        }
+        renderQuickDefectCombos('Đang tải top combo lỗi...');
+        try {
+            const params = new URLSearchParams({ plan_id: selectedPlanId, station: station || '' });
+            const res = await fetch(`/api/qc/input/quick-defect-combos?${params.toString()}`);
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.detail || 'API Error');
+            quickDefectCombos = data.rows || [];
+            renderQuickDefectCombos();
+        } catch (e) {
+            console.error(e);
+            quickDefectCombos = [];
+            renderQuickDefectCombos('Lỗi tải combo nhanh. Vui lòng thử lại.');
+        }
+    }
+
+    function normalizeMucDoText(value) {
+        return (value || '')
+            .toString()
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '');
+    }
+
+    function getPreferredMucDoFromMap(mucDo) {
+        if (!mucDo || typeof mucDo !== 'object') return '';
+        const levels = Object.keys(mucDo);
+        if (!levels.length) return '';
+        if (levels.length === 1) return levels[0];
+
+        const scoreLevel = (level) => {
+            const raw = normalizeMucDoText(level);
+            const num = raw.match(/\d+/);
+            if (num) return Number(num[0]);
+            if (raw.includes('nghiem') || raw.includes('nang') || raw.includes('cao') || raw.includes('high') || raw.includes('severe') || raw.includes('critical')) return 100;
+            if (raw.includes('trung') || raw.includes('medium')) return 50;
+            if (raw.includes('nhe') || raw.includes('thap') || raw.includes('low')) return 10;
+            return 0;
+        };
+
+        return levels
+            .map((level, idx) => ({ level, idx, score: scoreLevel(level) }))
+            .sort((a, b) => (b.score - a.score) || (b.idx - a.idx))[0].level;
+    }
+
+    function applyQuickDefectCombo(index) {
+        const combo = quickDefectCombos[index];
+        if (!combo) return;
+        if (!ensureStationSelected()) return;
+
+        const preferredMucDo = getPreferredMucDoFromMap(combo.muc_do);
+        const prefill = {
+            defects: [{
+                bo_phan_id: combo.bo_phan_id,
+                chi_tiet_id: combo.chi_tiet_id,
+                ma_loi_id: combo.ma_loi_id,
+                mo_ta_loi_id: combo.mo_ta_loi_id,
+                muc_do: preferredMucDo
+            }]
+        };
+
+        pendingFailedCount += 1;
+        renderOutputDisplay();
+        addDefectProduct(prefill, true, false);
+
+        const container = document.getElementById('defectProducts');
+        if (container && container.lastElementChild) {
+            container.lastElementChild.classList.add('pulse-success');
+            container.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            setTimeout(() => container.lastElementChild?.classList.remove('pulse-success'), 600);
+        }
+    }
+
     document.addEventListener('DOMContentLoaded', async () => {
         const reworkDateFilter = document.getElementById('reworkDateFilter');
         if (reworkDateFilter) {
@@ -1436,6 +1655,7 @@
         }
         await loadPlans();
         await loadMasterMaLoiOptions();
+        renderQuickDefectCombos();
         initSpeechRecognition();
     });
 
@@ -1578,8 +1798,10 @@
                 if (getActiveStation()) {
                     await loadExistingEntry();
                     await fetchOutputTotal();
+                    await loadQuickDefectCombos();
                 } else {
                     setOutputDisplay(0, 0);
+                    renderQuickDefectCombos();
                 }
             } else {
                 masterBoPhan = [];
@@ -1588,6 +1810,8 @@
                 clusterOptions = [];
                 renderOutputDisplay();
                 renderStationSelector();
+                quickDefectCombos = [];
+                renderQuickDefectCombos();
                 alert('Cảnh báo: Loại hàng này chưa được định nghĩa trong danh mục master!');
             }
             loadPosSummary();
@@ -1603,6 +1827,7 @@
         clusterOptions = [];
         selectedLoaiHangId = null;
         selectedTargetPercent = null;
+        quickDefectCombos = [];
         setOutputDisplay(0, 0);
         currentWorkTab = 'input';
         switchWorkTab('input');
@@ -1610,6 +1835,7 @@
         const stationCard = document.getElementById('stationCard');
         if (stationCard) stationCard.style.display = 'none';
         updateInlineStationSelector();
+        renderQuickDefectCombos();
     }
 
     async function loadExistingEntry() {
@@ -1912,7 +2138,7 @@
         return { bo_phan_items: Object.values(grouped) };
     }
 
-    function addDefectProduct(prefill = null, pendingFailed = false) {
+    function addDefectProduct(prefill = null, pendingFailed = false, isExisting = !!prefill) {
         if (!masterBoPhan || masterBoPhan.length === 0) {
             alert('Chưa có danh mục Bộ phận cho loại hàng này.');
             return;
@@ -1924,7 +2150,7 @@
         product.className = 'defect-product';
         product.dataset.productId = productId;
         product.dataset.displayIndex = displayIndex;
-        product.dataset.existing = prefill ? '1' : '0';
+        product.dataset.existing = isExisting ? '1' : '0';
         product.dataset.pendingFailed = pendingFailed ? '1' : '0';
         product.innerHTML = `
             <div class="d-flex justify-content-between align-items-center mb-2">
@@ -2928,6 +3154,7 @@
                 pendingFailedCount = 0;
                 await fetchOutputTotal();
                 loadPosSummary();
+                loadQuickDefectCombos();
                 setTimeout(() => {
                     btn.disabled = false;
                     btn.innerHTML = originalBtnHtml;
