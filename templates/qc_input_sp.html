@@ -638,79 +638,22 @@
                 min-width: 0;
             }
         }
-        .quick-combo-card {
+        .quick-combo-row {
             border: 1px solid #dbeafe;
             background: linear-gradient(135deg, #eff6ff 0%, #ffffff 78%);
-            border-radius: 14px;
-            padding: 0.85rem;
-            margin-bottom: 1rem;
-        }
-        .quick-combo-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 0.75rem;
-        }
-        .quick-combo-btn {
-            border: none;
-            background: #2563eb;
-            color: #fff;
-            border-radius: 999px;
-            padding: 0.55rem 0.85rem;
-            font-weight: 800;
-            font-size: 0.82rem;
-            box-shadow: 0 8px 18px rgba(37, 99, 235, 0.22);
-        }
-        .quick-combo-panel {
-            display: none;
-            margin-top: 0.75rem;
-        }
-        .quick-combo-panel.open { display: block; }
-        .quick-combo-list {
-            display: flex;
-            flex-direction: column;
-            gap: 0.55rem;
-        }
-        .quick-combo-item {
-            width: 100%;
-            border: 1px solid #cbd5e1;
-            background: #fff;
             border-radius: 12px;
-            padding: 0.7rem 0.75rem;
-            text-align: left;
-            display: flex;
-            gap: 0.7rem;
-            align-items: flex-start;
-            justify-content: space-between;
+            padding: 0.65rem;
+            margin-bottom: 0.75rem;
         }
-        .quick-combo-item:hover {
-            border-color: #2563eb;
-            background: #f8fbff;
-        }
-        .quick-combo-label {
-            color: #0f172a;
-            font-size: 0.88rem;
+        .quick-combo-row .form-select {
+            border-radius: 10px;
             font-weight: 700;
-            line-height: 1.25;
+            font-size: 0.88rem;
         }
-        .quick-combo-count {
-            flex: 0 0 auto;
-            min-width: 36px;
-            text-align: center;
-            border-radius: 999px;
-            background: #e0e7ff;
-            color: #1d4ed8;
-            font-size: 0.76rem;
-            font-weight: 900;
-            padding: 0.18rem 0.45rem;
-        }
-        .quick-combo-empty {
+        .quick-combo-hint {
             color: #64748b;
-            font-size: 0.84rem;
-            background: #fff;
-            border: 1px dashed #cbd5e1;
-            border-radius: 12px;
-            padding: 0.8rem;
+            font-size: 0.76rem;
+            margin-top: 0.35rem;
         }
         .rework-card {
             border-radius: 16px;
@@ -1055,20 +998,6 @@
                 <div class="card-lite">
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <div class="label mb-0">Sản phẩm lỗi</div>
-                    </div>
-                    <div class="quick-combo-card" id="quickComboCard">
-                        <div class="quick-combo-header">
-                            <div>
-                                <div class="label text-primary mb-1">Gợi ý theo lịch sử</div>
-                                <div class="text-muted small" id="quickComboHint">Chọn cụm để tải top combo lỗi.</div>
-                            </div>
-                            <button type="button" class="quick-combo-btn" id="quickComboToggle" onclick="toggleQuickComboPanel()" disabled>
-                                <i class="fas fa-bolt me-1"></i>Chọn nhanh dạng lỗi
-                            </button>
-                        </div>
-                        <div class="quick-combo-panel" id="quickComboPanel">
-                            <div id="quickComboList" class="quick-combo-list"></div>
-                        </div>
                     </div>
                     <div id="defectProducts" class="d-flex flex-column gap-3"></div>
                 </div>
@@ -1519,75 +1448,65 @@
         return true;
     }
 
-    function renderQuickDefectCombos(message = '') {
-        const btn = document.getElementById('quickComboToggle');
-        const panel = document.getElementById('quickComboPanel');
-        const list = document.getElementById('quickComboList');
-        const hint = document.getElementById('quickComboHint');
-        if (!btn || !panel || !list || !hint) return;
-
+    function getQuickComboHint() {
         const station = getActiveStation();
         const needsStation = !station && (stationMode === 'cluster' || stationList.length > 1);
-        btn.disabled = needsStation || quickDefectCombos.length === 0;
-        hint.textContent = message || (
-            needsStation
-                ? `Chọn ${getStationFieldLabel()} để tải top combo lỗi.`
-                : quickDefectCombos.length
-                    ? `Top ${quickDefectCombos.length} combo lỗi theo Loại hàng và ${getStationFieldLabel().toLowerCase()} đã chọn.`
-                    : 'Chưa có lịch sử lỗi phù hợp cho lựa chọn này.'
-        );
-
-        list.innerHTML = '';
-        if (!quickDefectCombos.length) {
-            list.innerHTML = `<div class="quick-combo-empty">${hint.textContent}</div>`;
-            return;
-        }
-
-        quickDefectCombos.forEach((combo, idx) => {
-            const item = document.createElement('button');
-            item.type = 'button';
-            item.className = 'quick-combo-item';
-            item.addEventListener('click', () => applyQuickDefectCombo(idx));
-
-            const label = document.createElement('div');
-            label.className = 'quick-combo-label';
-            label.textContent = combo.label || '--';
-
-            const count = document.createElement('div');
-            count.className = 'quick-combo-count';
-            count.textContent = combo.defect_qty || 0;
-
-            item.appendChild(label);
-            item.appendChild(count);
-            list.appendChild(item);
-        });
+        if (needsStation) return `Chọn ${getStationFieldLabel()} để tải top combo lỗi.`;
+        if (!quickDefectCombos.length) return 'Chưa có lịch sử lỗi phù hợp cho lựa chọn này.';
+        return `Chọn combo để tự điền vào vị trí trống gần nhất.`;
     }
 
-    function toggleQuickComboPanel() {
-        const panel = document.getElementById('quickComboPanel');
-        if (!panel) return;
-        panel.classList.toggle('open');
+    function getQuickComboOptionsHtml() {
+        const placeholder = quickDefectCombos.length
+            ? '-- Chọn nhanh dạng lỗi --'
+            : '-- Chưa có combo lịch sử --';
+        const options = [`<option value="">${placeholder}</option>`];
+        quickDefectCombos.forEach((combo, idx) => {
+            options.push(`<option value="${idx}">${combo.label || '--'} (${combo.defect_qty || 0})</option>`);
+        });
+        return options.join('');
+    }
+
+    function renderQuickComboSelect(productId) {
+        return `
+            <div class="quick-combo-row">
+                <label class="label text-primary mb-1">Chọn nhanh dạng lỗi</label>
+                <select class="form-select quick-combo-select" onchange="onQuickComboSelect(${productId}, this)" ${quickDefectCombos.length ? '' : 'disabled'}>
+                    ${getQuickComboOptionsHtml()}
+                </select>
+                <div class="quick-combo-hint">${getQuickComboHint()}</div>
+            </div>
+        `;
+    }
+
+    function refreshQuickComboDropdowns() {
+        document.querySelectorAll('.defect-product[data-pending-failed="1"]').forEach(product => {
+            const row = product.querySelector('.quick-combo-row');
+            if (!row) return;
+            const productId = product.dataset.productId;
+            row.outerHTML = renderQuickComboSelect(productId);
+        });
     }
 
     async function loadQuickDefectCombos() {
         quickDefectCombos = [];
         const station = getActiveStation();
         if (!selectedPlanId || (!station && (stationMode === 'cluster' || stationList.length > 1))) {
-            renderQuickDefectCombos();
+            refreshQuickComboDropdowns();
             return;
         }
-        renderQuickDefectCombos('Đang tải top combo lỗi...');
+        refreshQuickComboDropdowns();
         try {
             const params = new URLSearchParams({ plan_id: selectedPlanId, station: station || '' });
             const res = await fetch(`/api/qc/input/quick-defect-combos?${params.toString()}`);
             const data = await res.json();
             if (!res.ok) throw new Error(data.detail || 'API Error');
             quickDefectCombos = data.rows || [];
-            renderQuickDefectCombos();
+            refreshQuickComboDropdowns();
         } catch (e) {
             console.error(e);
             quickDefectCombos = [];
-            renderQuickDefectCombos('Lỗi tải combo nhanh. Vui lòng thử lại.');
+            refreshQuickComboDropdowns();
         }
     }
 
@@ -1620,32 +1539,74 @@
             .sort((a, b) => (b.score - a.score) || (b.idx - a.idx))[0].level;
     }
 
-    function applyQuickDefectCombo(index) {
+    async function onQuickComboSelect(productId, selectElem) {
+        const index = selectElem.value;
+        selectElem.value = '';
+        if (index === '') return;
+        await applyQuickDefectCombo(productId, Number(index));
+    }
+
+    async function applyQuickDefectCombo(productId, index) {
         const combo = quickDefectCombos[index];
         if (!combo) return;
         if (!ensureStationSelected()) return;
 
         const preferredMucDo = getPreferredMucDoFromMap(combo.muc_do);
-        const prefill = {
-            defects: [{
-                bo_phan_id: combo.bo_phan_id,
-                chi_tiet_id: combo.chi_tiet_id,
-                ma_loi_id: combo.ma_loi_id,
-                mo_ta_loi_id: combo.mo_ta_loi_id,
-                muc_do: preferredMucDo
-            }]
-        };
+        const product = document.querySelector(`.defect-product[data-product-id="${productId}"]`);
+        if (!product) return;
+        const block = await getQuickComboTargetBlock(product, combo);
+        if (!block) return;
+        await fillQuickComboBlock(block, combo, preferredMucDo);
 
-        pendingFailedCount += 1;
-        renderOutputDisplay();
-        addDefectProduct(prefill, true, false);
+        block.classList.add('pulse-success');
+        block.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setTimeout(() => block.classList.remove('pulse-success'), 600);
+    }
 
-        const container = document.getElementById('defectProducts');
-        if (container && container.lastElementChild) {
-            container.lastElementChild.classList.add('pulse-success');
-            container.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            setTimeout(() => container.lastElementChild?.classList.remove('pulse-success'), 600);
+    function isBlockEmptyForQuickCombo(block) {
+        const bpVal = getSelectedComboValue(block.querySelector('.combo-dropdown[data-type="bo-phan"]'), block.querySelector('.sel-bo-phan'));
+        const ctVal = getSelectedComboValue(block.querySelector('.combo-dropdown[data-type="chi-tiet"], .combo-dropdown[data-type="vp-chi-tiet"]'), block.querySelector('.sel-chi-tiet'));
+        const hasMaLoi = Array.from(block.querySelectorAll('.defect-items .defect-item'))
+            .some(item => !!getSelectedComboValue(item.querySelector('.combo-dropdown[data-type="ma-loi"]'), item.querySelector('.sel-ma-loi')));
+        return !bpVal && !ctVal && !hasMaLoi;
+    }
+
+    async function getQuickComboTargetBlock(product, combo) {
+        const existingEmpty = Array.from(product.querySelectorAll('.bo-phan-block'))
+            .find(block => isBlockEmptyForQuickCombo(block));
+        if (existingEmpty) return existingEmpty;
+        addBoPhanBlock(product.dataset.productId, {
+            bo_phan_id: combo.bo_phan_id,
+            chi_tiet_id: combo.chi_tiet_id,
+            defects: []
+        });
+        const blocks = product.querySelectorAll('.bo-phan-block');
+        return blocks[blocks.length - 1] || null;
+    }
+
+    async function fillQuickComboBlock(block, combo, preferredMucDo) {
+        const blockId = block.dataset.blockId;
+        if (visualPickerData && visualPickerData.has_visual_picker) {
+            const prefillNhom = vpFindNhomByBoPhanId(combo.bo_phan_id);
+            if (prefillNhom) vpSelectNhom(blockId, prefillNhom);
+            vpSelectKhoi(blockId, combo.bo_phan_id);
+            const khoi = vpGetKhoi((vpBlockState[blockId] || {}).nhom, combo.bo_phan_id);
+            const hotspot = khoi ? (khoi.hotspots || []).find(h => h.chi_tiet_id === combo.chi_tiet_id) : null;
+            if (hotspot) vpSelectHotspot(blockId, combo.bo_phan_id, hotspot);
+        } else {
+            selectComboValue(block.querySelector('.combo-dropdown[data-type="bo-phan"]'), String(combo.bo_phan_id));
+            await loadChiTietOptions(block, combo.bo_phan_id, combo.chi_tiet_id);
         }
+
+        let item = Array.from(block.querySelectorAll('.defect-items .defect-item'))
+            .find(it => !getSelectedComboValue(it.querySelector('.combo-dropdown[data-type="ma-loi"]'), it.querySelector('.sel-ma-loi')));
+        if (!item) {
+            addDefectItem(blockId);
+            const items = block.querySelectorAll('.defect-items .defect-item');
+            item = items[items.length - 1];
+        }
+        selectComboValue(item.querySelector('.combo-dropdown[data-type="ma-loi"]'), `${combo.ma_loi_id}|${combo.mo_ta_loi_id}`);
+        applyMucDoOptions(item, preferredMucDo);
     }
 
     document.addEventListener('DOMContentLoaded', async () => {
@@ -1655,7 +1616,7 @@
         }
         await loadPlans();
         await loadMasterMaLoiOptions();
-        renderQuickDefectCombos();
+        refreshQuickComboDropdowns();
         initSpeechRecognition();
     });
 
@@ -1801,7 +1762,7 @@
                     await loadQuickDefectCombos();
                 } else {
                     setOutputDisplay(0, 0);
-                    renderQuickDefectCombos();
+                    refreshQuickComboDropdowns();
                 }
             } else {
                 masterBoPhan = [];
@@ -1811,7 +1772,7 @@
                 renderOutputDisplay();
                 renderStationSelector();
                 quickDefectCombos = [];
-                renderQuickDefectCombos();
+                refreshQuickComboDropdowns();
                 alert('Cảnh báo: Loại hàng này chưa được định nghĩa trong danh mục master!');
             }
             loadPosSummary();
@@ -1835,7 +1796,7 @@
         const stationCard = document.getElementById('stationCard');
         if (stationCard) stationCard.style.display = 'none';
         updateInlineStationSelector();
-        renderQuickDefectCombos();
+        refreshQuickComboDropdowns();
     }
 
     async function loadExistingEntry() {
@@ -2157,6 +2118,7 @@
                 <div class="label mb-0">Sản phẩm lỗi #${displayIndex}</div>
                 <button class="btn btn-sm btn-outline-danger" onclick="removeDefectProduct(${productId})"><i class="fas fa-trash me-1"></i>Xóa</button>
             </div>
+            ${pendingFailed ? renderQuickComboSelect(productId) : ''}
             <div class="bo-phan-blocks d-flex flex-column gap-2"></div>
             <div class="text-end mt-2">
                 <button class="btn btn-sm btn-primary" onclick="addBoPhanBlock(${productId})"><i class="fas fa-plus me-1"></i>Thêm Bộ phận</button>
@@ -2750,6 +2712,13 @@
         sel.value = value;
         const option = Array.from(sel.options).find(o => o.value === value);
         trigger.textContent = option ? option.textContent : (combo.dataset.placeholder || '-- Chọn --');
+    }
+
+    function getSelectedComboValue(combo, fallbackSelect) {
+        const triggerText = (combo?.querySelector('.combo-trigger')?.textContent || '').trim();
+        if (!triggerText || triggerText.startsWith('--')) return '';
+        const sel = combo?.querySelector('select') || fallbackSelect;
+        return sel?.value || '';
     }
 
     document.addEventListener('click', (e) => {
