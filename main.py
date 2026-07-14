@@ -3670,6 +3670,9 @@ def api_qc_cap(
                     p.don_vi,
                     COALESCE(NULLIF(o.qc_bo_phan, ''), COALESCE({bo_phan_expr}, ''), '') AS bo_phan,
                     p.ke_hoach,
+                    p.ma_hang,
+                    p.ngay_rc,
+                    p.san_luong,
                     p.loai_hang
                 FROM output_logs o
                 JOIN public.prod_plan p ON p.id = o.plan_id
@@ -3977,6 +3980,10 @@ def api_qc_cap(
             "qc_bo_phan": r.get("qc_bo_phan") or "",
             "station": r.get("station") or "",
             "ke_hoach": r.get("ke_hoach") or "--",
+            "ke_hoach_hien_thi": build_prod_plan_display_name(r),
+            "ma_hang": r.get("ma_hang") or "",
+            "ngay_rc": str(r.get("ngay_rc")) if r.get("ngay_rc") else None,
+            "san_luong": r.get("san_luong"),
             "output_total": output_total,
             "defect_total": defect_total,
             "rework_done_count": rework_map.get(key, 0),
@@ -4414,6 +4421,28 @@ def normalize_prod_plan_bo_phan_list(raw: Any) -> List[str]:
             seen.add(s)
             out.append(s)
     return out
+
+
+def build_prod_plan_display_name(row: Dict[str, Any]) -> str:
+    ma_hang = str(row.get("ma_hang") or "").strip()
+    san_luong = row.get("san_luong")
+    ngay_rc = row.get("ngay_rc")
+
+    if not ma_hang:
+        return str(row.get("ke_hoach") or "--")
+
+    parts = [ma_hang]
+    if san_luong is not None and str(san_luong).strip() != "":
+        parts.append(str(san_luong).strip())
+    if ngay_rc:
+        if isinstance(ngay_rc, (date, datetime)):
+            parts.append(ngay_rc.strftime("%d-%m-%y"))
+        else:
+            try:
+                parts.append(date.fromisoformat(str(ngay_rc)[:10]).strftime("%d-%m-%y"))
+            except ValueError:
+                parts.append(str(ngay_rc))
+    return "_".join(parts) or str(row.get("ke_hoach") or "--")
 
 
 def normalize_qtcn_to_sx_list(raw: Any) -> List[str]:

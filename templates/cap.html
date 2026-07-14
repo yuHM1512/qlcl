@@ -648,7 +648,7 @@
                     <div>${r.don_vi}</div>
                     <div class="max-w-[72px] text-center">${r.bo_phan}</div>
                     <div>${r.station || '--'}</div>
-                    <div class="text-xs font-medium leading-snug">${r.ke_hoach}</div>
+                    <div class="text-xs font-medium leading-snug">${r.ke_hoach_hien_thi || r.ke_hoach || '--'}</div>
                     <div>${r.output_total}</div>
                     <div>${r.defect_total}</div>
                     <div>${r.rework_done_count ?? 0}</div>
