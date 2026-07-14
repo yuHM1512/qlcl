@@ -6024,7 +6024,7 @@ def api_qc_input_quick_defect_combos(
                     d.ma_loi_id, ml.ten_ma,
                     d.mo_ta_loi_id, mt.ten_mo_ta
                 ORDER BY defect_qty DESC, bp.ten_bo_phan, ct.ten_chi_tiet, ml.ten_ma, mt.ten_mo_ta
-                LIMIT 10
+                LIMIT 15
                 """,
                 (station_clean, plan_id),
             )
