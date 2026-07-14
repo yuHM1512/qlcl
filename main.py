@@ -258,6 +258,25 @@ def require_qaqt_api_user(request: Request) -> Dict:
     return user
 
 
+QC_DON_VI_SCOPED_ROLES = {"FACTORY_MANAGER", "FACTORY_DIRECTOR"}
+
+
+def is_qc_don_vi_scoped_role(user: Optional[Dict]) -> bool:
+    role = ((user or {}).get("department") or "").upper()
+    return role in QC_DON_VI_SCOPED_ROLES
+
+
+def resolve_qc_don_vi_scope(request: Request, requested_don_vi: Optional[str]) -> Tuple[Optional[str], Dict]:
+    """Return the effective QC don_vi filter for view-only factory roles."""
+    user = require_authenticated_api_user(request)
+    if is_qc_don_vi_scoped_role(user):
+        scoped_don_vi = (user.get("don_vi") or "").strip()
+        if not scoped_don_vi:
+            raise HTTPException(status_code=403, detail="Tài khoản chưa được gán đơn vị quản lý.")
+        return scoped_don_vi, user
+    return requested_don_vi, user
+
+
 def build_qc_template_context(request: Request, user: Optional[Dict], **extra) -> Dict[str, Any]:
     role = ((user or {}).get("department") or "").upper()
     context: Dict[str, Any] = {
@@ -266,6 +285,8 @@ def build_qc_template_context(request: Request, user: Optional[Dict], **extra) -
         "qc_role": role,
         "is_qc_role": role == "QC",
         "is_qaqt_role": role == "QAQT",
+        "is_qc_viewer_role": role in QC_DON_VI_SCOPED_ROLES,
+        "qc_scope_don_vi": ((user or {}).get("don_vi") or "") if role in QC_DON_VI_SCOPED_ROLES else "",
     }
     context.update(extra)
     return context
@@ -2546,8 +2567,11 @@ def qc_page(request: Request):
     user_data = get_authenticated_user(request)
     if not user_data:
         return RedirectResponse(url="/login", status_code=303)
-    if (user_data.get("department") or "").upper() == "QC":
+    role = (user_data.get("department") or "").upper()
+    if role == "QC":
         return RedirectResponse(url="/qc-input", status_code=303)
+    if role in QC_DON_VI_SCOPED_ROLES:
+        return RedirectResponse(url="/qc/dashboard", status_code=303)
     return templates.TemplateResponse(
         "qc.html",
         build_qc_template_context(request, user_data, don_vi_options=DON_VI_OPTIONS),
@@ -2662,16 +2686,26 @@ def qc_dashboard_page(request: Request):
     return templates.TemplateResponse("qc_dashboard.html", build_qc_template_context(request, user))
 
 @app.get("/api/qc/dashboard/filters")
-def api_qc_dashboard_filters(don_vi: Optional[str] = Query(None)):
+def api_qc_dashboard_filters(request: Request, don_vi: Optional[str] = Query(None)):
     """Return filter options for QC Dashboard."""
+    don_vi, _user = resolve_qc_don_vi_scope(request, don_vi)
     with get_db_connection() as conn:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute("""
+            don_vi_filter_params: List[Any] = []
+            don_vi_filter_sql = ""
+            if don_vi:
+                don_vi_filter_sql = "AND don_vi = %s"
+                don_vi_filter_params.append(don_vi)
+            cur.execute(
+                f"""
                 SELECT DISTINCT don_vi
                 FROM public.prod_plan
                 WHERE don_vi IS NOT NULL AND don_vi <> ''
+                  {don_vi_filter_sql}
                 ORDER BY don_vi
-            """)
+                """,
+                tuple(don_vi_filter_params),
+            )
             don_vi_options = [r["don_vi"] for r in cur.fetchall()]
 
             station_params = []
@@ -2765,6 +2799,7 @@ def api_qc_dashboard_filters(don_vi: Optional[str] = Query(None)):
 
 @app.get("/api/qc/dashboard/prev-date")
 def api_qc_dashboard_prev_date(
+    request: Request,
     date_before: Optional[str] = Query(None),
     don_vi: Optional[str] = Query(None),
     bo_phan: Optional[str] = Query(None),
@@ -2773,6 +2808,7 @@ def api_qc_dashboard_prev_date(
     type_name: Optional[str] = Query(None),
 ):
     """Return the nearest previous day (before date_before) that has data, to skip off days."""
+    don_vi, _user = resolve_qc_don_vi_scope(request, don_vi)
     if not date_before:
         date_before = datetime.now().strftime("%Y-%m-%d")
 
@@ -2821,6 +2857,7 @@ def api_qc_dashboard_prev_date(
 
 @app.get("/api/qc/dashboard")
 def api_qc_dashboard(
+    request: Request,
     date_from: Optional[str] = Query(None),
     date_to: Optional[str] = Query(None),
     focus_date: Optional[str] = Query(None),
@@ -2834,6 +2871,7 @@ def api_qc_dashboard(
     ma_loi_chi_tiet: Optional[str] = Query(None),
 ):
     """QC Dashboard data source."""
+    don_vi, _user = resolve_qc_don_vi_scope(request, don_vi)
     if not date_to:
         date_to = datetime.now().strftime("%Y-%m-%d")
     if not date_from:
@@ -3495,6 +3533,7 @@ def upsert_qc_cap_action(
 
 @app.get("/api/qc/cap/action")
 def get_qc_cap_action(
+    request: Request,
     plan_id: int = Query(...),
     date: str = Query(...),
     time_bucket: str = Query(...),
@@ -3504,9 +3543,17 @@ def get_qc_cap_action(
     ma_loi: Optional[str] = Query(None),
     vi_tri: Optional[str] = Query(None),
 ):
+    effective_don_vi, user = resolve_qc_don_vi_scope(request, None)
     loai_loi = normalize_qc_cap_loai_loi(loai_loi, ma_loi, vi_tri)
     with get_db_connection() as conn:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            if is_qc_don_vi_scoped_role(user):
+                cur.execute(
+                    "SELECT 1 FROM public.prod_plan WHERE id = %s AND don_vi = %s",
+                    (plan_id, effective_don_vi),
+                )
+                if not cur.fetchone():
+                    raise HTTPException(status_code=403, detail="Không có quyền xem dữ liệu ngoài đơn vị được gán.")
             cur.execute(
                 """
                 SELECT *
@@ -3540,6 +3587,7 @@ def delete_qc_employee(ma_nv: str):
 
 @app.get("/api/qc/cap")
 def api_qc_cap(
+    request: Request,
     date: Optional[str] = Query(None),
     date_from: Optional[str] = Query(None),
     date_to: Optional[str] = Query(None),
@@ -3548,6 +3596,7 @@ def api_qc_cap(
     station: Optional[str] = Query(None),
 ):
     """Tổng hợp dữ liệu CAP theo ngày và mốc thời gian."""
+    don_vi, _user = resolve_qc_don_vi_scope(request, don_vi)
     if date:
         date_from = date_to = date
     if not date_from or not date_to:
@@ -4224,8 +4273,9 @@ def api_qc_cap_heartbeat(
     return {"date": date, "latest": latest.isoformat() if latest else None}
 
 @app.get("/api/qc/cap/filters")
-def api_qc_cap_filters(don_vi: Optional[str] = Query(None)):
+def api_qc_cap_filters(request: Request, don_vi: Optional[str] = Query(None)):
     """Return filter options for QC CAP (don_vi, bo_phan, station)."""
+    don_vi, _user = resolve_qc_don_vi_scope(request, don_vi)
     with get_db_connection() as conn:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute("""
@@ -4240,21 +4290,39 @@ def api_qc_cap_filters(don_vi: Optional[str] = Query(None)):
             use_jsonb_bo_phan = bo_phan_type == "jsonb"
 
             # don_vi options
-            cur.execute("""
+            don_vi_filter_params: List[Any] = []
+            don_vi_filter_sql = ""
+            if don_vi:
+                don_vi_filter_sql = "AND don_vi = %s"
+                don_vi_filter_params.append(don_vi)
+            cur.execute(
+                f"""
                 SELECT DISTINCT don_vi
                 FROM public.prod_plan
                 WHERE don_vi IS NOT NULL AND don_vi <> ''
+                  {don_vi_filter_sql}
                 ORDER BY don_vi
-            """)
+                """,
+                tuple(don_vi_filter_params),
+            )
             don_vi_options = [r["don_vi"] for r in cur.fetchall()]
 
             # station options
-            cur.execute("""
-                SELECT DISTINCT station
-                FROM public.qc_output_sp_log
-                WHERE station IS NOT NULL AND station <> ''
-                ORDER BY station
-            """)
+            station_params: List[Any] = []
+            station_scope_sql = ""
+            if don_vi:
+                station_scope_sql = "JOIN public.prod_plan p ON p.id = o.plan_id AND p.don_vi = %s"
+                station_params.append(don_vi)
+            cur.execute(
+                f"""
+                SELECT DISTINCT o.station
+                FROM public.qc_output_sp_log o
+                {station_scope_sql}
+                WHERE o.station IS NOT NULL AND o.station <> ''
+                ORDER BY o.station
+                """,
+                tuple(station_params),
+            )
             station_options = [r["station"] for r in cur.fetchall()]
 
             # bo_phan options (child of don_vi if provided)
@@ -4302,12 +4370,13 @@ def api_qc_cap_filters(don_vi: Optional[str] = Query(None)):
 
 @app.post("/api/qc/cap/backfill")
 def backfill_qc_cap(
+    request: Request,
     date: Optional[str] = Query(None),
     date_from: Optional[str] = Query(None),
     date_to: Optional[str] = Query(None),
 ):
     """Backfill qc_error_dps from existing CAP data."""
-    _ = api_qc_cap(date=date, date_from=date_from, date_to=date_to)
+    _ = api_qc_cap(request=request, date=date, date_from=date_from, date_to=date_to)
     return {"status": "ok", "date_from": date_from or date, "date_to": date_to or date}
 
 
