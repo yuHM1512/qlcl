@@ -411,6 +411,7 @@
 
     <script>
         const sidebarKey = 'qlcl_sidebar_collapsed';
+        const isQcViewerRole = {{ is_qc_viewer_role | tojson }};
         let dailyChart;
         let bucketChart;
         let posChart;
@@ -602,13 +603,16 @@
             };
             const params = new URLSearchParams();
             if (keep.don_vi) params.set('don_vi', keep.don_vi);
+            if (keep.bo_phan) params.set('bo_phan', keep.bo_phan);
+            if (keep.ma_hang) params.set('ma_hang', keep.ma_hang);
+            if (keep.type_name) params.set('type_name', keep.type_name);
             const res = await fetch(`/api/qc/dashboard/filters?${params.toString()}`);
             const data = await res.json();
             if (!keep.type_name && (data.type || []).includes('Thường')) keep.type_name = 'Thường';
+            if (!keep.station && data.default_station) keep.station = data.default_station;
             buildSelect(document.getElementById('fDonVi'), data.don_vi || [], 'Tất cả', keep.don_vi);
             buildSelect(document.getElementById('fBoPhan'), data.bo_phan || [], 'Tất cả', keep.bo_phan);
-            // Default business rule: if station is not chosen, calculations use "Trạm sau seam".
-            buildSelect(document.getElementById('fStation'), data.station || [], 'Trạm sau seam (mặc định)', keep.station);
+            buildSelect(document.getElementById('fStation'), data.station || [], isQcViewerRole ? 'Chọn trạm' : 'Trạm sau seam (mặc định)', keep.station);
             buildSelect(document.getElementById('fMaHang'), data.ma_hang || [], 'Tất cả', keep.ma_hang);
             buildSelect(document.getElementById('fType'), data.type || [], 'Tất cả', keep.type_name);
         }
@@ -671,6 +675,10 @@
             });
             const res = await fetch(`/api/qc/dashboard?${params.toString()}`);
             const data = await res.json();
+            const stationSelect = document.getElementById('fStation');
+            if (stationSelect && !stationSelect.value && data.active_station && [...stationSelect.options].some((o) => o.value === data.active_station)) {
+                stationSelect.value = data.active_station;
+            }
 
             document.getElementById('kpiInspected').textContent = fmtNum(data.totals.inspected_total);
             document.getElementById('kpiDefect').textContent = fmtNum(data.totals.defect_total);

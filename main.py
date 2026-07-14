@@ -277,6 +277,67 @@ def resolve_qc_don_vi_scope(request: Request, requested_don_vi: Optional[str]) -
     return requested_don_vi, user
 
 
+def resolve_dashboard_default_station(
+    cur,
+    *,
+    station: Optional[str] = None,
+    scoped_user: Optional[Dict] = None,
+    don_vi: Optional[str] = None,
+    bo_phan: Optional[str] = None,
+    ma_hang: Optional[str] = None,
+    type_name: Optional[str] = None,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    date_before: Optional[str] = None,
+    resolved_bo_phan_expr: str = "COALESCE(NULLIF(qe.bo_phan, ''), '')",
+) -> str:
+    station_clean = (station or "").strip()
+    if station_clean:
+        return station_clean
+
+    if not is_qc_don_vi_scoped_role(scoped_user):
+        return "Trạm sau seam"
+
+    where_clauses = ["o.station IS NOT NULL", "o.station <> ''"]
+    params: List[Any] = []
+    if date_from and date_to:
+        where_clauses.append("o.date BETWEEN %s AND %s")
+        params.extend([date_from, date_to])
+    elif date_before:
+        where_clauses.append("o.date < %s")
+        params.append(date_before)
+    if don_vi:
+        where_clauses.append("p.don_vi = %s")
+        params.append(don_vi)
+    if bo_phan:
+        where_clauses.append(f"{resolved_bo_phan_expr} = %s")
+        params.append(bo_phan)
+    if ma_hang:
+        where_clauses.append("COALESCE(p.ma_hang, '') = %s")
+        params.append(ma_hang)
+    if type_name:
+        where_clauses.append("COALESCE(tgt.type, '') = %s")
+        params.append(type_name)
+
+    cur.execute(
+        f"""
+        SELECT o.station
+        FROM public.qc_output_sp_log o
+        JOIN public.prod_plan p ON p.id = o.plan_id
+        LEFT JOIN public.quality_employees qe ON qe.ma_nv = o.ma_nv
+        LEFT JOIN public.dm_loai_hang lh ON lh.ten_loai = p.loai_hang
+        LEFT JOIN public.dm_loai_hang_target tgt ON tgt.id_type = lh.id_type
+        WHERE {" AND ".join(where_clauses)}
+        GROUP BY o.station
+        ORDER BY SUM(CASE WHEN o.delta > 0 THEN o.delta ELSE 0 END) DESC, o.station
+        LIMIT 1
+        """,
+        tuple(params),
+    )
+    row = cur.fetchone() or {}
+    return (row.get("station") or "").strip()
+
+
 def build_qc_template_context(request: Request, user: Optional[Dict], **extra) -> Dict[str, Any]:
     role = ((user or {}).get("department") or "").upper()
     context: Dict[str, Any] = {
@@ -2686,9 +2747,15 @@ def qc_dashboard_page(request: Request):
     return templates.TemplateResponse("qc_dashboard.html", build_qc_template_context(request, user))
 
 @app.get("/api/qc/dashboard/filters")
-def api_qc_dashboard_filters(request: Request, don_vi: Optional[str] = Query(None)):
+def api_qc_dashboard_filters(
+    request: Request,
+    don_vi: Optional[str] = Query(None),
+    bo_phan: Optional[str] = Query(None),
+    ma_hang: Optional[str] = Query(None),
+    type_name: Optional[str] = Query(None),
+):
     """Return filter options for QC Dashboard."""
-    don_vi, _user = resolve_qc_don_vi_scope(request, don_vi)
+    don_vi, scoped_user = resolve_qc_don_vi_scope(request, don_vi)
     with get_db_connection() as conn:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             don_vi_filter_params: List[Any] = []
@@ -2788,11 +2855,21 @@ def api_qc_dashboard_filters(request: Request, don_vi: Optional[str] = Query(Non
                 ORDER BY tgt.type
             """, tuple(type_params))
             type_options = [r["type"] for r in cur.fetchall()]
+            default_type_name = type_name or ("Thường" if "Thường" in type_options else None)
+            default_station = resolve_dashboard_default_station(
+                cur,
+                scoped_user=scoped_user,
+                don_vi=don_vi,
+                bo_phan=bo_phan,
+                ma_hang=ma_hang,
+                type_name=default_type_name,
+            )
 
     return {
         "don_vi": don_vi_options,
         "bo_phan": bo_phan_options,
         "station": station_options,
+        "default_station": default_station,
         "ma_hang": ma_hang_options,
         "type": type_options,
     }
@@ -2808,18 +2885,15 @@ def api_qc_dashboard_prev_date(
     type_name: Optional[str] = Query(None),
 ):
     """Return the nearest previous day (before date_before) that has data, to skip off days."""
-    don_vi, _user = resolve_qc_don_vi_scope(request, don_vi)
+    don_vi, scoped_user = resolve_qc_don_vi_scope(request, don_vi)
     if not date_before:
         date_before = datetime.now().strftime("%Y-%m-%d")
-
-    station_clean = (station or "").strip()
-    station_for_calc = station_clean or "Trạm sau seam"
 
     # "Tổ" filter is based on QC employee team only.
     resolved_bo_phan_expr = "COALESCE(NULLIF(qe.bo_phan, ''), '')"
 
-    where_clauses = ["o.date < %s", "COALESCE(o.station, '') = %s"]
-    params: List = [date_before, station_for_calc]
+    where_clauses = ["o.date < %s"]
+    params: List = [date_before]
 
     if don_vi:
         where_clauses.append("p.don_vi = %s")
@@ -2834,10 +2908,24 @@ def api_qc_dashboard_prev_date(
         where_clauses.append("COALESCE(tgt.type, '') = %s")
         params.append(type_name)
 
-    where_sql = " AND ".join(where_clauses)
-
     with get_db_connection() as conn:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            station_for_calc = resolve_dashboard_default_station(
+                cur,
+                station=station,
+                scoped_user=scoped_user,
+                don_vi=don_vi,
+                bo_phan=bo_phan,
+                ma_hang=ma_hang,
+                type_name=type_name,
+                date_before=date_before,
+                resolved_bo_phan_expr=resolved_bo_phan_expr,
+            )
+            if station_for_calc:
+                where_clauses.append("COALESCE(o.station, '') = %s")
+                params.append(station_for_calc)
+
+            where_sql = " AND ".join(where_clauses)
             cur.execute(
                 f"""
                 SELECT MAX(o.date) AS prev_date
@@ -2871,7 +2959,7 @@ def api_qc_dashboard(
     ma_loi_chi_tiet: Optional[str] = Query(None),
 ):
     """QC Dashboard data source."""
-    don_vi, _user = resolve_qc_don_vi_scope(request, don_vi)
+    don_vi, scoped_user = resolve_qc_don_vi_scope(request, don_vi)
     if not date_to:
         date_to = datetime.now().strftime("%Y-%m-%d")
     if not date_from:
@@ -2927,10 +3015,18 @@ def api_qc_dashboard(
             # "Tổ" filter must be based on QC employee team only (qe.bo_phan).
             resolved_bo_phan_expr = "COALESCE(NULLIF(qe.bo_phan, ''), '')"
 
-            station_clean = (station or "").strip()
-            # Business rule: when station filter is empty, all calculations must
-            # be based on the default station ("Trạm sau seam").
-            station_for_calc = station_clean or "Trạm sau seam"
+            station_for_calc = resolve_dashboard_default_station(
+                cur,
+                station=station,
+                scoped_user=scoped_user,
+                don_vi=don_vi,
+                bo_phan=bo_phan,
+                ma_hang=ma_hang,
+                type_name=type_name,
+                date_from=date_from,
+                date_to=date_to,
+                resolved_bo_phan_expr=resolved_bo_phan_expr,
+            )
 
             # Filters used for KPI/charts (force station_for_calc).
             base_clauses_calc = ["o.date BETWEEN %s AND %s"]
@@ -2941,8 +3037,9 @@ def api_qc_dashboard(
             if bo_phan:
                 base_clauses_calc.append(f"{resolved_bo_phan_expr} = %s")
                 base_params_calc.append(bo_phan)
-            base_clauses_calc.append("COALESCE(o.station, '') = %s")
-            base_params_calc.append(station_for_calc)
+            if station_for_calc:
+                base_clauses_calc.append("COALESCE(o.station, '') = %s")
+                base_params_calc.append(station_for_calc)
             if ma_hang:
                 base_clauses_calc.append("COALESCE(p.ma_hang, '') = %s")
                 base_params_calc.append(ma_hang)
@@ -3035,8 +3132,9 @@ def api_qc_dashboard(
             if bo_phan:
                 bucket_clauses.append(f"{resolved_bo_phan_expr} = %s")
                 bucket_params.append(bo_phan)
-            bucket_clauses.append("COALESCE(o.station, '') = %s")
-            bucket_params.append(station_for_calc)
+            if station_for_calc:
+                bucket_clauses.append("COALESCE(o.station, '') = %s")
+                bucket_params.append(station_for_calc)
             if ma_hang:
                 bucket_clauses.append("COALESCE(p.ma_hang, '') = %s")
                 bucket_params.append(ma_hang)
@@ -3081,8 +3179,9 @@ def api_qc_dashboard(
             if bo_phan:
                 pos_clauses.append(f"{resolved_bo_phan_expr} = %s")
                 pos_params.append(bo_phan)
-            pos_clauses.append("COALESCE(sp.station, '') = %s")
-            pos_params.append(station_for_calc)
+            if station_for_calc:
+                pos_clauses.append("COALESCE(sp.station, '') = %s")
+                pos_params.append(station_for_calc)
             if ma_hang:
                 pos_clauses.append("COALESCE(p.ma_hang, '') = %s")
                 pos_params.append(ma_hang)
@@ -3122,8 +3221,9 @@ def api_qc_dashboard(
             if bo_phan:
                 defect_clauses.append(f"{resolved_bo_phan_expr} = %s")
                 defect_params.append(bo_phan)
-            defect_clauses.append("COALESCE(sp.station, '') = %s")
-            defect_params.append(station_for_calc)
+            if station_for_calc:
+                defect_clauses.append("COALESCE(sp.station, '') = %s")
+                defect_params.append(station_for_calc)
             if ma_hang:
                 defect_clauses.append("COALESCE(p.ma_hang, '') = %s")
                 defect_params.append(ma_hang)
@@ -3320,6 +3420,7 @@ def api_qc_dashboard(
 
     return {
         "range": {"date_from": date_from, "date_to": date_to, "focus_date": focus_date},
+        "active_station": station_for_calc,
         "totals": totals,
         "daily": daily,
         "by_bucket": by_bucket,
