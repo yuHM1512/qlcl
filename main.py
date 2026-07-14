@@ -277,6 +277,13 @@ def resolve_qc_don_vi_scope(request: Request, requested_don_vi: Optional[str]) -
     return requested_don_vi, user
 
 
+def redirect_to_login_for_current_path(request: Request) -> RedirectResponse:
+    path = str(request.url.path)
+    if request.url.query:
+        path = f"{path}?{request.url.query}"
+    return RedirectResponse(url=f"/login?next={quote(path, safe='/?=&%')}", status_code=303)
+
+
 def resolve_dashboard_default_station(
     cur,
     *,
@@ -2627,7 +2634,7 @@ DON_VI_OPTIONS = ["XN1-V1", "XN2", "XN3", "XNDT", "XNV2"]
 def qc_page(request: Request):
     user_data = get_authenticated_user(request)
     if not user_data:
-        return RedirectResponse(url="/login", status_code=303)
+        return redirect_to_login_for_current_path(request)
     role = (user_data.get("department") or "").upper()
     if role == "QC":
         return RedirectResponse(url="/qc-input", status_code=303)
@@ -2700,7 +2707,7 @@ def qc_input_sp_page(request: Request):
 def qc_settings_customer(request: Request):
     user = get_authenticated_user(request)
     if not user:
-        return RedirectResponse(url="/login", status_code=303)
+        return redirect_to_login_for_current_path(request)
     if (user.get("department") or "").upper() != "QAQT":
         return RedirectResponse(url="/qc", status_code=303)
     return templates.TemplateResponse(
@@ -2712,7 +2719,7 @@ def qc_settings_customer(request: Request):
 def qc_settings_details(request: Request):
     user = get_authenticated_user(request)
     if not user:
-        return RedirectResponse(url="/login", status_code=303)
+        return redirect_to_login_for_current_path(request)
     if (user.get("department") or "").upper() != "QAQT":
         return RedirectResponse(url="/qc", status_code=303)
     return templates.TemplateResponse(
@@ -2724,7 +2731,7 @@ def qc_settings_details(request: Request):
 def qc_settings_qc_list(request: Request):
     user = get_authenticated_user(request)
     if not user:
-        return RedirectResponse(url="/login", status_code=303)
+        return redirect_to_login_for_current_path(request)
     if (user.get("department") or "").upper() != "QAQT":
         return RedirectResponse(url="/qc", status_code=303)
     return templates.TemplateResponse(
@@ -2736,14 +2743,14 @@ def qc_settings_qc_list(request: Request):
 def qc_cap_page(request: Request):
     user = get_authenticated_user(request)
     if not user:
-        return RedirectResponse(url="/login", status_code=303)
+        return redirect_to_login_for_current_path(request)
     return templates.TemplateResponse("cap.html", build_qc_template_context(request, user))
 
 @app.get("/qc/dashboard")
 def qc_dashboard_page(request: Request):
     user = get_authenticated_user(request)
     if not user:
-        return RedirectResponse(url="/login", status_code=303)
+        return redirect_to_login_for_current_path(request)
     return templates.TemplateResponse("qc_dashboard.html", build_qc_template_context(request, user))
 
 @app.get("/api/qc/dashboard/filters")
