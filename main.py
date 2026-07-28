@@ -96,6 +96,7 @@ SCHEMA_BOOTSTRAP_FILES = [
     "alter_quality_employees_add_station.sql",
     "create_customer_hierarchy.sql",
     "create_error_classification.sql",
+    "create_error_catalog_versioning.sql",
     "create_hdkp_tables.sql",
     "create_prod_plan.sql",
     "migrate_prod_plan_bo_phan_json.sql",
@@ -131,6 +132,26 @@ def get_db_connection():
 
 def get_prod_factory_connection():
     return psycopg2.connect(PROD_FACTORY_DATABASE_URL)
+
+
+def get_effective_defect_catalog_id(cur, effective_date: Optional[str] = None) -> Optional[int]:
+    """Return the latest defect catalog effective for a date; defaults to today."""
+    date_value = effective_date or datetime.now().strftime("%Y-%m-%d")
+    cur.execute(
+        """
+        SELECT id
+        FROM public.dm_defect_catalog
+        WHERE effective_from <= %s::date
+          AND (effective_to IS NULL OR effective_to >= %s::date)
+        ORDER BY effective_from DESC, id DESC
+        LIMIT 1
+        """,
+        (date_value, date_value),
+    )
+    row = cur.fetchone()
+    if isinstance(row, dict):
+        return row.get("id")
+    return row[0] if row else None
 
 
 def bootstrap_qlcl_schema():
@@ -5381,10 +5402,19 @@ def api_dm_ma_hang_delete(id: int):
 # --- Error Classification ---
 
 @app.get("/api/dm/nhom-loi")
-def api_dm_nhom_loi():
+def api_dm_nhom_loi(date_str: Optional[str] = Query(None, alias="date")):
     with get_db_connection() as conn:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute("SELECT id, ten_nhom FROM public.dm_nhom_loi ORDER BY ten_nhom")
+            catalog_id = get_effective_defect_catalog_id(cur, date_str)
+            cur.execute(
+                """
+                SELECT id, ten_nhom
+                FROM public.dm_nhom_loi
+                WHERE catalog_id = %s
+                ORDER BY ten_nhom
+                """,
+                (catalog_id,),
+            )
             return {"rows": cur.fetchall()}
 
 @app.post("/api/dm/nhom-loi")
@@ -5392,7 +5422,11 @@ async def api_dm_nhom_loi_create(request: Request):
     body = await request.json()
     with get_db_connection() as conn:
         with conn.cursor() as cur:
-            cur.execute("INSERT INTO public.dm_nhom_loi (ten_nhom) VALUES (%s) RETURNING id", (body["ten_nhom"],))
+            catalog_id = get_effective_defect_catalog_id(cur)
+            cur.execute(
+                "INSERT INTO public.dm_nhom_loi (catalog_id, ten_nhom) VALUES (%s, %s) RETURNING id",
+                (catalog_id, body["ten_nhom"]),
+            )
             new_id = cur.fetchone()[0]
             conn.commit()
     return {"id": new_id}
@@ -5458,23 +5492,30 @@ def api_dm_mo_ta_loi_delete(id: int):
     return {"status": "ok"}
 
 @app.get("/api/dm/ma-loi-options")
-def api_dm_ma_loi_options():
+def api_dm_ma_loi_options(date_str: Optional[str] = Query(None, alias="date")):
     """
-    Lấy danh sách Mã lỗi + Mô tả lỗi dạng gộp (ten_ma: ten_mo_ta)
+    Lấy danh sách Mã lỗi + Mô tả lỗi dạng gộp theo catalog hiệu lực.
     """
     with get_db_connection() as conn:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            catalog_id = get_effective_defect_catalog_id(cur, date_str)
             cur.execute("""
                 SELECT 
+                    dc.id AS catalog_id,
+                    dc.code AS catalog_code,
+                    nl.ten_nhom,
                     ml.id AS ma_loi_id,
                     mt.id AS mo_ta_loi_id,
                     ml.ten_ma,
                     mt.ten_mo_ta,
                     mt.muc_do
                 FROM public.dm_ma_loi ml
+                JOIN public.dm_nhom_loi nl ON nl.id = ml.nhom_loi_id
+                JOIN public.dm_defect_catalog dc ON dc.id = nl.catalog_id
                 JOIN public.dm_mo_ta_loi mt ON mt.ma_loi_id = ml.id
+                WHERE dc.id = %s
                 ORDER BY ml.ten_ma, mt.ten_mo_ta
-            """)
+            """, (catalog_id,))
             rows = cur.fetchall()
 
             def _sort_key(ten_ma: str):
@@ -5487,8 +5528,8 @@ def api_dm_ma_loi_options():
 
             rows.sort(key=lambda r: _sort_key(r.get("ten_ma")))
             for r in rows:
-                r["label"] = f"{r['ten_ma']}: {r['ten_mo_ta']}"
-            return {"rows": rows}
+                r["label"] = f"{r['ten_ma']}. {r['ten_mo_ta']}"
+            return {"rows": rows, "catalog_id": catalog_id}
 
 
 @app.post("/api/qc/error-log-sp")
@@ -5650,8 +5691,34 @@ async def api_qc_error_log_sp_create(request: Request):
                     cur.execute(
                         """
                         INSERT INTO public.qc_defect
-                        (error_log_sp_id, sp_index, bo_phan_id, chi_tiet_id, ma_loi_id, mo_ta_loi_id, muc_do, lap_lai_3, image_path)
-                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        (
+                            error_log_sp_id, sp_index, bo_phan_id, chi_tiet_id,
+                            ma_loi_id, mo_ta_loi_id, muc_do, lap_lai_3, image_path,
+                            defect_catalog_id, ma_loi_code_snapshot, mo_ta_loi_snapshot, nhom_loi_snapshot
+                        )
+                        VALUES (
+                            %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                            COALESCE(
+                                %s,
+                                (
+                                    SELECT nl.catalog_id
+                                    FROM public.dm_ma_loi ml
+                                    JOIN public.dm_nhom_loi nl ON nl.id = ml.nhom_loi_id
+                                    WHERE ml.id = %s
+                                )
+                            ),
+                            COALESCE(%s, (SELECT ml.ten_ma FROM public.dm_ma_loi ml WHERE ml.id = %s)),
+                            COALESCE(%s, (SELECT mt.ten_mo_ta FROM public.dm_mo_ta_loi mt WHERE mt.id = %s)),
+                            COALESCE(
+                                %s,
+                                (
+                                    SELECT nl.ten_nhom
+                                    FROM public.dm_ma_loi ml
+                                    JOIN public.dm_nhom_loi nl ON nl.id = ml.nhom_loi_id
+                                    WHERE ml.id = %s
+                                )
+                            )
+                        )
                         """,
                         (
                             log_id,
@@ -5663,6 +5730,14 @@ async def api_qc_error_log_sp_create(request: Request):
                             d.get("muc_do"),
                             d.get("lap_lai_3", False),
                             d.get("image_path"),
+                            d.get("catalog_id"),
+                            d.get("ma_loi_id"),
+                            d.get("ma_loi_code"),
+                            d.get("ma_loi_id"),
+                            d.get("mo_ta_loi"),
+                            d.get("mo_ta_loi_id"),
+                            d.get("nhom_loi"),
+                            d.get("ma_loi_id"),
                         )
                     )
             if pending_failed_count > 0:

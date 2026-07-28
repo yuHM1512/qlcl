@@ -1863,7 +1863,8 @@
 
     async function loadMasterMaLoiOptions() {
         try {
-            const res = await fetch('/api/dm/ma-loi-options');
+            const params = new URLSearchParams({ date: reportDateStr });
+            const res = await fetch(`/api/dm/ma-loi-options?${params.toString()}`);
             const data = await res.json();
             masterMaLoiOptions = data.rows || [];
         } catch (e) { console.error(e); }
@@ -3121,12 +3122,17 @@
                     const parts = mlVal.split('|');
                     const maLoiId = parseInt(parts[0]);
                     const moTaLoiId = parseInt(parts[1]);
+                    const selectedMaLoi = masterMaLoiOptions.find(opt => opt.ma_loi_id === maLoiId && opt.mo_ta_loi_id === moTaLoiId) || {};
                     defects.push({
                         bo_phan_id: parseInt(bpId),
                         chi_tiet_id: parseInt(ctId),
                         ma_loi_id: maLoiId,
                         mo_ta_loi_id: moTaLoiId,
                         muc_do: mucDo,
+                        catalog_id: selectedMaLoi.catalog_id || null,
+                        ma_loi_code: selectedMaLoi.ten_ma || null,
+                        mo_ta_loi: selectedMaLoi.ten_mo_ta || null,
+                        nhom_loi: selectedMaLoi.ten_nhom || null,
                         image_path: blockImagePaths[block.dataset.blockId] || null
                     });
                 }
