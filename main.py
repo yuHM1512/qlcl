@@ -84,6 +84,18 @@ try:
 except ValueError:
     QTCN_AUTO_SYNC_INTERVAL_MINUTES = 60
 
+# --- Auto-sync PULL từ XNV2 SQL Server (QLCL chủ động kéo dữ liệu) ---
+HL_XNV2_AUTO_SYNC_ENABLED = env_flag("HL_XNV2_AUTO_SYNC_ENABLED", default=False)
+try:
+    HL_XNV2_AUTO_SYNC_INTERVAL_MINUTES = max(1, int(os.getenv("HL_XNV2_AUTO_SYNC_INTERVAL_MINUTES", "60")))
+except ValueError:
+    HL_XNV2_AUTO_SYNC_INTERVAL_MINUTES = 60
+# SQL Server của XNV2 — cấu hình riêng, có thể khác với HANGING_LINE_SQL_SERVER
+XNV2_SQL_SERVER = os.getenv("XNV2_SQL_SERVER", "")
+XNV2_APP_DB     = os.getenv("XNV2_APP_DB", "hanging_app")
+XNV2_SQL_DRIVER = os.getenv("XNV2_SQL_DRIVER", "ODBC Driver 17 for SQL Server")
+XNV2_DON_VI     = os.getenv("XNV2_DON_VI", "XNV2")
+
 DB_SCRIPTS_DIR = PathLib(__file__).resolve().parent / "db"
 GEMBA_CP_BASE_DIR = PathLib(__file__).resolve().parent / "gemba_cp"
 GEMBA_CP_STATIC_DIR = GEMBA_CP_BASE_DIR / "static"
@@ -1197,8 +1209,9 @@ app.include_router(gemba_admin_router.router, dependencies=[Depends(require_auth
 
 
 @app.on_event("startup")
-def startup_qtcn_auto_sync():
+def startup_auto_sync():
     start_qtcn_auto_sync_if_enabled()
+    start_xnv2_auto_sync_if_enabled()
 
 
 @app.get("/")
@@ -4552,6 +4565,56 @@ QTCN_SOURCE_SYSTEM = "prod_factory"
 _qtcn_auto_sync_started = False
 _qtcn_auto_sync_lock = threading.Lock()
 
+_xnv2_auto_sync_started = False
+_xnv2_auto_sync_lock = threading.Lock()
+
+
+def get_xnv2_connection():
+    """Kết nối SQL Server của XNV2 — dùng riêng biệt với HANGING_LINE_SQL_SERVER."""
+    if not PYODBC_AVAILABLE:
+        raise RuntimeError("pyodbc chưa được cài đặt. Chạy: pip install pyodbc")
+    if not XNV2_SQL_SERVER:
+        raise RuntimeError("XNV2_SQL_SERVER chưa được cấu hình trong .env")
+    conn_str = (
+        f"DRIVER={{{XNV2_SQL_DRIVER}}};"
+        f"SERVER={XNV2_SQL_SERVER};"
+        f"DATABASE={XNV2_APP_DB};"
+        "Trusted_Connection=yes;"
+        "TrustServerCertificate=yes;"
+    )
+    return pyodbc.connect(conn_str, autocommit=True)
+
+
+def run_xnv2_auto_sync_loop() -> None:
+    logger.info("XNV2 auto-sync (PULL) started, interval=%s minutes", HL_XNV2_AUTO_SYNC_INTERVAL_MINUTES)
+    while True:
+        time.sleep(HL_XNV2_AUTO_SYNC_INTERVAL_MINUTES * 60)
+        try:
+            conn = get_xnv2_connection()
+            result = sync_hanging_line_prod_plan(conn_override=conn, don_vi_override=XNV2_DON_VI)
+            logger.info(
+                "XNV2 auto-sync ok — synced=%s inserted=%s updated=%s skipped=%s",
+                result.get("synced", 0),
+                result.get("inserted", 0),
+                result.get("updated", 0),
+                result.get("skipped", 0),
+            )
+        except Exception:
+            logger.exception("XNV2 auto-sync failed")
+
+
+def start_xnv2_auto_sync_if_enabled() -> None:
+    global _xnv2_auto_sync_started
+    if not HL_XNV2_AUTO_SYNC_ENABLED:
+        return
+    with _xnv2_auto_sync_lock:
+        if _xnv2_auto_sync_started:
+            return
+        t = threading.Thread(target=run_xnv2_auto_sync_loop, name="xnv2-auto-sync", daemon=True)
+        t.start()
+        _xnv2_auto_sync_started = True
+        logger.info("XNV2 auto-sync thread started")
+
 
 def normalize_prod_plan_bo_phan_list(raw: Any) -> List[str]:
     if raw is None:
@@ -4926,9 +4989,17 @@ def build_hl_sync_plan_code(mono: str) -> str:
     return f"{HL_SYNC_PLAN_PREFIX}{safe}" if safe else HL_SYNC_PLAN_PREFIX.rstrip("-")
 
 
-def sync_hanging_line_prod_plan() -> Dict[str, Any]:
+def sync_hanging_line_prod_plan(
+    conn_override=None,
+    don_vi_override: str | None = None,
+) -> Dict[str, Any]:
     """Read tPlanMaster + tDemandRoot + tPlanPO from hanging-line SQL Server
     and upsert into qlcl.prod_plan with source_system='hanging_line'.
+
+    Args:
+        conn_override: pyodbc connection đã mở sẵn (dùng cho XNV2 hoặc XN khác).
+                       Nếu None thì dùng get_hanging_line_connection() mặc định.
+        don_vi_override: ghi đè HANGING_LINE_DON_VI (vd 'XNV2').
     """
     synced = 0
     inserted = 0
@@ -4938,7 +5009,7 @@ def sync_hanging_line_prod_plan() -> Dict[str, Any]:
 
     # --- Read from SQL Server ---
     try:
-        hl_conn = get_hanging_line_connection()
+        hl_conn = conn_override if conn_override is not None else get_hanging_line_connection()
     except Exception as exc:
         return {"status": "error", "detail": f"Không kết nối được SQL Server chuyền treo: {exc}"}
 
@@ -4994,7 +5065,7 @@ def sync_hanging_line_prod_plan() -> Dict[str, Any]:
                 guid_str = str(row["PlanMaster_guid"])
                 ke_hoach = build_hl_sync_plan_code(mono)
                 line_no = row.get("LineNo") or 0
-                don_vi = HANGING_LINE_DON_VI
+                don_vi = don_vi_override if don_vi_override is not None else HANGING_LINE_DON_VI
                 bo_phan_list = [f"Tổ {line_no}"] if line_no else []
 
                 # Loại hàng lấy trực tiếp từ tPlanMaster.LoaiHang (ten_loai)
