@@ -871,6 +871,84 @@
             color: #475569;
             cursor: pointer;
         }
+
+        /* Điều hướng + ngày báo cáo — 1 hàng phẳng */
+        .nav-date-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #fffbeb;
+            border: 1.5px solid #fde68a;
+            border-radius: 12px;
+            padding: 6px 12px;
+            flex-wrap: nowrap;
+        }
+        .nav-back-btn {
+            background: none;
+            border: none;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #475569;
+            cursor: pointer;
+            white-space: nowrap;
+            padding: 0 4px;
+            flex-shrink: 0;
+        }
+        .nav-back-btn:hover { color: #1e3a5f; }
+        .nav-divider {
+            width: 1px;
+            height: 18px;
+            background: #fcd34d;
+            flex-shrink: 0;
+        }
+        .nav-date-bar label {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: #92400e;
+            white-space: nowrap;
+            margin-bottom: 0;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .nav-date-bar input[type="date"] {
+            flex: 1;
+            min-width: 0;
+            border: none;
+            background: transparent;
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #1e3a5f;
+            padding: 0;
+        }
+        .date-today-btn {
+            font-size: 0.75rem;
+            font-weight: 700;
+            border: 1px solid #fcd34d;
+            background: #fef3c7;
+            color: #92400e;
+            border-radius: 999px;
+            padding: 3px 10px;
+            cursor: pointer;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .date-today-btn:hover { background: #fde68a; }
+
+        /* Badge chuyền treo trong compact plan */
+        .hanging-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            background: rgba(255,255,255,0.22);
+            border: 1px solid rgba(255,255,255,0.35);
+            border-radius: 999px;
+            padding: 2px 8px;
+            color: #fff;
+        }
     </style>
 </head>
 <body>
@@ -905,9 +983,14 @@
     <div id="planSelectionArea">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h6 class="text-muted fw-bold mb-0 ms-1" style="font-size: 0.85rem; letter-spacing: 0.5px;">KẾ HOẠCH CÓ SẴN</h6>
-            <button type="button" class="btn btn-sm btn-outline-primary" style="border-radius: 8px; font-weight: 700;" onclick="syncQtcnPlans()">
-                <i class="fas fa-sync-alt me-1"></i> Đồng bộ
-            </button>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-sm btn-outline-primary" style="border-radius: 8px; font-weight: 700;" onclick="syncQtcnPlans()">
+                    <i class="fas fa-sync-alt me-1"></i> XNV2
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-info" style="border-radius: 8px; font-weight: 700;" onclick="syncHangingLinePlans()">
+                    <i class="fas fa-sync-alt me-1"></i> Chuyền treo
+                </button>
+            </div>
         </div>
         <div id="plansList" class="d-flex flex-column gap-3">
             <div class="text-center text-muted my-4" id="loadingPlansMsg">
@@ -917,9 +1000,21 @@
     </div>
 
     <div id="inputDataArea" style="display: none;">
-        <button class="btn btn-sm btn-light mb-3 rounded-pill fw-bold" onclick="backToPlanSelection()">
-            <i class="fas fa-chevron-left me-1"></i> Trở về danh sách kế hoạch
-        </button>
+        <!-- Điều hướng + ngày báo cáo: justify-between -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.85rem;gap:8px;">
+            <button onclick="backToPlanSelection()"
+                style="background:none;border:none;font-weight:700;color:#64748b;font-size:0.9rem;cursor:pointer;padding:0;display:flex;align-items:center;gap:5px;white-space:nowrap;flex-shrink:0;">
+                <i class="fas fa-chevron-left" style="font-size:0.8rem;"></i> Trở về
+            </button>
+            <div style="display:flex;align-items:center;gap:6px;background:#fffbeb;border:1.5px solid #fde68a;border-radius:999px;padding:5px 12px;flex-shrink:0;">
+                <i class="fas fa-calendar-alt" style="color:#92400e;font-size:0.78rem;flex-shrink:0;"></i>
+                <input type="date" id="reportDateInput" onchange="onReportDateChange(this.value)"
+                    style="border:none;background:transparent;font-size:0.88rem;font-weight:700;color:#1e3a5f;width:120px;padding:0;cursor:pointer;">
+                <button onclick="resetReportDateToToday()"
+                    title="Về hôm nay"
+                    style="background:none;border:none;font-size:0.9rem;color:#92400e;cursor:pointer;padding:0 0 0 2px;line-height:1;flex-shrink:0;">↺</button>
+            </div>
+        </div>
 
         <div id="stationCard" class="card-lite mb-3" style="display: none;">
             <div class="label text-primary">Trạm</div>
@@ -937,6 +1032,13 @@
                 <span>Tổ: <strong id="lblSelectedBoPhanCompact">...</strong></span>
                 <span>Ngày SX: <strong id="lblSelectedNgayCompact">...</strong></span>
                 <span>SL: <strong id="lblSelectedSanLuongCompact">...</strong></span>
+                <span id="hangingBadgeWrap" style="display:none;">
+                    <span class="hanging-badge"><i class="fas fa-link"></i> Chuyền treo</span>
+                </span>
+            </div>
+            <div style="margin-top: 6px; font-size: 0.8rem; opacity: 0.85;">
+                <i class="fas fa-calendar-check me-1"></i>
+                Ngày báo cáo: <strong id="lblReportDateCompact">...</strong>
             </div>
         </div>
 
@@ -969,7 +1071,7 @@
                     </div>
                     <div class="d-flex align-items-center justify-content-between mt-2">
                         <div class="output-action-buttons">
-                            <button class="btn btn-success btn-sm" onclick="adjustOutputStatus('Passed')">+1 Đạt</button>
+                            <button id="btnPlusDat" class="btn btn-success btn-sm" onclick="adjustOutputStatus('Passed')">+1 Đạt</button>
                             <button class="btn btn-danger btn-sm" onclick="adjustOutputStatus('Failed')">+1 Lỗi</button>
                         </div>
                         <div class="stats-grid">
@@ -1073,14 +1175,49 @@
     let selectedLoaiHangId = null;
     let clusterOptions = [];
     let quickDefectCombos = [];
-    const reportDateStr = (() => {
+
+    // Ngày báo cáo — mặc định hôm nay, có thể đổi qua picker
+    function todayStr() {
         const now = new Date();
         const y = now.getFullYear();
         const m = String(now.getMonth() + 1).padStart(2, '0');
         const d = String(now.getDate()).padStart(2, '0');
         return `${y}-${m}-${d}`;
-    })();
+    }
+    let reportDateStr = todayStr();
     let reworkDateStr = reportDateStr;
+
+    // Khởi tạo giá trị cho input date picker
+    function initReportDatePicker() {
+        const inp = document.getElementById('reportDateInput');
+        if (inp) inp.value = reportDateStr;
+    }
+
+    function onReportDateChange(value) {
+        if (!value) return;
+        reportDateStr = value;
+        reworkDateStr = value;
+        // Cập nhật label trong compact plan header (nếu đang có kế hoạch được chọn)
+        const lbl = document.getElementById('lblReportDateCompact');
+        if (lbl) lbl.textContent = fmtDate(value);
+        // Reload dữ liệu nếu đang ở màn hình nhập liệu
+        if (document.getElementById('inputDataArea').style.display !== 'none' && selectedPlanId) {
+            const station = getActiveStation();
+            if (station || stationList.length === 0) {
+                loadExistingEntry();
+                fetchOutputTotal();
+            }
+            if (currentWorkTab === 'rework') fetchInlineReworkData();
+            loadPosSummary();
+        }
+    }
+
+    function resetReportDateToToday() {
+        const today = todayStr();
+        const inp = document.getElementById('reportDateInput');
+        if (inp) inp.value = today;
+        onReportDateChange(today);
+    }
 
     function fmtDate(val) {
         if (!val) return '--';
@@ -1650,6 +1787,9 @@
     }
 
     document.addEventListener('DOMContentLoaded', async () => {
+        // Khởi tạo date picker ngày báo cáo
+        initReportDatePicker();
+
         const reworkDateFilter = document.getElementById('reworkDateFilter');
         if (reworkDateFilter) {
             reworkDateFilter.value = reworkDateStr;
@@ -1706,7 +1846,7 @@
                 </div>
                 <div class="po-panel">
                     <div class="po-panel-title">Danh sách PO & SL</div>
-                    ${renderPoLines(p.po_info)}
+                    ${renderPoLines(p.po_info, p.ke_hoach || 'Chưa có PO')}
                 </div>
                 <div class="plan-select-footer">
                     <div>
@@ -1749,6 +1889,29 @@
         }
     }
 
+    async function syncHangingLinePlans(options = {}) {
+        try {
+            const res = await fetch('/api/prod-plan/sync-hanging-line', { method: 'POST' });
+            const data = await res.json();
+            if (!res.ok) {
+                if (!options.silent) {
+                    alert(data.detail || 'Không thể đồng bộ kế hoạch chuyền treo.');
+                }
+                return null;
+            }
+            if (!options.silent) {
+                alert(`Đồng bộ chuyền treo xong. Thêm ${data.inserted || 0}, cập nhật ${data.updated || 0}, bỏ qua ${data.skipped || 0}.`);
+                await loadPlans();
+            }
+            return data;
+        } catch (e) {
+            if (!options.silent) {
+                alert('Lỗi kết nối máy chủ khi đồng bộ chuyền treo.');
+            }
+            return null;
+        }
+    }
+
     async function selectPlan(planId) {
         selectedPlanId = planId;
         const plan = availablePlans.find(p => p.id == planId);
@@ -1768,6 +1931,25 @@
         document.getElementById('lblSelectedBoPhanCompact').textContent = plan.bo_phan || '--';
         document.getElementById('lblSelectedNgayCompact').textContent = fmtDate(plan.ngay_rc);
         document.getElementById('lblSelectedSanLuongCompact').textContent = fmtNumber(plan.san_luong);
+
+        // Hiển thị ngày báo cáo trong compact header
+        const lblDate = document.getElementById('lblReportDateCompact');
+        if (lblDate) lblDate.textContent = fmtDate(reportDateStr);
+
+        // Nhận diện kế hoạch từ chuyền treo → ẩn "+1 Đạt"
+        const isHangingLine = plan.source_system === 'hanging_line';
+        const btnPlusDat = document.getElementById('btnPlusDat');
+        if (btnPlusDat) {
+            btnPlusDat.style.display = isHangingLine ? 'none' : '';
+            // Tooltip giải thích khi ẩn (nếu cần debug)
+            btnPlusDat.title = isHangingLine
+                ? 'Sản lượng lấy tự động từ chuyền treo'
+                : '';
+        }
+        // Hiện/ẩn badge "Chuyền treo"
+        const badgeWrap = document.getElementById('hangingBadgeWrap');
+        if (badgeWrap) badgeWrap.style.display = isHangingLine ? '' : 'none';
+
         switchWorkTab(currentWorkTab);
 
         document.getElementById('defectProducts').innerHTML = '';

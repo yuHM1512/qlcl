@@ -29,6 +29,11 @@ from fastapi.templating import Jinja2Templates
 
 import psycopg2
 import psycopg2.extras
+try:
+    import pyodbc
+    PYODBC_AVAILABLE = True
+except ImportError:
+    PYODBC_AVAILABLE = False
 from openpyxl import load_workbook
 from openpyxl.styles import Alignment
 from openpyxl.drawing.image import Image
@@ -118,6 +123,7 @@ SCHEMA_BOOTSTRAP_FILES = [
     "create_qc_hdkp_endline.sql",
     "alter_prod_plan_add_po_info.sql",
     "alter_prod_plan_add_sync_fields.sql",
+    "alter_prod_plan_add_mono.sql",
 ]
 
 # Tạo thư mục lưu PDF và images nếu chưa có
@@ -132,6 +138,27 @@ def get_db_connection():
 
 def get_prod_factory_connection():
     return psycopg2.connect(PROD_FACTORY_DATABASE_URL)
+
+
+# --- Hanging Line (SQL Server) connection ---
+HANGING_LINE_SQL_SERVER = os.getenv("HANGING_LINE_SQL_SERVER", r".\SQLEXPRESS")
+HANGING_LINE_APP_DB = os.getenv("HANGING_LINE_APP_DB", "hanging_app")
+HANGING_LINE_SQL_DRIVER = os.getenv("HANGING_LINE_SQL_DRIVER", "ODBC Driver 17 for SQL Server")
+HANGING_LINE_DON_VI = os.getenv("QLCL_DON_VI", "Chuyền treo")  # don_vi for prod_plan sync
+
+
+def get_hanging_line_connection():
+    """Connect to SQL Server hanging-line DB (read-only, Windows Auth)."""
+    if not PYODBC_AVAILABLE:
+        raise RuntimeError("pyodbc chưa được cài đặt. Chạy: pip install pyodbc")
+    conn_str = (
+        f"DRIVER={{{HANGING_LINE_SQL_DRIVER}}};"
+        f"SERVER={HANGING_LINE_SQL_SERVER};"
+        f"DATABASE={HANGING_LINE_APP_DB};"
+        "Trusted_Connection=yes;"
+        "TrustServerCertificate=yes;"
+    )
+    return pyodbc.connect(conn_str, autocommit=True)
 
 
 def get_effective_defect_catalog_id(cur, effective_date: Optional[str] = None) -> Optional[int]:
@@ -4885,6 +4912,223 @@ def start_qtcn_auto_sync_if_enabled() -> None:
         _qtcn_auto_sync_started = True
 
 
+# ==================== HANGING LINE SYNC ====================
+# Đồng bộ kế hoạch từ SQL Server chuyền treo → PostgreSQL QLCL
+HL_SOURCE_SYSTEM = "hanging_line"
+HL_SYNC_PLAN_PREFIX = "HL-"
+# LoaiHang trên tPlanMaster lưu trực tiếp tên loại hàng (ten_loai)
+# giống bên dm_loai_hang → không cần map nữa.
+
+
+def build_hl_sync_plan_code(mono: str) -> str:
+    """Build ke_hoach code from MONo for hanging-line synced plans."""
+    safe = re.sub(r"[^A-Za-z0-9_#\-]+", "", str(mono or "")).strip()
+    return f"{HL_SYNC_PLAN_PREFIX}{safe}" if safe else HL_SYNC_PLAN_PREFIX.rstrip("-")
+
+
+def sync_hanging_line_prod_plan() -> Dict[str, Any]:
+    """Read tPlanMaster + tDemandRoot + tPlanPO from hanging-line SQL Server
+    and upsert into qlcl.prod_plan with source_system='hanging_line'.
+    """
+    synced = 0
+    inserted = 0
+    updated = 0
+    skipped = 0
+    warnings: List[str] = []
+
+    # --- Read from SQL Server ---
+    try:
+        hl_conn = get_hanging_line_connection()
+    except Exception as exc:
+        return {"status": "error", "detail": f"Không kết nối được SQL Server chuyền treo: {exc}"}
+
+    try:
+        hl_cur = hl_conn.cursor()
+        hl_cur.execute("""
+            SELECT
+                CAST(pm.PlanMaster_guid AS NVARCHAR(36)) AS PlanMaster_guid,
+                pm.MONo,
+                pm.SoDonHang,
+                pm.StyleNo,
+                pm.NhuCauMe,
+                pm.[LineNo],
+                pm.FirstHangDate,
+                pm.SLKH,
+                pm.Customer,
+                pm.LoaiHang,
+                dr.DMKT,
+                dr.LDBienChe
+            FROM app.tPlanMaster pm
+            LEFT JOIN app.tDemandRoot dr ON pm.NhuCauMe = dr.NhuCauMe
+            ORDER BY pm.FirstHangDate DESC, pm.CreatedAt DESC
+        """)
+        columns = [col[0] for col in hl_cur.description]
+        plan_rows = [dict(zip(columns, row)) for row in hl_cur.fetchall()]
+
+        # Lấy tổng SL PO cho từng plan (QC chỉ cần tổng, không cần chi tiết)
+        po_qty_map: Dict[str, int] = {}
+        if plan_rows:
+            hl_cur.execute("""
+                SELECT
+                    CAST(PlanMaster_guid AS NVARCHAR(36)) AS PlanMaster_guid,
+                    SUM(Qty) AS TotalQty
+                FROM app.tPlanPO
+                GROUP BY PlanMaster_guid
+            """)
+            for po_row in hl_cur.fetchall():
+                guid = str(po_row[0])
+                po_qty_map[guid] = int(po_row[1] or 0)
+    finally:
+        hl_conn.close()
+
+    # --- Upsert into PostgreSQL ---
+    with get_db_connection() as conn:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            for row in plan_rows:
+                mono = str(row.get("MONo") or "").strip()
+                if not mono:
+                    skipped += 1
+                    warnings.append("Bỏ qua 1 record tPlanMaster vì thiếu MONo")
+                    continue
+
+                guid_str = str(row["PlanMaster_guid"])
+                ke_hoach = build_hl_sync_plan_code(mono)
+                line_no = row.get("LineNo") or 0
+                don_vi = HANGING_LINE_DON_VI
+                bo_phan_list = [f"Tổ {line_no}"] if line_no else []
+
+                # Loại hàng lấy trực tiếp từ tPlanMaster.LoaiHang (ten_loai)
+                loai_hang = (row.get("LoaiHang") or "").strip() or None
+
+                style_no = (row.get("StyleNo") or "").strip()
+                customer = (row.get("Customer") or "").strip()
+                slkh = row.get("SLKH")
+                first_hang = row.get("FirstHangDate")
+                po_total = po_qty_map.get(guid_str, 0)
+                san_luong = po_total if po_total else slkh
+
+                synced += 1
+
+                # Try UPDATE by (source_system, source_record_id) — primary key
+                cur.execute(
+                    """
+                    UPDATE public.prod_plan
+                    SET ke_hoach = %s,
+                        don_vi = %s,
+                        bo_phan = %s::jsonb,
+                        khach_hang = %s,
+                        ma_hang = %s,
+                        loai_hang = COALESCE(%s, loai_hang),
+                        ngay_rc = %s,
+                        san_luong = %s,
+                        mau = COALESCE(mau, ''),
+                        size = COALESCE(size, ''),
+                        mono = %s,
+                        source_status = 'active',
+                        is_active = TRUE,
+                        last_synced_at = NOW(),
+                        updated_at = NOW()
+                    WHERE source_system = %s AND source_record_id = %s
+                    """,
+                    (
+                        ke_hoach,
+                        don_vi,
+                        json.dumps(bo_phan_list),
+                        customer,
+                        style_no,
+                        loai_hang,
+                        first_hang,
+                        san_luong,
+                        mono,
+                        HL_SOURCE_SYSTEM,
+                        guid_str,
+                    ),
+                )
+                if cur.rowcount:
+                    updated += 1
+                    continue
+
+                # Fallback: try UPDATE by mono (nếu đã tồn tại nhưng chưa có source tracking)
+                cur.execute(
+                    """
+                    UPDATE public.prod_plan
+                    SET source_system = %s,
+                        source_record_id = %s,
+                        ke_hoach = %s,
+                        don_vi = %s,
+                        bo_phan = %s::jsonb,
+                        khach_hang = %s,
+                        ma_hang = %s,
+                        loai_hang = COALESCE(%s, loai_hang),
+                        ngay_rc = %s,
+                        san_luong = %s,
+                        mau = COALESCE(mau, ''),
+                        size = COALESCE(size, ''),
+                        source_status = 'active',
+                        is_active = TRUE,
+                        last_synced_at = NOW(),
+                        updated_at = NOW()
+                    WHERE mono = %s
+                    """,
+                    (
+                        HL_SOURCE_SYSTEM,
+                        guid_str,
+                        ke_hoach,
+                        don_vi,
+                        json.dumps(bo_phan_list),
+                        customer,
+                        style_no,
+                        loai_hang,
+                        first_hang,
+                        san_luong,
+                        mono,
+                    ),
+                )
+                if cur.rowcount:
+                    updated += 1
+                    continue
+
+                # INSERT mới
+                cur.execute(
+                    """
+                    INSERT INTO public.prod_plan
+                        (ke_hoach, don_vi, bo_phan, khach_hang, ma_hang, loai_hang,
+                         ngay_rc, san_luong, mau, size, mono,
+                         source_system, source_record_id, source_status, is_active, last_synced_at)
+                    VALUES (%s, %s, %s::jsonb, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW())
+                    """,
+                    (
+                        ke_hoach,
+                        don_vi,
+                        json.dumps(bo_phan_list),
+                        customer,
+                        style_no,
+                        loai_hang,
+                        first_hang,
+                        san_luong,
+                        "",   # mau
+                        "",   # size
+                        mono,
+                        HL_SOURCE_SYSTEM,
+                        guid_str,
+                        "active",
+                        True,
+                    ),
+                )
+                inserted += 1
+
+            conn.commit()
+
+    return {
+        "status": "ok",
+        "synced": synced,
+        "inserted": inserted,
+        "updated": updated,
+        "skipped": skipped,
+        "warnings": warnings[:20],
+    }
+
+
 @app.get("/api/prod-plan")
 def api_prod_plan_list(
     request: Request,
@@ -4936,7 +5180,7 @@ def api_prod_plan_list(
                            else "COALESCE(bo_phan, '')"
                        } AS bo_phan,
                        khach_hang, ma_hang,
-                       loai_hang, ngay_rc, san_luong, mau, size, po_info,
+                       loai_hang, ngay_rc, san_luong, mau, size, po_info, mono,
                        source_system, source_record_id, source_status, COALESCE(is_active, TRUE) AS is_active, last_synced_at,
                        created_at, updated_at
                 FROM public.prod_plan
@@ -4948,7 +5192,7 @@ def api_prod_plan_list(
             rows = cur.fetchall()
             # Serialize dates
             for r in rows:
-                for k in ('ngay_rc', 'created_at', 'updated_at'):
+                for k in ('ngay_rc', 'created_at', 'updated_at', 'last_synced_at'):
                     if r.get(k):
                         r[k] = str(r[k])
     return {"rows": rows}
@@ -5066,6 +5310,133 @@ def api_prod_plan_sync_qtcn(request: Request):
     if not user:
         raise HTTPException(status_code=401, detail="Bạn chưa đăng nhập")
     return sync_qtcn_prod_plan()
+
+
+@app.post("/api/prod-plan/sync-hanging-line")
+def api_prod_plan_sync_hanging_line(request: Request):
+    """Sync plans from hanging-line SQL Server (tPlanMaster) into qlcl.prod_plan.
+    Dùng khi QLCL và hanging line chạy cùng máy (local dev).
+    """
+    user = get_authenticated_user(request)
+    if not user:
+        raise HTTPException(status_code=401, detail="Bạn chưa đăng nhập")
+    result = sync_hanging_line_prod_plan()
+    if result.get("status") == "error":
+        raise HTTPException(status_code=500, detail=result.get("detail", "Lỗi đồng bộ"))
+    return result
+
+
+# API key cho push từ hanging line app — set trong .env của QLCL server
+_PUSH_API_KEY = os.getenv("QLCL_API_KEY", "")
+
+
+@app.post("/api/prod-plan/push-from-hl")
+def api_push_from_hanging_line(request: Request, payload: dict):
+    """Nhận danh sách kế hoạch JSON từ hanging line app và upsert vào prod_plan.
+
+    Dùng khi QLCL chạy trên server trung tâm (không thể kết nối trực tiếp SQL Server XN).
+    Auth: header X-API-Key phải khớp QLCL_API_KEY (bỏ qua nếu QLCL_API_KEY chưa set).
+
+    Body: {"don_vi": "XN3", "plans": [{guid, mono, ke_hoach, line_no, style_no,
+                                        customer, loai_hang, first_hang, san_luong}, ...]}
+    """
+    # Kiểm tra API key nếu đã cấu hình
+    if _PUSH_API_KEY and request.headers.get("X-API-Key") != _PUSH_API_KEY:
+        raise HTTPException(status_code=403, detail="API key không hợp lệ")
+
+    don_vi = str(payload.get("don_vi") or "").strip()
+    plans = payload.get("plans") or []
+    if not don_vi:
+        raise HTTPException(status_code=422, detail="Thiếu don_vi")
+
+    inserted = updated = skipped = 0
+    warnings: list[str] = []
+
+    with get_db_connection() as conn:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            for row in plans:
+                mono = str(row.get("mono") or "").strip()
+                if not mono:
+                    skipped += 1
+                    warnings.append("Bỏ qua 1 plan vì thiếu mono")
+                    continue
+
+                guid_str       = str(row.get("guid") or mono)
+                ke_hoach       = str(row.get("ke_hoach") or f"HL-{mono}")
+                line_no        = row.get("line_no") or 0
+                bo_phan_list   = [f"Tổ {line_no}"] if line_no else []
+                style_no       = str(row.get("style_no") or "").strip()
+                customer       = str(row.get("customer") or "").strip()
+                loai_hang      = str(row.get("loai_hang") or "").strip() or None
+                first_hang     = row.get("first_hang")  # YYYY-MM-DD string hoặc None
+                san_luong      = row.get("san_luong") or 0
+
+                # UPDATE by (source_system, source_record_id)
+                cur.execute(
+                    """
+                    UPDATE public.prod_plan
+                    SET ke_hoach = %s, don_vi = %s, bo_phan = %s::jsonb,
+                        khach_hang = %s, ma_hang = %s,
+                        loai_hang = COALESCE(%s, loai_hang),
+                        ngay_rc = %s, san_luong = %s, mono = %s,
+                        source_status = 'active', is_active = TRUE,
+                        last_synced_at = NOW(), updated_at = NOW()
+                    WHERE source_system = %s AND source_record_id = %s
+                    """,
+                    (ke_hoach, don_vi, json.dumps(bo_phan_list),
+                     customer, style_no, loai_hang, first_hang, san_luong, mono,
+                     HL_SOURCE_SYSTEM, guid_str),
+                )
+                if cur.rowcount:
+                    updated += 1
+                    continue
+
+                # UPDATE by mono (fallback — plan đã nhập tay chưa có source tracking)
+                cur.execute(
+                    """
+                    UPDATE public.prod_plan
+                    SET source_system = %s, source_record_id = %s,
+                        ke_hoach = %s, don_vi = %s, bo_phan = %s::jsonb,
+                        khach_hang = %s, ma_hang = %s,
+                        loai_hang = COALESCE(%s, loai_hang),
+                        ngay_rc = %s, san_luong = %s,
+                        source_status = 'active', is_active = TRUE,
+                        last_synced_at = NOW(), updated_at = NOW()
+                    WHERE mono = %s
+                    """,
+                    (HL_SOURCE_SYSTEM, guid_str, ke_hoach, don_vi,
+                     json.dumps(bo_phan_list), customer, style_no, loai_hang,
+                     first_hang, san_luong, mono),
+                )
+                if cur.rowcount:
+                    updated += 1
+                    continue
+
+                # INSERT mới
+                cur.execute(
+                    """
+                    INSERT INTO public.prod_plan
+                        (ke_hoach, don_vi, bo_phan, khach_hang, ma_hang, loai_hang,
+                         ngay_rc, san_luong, mau, size, mono,
+                         source_system, source_record_id, source_status, is_active, last_synced_at)
+                    VALUES (%s, %s, %s::jsonb, %s, %s, %s, %s, %s, '', '', %s, %s, %s, 'active', TRUE, NOW())
+                    """,
+                    (ke_hoach, don_vi, json.dumps(bo_phan_list),
+                     customer, style_no, loai_hang, first_hang, san_luong,
+                     mono, HL_SOURCE_SYSTEM, guid_str),
+                )
+                inserted += 1
+
+        conn.commit()
+
+    return {
+        "status": "ok",
+        "don_vi": don_vi,
+        "inserted": inserted,
+        "updated": updated,
+        "skipped": skipped,
+        "warnings": warnings[:20],
+    }
 
 
 @app.delete("/api/prod-plan/{plan_id}")
@@ -6495,6 +6866,203 @@ async def api_update_rework_sp(log_id: int, sp_index: int, request: Request):
 @app.get("/healthz")
 def healthz():
     return {"status": "ok"}
+
+
+# ============================================================
+# TV-3 Integration — QC data endpoint cho chuyền treo TV
+# ============================================================
+
+_TV3_SLOT_BUCKET_MAP = [
+    # (bucket_label từ SQL, slot_number, label hiển thị TV)
+    ("7H30 - 9H30",   1, "7:30–9:30"),
+    ("9H30 - 11H30",  2, "9:30–11:30"),
+    ("12H30 - 14H30", 3, "12:30–14:30"),
+    ("14H30 - 16H30", 4, "14:30–16:30"),
+    ("Sau 16H30",      5, "Sau 16:30"),
+]
+
+def _tv3_bucket_sql(time_expr: str) -> str:
+    """CASE expression phân loại time → bucket label."""
+    return f"""
+        CASE
+            WHEN {time_expr} < '09:30:00' THEN '7H30 - 9H30'
+            WHEN {time_expr} < '11:30:00' THEN '9H30 - 11H30'
+            WHEN {time_expr} < '14:30:00' THEN '12H30 - 14H30'
+            WHEN {time_expr} < '16:30:00' THEN '14H30 - 16H30'
+            ELSE 'Sau 16H30'
+        END
+    """
+
+
+@app.get("/api/tv3/qc-data")
+def api_tv3_qc_data(
+    mono: str = Query(..., description="MONo từ chuyền treo (prod_plan.mono)"),
+    date: str = Query(..., description="Ngày YYYY-MM-DD"),
+):
+    """Trả về toàn bộ QC defect data cho TV-3 chuyền treo.
+
+    Lọc theo MONo (qua prod_plan.mono) + date.
+    Endpoint này được gọi từ hanging line app backend.
+    """
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+
+                # ── 1. Resolve plan_id từ mono ──────────────────────────
+                cur.execute(
+                    "SELECT id FROM public.prod_plan WHERE mono = %s LIMIT 1",
+                    (mono,),
+                )
+                plan_row = cur.fetchone()
+                if not plan_row:
+                    return {"found": False, "mono": mono}
+                plan_id = int(plan_row["id"])
+
+                # Timezone expression — dùng Asia/Ho_Chi_Minh
+                time_expr = "timezone('Asia/Ho_Chi_Minh', sp.created_at)::time"
+                bucket_sql = _tv3_bucket_sql(time_expr)
+
+                # ── 2. Tổng kiểm + tổng lỗi (từ cached columns) ────────
+                cur.execute(
+                    """
+                    SELECT
+                        COALESCE(SUM(output), 0)       AS total_kiem,
+                        COALESCE(SUM(defect_count), 0) AS total_loi
+                    FROM public.qc_error_log_sp
+                    WHERE plan_id = %s AND date = %s
+                    """,
+                    (plan_id, date),
+                )
+                agg = cur.fetchone() or {}
+                total_kiem = int(agg.get("total_kiem") or 0)
+                total_loi  = int(agg.get("total_loi")  or 0)
+                ty_le_loi  = round(total_loi / total_kiem * 100, 1) if total_kiem > 0 else 0.0
+
+                # ── 3. Tổng kiểm theo slot (dùng created_at của sp) ─────
+                cur.execute(
+                    f"""
+                    SELECT {bucket_sql} AS bucket,
+                           COALESCE(SUM(sp.output), 0)       AS kiem,
+                           COALESCE(SUM(sp.defect_count), 0) AS loi
+                    FROM public.qc_error_log_sp sp
+                    WHERE sp.plan_id = %s AND sp.date = %s
+                    GROUP BY bucket
+                    """,
+                    (plan_id, date),
+                )
+                bucket_rows = {r["bucket"]: r for r in cur.fetchall()}
+                slots = []
+                for bkey, slot_num, slot_label in _TV3_SLOT_BUCKET_MAP:
+                    row  = bucket_rows.get(bkey, {})
+                    kiem = int(row.get("kiem", 0) or 0)
+                    loi  = int(row.get("loi", 0)  or 0)
+                    pct  = round(loi / kiem * 100, 1) if kiem > 0 else 0.0
+                    slots.append({
+                        "slot":  slot_num,
+                        "label": slot_label,
+                        "kiem":  kiem,
+                        "loi":   loi,
+                        "pct":   pct,
+                    })
+
+                # ── 4. Phân bổ lỗi theo bộ phận (donut) ────────────────
+                cur.execute(
+                    """
+                    SELECT
+                        COALESCE(NULLIF(bp.ten_bo_phan, ''), '(Không rõ)') AS bp_name,
+                        COUNT(*) AS n
+                    FROM public.qc_defect d
+                    JOIN public.qc_error_log_sp sp ON sp.id = d.error_log_sp_id
+                    LEFT JOIN public.dm_bo_phan bp ON bp.id = d.bo_phan_id
+                    WHERE sp.plan_id = %s AND sp.date = %s
+                    GROUP BY bp_name
+                    ORDER BY n DESC
+                    """,
+                    (plan_id, date),
+                )
+                bo_phan = [
+                    {"name": r["bp_name"], "count": int(r["n"])}
+                    for r in cur.fetchall()
+                ]
+
+                # ── 5. Top 3 mã lỗi (column chart) ─────────────────────
+                cur.execute(
+                    """
+                    SELECT
+                        COALESCE(NULLIF(ml.ten_ma, ''), d.ma_loi_id::text, '(Không rõ)') AS ma_loi,
+                        COUNT(*) AS n
+                    FROM public.qc_defect d
+                    JOIN public.qc_error_log_sp sp ON sp.id = d.error_log_sp_id
+                    LEFT JOIN public.dm_ma_loi ml ON ml.id = d.ma_loi_id
+                    WHERE sp.plan_id = %s AND sp.date = %s
+                    GROUP BY ma_loi
+                    ORDER BY n DESC
+                    LIMIT 3
+                    """,
+                    (plan_id, date),
+                )
+                top3 = [
+                    {"ma_loi": r["ma_loi"], "n": int(r["n"])}
+                    for r in cur.fetchall()
+                ]
+
+                # ── 6. Combo table (bp + ct + ma_loi + count) ───────────
+                cur.execute(
+                    """
+                    SELECT
+                        COALESCE(NULLIF(bp.ten_bo_phan, ''), '(Không rõ)') AS bp,
+                        COALESCE(NULLIF(ct.ten_chi_tiet, ''), '(Không rõ)') AS ct,
+                        COALESCE(NULLIF(ml.ten_ma, ''), d.ma_loi_id::text, '(Không rõ)') AS ma_loi,
+                        COUNT(*) AS n
+                    FROM public.qc_defect d
+                    JOIN public.qc_error_log_sp sp ON sp.id = d.error_log_sp_id
+                    LEFT JOIN public.dm_bo_phan  bp ON bp.id = d.bo_phan_id
+                    LEFT JOIN public.dm_chi_tiet ct ON ct.id = d.chi_tiet_id
+                    LEFT JOIN public.dm_ma_loi   ml ON ml.id = d.ma_loi_id
+                    WHERE sp.plan_id = %s AND sp.date = %s
+                    GROUP BY bp, ct, ma_loi
+                    ORDER BY n DESC
+                    """,
+                    (plan_id, date),
+                )
+                combo = [
+                    {"bp": r["bp"], "ct": r["ct"], "ma_loi": r["ma_loi"], "n": int(r["n"])}
+                    for r in cur.fetchall()
+                ]
+
+                # ── 7. Cảnh báo hàng loạt (qc_defect_multi) ────────────
+                cur.execute(
+                    """
+                    SELECT time, bo_phan, chi_tiet, ma_loi
+                    FROM public.qc_defect_multi
+                    WHERE plan_id = %s AND date = %s
+                    ORDER BY time
+                    """,
+                    (plan_id, date),
+                )
+                canh_bao = []
+                for r in cur.fetchall():
+                    t = r.get("time")
+                    time_str = t.strftime("%H:%M") if hasattr(t, "strftime") else str(t)[:5]
+                    parts = [p for p in [r.get("bo_phan"), r.get("chi_tiet"), r.get("ma_loi")] if p]
+                    canh_bao.append({"time": time_str, "text": " · ".join(parts)})
+
+                return {
+                    "found":      True,
+                    "plan_id":    plan_id,
+                    "total_kiem": total_kiem,
+                    "total_loi":  total_loi,
+                    "ty_le_loi":  ty_le_loi,
+                    "slots":      slots,
+                    "bo_phan":    bo_phan,
+                    "top3":       top3,
+                    "combo":      combo,
+                    "canh_bao":   canh_bao,
+                }
+
+    except Exception as e:
+        logger.error("api_tv3_qc_data error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Lỗi truy vấn QC data: {str(e)}")
 
 
 if __name__ == "__main__":

@@ -11,4 +11,5 @@ pydantic-settings==2.8.1
 psycopg[binary]==3.2.6
 google-api-python-client==2.169.0
 google-auth==2.40.1
+pyodbc==5.1.0
 
