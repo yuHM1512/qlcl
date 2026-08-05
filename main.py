@@ -6683,14 +6683,22 @@ def api_qc_input_pos_summary(
 def api_qc_input_quick_defect_combos(
     plan_id: int = Query(...),
     station: str = Query(...),
+    date_str: Optional[str] = Query(None, alias="date"),
 ):
-    """Top defect combos by historical count for the selected plan type and QC cluster."""
+    """Top defect combos by history, resolved to the active defect catalog for the input date."""
     station_clean = (station or "").strip()
     if not station_clean:
         return {"status": "ok", "rows": [], "message": "Chưa chọn cụm."}
 
     with get_db_connection() as conn:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            catalog_id = get_effective_defect_catalog_id(cur, date_str)
+            cur.execute(
+                "SELECT code FROM public.dm_defect_catalog WHERE id = %s",
+                (catalog_id,),
+            )
+            catalog_row = cur.fetchone() or {}
+            map_legacy_codes = (catalog_row.get("code") == "qlcl-hdkt-8.9-bm3-rev08")
             cur.execute(
                 """
                 WITH selected AS (
@@ -6706,50 +6714,92 @@ def api_qc_input_quick_defect_combos(
                      AND qc.is_active = TRUE
                     WHERE p.id = %s
                     LIMIT 1
+                ),
+                history AS (
+                    SELECT
+                        d.bo_phan_id,
+                        bp.ten_bo_phan,
+                        d.chi_tiet_id,
+                        ct.ten_chi_tiet,
+                        COALESCE(d.ma_loi_code_snapshot, ml_old.ten_ma, '') AS old_ten_ma,
+                        COALESCE(old_cat.code, 'legacy-before-2026-07-28') AS old_catalog_code,
+                        sp.date
+                    FROM selected s
+                    JOIN public.prod_plan p
+                      ON p.loai_hang = s.loai_hang
+                    JOIN public.qc_error_log_sp sp
+                      ON sp.plan_id = p.id
+                     AND COALESCE(sp.station, '') = s.ten_cum
+                    JOIN public.qc_defect d
+                      ON d.error_log_sp_id = sp.id
+                    JOIN public.dm_bo_phan bp
+                      ON bp.id = d.bo_phan_id
+                     AND bp.loai_hang_id = s.loai_hang_id
+                    JOIN public.dm_chi_tiet ct
+                      ON ct.id = d.chi_tiet_id
+                     AND ct.bo_phan_id = bp.id
+                    LEFT JOIN public.dm_ma_loi ml_old
+                      ON ml_old.id = d.ma_loi_id
+                    LEFT JOIN public.dm_defect_catalog old_cat
+                      ON old_cat.id = d.defect_catalog_id
+                    WHERE d.bo_phan_id IS NOT NULL
+                      AND d.chi_tiet_id IS NOT NULL
+                      AND d.ma_loi_id IS NOT NULL
+                      AND d.mo_ta_loi_id IS NOT NULL
+                ),
+                mapped_history AS (
+                    SELECT
+                        h.bo_phan_id,
+                        h.ten_bo_phan,
+                        h.chi_tiet_id,
+                        h.ten_chi_tiet,
+                        CASE
+                            WHEN %s
+                                 AND (h.old_catalog_code = 'legacy-before-2026-07-28' OR h.date < DATE '2026-07-28')
+                                 AND h.old_ten_ma ~ '^S[0-9]+$'
+                                THEN 'E' || substring(h.old_ten_ma from 2)
+                            WHEN %s
+                                 AND (h.old_catalog_code = 'legacy-before-2026-07-28' OR h.date < DATE '2026-07-28')
+                                 AND h.old_ten_ma ~ '^F[0-9]+$'
+                                THEN 'O' || substring(h.old_ten_ma from 2)
+                            ELSE h.old_ten_ma
+                        END AS target_ten_ma
+                    FROM history h
                 )
                 SELECT
-                    d.bo_phan_id,
-                    bp.ten_bo_phan,
-                    d.chi_tiet_id,
-                    ct.ten_chi_tiet,
-                    d.ma_loi_id,
+                    h.bo_phan_id,
+                    h.ten_bo_phan,
+                    h.chi_tiet_id,
+                    h.ten_chi_tiet,
+                    ml.id AS ma_loi_id,
                     ml.ten_ma,
-                    d.mo_ta_loi_id,
+                    mt.id AS mo_ta_loi_id,
                     mt.ten_mo_ta,
+                    dc.id AS catalog_id,
+                    dc.code AS catalog_code,
+                    nl.ten_nhom,
                     MAX(mt.muc_do::text) AS muc_do_text,
                     COUNT(*)::int AS defect_qty
-                FROM selected s
-                JOIN public.prod_plan p
-                  ON p.loai_hang = s.loai_hang
-                JOIN public.qc_error_log_sp sp
-                  ON sp.plan_id = p.id
-                 AND COALESCE(sp.station, '') = s.ten_cum
-                JOIN public.qc_defect d
-                  ON d.error_log_sp_id = sp.id
-                JOIN public.dm_bo_phan bp
-                  ON bp.id = d.bo_phan_id
-                 AND bp.loai_hang_id = s.loai_hang_id
-                JOIN public.dm_chi_tiet ct
-                  ON ct.id = d.chi_tiet_id
-                 AND ct.bo_phan_id = bp.id
+                FROM mapped_history h
+                JOIN public.dm_defect_catalog dc
+                  ON dc.id = %s
+                JOIN public.dm_nhom_loi nl
+                  ON nl.catalog_id = dc.id
                 JOIN public.dm_ma_loi ml
-                  ON ml.id = d.ma_loi_id
+                  ON ml.nhom_loi_id = nl.id
+                 AND ml.ten_ma = h.target_ten_ma
                 JOIN public.dm_mo_ta_loi mt
-                  ON mt.id = d.mo_ta_loi_id
-                 AND mt.ma_loi_id = ml.id
-                WHERE d.bo_phan_id IS NOT NULL
-                  AND d.chi_tiet_id IS NOT NULL
-                  AND d.ma_loi_id IS NOT NULL
-                  AND d.mo_ta_loi_id IS NOT NULL
+                  ON mt.ma_loi_id = ml.id
                 GROUP BY
-                    d.bo_phan_id, bp.ten_bo_phan,
-                    d.chi_tiet_id, ct.ten_chi_tiet,
-                    d.ma_loi_id, ml.ten_ma,
-                    d.mo_ta_loi_id, mt.ten_mo_ta
-                ORDER BY defect_qty DESC, bp.ten_bo_phan, ct.ten_chi_tiet, ml.ten_ma, mt.ten_mo_ta
+                    h.bo_phan_id, h.ten_bo_phan,
+                    h.chi_tiet_id, h.ten_chi_tiet,
+                    ml.id, ml.ten_ma,
+                    mt.id, mt.ten_mo_ta,
+                    dc.id, dc.code, nl.ten_nhom
+                ORDER BY defect_qty DESC, h.ten_bo_phan, h.ten_chi_tiet, ml.ten_ma, mt.ten_mo_ta
                 LIMIT 15
                 """,
-                (station_clean, plan_id),
+                (station_clean, plan_id, map_legacy_codes, map_legacy_codes, catalog_id),
             )
             rows = cur.fetchall()
 

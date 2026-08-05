@@ -1193,10 +1193,11 @@
         if (inp) inp.value = reportDateStr;
     }
 
-    function onReportDateChange(value) {
+    async function onReportDateChange(value) {
         if (!value) return;
         reportDateStr = value;
         reworkDateStr = value;
+        await loadMasterMaLoiOptions();
         // Cập nhật label trong compact plan header (nếu đang có kế hoạch được chọn)
         const lbl = document.getElementById('lblReportDateCompact');
         if (lbl) lbl.textContent = fmtDate(value);
@@ -1209,6 +1210,7 @@
             }
             if (currentWorkTab === 'rework') fetchInlineReworkData();
             loadPosSummary();
+            loadQuickDefectCombos();
         }
     }
 
@@ -1673,7 +1675,7 @@
         }
         refreshQuickComboDropdowns();
         try {
-            const params = new URLSearchParams({ plan_id: selectedPlanId, station: station || '' });
+            const params = new URLSearchParams({ plan_id: selectedPlanId, station: station || '', date: reportDateStr });
             const res = await fetch(`/api/qc/input/quick-defect-combos?${params.toString()}`);
             const data = await res.json();
             if (!res.ok) throw new Error(data.detail || 'API Error');
@@ -1782,8 +1784,39 @@
             const items = block.querySelectorAll('.defect-items .defect-item');
             item = items[items.length - 1];
         }
-        selectComboValue(item.querySelector('.combo-dropdown[data-type="ma-loi"]'), `${combo.ma_loi_id}|${combo.mo_ta_loi_id}`);
+        const resolvedMaLoi = resolveQuickComboMaLoi(combo);
+        if (!resolvedMaLoi) {
+            alert(`Không tìm thấy mã lỗi ${combo.ten_ma || ''} trong bộ lỗi đang áp dụng.`);
+            return;
+        }
+        selectComboValue(item.querySelector('.combo-dropdown[data-type="ma-loi"]'), `${resolvedMaLoi.ma_loi_id}|${resolvedMaLoi.mo_ta_loi_id}`);
         applyMucDoOptions(item, preferredMucDo);
+    }
+
+    function normalizeDefectCode(code) {
+        return (code || '').toString().trim().toUpperCase();
+    }
+
+    function resolveQuickComboMaLoi(combo) {
+        const maId = Number(combo.ma_loi_id);
+        const moTaId = Number(combo.mo_ta_loi_id);
+        let found = masterMaLoiOptions.find(opt => opt.ma_loi_id === maId && opt.mo_ta_loi_id === moTaId);
+        if (found) return found;
+
+        const code = normalizeDefectCode(combo.ten_ma);
+        if (!code) return null;
+        found = masterMaLoiOptions.find(opt => normalizeDefectCode(opt.ten_ma) === code);
+        if (found) return found;
+
+        if (/^S\d+$/.test(code)) {
+            found = masterMaLoiOptions.find(opt => normalizeDefectCode(opt.ten_ma) === `E${code.slice(1)}`);
+            if (found) return found;
+        }
+        if (/^F\d+$/.test(code)) {
+            found = masterMaLoiOptions.find(opt => normalizeDefectCode(opt.ten_ma) === `O${code.slice(1)}`);
+            if (found) return found;
+        }
+        return null;
     }
 
     document.addEventListener('DOMContentLoaded', async () => {
@@ -3378,7 +3411,5 @@
 </script>
 </body>
 </html>
-
-
 
 
