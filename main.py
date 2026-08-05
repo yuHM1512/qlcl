@@ -6694,11 +6694,18 @@ def api_qc_input_quick_defect_combos(
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             catalog_id = get_effective_defect_catalog_id(cur, date_str)
             cur.execute(
-                "SELECT code FROM public.dm_defect_catalog WHERE id = %s",
+                """
+                SELECT code, effective_from, effective_to
+                FROM public.dm_defect_catalog
+                WHERE id = %s
+                """,
                 (catalog_id,),
             )
             catalog_row = cur.fetchone() or {}
-            map_legacy_codes = (catalog_row.get("code") == "qlcl-hdkt-8.9-bm3-rev08")
+            catalog_from = catalog_row.get("effective_from")
+            catalog_to = catalog_row.get("effective_to")
+            catalog_code = catalog_row.get("code")
+            map_legacy_codes = (catalog_code == "qlcl-hdkt-8.9-bm3-rev08")
             cur.execute(
                 """
                 WITH selected AS (
@@ -6763,14 +6770,40 @@ def api_qc_input_quick_defect_combos(
                                  AND h.old_ten_ma ~ '^F[0-9]+$'
                                 THEN 'O' || substring(h.old_ten_ma from 2)
                             ELSE h.old_ten_ma
-                        END AS target_ten_ma
+                        END AS target_ten_ma,
+                        h.old_ten_ma,
+                        h.old_catalog_code,
+                        h.date
                     FROM history h
+                ),
+                suggestions AS (
+                    SELECT
+                        bo_phan_id,
+                        ten_bo_phan,
+                        chi_tiet_id,
+                        ten_chi_tiet,
+                        target_ten_ma,
+                        COUNT(*)::int AS historical_qty
+                    FROM mapped_history
+                    GROUP BY bo_phan_id, ten_bo_phan, chi_tiet_id, ten_chi_tiet, target_ten_ma
+                ),
+                current_counts AS (
+                    SELECT
+                        bo_phan_id,
+                        chi_tiet_id,
+                        target_ten_ma,
+                        COUNT(*)::int AS current_qty
+                    FROM mapped_history
+                    WHERE date >= %s::date
+                      AND (%s::date IS NULL OR date <= %s::date)
+                      AND old_catalog_code = %s
+                    GROUP BY bo_phan_id, chi_tiet_id, target_ten_ma
                 )
                 SELECT
-                    h.bo_phan_id,
-                    h.ten_bo_phan,
-                    h.chi_tiet_id,
-                    h.ten_chi_tiet,
+                    s.bo_phan_id,
+                    s.ten_bo_phan,
+                    s.chi_tiet_id,
+                    s.ten_chi_tiet,
                     ml.id AS ma_loi_id,
                     ml.ten_ma,
                     mt.id AS mo_ta_loi_id,
@@ -6779,27 +6812,42 @@ def api_qc_input_quick_defect_combos(
                     dc.code AS catalog_code,
                     nl.ten_nhom,
                     MAX(mt.muc_do::text) AS muc_do_text,
-                    COUNT(*)::int AS defect_qty
-                FROM mapped_history h
+                    COALESCE(MAX(cc.current_qty), 0)::int AS defect_qty,
+                    MAX(s.historical_qty)::int AS historical_qty
+                FROM suggestions s
                 JOIN public.dm_defect_catalog dc
                   ON dc.id = %s
                 JOIN public.dm_nhom_loi nl
                   ON nl.catalog_id = dc.id
                 JOIN public.dm_ma_loi ml
                   ON ml.nhom_loi_id = nl.id
-                 AND ml.ten_ma = h.target_ten_ma
+                 AND ml.ten_ma = s.target_ten_ma
                 JOIN public.dm_mo_ta_loi mt
                   ON mt.ma_loi_id = ml.id
+                LEFT JOIN current_counts cc
+                  ON cc.bo_phan_id = s.bo_phan_id
+                 AND cc.chi_tiet_id = s.chi_tiet_id
+                 AND cc.target_ten_ma = s.target_ten_ma
                 GROUP BY
-                    h.bo_phan_id, h.ten_bo_phan,
-                    h.chi_tiet_id, h.ten_chi_tiet,
+                    s.bo_phan_id, s.ten_bo_phan,
+                    s.chi_tiet_id, s.ten_chi_tiet,
                     ml.id, ml.ten_ma,
                     mt.id, mt.ten_mo_ta,
                     dc.id, dc.code, nl.ten_nhom
-                ORDER BY defect_qty DESC, h.ten_bo_phan, h.ten_chi_tiet, ml.ten_ma, mt.ten_mo_ta
+                ORDER BY defect_qty DESC, historical_qty DESC, s.ten_bo_phan, s.ten_chi_tiet, ml.ten_ma, mt.ten_mo_ta
                 LIMIT 15
                 """,
-                (station_clean, plan_id, map_legacy_codes, map_legacy_codes, catalog_id),
+                (
+                    station_clean,
+                    plan_id,
+                    map_legacy_codes,
+                    map_legacy_codes,
+                    catalog_from,
+                    catalog_to,
+                    catalog_to,
+                    catalog_code,
+                    catalog_id,
+                ),
             )
             rows = cur.fetchall()
 

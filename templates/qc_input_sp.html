@@ -1601,7 +1601,9 @@
             : '-- Chưa có combo lịch sử --';
         const options = [`<option value="">${placeholder}</option>`];
         quickDefectCombos.forEach((combo, idx) => {
-            options.push(`<option value="${idx}">${combo.label || '--'} (${combo.defect_qty || 0})</option>`);
+            const qty = Number(combo.defect_qty || 0);
+            const qtyLabel = qty > 0 ? ` (${qty})` : '';
+            options.push(`<option value="${idx}">${combo.label || '--'}${qtyLabel}</option>`);
         });
         return options.join('');
     }
@@ -3411,5 +3413,4 @@
 </script>
 </body>
 </html>
-
 
