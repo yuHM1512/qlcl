@@ -36,6 +36,7 @@ IMAGES_STORAGE_DIR = Path(os.getenv("IMAGES_STORAGE_DIR") or "images")
 SLUG_TO_TEN_LOAI: dict[str, str] = {
     "aovest":  "Áo vest",
     "quantay": "Quần tây",
+    "aokhoac_thethao": "Áo khoác thể thao nhiều lớp",
 }
 
 SRC_JSON = Path(__file__).resolve().parent / "out" / "visual_picker.json"

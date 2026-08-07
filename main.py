@@ -5660,7 +5660,8 @@ def api_dm_chi_tiet_delete(id: int):
 
 # Visual position picker: returns nhóm -> khối (image) -> hotspots (codes).
 # Used by /qc-input for loại hàng that has been "số hoá" (e.g. Áo vest).
-NHOM_LABELS = {"chinh": "Chính", "lot": "Lót", "nhan_dien": "Nhận diện"}
+NHOM_LABELS = {"chinh": "Chính", "lot": "Lót", "nhan_dien": "Nhận diện",
+               "lop_1": "Lớp 1", "lop_2": "Lớp 2", "lop_3": "Lớp 3"}
 
 @app.get("/api/qc/visual-picker")
 def api_qc_visual_picker(loai_hang_id: int = Query(...)):
@@ -5711,7 +5712,7 @@ def api_qc_visual_picker(loai_hang_id: int = Query(...)):
                 "rotation": float(r["rotation"]) if r["rotation"] is not None else 0.0,
             })
 
-    nhom_order = ["chinh", "lot", "nhan_dien"]
+    nhom_order = ["chinh", "lot", "nhan_dien", "lop_1", "lop_2", "lop_3"]
     nhoms = []
     for key in nhom_order:
         if key not in by_nhom:

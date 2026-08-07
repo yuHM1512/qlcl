@@ -53,7 +53,48 @@ SHEET_MAP: dict[str, tuple[str, str]] = {
     "AO VEST - LOT":       ("aovest",  "lot"),
     "AO VEST - NHAN DIEN": ("aovest",  "nhan_dien"),
     "QUAN TAY":            ("quantay", "chinh"),
+    "L1":                  ("aokhoac_thethao", "lop_1"),
 }
+
+_NEW_CODE_RE = re.compile(r'^([A-Za-z]+)\(\d+\)\s*-\s*(\d+)$')
+_NEW_PREFIX_RE = re.compile(r'^([A-Za-z]+)\(\d+\)$')
+
+
+def normalize_code(text: str) -> str | None:
+    """Normalize to short key for matching: 'M(1) - 1' -> 'M1'; 'M1' -> 'M1'."""
+    text = text.strip()
+    m = _NEW_CODE_RE.match(text)
+    if m:
+        return m.group(1).upper() + m.group(2)
+    if re.match(r'^[A-Z]{1,3}\d+$', text):
+        return text
+    return None
+
+
+def format_ma_vi_tri(code: str, layer: int | None = None) -> str:
+    """'M1' + layer=1 -> 'M(1) - 1'; without layer returns code as-is."""
+    if layer is None:
+        return code
+    m = re.match(r'^([A-Z]+)(\d+)$', code)
+    if m:
+        return f"{m.group(1)}({layer}) - {m.group(2)}"
+    return code
+
+
+def get_layer_from_nhom(nhom_key: str) -> int | None:
+    m = re.match(r'^lop_(\d+)$', nhom_key)
+    return int(m.group(1)) if m else None
+
+
+def extract_header_prefix(text: str) -> str | None:
+    """'M(1)' -> 'M'; 'TN' -> 'TN'; 'Ta(1)' -> 'TA'; else None."""
+    text = text.strip()
+    m = _NEW_PREFIX_RE.match(text)
+    if m:
+        return m.group(1).upper()
+    if re.match(r'^[A-Z]{1,3}$', text):
+        return text
+    return None
 
 
 def read_shared_strings(z: zipfile.ZipFile) -> list[str]:
@@ -230,17 +271,18 @@ def build_khoi_tables(cells: dict[str, str]) -> list[dict]:
         b_val = (cols.get("B") or "").strip()
         if not a_val or not b_val:
             continue
-        if not re.match(r"^[A-Z]{1,3}$", a_val):
+        prefix = extract_header_prefix(a_val)
+        if not prefix:
             continue
-        if a_val in {"A", "B", "C", "D", "E"}:
+        if prefix in {"A", "B", "C", "D", "E"}:
             if b_val in {"Tên", "Mã", "Mã ", "Tên ", "Cổ"}:
-                if a_val == "C" and b_val == "Cổ":
+                if prefix == "C" and b_val == "Cổ":
                     pass
                 else:
                     continue
         if b_val in {"Tên", "Mã", "Mã ", "Tên "}:
             continue
-        header_rows.append((row, a_val, b_val))
+        header_rows.append((row, prefix, b_val))
 
     header_rows.sort(key=lambda x: x[0])
 
@@ -252,9 +294,9 @@ def build_khoi_tables(cells: dict[str, str]) -> list[dict]:
             cols = by_row.get(r, {})
             e_val = (cols.get("E") or "").strip()
             d_val = (cols.get("D") or "").strip()
-            if e_val and re.match(r"^[A-Z]{1,3}\d+$", e_val):
-                if d_val:
-                    codes[e_val] = d_val
+            norm = normalize_code(e_val) if e_val else None
+            if norm and d_val:
+                codes[norm] = d_val
         tables.append({
             "prefix": prefix,
             "ten_khoi": ten_khoi,
@@ -297,7 +339,10 @@ def assign_pictures_to_khois(
     for tb in textboxes:
         cx = tb["off_x"] + tb["ext_cx"] / 2
         cy = tb["off_y"] + tb["ext_cy"] / 2
-        m = re.match(r"^([A-Z]+)\d+$", tb["text"])
+        norm = normalize_code(tb["text"])
+        if not norm:
+            continue
+        m = re.match(r"^([A-Z]+)\d+$", norm)
         if not m:
             continue
         for i, pic in enumerate(pics):
@@ -351,13 +396,14 @@ def process_sheet(
     out_dir: Path,
 ) -> dict:
     """Build the nhom entry for one sheet."""
+    layer = get_layer_from_nhom(nhom_key)
     cells = parse_sheet_cells(z, sh["sheet_xml_path"], shared)
     khoi_tables = build_khoi_tables(cells)
     drw = parse_drawing(z, sh["drawing_xml_path"])
 
     pic_khoi = assign_pictures_to_khois(drw["pictures"], drw["textboxes"], khoi_tables)
 
-    TOL_EMU = 200000
+    TOL_EMU = 300000
 
     def edge_dist(cx: float, cy: float, bb: dict) -> float:
         dx = max(0, bb["off_x"] - cx, cx - (bb["off_x"] + bb["ext_cx"]))
@@ -374,15 +420,18 @@ def process_sheet(
             if point_in_bbox(cx, cy, pic):
                 khoi = pic_khoi[i]
                 if khoi:
-                    m = re.match(r"^([A-Z]+)\d+$", tb["text"])
-                    if m and m.group(1) == khoi["prefix"]:
-                        assigned = i
-                        break
+                    tb_norm = normalize_code(tb["text"])
+                    if tb_norm:
+                        m = re.match(r"^([A-Z]+)\d+$", tb_norm)
+                        if m and m.group(1) == khoi["prefix"]:
+                            assigned = i
+                            break
                 else:
                     assigned = i
                     break
         if assigned is None:
-            m = re.match(r"^([A-Z]+)\d+$", tb["text"])
+            tb_norm = normalize_code(tb["text"])
+            m = re.match(r"^([A-Z]+)\d+$", tb_norm) if tb_norm else None
             code_prefix = m.group(1) if m else None
             candidates: list[tuple[int, float]] = []
             for i, pic in enumerate(drw["pictures"]):
@@ -414,10 +463,10 @@ def process_sheet(
             rel_y = (tb["off_y"] - pic["off_y"]) / pic["ext_cy"]
             rel_w = tb["ext_cx"] / pic["ext_cx"]
             rel_h = tb["ext_cy"] / pic["ext_cy"]
-            code = tb["text"]
+            code = normalize_code(tb["text"]) or tb["text"]
             label = local_codes.get(code)
             hotspots.append({
-                "ma": code,
+                "ma": format_ma_vi_tri(code, layer),
                 "label": label,
                 "x_pct": round(rel_x, 5),
                 "y_pct": round(rel_y, 5),
