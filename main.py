@@ -6713,13 +6713,9 @@ def api_qc_input_quick_defect_combos(
                     SELECT p.id AS plan_id,
                            p.loai_hang,
                            lh.id AS loai_hang_id,
-                           qc.ten_cum
+                           %s::text AS station
                     FROM public.prod_plan p
                     JOIN public.dm_loai_hang lh ON lh.ten_loai = p.loai_hang
-                    JOIN public.dm_qc_cum qc
-                      ON qc.loai_hang_id = lh.id
-                     AND qc.ten_cum = %s
-                     AND qc.is_active = TRUE
                     WHERE p.id = %s
                     LIMIT 1
                 ),
@@ -6737,7 +6733,7 @@ def api_qc_input_quick_defect_combos(
                       ON p.loai_hang = s.loai_hang
                     JOIN public.qc_error_log_sp sp
                       ON sp.plan_id = p.id
-                     AND COALESCE(sp.station, '') = s.ten_cum
+                     AND COALESCE(sp.station, '') = s.station
                     JOIN public.qc_defect d
                       ON d.error_log_sp_id = sp.id
                     JOIN public.dm_bo_phan bp

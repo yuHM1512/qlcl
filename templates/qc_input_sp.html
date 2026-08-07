@@ -987,9 +987,6 @@
                 <button type="button" class="btn btn-sm btn-outline-primary" style="border-radius: 8px; font-weight: 700;" onclick="syncQtcnPlans()">
                     <i class="fas fa-sync-alt me-1"></i> XNV2
                 </button>
-                <button type="button" class="btn btn-sm btn-outline-info" style="border-radius: 8px; font-weight: 700;" onclick="syncHangingLinePlans()">
-                    <i class="fas fa-sync-alt me-1"></i> Chuyền treo
-                </button>
             </div>
         </div>
         <div id="plansList" class="d-flex flex-column gap-3">
@@ -1442,6 +1439,10 @@
     }
 
     function getPlanStationOptions() {
+        const assignedStations = normalizeStationList(userStationsRaw);
+        if (assignedStations.length) {
+            return assignedStations;
+        }
         if (stationMode === 'cluster') {
             return Array.isArray(clusterOptions) ? clusterOptions.slice() : [];
         }
@@ -1463,8 +1464,9 @@
 
         picker.style.display = 'flex';
         labelEl.textContent = getStationFieldLabel();
+        const hasAssignedStations = normalizeStationList(userStationsRaw).length > 0;
         hintEl.textContent = stationList.length
-            ? 'QC XNV2 tự chọn cụm để ghi nhận số liệu.'
+            ? (hasAssignedStations ? 'Hệ thống tự nhận trạm theo QC.' : 'QC XNV2 tự chọn cụm để ghi nhận số liệu.')
             : 'Loại hàng này chưa có cụm được cấu hình.';
         selectEl.innerHTML = `<option value="">-- Chọn ${getStationFieldLabel()} --</option>`;
         stationList.forEach(st => {
@@ -3413,4 +3415,3 @@
 </script>
 </body>
 </html>
-
