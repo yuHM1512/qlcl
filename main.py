@@ -78,7 +78,7 @@ def env_flag(name: str, default: bool = False) -> bool:
     return str(raw).strip().lower() in {"1", "true", "yes", "on"}
 
 
-QTCN_AUTO_SYNC_ENABLED = env_flag("QTCN_AUTO_SYNC_ENABLED", default=False)
+QTCN_AUTO_SYNC_ENABLED = env_flag("QTCN_AUTO_SYNC_ENABLED", default=True)
 try:
     QTCN_AUTO_SYNC_INTERVAL_MINUTES = max(1, int(os.getenv("QTCN_AUTO_SYNC_INTERVAL_MINUTES", "60")))
 except ValueError:
