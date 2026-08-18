@@ -1,0 +1,210 @@
+{# ============================================================
+   _base_styles.html — Shared Tailwind config + CSS classes
+
+   Include trong <head> của mỗi trang QC module:
+     <script src="https://cdn.tailwindcss.com"></script>
+     {% include '_base_styles.html' %}
+   ============================================================ #}
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@500;700;800&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+
+<script>
+    tailwind.config = {
+        theme: {
+            extend: {
+                fontFamily: {
+                    sans: ['Inter', 'sans-serif'],
+                    display: ['Manrope', 'sans-serif'],
+                },
+                colors: {
+                    surface: '#f8f9fa',
+                    'surface-lowest': '#ffffff',
+                    'surface-low': '#f3f4f6',
+                    'surface-high': '#e7e8e9',
+                    'on-surface': '#191c1d',
+                    'on-surface-variant': '#424654',
+                    primary: '#0040a1',
+                    'primary-container': '#0056d2',
+                    'secondary-container': '#9cb4fe',
+                    'error-container': '#ffdad6',
+                },
+                boxShadow: {
+                    'cloud': '0px 20px 40px rgba(25, 28, 29, 0.05)',
+                }
+            }
+        }
+    }
+</script>
+
+<style>
+    body { background-color: #f8f9fa; color: #191c1d; }
+
+    /* ── Header ── */
+    .glass-header {
+        background: rgba(248, 249, 250, 0.8);
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
+    }
+
+    /* ── Buttons ── */
+    .btn-primary {
+        background: linear-gradient(135deg, #0040a1 0%, #0056d2 100%);
+        color: #ffffff;
+        border-radius: 0.75rem;
+        transition: all 0.3s ease;
+    }
+    .btn-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0px 8px 16px rgba(0, 64, 161, 0.2);
+    }
+    .btn-tertiary {
+        background: transparent;
+        color: #0040a1;
+        border-radius: 0.75rem;
+        transition: all 0.3s ease;
+    }
+    .btn-tertiary:hover {
+        background-color: #f3f4f6;
+    }
+
+    /* ── Form inputs ── */
+    .input-field {
+        background-color: #f3f4f6;
+        border: none;
+        border-radius: 0.75rem;
+        padding: 12px 16px;
+        font-size: 14px;
+        color: #191c1d;
+        transition: all 0.2s;
+        width: 100%;
+    }
+    .input-field:focus {
+        outline: none;
+        background-color: #ffffff;
+        box-shadow: 0 0 0 1px rgba(0, 64, 161, 0.3);
+    }
+    select.input-field {
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23424654' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 16px center;
+        padding-right: 40px;
+    }
+
+    /* ── Data table ── */
+    .data-table { width: 100%; border-collapse: collapse; }
+    .data-table th {
+        background: transparent;
+        font-size: 11px;
+        font-weight: 600;
+        color: #424654;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 14px 12px;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+    .data-table td {
+        padding: 14px 12px;
+        font-size: 14px;
+        color: #191c1d;
+        transition: background 0.2s;
+    }
+    .table-row {
+        border-radius: 0.75rem;
+        transition: all 0.2s;
+    }
+    .table-row:hover {
+        background-color: #ffffff;
+        box-shadow: 0px 4px 12px rgba(25, 28, 29, 0.03);
+    }
+
+    /* ── Badges ── */
+    .badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 12px;
+        border-radius: 9999px;
+        font-size: 12px;
+        font-weight: 600;
+        font-family: 'Inter', sans-serif;
+        background-color: #e7e8e9;
+        color: #424654;
+    }
+    .badge-active { background: #9cb4fe; color: #0040a1; }
+
+    /* ── Modal ── */
+    .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(25, 28, 29, 0.4);
+        backdrop-filter: blur(4px);
+        z-index: 100;
+        display: none;
+        align-items: center;
+        justify-content: center;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal-box {
+        background: #ffffff;
+        border-radius: 1rem;
+        max-width: 720px;
+        width: 95%;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0px 20px 40px rgba(25, 28, 29, 0.05);
+    }
+    .modal-backdrop {
+        position: absolute;
+        inset: 0;
+        background: rgba(25, 28, 29, 0.4);
+        backdrop-filter: blur(4px);
+    }
+
+    /* ── Toast ── */
+    .toast {
+        position: fixed;
+        bottom: 32px;
+        right: 32px;
+        z-index: 200;
+        padding: 16px 24px;
+        border-radius: 0.75rem;
+        font-size: 14px;
+        font-weight: 500;
+        color: #191c1d;
+        transform: translateY(80px);
+        opacity: 0;
+        transition: all .3s cubic-bezier(0.16, 1, 0.3, 1);
+        box-shadow: 0px 20px 40px rgba(25, 28, 29, 0.1);
+    }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast-success { background: #9cb4fe; }
+    .toast-error { background: #ffdad6; }
+
+    /* ── Sidebar collapse ── */
+    @media (min-width: 1024px) {
+        body.sidebar-collapsed aside {
+            width: 72px;
+        }
+        body.sidebar-collapsed aside a,
+        body.sidebar-collapsed aside button {
+            justify-content: center;
+            padding-left: 0.75rem;
+            padding-right: 0.75rem;
+            font-size: 0;
+        }
+        body.sidebar-collapsed aside span:not(.material-symbols-outlined) {
+            display: none;
+        }
+        body.sidebar-collapsed aside .material-symbols-outlined {
+            margin-right: 0;
+            font-size: 20px;
+        }
+        body.sidebar-collapsed aside .nav-group-label,
+        body.sidebar-collapsed aside .nav-divider-label {
+            display: none;
+        }
+    }
+</style>

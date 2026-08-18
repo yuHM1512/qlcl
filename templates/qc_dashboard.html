@@ -7,181 +7,14 @@
     <title>Dashboard QC - QLCL</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@500;700;800&display=swap"
-        rel="stylesheet" />
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
-        rel="stylesheet" />
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                        display: ['Manrope', 'sans-serif'],
-                    },
-                    colors: {
-                        surface: '#f8f9fa',
-                        'surface-lowest': '#ffffff',
-                        'surface-low': '#f3f4f6',
-                        'surface-high': '#e7e8e9',
-                        'on-surface': '#191c1d',
-                        'on-surface-variant': '#424654',
-                        primary: '#0040a1',
-                        'primary-container': '#0056d2',
-                        'secondary-container': '#9cb4fe',
-                        error: '#b91c1c',
-                    },
-                    boxShadow: {
-                        'cloud': '0px 20px 40px rgba(25, 28, 29, 0.05)',
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        body {
-            background-color: #f8f9fa;
-            color: #191c1d;
-        }
-
-        .glass-header {
-            background: rgba(248, 249, 250, 0.8);
-            backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #0040a1 0%, #0056d2 100%);
-            color: #ffffff;
-            border-radius: 0.75rem;
-            transition: all 0.3s ease;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-1px);
-            box-shadow: 0px 8px 16px rgba(0, 64, 161, 0.2);
-        }
-
-        .btn-tertiary {
-            background: transparent;
-            color: #0040a1;
-            border-radius: 0.75rem;
-            transition: all 0.3s ease;
-        }
-
-        .btn-tertiary:hover {
-            background-color: #f3f4f6;
-        }
-
-        .input-field {
-            width: 100%;
-            background-color: #f3f4f6;
-            border: 2px solid transparent;
-            border-radius: 0.75rem;
-            padding: 0.65rem 0.9rem;
-            color: #191c1d;
-            font-size: 0.875rem;
-            transition: all 0.3s ease;
-            outline: none;
-        }
-
-        .input-field:focus {
-            background-color: #ffffff;
-            border-color: rgba(0, 64, 161, 0.4);
-            box-shadow: 0px 4px 12px rgba(0, 64, 161, 0.08);
-        }
-
-        .input-field::placeholder {
-            color: rgba(66, 70, 84, 0.5);
-        }
-
-        @media (min-width: 1024px) {
-            body.sidebar-collapsed aside {
-                width: 72px;
-            }
-
-            body.sidebar-collapsed aside a,
-            body.sidebar-collapsed aside button {
-                justify-content: center;
-                padding-left: 0.75rem;
-                padding-right: 0.75rem;
-                font-size: 0;
-            }
-
-            body.sidebar-collapsed aside span:not(.material-symbols-outlined) {
-                display: none;
-            }
-
-            body.sidebar-collapsed aside .material-symbols-outlined {
-                margin-right: 0;
-                font-size: 20px;
-            }
-
-            body.sidebar-collapsed aside #submenu-settings {
-                display: none !important;
-            }
-        }
-    </style>
+    {% include '_base_styles.html' %}
 </head>
 
 <body class="min-h-screen">
-    <header class="glass-header sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-8 py-6 flex items-center justify-between">
-            <div class="flex items-center gap-4">
-                <button id="sidebarToggle"
-                    class="w-9 h-9 rounded-full bg-surface-lowest shadow-sm flex items-center justify-center text-on-surface-variant hover:text-primary transition"
-                    title="Thu gọn / Mở rộng menu">
-                    <span class="material-symbols-outlined">menu</span>
-                </button>
-                <a href="/qc" class="text-on-surface-variant hover:text-on-surface transition">
-                    <span class="material-symbols-outlined">arrow_back</span>
-                </a>
-                <div>
-                    <h1 class="font-display text-2xl font-bold">QC Inline/Endline</h1>
-                    <p class="text-xs text-on-surface-variant font-medium">Dashboard tỉ lệ lỗi</p>
-                </div>
-            </div>
-            <button onclick="logout()" class="btn-tertiary px-4 py-2 flex items-center gap-2">
-                <span class="material-symbols-outlined text-sm">logout</span> Đăng xuất
-            </button>
-        </div>
-    </header>
+    {% include '_header.html' %}
 
-    <div class="max-w-7xl mx-auto px-8 py-10 flex flex-col lg:flex-row gap-10">
-        <aside class="w-full lg:w-64 shrink-0">
-            <div class="rounded-2xl bg-surface-high/70 p-4 space-y-2 sticky top-28">
-                {% if not is_qc_viewer_role %}
-                <a href="{{ '/qc-input' if is_qc_role else '/qc' }}"
-                    class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-low transition font-semibold">
-                    <span class="material-symbols-outlined">inventory_2</span>
-                    {{ 'Nhập liệu' if is_qc_role else 'Kế hoạch sản xuất' }}
-                </a>
-                {% endif %}
-                <a href="/qc/dashboard"
-                    class="flex items-center gap-3 px-4 py-3 rounded-xl bg-surface-lowest text-primary font-semibold">
-                    <span class="material-symbols-outlined">dashboard</span>
-                    Dashboard
-                </a>
-                <a href="/qc/cap"
-                    class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-low transition font-semibold">
-                    <span class="material-symbols-outlined">task_alt</span>
-                    Hành động khắc phục
-                </a>
-                {% if is_qaqt_role %}
-                <a href="/qc/settings/details"
-                    class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-low transition font-semibold">
-                    <span class="material-symbols-outlined">settings</span>
-                    Cài đặt danh mục
-                </a>
-                <a href="/qc/settings/visual-picker"
-                    class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-low transition font-semibold">
-                    <span class="material-symbols-outlined">my_location</span>
-                    Sắp xếp vị trí
-                </a>
-                {% endif %}
-            </div>
-        </aside>
+    <div class="max-w-7xl mx-auto px-6 mt-10 flex flex-col lg:flex-row gap-10">
+        {% include '_sidebar.html' %}
 
         <main class="flex-1 space-y-8">
             <!-- Filters -->
@@ -409,29 +242,14 @@
         </main>
     </div>
 
+    {% include '_toast.html' %}
+    {% include '_base_scripts.html' %}
+
     <script>
-        const sidebarKey = 'qlcl_sidebar_collapsed';
         const isQcViewerRole = {{ is_qc_viewer_role | tojson }};
         let dailyChart;
         let bucketChart;
         let posChart;
-
-        function applySidebarState() {
-            const collapsed = localStorage.getItem(sidebarKey) === '1';
-            document.body.classList.toggle('sidebar-collapsed', collapsed);
-            const icon = document.querySelector('#sidebarToggle .material-symbols-outlined');
-            if (icon) icon.textContent = collapsed ? 'menu_open' : 'menu';
-        }
-
-        function toggleSidebar() {
-            const collapsed = localStorage.getItem(sidebarKey) === '1';
-            localStorage.setItem(sidebarKey, collapsed ? '0' : '1');
-            applySidebarState();
-        }
-
-        function logout() {
-            fetch('/logout', { method: 'POST' }).then(() => (window.location.href = '/login'));
-        }
 
         function buildSelect(el, items, placeholder, keepValue = '') {
             if (!el) return;
@@ -1040,8 +858,6 @@
 
         document.addEventListener('DOMContentLoaded', async () => {
             initDates();
-            applySidebarState();
-            document.getElementById('sidebarToggle')?.addEventListener('click', toggleSidebar);
 
             await loadFilters();
             await loadDashboard();

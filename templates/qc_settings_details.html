@@ -1,139 +1,57 @@
-﻿﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Bộ phận & Chi tiết - QC Settings</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@500;700;800&display=swap" rel="stylesheet" />
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                        display: ['Manrope', 'sans-serif'],
-                    },
-                    colors: {
-                        surface: '#f8f9fa',
-                        'surface-lowest': '#ffffff',
-                        'surface-low': '#f3f4f6', 
-                        'surface-high': '#e7e8e9',
-                        'on-surface': '#191c1d',
-                        'on-surface-variant': '#424654',
-                        primary: '#0040a1',
-                        'primary-container': '#0056d2',
-                        'secondary-container': '#9cb4fe',
-                        'error-container': '#ffdad6',
-                    },
-                    boxShadow: {
-                        'cloud': '0px 20px 40px rgba(25, 28, 29, 0.05)',
-                    }
-                }
-            }
-        }
-    </script>
+    {% include '_base_styles.html' %}
     <style>
-        body { background-color: #f8f9fa; color: #191c1d; }
-        .glass-header { background: rgba(248, 249, 250, 0.8); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); }
-        .btn-primary { background: linear-gradient(135deg, #0040a1 0%, #0056d2 100%); color: #ffffff; border-radius: 0.75rem; transition: all 0.3s ease; }
-        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0px 8px 16px rgba(0, 64, 161, 0.2); }
-        .btn-tertiary { background: transparent; color: #0040a1; border-radius: 0.75rem; transition: all 0.3s ease; }
-        .btn-tertiary:hover { background-color: #f3f4f6; }
-        .input-field { background-color: #f3f4f6; border: none; border-radius: 0.75rem; padding: 12px 16px; font-size: 14px; color: #191c1d; transition: all 0.2s; width: 100%; }
-        .input-field:focus { outline: none; background-color: #ffffff; box-shadow: 0 0 0 1px rgba(0, 64, 161, 0.3); }
-        select.input-field { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23424654' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 16px center; padding-right: 40px; }
-        .toast { position: fixed; bottom: 32px; right: 32px; z-index: 200; padding: 16px 24px; border-radius: 0.75rem; font-size: 14px; font-weight: 500; color: #191c1d; transform: translateY(80px); opacity: 0; transition: all .3s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 0px 20px 40px rgba(25, 28, 29, 0.1); }
-        .toast.show { transform: translateY(0); opacity: 1; }
-        .toast-success { background: #9cb4fe; }
-        .toast-error { background: #ffdad6; }
-        
         .list-container {
-            max-height: 500px; overflow-y: auto; 
+            max-height: 500px; overflow-y: auto;
             padding-right: 8px;
         }
         .list-container::-webkit-scrollbar { width: 6px; }
         .list-container::-webkit-scrollbar-thumb { background: #e7e8e9; border-radius: 4px; }
-        @media (min-width: 768px) {
-            body.sidebar-collapsed aside {
-                width: 72px;
-            }
-            body.sidebar-collapsed aside a,
-            body.sidebar-collapsed aside button {
-                justify-content: center;
-                padding-left: 0.75rem;
-                padding-right: 0.75rem;
-                font-size: 0;
-            }
-            body.sidebar-collapsed aside span:not(.material-symbols-outlined) {
-                display: none;
-            }
-            body.sidebar-collapsed aside .material-symbols-outlined {
-                margin-right: 0;
-                font-size: 20px;
-            }
-            body.sidebar-collapsed aside #submenu-settings {
-                display: none !important;
-            }
+
+        /* Loading spinner */
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spinner { animation: spin 0.8s linear infinite; display: inline-block; }
+
+        /* Active item left border accent */
+        .list-item-active {
+            border-left: 3px solid #0040a1 !important;
+            background-color: #f0f4ff !important;
+        }
+
+        /* Search input icon positioning */
+        .search-wrap { position: relative; }
+        .search-wrap .search-icon {
+            position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+            color: #424654; font-size: 18px; pointer-events: none;
+        }
+        .search-wrap input {
+            padding-left: 34px;
+        }
+
+        /* Inline delete confirm */
+        .btn-delete-confirm {
+            background: #ffdad6 !important;
+            color: crimson !important;
+            opacity: 1 !important;
+            font-size: 11px;
+            font-weight: 700;
+            width: auto !important;
+            padding: 0 10px !important;
+            border-radius: 9999px;
         }
     </style>
 </head>
 <body class="font-sans antialiased min-h-screen pb-16">
-    <header class="glass-header sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-6 py-6 flex items-center justify-between">
-            <div class="flex items-center gap-6">
-                <button id="sidebarToggle" class="flex items-center justify-center w-10 h-10 rounded-full bg-surface-lowest shadow-sm hover:shadow-cloud transition text-on-surface-variant" title="Thu gọn / Mở rộng menu">
-                    <span class="material-symbols-outlined">menu</span>
-                </button>
-                <a href="/" class="flex items-center justify-center w-10 h-10 rounded-full bg-surface-lowest shadow-sm hover:shadow-cloud transition text-on-surface-variant">
-                    <span class="material-symbols-outlined">arrow_back</span>
-                </a>
-                <div>
-                    <h1 class="text-2xl font-display font-bold tracking-tight text-on-surface">QC Inline/Endline</h1>
-                    <p class="text-sm font-medium text-on-surface-variant mt-1">Cài đặt danh mục</p>
-                </div>
-            </div>
-            <div class="flex items-center gap-4">
-                <button onclick="logout()" class="btn-tertiary px-4 py-2 font-semibold text-sm flex items-center gap-2" title="Đăng xuất">
-                    <span class="material-symbols-outlined text-sm">logout</span> Đăng xuất
-                </button>
-            </div>
-        </div>
-    </header>
+    {% include '_header.html' %}
 
-    <div class="max-w-7xl mx-auto px-6 mt-12 flex flex-col md:flex-row gap-12">
-        <aside class="w-full md:w-64 shrink-0">
-            <div class="bg-surface-lowest rounded-2xl p-4 sticky top-32 shadow-cloud">
-                <a href="/qc" class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-low font-semibold transition mb-2">
-                    <span class="material-symbols-outlined">inventory_2</span>
-                    Kế hoạch sản xuất
-                </a>
-                <a href="/qc/dashboard" class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-low font-semibold transition mb-2">
-                    <span class="material-symbols-outlined">dashboard</span>
-                    Dashboard
-                </a>
-<a href="/qc/cap" class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-low font-semibold transition mb-2">
-    <span class="material-symbols-outlined">task_alt</span>
-    Hành động khắc phục
-</a>
-                <div>
-                    <button class="w-full flex items-center justify-between px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-low font-semibold transition">
-                        <div class="flex items-center gap-3">
-                            <span class="material-symbols-outlined text-primary">settings</span>
-                            <span class="text-primary">Cài đặt danh mục</span>
-                        </div>
-                        <span class="material-symbols-outlined text-sm text-primary">expand_more</span>
-                    </button>
-                    <div id="submenu-settings" class="flex flex-col pl-11 pr-4 py-2 space-y-2 mt-1">
-                        <a href="/qc/settings/customer" class="block py-1.5 text-sm font-medium text-on-surface-variant hover:text-primary transition">Khách hàng - Mã hàng</a>
-                        <a href="/qc/settings/details" class="block py-1.5 text-sm font-bold text-primary transition">Bộ phận - Chi tiết</a>
-                        <a href="/qc/settings/qc-list" class="block py-1.5 text-sm font-medium text-on-surface-variant hover:text-primary transition">Danh sách QC</a>
-                        <a href="/qc/settings/visual-picker" class="block py-1.5 text-sm font-medium text-on-surface-variant hover:text-primary transition">Sắp xếp vị trí</a>
-                    </div>
-                </div>
-            </div>
-        </aside>
+    <div class="max-w-7xl mx-auto px-6 mt-10 flex flex-col lg:flex-row gap-10">
+        {% include '_sidebar.html' %}
 
         <main class="flex-1 min-w-0">
             <div class="flex flex-col items-start gap-6 mb-12">
@@ -143,46 +61,68 @@
                 </div>
             </div>
 
+            <!-- Breadcrumb context bar -->
+            <div id="breadcrumbBar" class="mb-4 flex items-center gap-2 text-sm text-on-surface-variant bg-surface-lowest rounded-xl px-5 py-3 shadow-cloud" style="display:none;">
+                <span class="material-symbols-outlined text-[18px]">account_tree</span>
+                <span id="breadcrumbContent" class="font-medium"></span>
+            </div>
+
             <div class="bg-surface-lowest rounded-2xl p-8 shadow-cloud">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <!-- Column 1: Loại hàng -->
                     <div class="bg-surface rounded-2xl p-6 space-y-6">
-                        <h4 class="text-xs font-bold text-on-surface-variant tracking-wide">1. LOẠI HÀNG</h4>
+                        <h4 class="text-xs font-bold text-on-surface-variant tracking-wide">1. LOẠI HÀNG <span id="countLH" class="text-primary"></span></h4>
                         <div class="space-y-4">
                             <div class="flex gap-2">
-                                <input type="text" id="newLH" class="input-field" placeholder="Thêm loại hàng...">
+                                <input type="text" id="newLH" class="input-field" placeholder="Thêm loại hàng..." onkeydown="if(event.key==='Enter'){event.preventDefault();addMasterItem('loai-hang','newLH');}">
                                 <button onclick="addMasterItem('loai-hang', 'newLH')" class="btn-primary w-12 flex-shrink-0 flex items-center justify-center rounded-xl"><span class="material-symbols-outlined">add</span></button>
                             </div>
                             <select id="newLHType" class="input-field">
                                 <option value="">-- Chọn phân loại --</option>
                             </select>
                         </div>
+                        <!-- Search filter -->
+                        <div class="search-wrap">
+                            <span class="material-symbols-outlined search-icon">search</span>
+                            <input type="text" id="searchLH" class="input-field w-full" placeholder="Tìm loại hàng..." oninput="filterList('listLH', this.value)">
+                        </div>
                         <div id="listLH" class="list-container space-y-2 mt-4"></div>
                     </div>
-                    
+
+                    <!-- Column 2: Bộ phận -->
                     <div class="bg-surface rounded-2xl p-6 space-y-6">
-                        <h4 class="text-xs font-bold text-on-surface-variant tracking-wide">2. BỘ PHẬN TƯƠNG ỨNG</h4>
+                        <h4 class="text-xs font-bold text-on-surface-variant tracking-wide">2. BỘ PHẬN TƯƠNG ỨNG <span id="countBP" class="text-primary"></span></h4>
                         <div class="space-y-4">
-                            <select id="selLH" class="input-field" onchange="loadMasterSubItems('bo-phan', this.value, 'listBP')">
+                            <select id="selLH" class="input-field" onchange="onSelectLH(this.value)">
                                 <option value="">-- Chọn loại hàng --</option>
                             </select>
                             <div class="flex gap-2">
-                                <input type="text" id="newBP" class="input-field" placeholder="Thêm bộ phận...">
+                                <input type="text" id="newBP" class="input-field" placeholder="Thêm bộ phận..." onkeydown="if(event.key==='Enter'){event.preventDefault();addMasterSubItem('bo-phan','selLH','newBP');}">
                                 <button onclick="addMasterSubItem('bo-phan', 'selLH', 'newBP')" class="btn-primary w-12 flex-shrink-0 flex items-center justify-center rounded-xl"><span class="material-symbols-outlined">add</span></button>
                             </div>
                         </div>
+                        <div class="search-wrap">
+                            <span class="material-symbols-outlined search-icon">search</span>
+                            <input type="text" id="searchBP" class="input-field w-full" placeholder="Tìm bộ phận..." oninput="filterList('listBP', this.value)">
+                        </div>
                         <div id="listBP" class="list-container space-y-2 mt-4"></div>
                     </div>
-                    
+
+                    <!-- Column 3: Chi tiết -->
                     <div class="bg-surface rounded-2xl p-6 space-y-6">
-                        <h4 class="text-xs font-bold text-on-surface-variant tracking-wide">3. CHI TIẾT SẢN PHẨM</h4>
+                        <h4 class="text-xs font-bold text-on-surface-variant tracking-wide">3. CHI TIẾT SẢN PHẨM <span id="countCT" class="text-primary"></span></h4>
                         <div class="space-y-4">
-                            <select id="selBP" class="input-field" onchange="loadMasterSubItems('chi-tiet', this.value, 'listCT')">
+                            <select id="selBP" class="input-field" onchange="onSelectBP(this.value)">
                                 <option value="">-- Chọn bộ phận --</option>
                             </select>
                             <div class="flex gap-2">
-                                <input type="text" id="newCT" class="input-field" placeholder="Thêm chi tiết...">
+                                <input type="text" id="newCT" class="input-field" placeholder="Thêm chi tiết..." onkeydown="if(event.key==='Enter'){event.preventDefault();addMasterSubItem('chi-tiet','selBP','newCT');}">
                                 <button onclick="addMasterSubItem('chi-tiet', 'selBP', 'newCT')" class="btn-primary w-12 flex-shrink-0 flex items-center justify-center rounded-xl"><span class="material-symbols-outlined">add</span></button>
                             </div>
+                        </div>
+                        <div class="search-wrap">
+                            <span class="material-symbols-outlined search-icon">search</span>
+                            <input type="text" id="searchCT" class="input-field w-full" placeholder="Tìm chi tiết..." oninput="filterList('listCT', this.value)">
                         </div>
                         <div id="listCT" class="list-container space-y-2 mt-4"></div>
                     </div>
@@ -191,68 +131,132 @@
         </main>
     </div>
 
-    <!-- Toast -->
-    <div id="toast" class="toast flex items-center gap-3">
-        <span class="material-symbols-outlined" id="toastIcon">info</span>
-        <span id="toastMessage"></span>
-    </div>
+    {% include '_toast.html' %}
+    {% include '_base_scripts.html' %}
 
     <script>
-        const sidebarKey = 'qlcl_sidebar_collapsed';
-        function applySidebarState() {
-            const collapsed = localStorage.getItem(sidebarKey) === '1';
-            document.body.classList.toggle('sidebar-collapsed', collapsed);
-            const icon = document.querySelector('#sidebarToggle .material-symbols-outlined');
-            if (icon) icon.textContent = collapsed ? 'menu_open' : 'menu';
-        }
-        function toggleSidebar() {
-            const collapsed = localStorage.getItem(sidebarKey) === '1';
-            localStorage.setItem(sidebarKey, collapsed ? '0' : '1');
-            applySidebarState();
-        }
+        // Track current selections for breadcrumb
+        let currentLHName = '';
+        let currentBPName = '';
 
         document.addEventListener('DOMContentLoaded', () => {
-            const sidebarToggle = document.getElementById('sidebarToggle');
-            if (sidebarToggle) sidebarToggle.addEventListener('click', toggleSidebar);
-            applySidebarState();
             loadMasterLH();
             loadLoaiHangTargets();
+            // Show initial empty states
+            showEmptyState('listBP', 'Chọn loại hàng để xem bộ phận');
+            showEmptyState('listCT', 'Chọn bộ phận để xem chi tiết');
         });
 
-        async function logout() {
-            try {
-                const res = await fetch('/logout', { method: 'POST' });
-                if (res.redirected) window.location.href = res.url;
-                else window.location.href = '/login';
-            } catch (e) {
-                window.location.href = '/login';
+        // --- Breadcrumb ---
+        function updateBreadcrumb() {
+            const bar = document.getElementById('breadcrumbBar');
+            const content = document.getElementById('breadcrumbContent');
+            if (!currentLHName && !currentBPName) {
+                bar.style.display = 'none';
+                return;
+            }
+            bar.style.display = 'flex';
+            let parts = [];
+            if (currentLHName) parts.push(currentLHName);
+            if (currentBPName) parts.push(currentBPName);
+            content.innerHTML = parts.map((p, i) => {
+                const isLast = i === parts.length - 1;
+                return `<span class="${isLast ? 'text-primary font-semibold' : 'text-on-surface-variant'}">${p}</span>`;
+            }).join('<span class="material-symbols-outlined text-[14px] mx-1 text-on-surface-variant align-middle">chevron_right</span>');
+        }
+
+        // --- Loading spinner ---
+        function showLoading(elemId) {
+            const container = document.getElementById(elemId);
+            container.innerHTML = `
+                <div class="flex flex-col items-center justify-center py-8 text-on-surface-variant">
+                    <span class="material-symbols-outlined spinner text-[28px] text-primary">progress_activity</span>
+                    <span class="text-xs mt-2">Đang tải...</span>
+                </div>`;
+        }
+
+        // --- Empty states ---
+        function showEmptyState(elemId, message) {
+            const container = document.getElementById(elemId);
+            container.innerHTML = `
+                <div class="flex flex-col items-center justify-center py-8 text-on-surface-variant">
+                    <span class="material-symbols-outlined text-[28px] mb-1 opacity-40">inbox</span>
+                    <p class="text-sm font-medium text-center">${message}</p>
+                </div>`;
+        }
+
+        // --- Search/filter ---
+        function filterList(listId, query) {
+            const container = document.getElementById(listId);
+            const items = container.querySelectorAll('[data-filter-name]');
+            const q = query.toLowerCase().trim();
+            let visibleCount = 0;
+            items.forEach(item => {
+                const name = (item.getAttribute('data-filter-name') || '').toLowerCase();
+                const match = !q || name.includes(q);
+                item.style.display = match ? '' : 'none';
+                if (match) visibleCount++;
+            });
+            // Show/hide no-results message
+            let noResult = container.querySelector('.search-no-result');
+            if (q && visibleCount === 0) {
+                if (!noResult) {
+                    noResult = document.createElement('p');
+                    noResult.className = 'search-no-result p-4 text-center text-sm font-medium text-on-surface-variant';
+                    noResult.textContent = 'Không tìm thấy kết quả';
+                    container.appendChild(noResult);
+                }
+                noResult.style.display = '';
+            } else if (noResult) {
+                noResult.style.display = 'none';
             }
         }
 
-        function showToast(msg, type = 'success') {
-            const t = document.getElementById('toast');
-            const msgEl = document.getElementById('toastMessage');
-            const iconEl = document.getElementById('toastIcon');
-            
-            msgEl.textContent = msg;
-            
-            if(type === 'success') {
-                t.className = 'toast toast-success show flex items-center gap-3';
-                iconEl.textContent = 'check_circle';
-            } else {
-                t.className = 'toast toast-error show flex items-center gap-3';
-                iconEl.textContent = 'error';
-            }
-            
-            setTimeout(() => { t.classList.remove('show'); }, 3000);
+        // --- Count badges ---
+        function updateCount(countId, count) {
+            const el = document.getElementById(countId);
+            if (el) el.textContent = count > 0 ? `(${count})` : '';
         }
 
+        // --- Selection handlers with breadcrumb & highlight ---
+        function onSelectLH(value) {
+            const sel = document.getElementById('selLH');
+            currentLHName = value ? sel.options[sel.selectedIndex].textContent : '';
+            currentBPName = '';
+            updateBreadcrumb();
+            // Reset search
+            const searchBP = document.getElementById('searchBP');
+            if (searchBP) searchBP.value = '';
+            const searchCT = document.getElementById('searchCT');
+            if (searchCT) searchCT.value = '';
+            // Reset column 3
+            updateCount('countCT', 0);
+            showEmptyState('listCT', 'Chọn bộ phận để xem chi tiết');
+            document.getElementById('selBP').innerHTML = '<option value="">-- Chọn bộ phận --</option>';
+            // Load column 2
+            loadMasterSubItems('bo-phan', value, 'listBP');
+        }
+
+        function onSelectBP(value) {
+            const sel = document.getElementById('selBP');
+            currentBPName = value ? sel.options[sel.selectedIndex].textContent : '';
+            updateBreadcrumb();
+            // Reset search
+            const searchCT = document.getElementById('searchCT');
+            if (searchCT) searchCT.value = '';
+            // Load column 3
+            loadMasterSubItems('chi-tiet', value, 'listCT');
+        }
+
+        // --- Data loading ---
         async function loadMasterLH() {
+            showLoading('listLH');
             try {
                 const res = await fetch('/api/dm/loai-hang');
                 const data = await res.json();
                 renderMasterList('listLH', data.rows, 'loai-hang', () => loadMasterLH());
-                
+                updateCount('countLH', data.rows ? data.rows.length : 0);
+
                 const sel = document.getElementById('selLH');
                 const prevVal = sel.value;
                 sel.innerHTML = '<option value="">-- Chọn loại --</option>';
@@ -262,11 +266,24 @@
                     sel.appendChild(opt);
                 });
                 sel.value = prevVal;
-                
+
                 // Clear next levels
+                updateCount('countBP', 0);
+                updateCount('countCT', 0);
                 document.getElementById('listBP').innerHTML = '';
                 document.getElementById('listCT').innerHTML = '';
                 document.getElementById('selBP').innerHTML = '<option value="">-- Chọn bộ phận --</option>';
+
+                // Show empty states if nothing selected
+                if (!sel.value) {
+                    showEmptyState('listBP', 'Chọn loại hàng để xem bộ phận');
+                    showEmptyState('listCT', 'Chọn bộ phận để xem chi tiết');
+                }
+
+                // If no rows
+                if (!data.rows || data.rows.length === 0) {
+                    showEmptyState('listLH', 'Chưa có loại hàng nào');
+                }
             } catch (e) { console.error(e); }
         }
 
@@ -290,10 +307,18 @@
         async function loadMasterSubItems(apiType, parentId, listElementId) {
             const list = document.getElementById(listElementId);
             if (!parentId) {
-                list.innerHTML = `<p class="p-4 text-center text-sm font-medium text-on-surface-variant">Vui lòng chọn mục cha</p>`;
+                if (apiType === 'bo-phan') {
+                    showEmptyState(listElementId, 'Chọn loại hàng để xem bộ phận');
+                    updateCount('countBP', 0);
+                } else {
+                    showEmptyState(listElementId, 'Chọn bộ phận để xem chi tiết');
+                    updateCount('countCT', 0);
+                }
                 return;
             }
-            
+
+            showLoading(listElementId);
+
             let url = `/api/dm/${apiType}?`;
             if (apiType === 'bo-phan') url += `loai_hang_id=${parentId}`;
             if (apiType === 'chi-tiet') url += `bo_phan_id=${parentId}`;
@@ -301,8 +326,17 @@
             try {
                 const res = await fetch(url);
                 const data = await res.json();
-                renderMasterList(listElementId, data.rows, apiType, () => loadMasterSubItems(apiType, parentId, listElementId));
-                
+
+                const countId = apiType === 'bo-phan' ? 'countBP' : 'countCT';
+                updateCount(countId, data.rows ? data.rows.length : 0);
+
+                if (!data.rows || data.rows.length === 0) {
+                    const emptyMsg = apiType === 'bo-phan' ? 'Chưa có bộ phận nào' : 'Chưa có chi tiết nào';
+                    showEmptyState(listElementId, emptyMsg);
+                } else {
+                    renderMasterList(listElementId, data.rows, apiType, () => loadMasterSubItems(apiType, parentId, listElementId));
+                }
+
                 if (apiType === 'bo-phan') {
                     const sel = document.getElementById('selBP');
                     sel.innerHTML = '<option value="">-- Chọn BP --</option>';
@@ -312,6 +346,8 @@
                         sel.appendChild(opt);
                     });
                     document.getElementById('listCT').innerHTML = '';
+                    updateCount('countCT', 0);
+                    showEmptyState('listCT', 'Chọn bộ phận để xem chi tiết');
                 }
             } catch (e) { console.error(e); }
         }
@@ -319,24 +355,65 @@
         function renderMasterList(elemId, rows, type, onUpdatedSource) {
             const container = document.getElementById(elemId);
             if (!rows || rows.length === 0) {
-                container.innerHTML = '<p class="p-4 text-center text-sm font-medium text-on-surface-variant">Chưa có dữ liệu</p>';
+                const emptyMsg = type === 'loai-hang' ? 'Chưa có loại hàng nào' :
+                                 type === 'bo-phan' ? 'Chưa có bộ phận nào' :
+                                 'Chưa có chi tiết nào';
+                showEmptyState(elemId, emptyMsg);
                 return;
             }
 
             const nameKey = type === 'loai-hang' ? 'ten_loai' :
-                          type === 'bo-phan' ? 'ten_bo_phan' : 
+                          type === 'bo-phan' ? 'ten_bo_phan' :
                           type === 'chi-tiet' ? 'ten_chi_tiet' : '';
 
             container.innerHTML = rows.map(r => `
-                <div class="flex items-center justify-between px-4 py-3 bg-surface-lowest rounded-xl group transition-all hover:shadow-[0_2px_8px_rgba(25,28,29,0.04)]">
-                    <span class="font-semibold text-on-surface text-sm break-words trumcate max-w-[80%]">${r[nameKey]}</span>
-                    <button onclick="deleteMasterItem('${type}', ${r.id}, '${elemId}')" class="h-8 w-8 text-on-surface-variant hover:text-[crimson] hover:bg-error-container rounded-full opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                <div class="flex items-center justify-between px-4 py-3 bg-surface-lowest rounded-xl group transition-all hover:shadow-[0_2px_8px_rgba(25,28,29,0.04)]" data-filter-name="${(r[nameKey] || '').replace(/"/g, '&quot;')}" data-item-id="${r.id}">
+                    <span class="font-semibold text-on-surface text-sm break-words truncate max-w-[80%]">${r[nameKey]}</span>
+                    <button data-delete-type="${type}" data-delete-id="${r.id}" data-delete-list="${elemId}" class="delete-btn h-8 w-8 text-on-surface-variant hover:text-[crimson] hover:bg-error-container rounded-full opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
                         <span class="material-symbols-outlined text-[18px]">delete</span>
                     </button>
                 </div>
             `).join('');
+
+            // Attach inline delete handlers
+            container.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    handleInlineDelete(this);
+                });
+            });
         }
 
+        // --- Inline delete confirmation ---
+        function handleInlineDelete(btn) {
+            // Already in confirm state? Execute delete.
+            if (btn.dataset.confirmState === 'true') {
+                const type = btn.dataset.deleteType;
+                const id = btn.dataset.deleteId;
+                const listId = btn.dataset.deleteList;
+                deleteMasterItem(type, id, listId);
+                return;
+            }
+
+            // Enter confirm state
+            btn.dataset.confirmState = 'true';
+            const origHTML = btn.innerHTML;
+            const origClasses = btn.className;
+            btn.innerHTML = 'Xoá?';
+            btn.className = 'delete-btn btn-delete-confirm h-8 flex items-center justify-center transition';
+
+            // Revert after 3 seconds
+            const timer = setTimeout(() => {
+                btn.dataset.confirmState = '';
+                btn.innerHTML = origHTML;
+                btn.className = origClasses;
+            }, 3000);
+
+            // Store timer so second click can clear it
+            btn._revertTimer = timer;
+        }
+
+        // --- CRUD operations ---
         async function addMasterItem(type, inputId) {
             const input = document.getElementById(inputId);
             const val = input.value.trim();
@@ -361,6 +438,7 @@
                 });
                 if (res.ok) {
                     input.value = '';
+                    showToast('Đã thêm thành công!');
                     if (type === 'loai-hang') loadMasterLH();
                 }
             } catch (e) { console.error(e); }
@@ -387,6 +465,7 @@
                 });
                 if (res.ok) {
                     input.value = '';
+                    showToast('Đã thêm thành công!');
                     const listId = type === 'bo-phan' ? 'listBP' : 'listCT';
                     loadMasterSubItems(type, parentId, listId);
                 }
@@ -394,7 +473,6 @@
         }
 
         async function deleteMasterItem(type, id, listElementId) {
-            if (!confirm('Bạn có chắc chắn muốn xoá mục này không? Các dữ liệu liên quan có thể bị ảnh hưởng.')) return;
             try {
                 const res = await fetch(`/api/dm/${type}/${id}`, { method: 'DELETE' });
                 if (res.ok) {
@@ -406,12 +484,10 @@
                     const err = await res.json();
                     showToast(err.detail || 'Lỗi khi xoá', 'error');
                 }
-            } catch (e) { 
+            } catch (e) {
                 showToast('Lỗi kết nối', 'error');
             }
         }
     </script>
 </body>
 </html>
-
-

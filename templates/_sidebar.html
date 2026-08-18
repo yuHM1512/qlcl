@@ -1,0 +1,95 @@
+{# ============================================================
+   _sidebar.html — Unified sidebar partial for QC module
+
+   Required context variables:
+     - active_page: string — one of:
+         'plan', 'input', 'dashboard', 'cap',
+         'settings_customer', 'settings_details',
+         'settings_qcs', 'settings_visual'
+     - is_qc_role: bool
+     - is_qaqt_role: bool
+     - is_qc_viewer_role: bool
+   ============================================================ #}
+
+<aside class="w-full lg:w-64 shrink-0">
+    <div class="bg-surface-lowest rounded-2xl p-3 sticky top-28 shadow-cloud space-y-1">
+
+        {# ── Nhóm: Vận hành ── #}
+        <div class="px-3 pt-2 pb-1">
+            <span class="text-[10px] font-bold uppercase tracking-[0.12em] text-on-surface-variant/50">Vận hành</span>
+        </div>
+
+        {# Kế hoạch SX — chỉ QAQT thấy #}
+        {% if is_qaqt_role %}
+        <a href="/qc"
+           class="flex items-center gap-3 px-4 py-2.5 rounded-xl font-semibold transition
+                  {% if active_page == 'plan' %}bg-primary/8 text-primary{% else %}text-on-surface-variant hover:bg-surface-low{% endif %}">
+            <span class="material-symbols-outlined text-[20px]">inventory_2</span>
+            <span>Kế hoạch SX</span>
+        </a>
+        {% endif %}
+
+        {# Nhập liệu — chỉ QC thấy #}
+        {% if is_qc_role %}
+        <a href="/qc-input"
+           class="flex items-center gap-3 px-4 py-2.5 rounded-xl font-semibold transition
+                  {% if active_page == 'input' %}bg-primary/8 text-primary{% else %}text-on-surface-variant hover:bg-surface-low{% endif %}">
+            <span class="material-symbols-outlined text-[20px]">edit_note</span>
+            <span>Nhập liệu</span>
+        </a>
+        {% endif %}
+
+        {# Dashboard — tất cả roles #}
+        <a href="/qc/dashboard"
+           class="flex items-center gap-3 px-4 py-2.5 rounded-xl font-semibold transition
+                  {% if active_page == 'dashboard' %}bg-primary/8 text-primary{% else %}text-on-surface-variant hover:bg-surface-low{% endif %}">
+            <span class="material-symbols-outlined text-[20px]">dashboard</span>
+            <span>Dashboard</span>
+        </a>
+
+        {# Hành động KP — tất cả roles #}
+        <a href="/qc/cap"
+           class="flex items-center gap-3 px-4 py-2.5 rounded-xl font-semibold transition
+                  {% if active_page == 'cap' %}bg-primary/8 text-primary{% else %}text-on-surface-variant hover:bg-surface-low{% endif %}">
+            <span class="material-symbols-outlined text-[20px]">task_alt</span>
+            <span>Hành động KP</span>
+        </a>
+
+        {# ── Nhóm: Cài đặt — chỉ QAQT thấy ── #}
+        {% if is_qaqt_role %}
+        <div class="h-px bg-surface-high mx-3 my-2"></div>
+        <div class="px-3 pt-1 pb-1">
+            <span class="text-[10px] font-bold uppercase tracking-[0.12em] text-on-surface-variant/50">Cài đặt</span>
+        </div>
+
+        <a href="/qc/settings/customer"
+           class="flex items-center gap-3 px-4 py-2.5 rounded-xl font-semibold transition
+                  {% if active_page == 'settings_customer' %}bg-primary/8 text-primary{% else %}text-on-surface-variant hover:bg-surface-low{% endif %}">
+            <span class="material-symbols-outlined text-[20px]">group</span>
+            <span>KH – Mã hàng</span>
+        </a>
+
+        <a href="/qc/settings/details"
+           class="flex items-center gap-3 px-4 py-2.5 rounded-xl font-semibold transition
+                  {% if active_page == 'settings_details' %}bg-primary/8 text-primary{% else %}text-on-surface-variant hover:bg-surface-low{% endif %}">
+            <span class="material-symbols-outlined text-[20px]">precision_manufacturing</span>
+            <span>Bộ phận – Chi tiết</span>
+        </a>
+
+        <a href="/qc/settings/qc-list"
+           class="flex items-center gap-3 px-4 py-2.5 rounded-xl font-semibold transition
+                  {% if active_page == 'settings_qcs' %}bg-primary/8 text-primary{% else %}text-on-surface-variant hover:bg-surface-low{% endif %}">
+            <span class="material-symbols-outlined text-[20px]">badge</span>
+            <span>Danh sách QC</span>
+        </a>
+
+        <a href="/qc/settings/visual-picker"
+           class="flex items-center gap-3 px-4 py-2.5 rounded-xl font-semibold transition
+                  {% if active_page == 'settings_visual' %}bg-primary/8 text-primary{% else %}text-on-surface-variant hover:bg-surface-low{% endif %}">
+            <span class="material-symbols-outlined text-[20px]">my_location</span>
+            <span>Sắp xếp vị trí</span>
+        </a>
+        {% endif %}
+
+    </div>
+</aside>

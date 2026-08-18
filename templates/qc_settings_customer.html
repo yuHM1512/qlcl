@@ -1,139 +1,86 @@
-﻿﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Khách hàng & Mã hàng - QC Settings</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@500;700;800&display=swap" rel="stylesheet" />
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                        display: ['Manrope', 'sans-serif'],
-                    },
-                    colors: {
-                        surface: '#f8f9fa',
-                        'surface-lowest': '#ffffff',
-                        'surface-low': '#f3f4f6', 
-                        'surface-high': '#e7e8e9',
-                        'on-surface': '#191c1d',
-                        'on-surface-variant': '#424654',
-                        primary: '#0040a1',
-                        'primary-container': '#0056d2',
-                        'secondary-container': '#9cb4fe',
-                        'error-container': '#ffdad6',
-                    },
-                    boxShadow: {
-                        'cloud': '0px 20px 40px rgba(25, 28, 29, 0.05)',
-                    }
-                }
-            }
-        }
-    </script>
+    {% include '_base_styles.html' %}
     <style>
-        body { background-color: #f8f9fa; color: #191c1d; }
-        .glass-header { background: rgba(248, 249, 250, 0.8); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); }
-        .btn-primary { background: linear-gradient(135deg, #0040a1 0%, #0056d2 100%); color: #ffffff; border-radius: 0.75rem; transition: all 0.3s ease; }
-        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0px 8px 16px rgba(0, 64, 161, 0.2); }
-        .btn-tertiary { background: transparent; color: #0040a1; border-radius: 0.75rem; transition: all 0.3s ease; }
-        .btn-tertiary:hover { background-color: #f3f4f6; }
-        .input-field { background-color: #f3f4f6; border: none; border-radius: 0.75rem; padding: 12px 16px; font-size: 14px; color: #191c1d; transition: all 0.2s; width: 100%; }
-        .input-field:focus { outline: none; background-color: #ffffff; box-shadow: 0 0 0 1px rgba(0, 64, 161, 0.3); }
-        select.input-field { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23424654' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 16px center; padding-right: 40px; }
-        .toast { position: fixed; bottom: 32px; right: 32px; z-index: 200; padding: 16px 24px; border-radius: 0.75rem; font-size: 14px; font-weight: 500; color: #191c1d; transform: translateY(80px); opacity: 0; transition: all .3s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 0px 20px 40px rgba(25, 28, 29, 0.1); }
-        .toast.show { transform: translateY(0); opacity: 1; }
-        .toast-success { background: #9cb4fe; }
-        .toast-error { background: #ffdad6; }
-        
         .list-container {
-            max-height: 500px; overflow-y: auto; 
+            max-height: 500px; overflow-y: auto;
             padding-right: 8px; /* For scrollbar breathing room */
         }
         .list-container::-webkit-scrollbar { width: 6px; }
         .list-container::-webkit-scrollbar-thumb { background: #e7e8e9; border-radius: 4px; }
-        @media (min-width: 768px) {
-            body.sidebar-collapsed aside {
-                width: 72px;
-            }
-            body.sidebar-collapsed aside a,
-            body.sidebar-collapsed aside button {
-                justify-content: center;
-                padding-left: 0.75rem;
-                padding-right: 0.75rem;
-                font-size: 0;
-            }
-            body.sidebar-collapsed aside span:not(.material-symbols-outlined) {
-                display: none;
-            }
-            body.sidebar-collapsed aside .material-symbols-outlined {
-                margin-right: 0;
-                font-size: 20px;
-            }
-            body.sidebar-collapsed aside #submenu-settings {
-                display: none !important;
-            }
+
+        /* Loading spinner */
+        @keyframes spin-smooth {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .loading-spinner {
+            animation: spin-smooth 1s linear infinite;
+            display: inline-block;
+        }
+
+        /* Search input with icon */
+        .search-wrap {
+            position: relative;
+        }
+        .search-wrap .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #424654;
+            font-size: 18px;
+            pointer-events: none;
+        }
+        .search-wrap input {
+            padding-left: 38px;
+        }
+
+        /* Selected customer highlight */
+        .list-item-selected {
+            border-left: 3px solid #0040a1;
+            background: #f0f4ff !important;
+        }
+
+        /* Delete confirm state */
+        .btn-delete-confirm {
+            background: #ffdad6 !important;
+            opacity: 1 !important;
+            color: crimson !important;
+            border-radius: 8px !important;
+            width: auto !important;
+            padding: 2px 10px !important;
+            font-size: 12px !important;
+            font-weight: 600 !important;
+        }
+
+        /* Count badge */
+        .count-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 22px;
+            height: 20px;
+            padding: 0 6px;
+            border-radius: 10px;
+            background: #e7e8e9;
+            color: #424654;
+            font-size: 11px;
+            font-weight: 700;
+            margin-left: 6px;
         }
     </style>
 </head>
 <body class="font-sans antialiased min-h-screen pb-16">
-    <header class="glass-header sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-6 py-6 flex items-center justify-between">
-            <div class="flex items-center gap-6">
-                <button id="sidebarToggle" class="flex items-center justify-center w-10 h-10 rounded-full bg-surface-lowest shadow-sm hover:shadow-cloud transition text-on-surface-variant" title="Thu gọn / Mở rộng menu">
-                    <span class="material-symbols-outlined">menu</span>
-                </button>
-                <a href="/" class="flex items-center justify-center w-10 h-10 rounded-full bg-surface-lowest shadow-sm hover:shadow-cloud transition text-on-surface-variant">
-                    <span class="material-symbols-outlined">arrow_back</span>
-                </a>
-                <div>
-                    <h1 class="text-2xl font-display font-bold tracking-tight text-on-surface">QC Inline/Endline</h1>
-                    <p class="text-sm font-medium text-on-surface-variant mt-1">Cài đặt danh mục</p>
-                </div>
-            </div>
-            <div class="flex items-center gap-4">
-                <button onclick="logout()" class="btn-tertiary px-4 py-2 font-semibold text-sm flex items-center gap-2" title="Đăng xuất">
-                    <span class="material-symbols-outlined text-sm">logout</span> Đăng xuất
-                </button>
-            </div>
-        </div>
-    </header>
+    {% include '_header.html' %}
 
-    <div class="max-w-7xl mx-auto px-6 mt-12 flex flex-col md:flex-row gap-12">
-        <aside class="w-full md:w-64 shrink-0">
-            <div class="bg-surface-lowest rounded-2xl p-4 sticky top-32 shadow-cloud">
-                <a href="/qc" class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-low font-semibold transition mb-2">
-                    <span class="material-symbols-outlined">inventory_2</span>
-                    Kế hoạch sản xuất
-                </a>
-                <a href="/qc/dashboard" class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-low font-semibold transition mb-2">
-                    <span class="material-symbols-outlined">dashboard</span>
-                    Dashboard
-                </a>
-<a href="/qc/cap" class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-low font-semibold transition mb-2">
-    <span class="material-symbols-outlined">task_alt</span>
-    Hành động khắc phục
-</a>
-                <div>
-                    <button class="w-full flex items-center justify-between px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-low font-semibold transition">
-                        <div class="flex items-center gap-3">
-                            <span class="material-symbols-outlined text-primary">settings</span>
-                            <span class="text-primary">Cài đặt danh mục</span>
-                        </div>
-                        <span class="material-symbols-outlined text-sm text-primary">expand_more</span>
-                    </button>
-                    <div id="submenu-settings" class="flex flex-col pl-11 pr-4 py-2 space-y-2 mt-1">
-                        <a href="/qc/settings/customer" class="block py-1.5 text-sm font-bold text-primary transition">Khách hàng - Mã hàng</a>
-                        <a href="/qc/settings/details" class="block py-1.5 text-sm font-medium text-on-surface-variant hover:text-primary transition">Bộ phận - Chi tiết</a>
-                        <a href="/qc/settings/qc-list" class="block py-1.5 text-sm font-medium text-on-surface-variant hover:text-primary transition">Danh sách QC</a>
-                        <a href="/qc/settings/visual-picker" class="block py-1.5 text-sm font-medium text-on-surface-variant hover:text-primary transition">Sắp xếp vị trí</a>
-                    </div>
-                </div>
-            </div>
-        </aside>
+    <div class="max-w-7xl mx-auto px-6 mt-10 flex flex-col lg:flex-row gap-10">
+        {% include '_sidebar.html' %}
 
         <main class="flex-1 min-w-0">
             <div class="flex flex-col items-start gap-6 mb-12">
@@ -146,23 +93,39 @@
             <div class="bg-surface-lowest rounded-2xl p-8 shadow-cloud">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
                     <div class="bg-surface rounded-2xl p-6">
-                        <h4 class="text-xs font-bold text-on-surface-variant mb-6 tracking-wide">DANH SÁCH KHÁCH HÀNG</h4>
-                        <div class="flex gap-3 mb-6">
-                            <input type="text" id="newKH" class="input-field" placeholder="Tên khách hàng mới...">
+                        <h4 class="text-xs font-bold text-on-surface-variant mb-6 tracking-wide">
+                            DANH SÁCH KHÁCH HÀNG <span id="countKH" class="count-badge" style="display:none;">0</span>
+                        </h4>
+                        <div class="flex gap-3 mb-4">
+                            <input type="text" id="newKH" class="input-field" placeholder="Tên khách hàng mới..."
+                                   onkeydown="if(event.key==='Enter'){addMasterItem('khach-hang','newKH')}">
                             <button onclick="addMasterItem('khach-hang', 'newKH')" class="btn-primary w-12 flex-shrink-0 flex items-center justify-center rounded-xl"><span class="material-symbols-outlined">add</span></button>
+                        </div>
+                        <div class="search-wrap mb-4">
+                            <span class="material-symbols-outlined search-icon">search</span>
+                            <input type="text" id="searchKH" class="input-field w-full" placeholder="Tìm khách hàng..."
+                                   oninput="filterList('listKH', this.value)">
                         </div>
                         <div id="listKH" class="list-container space-y-2"></div>
                     </div>
                     <div class="bg-surface rounded-2xl p-6">
-                        <h4 class="text-xs font-bold text-on-surface-variant mb-6 tracking-wide">MÃ HÀNG THEO KHÁCH HÀNG</h4>
-                        <div class="space-y-4 mb-6">
-                            <select id="selKH" class="input-field" onchange="loadMasterSubItems('ma-hang', this.value, 'listMH')">
+                        <h4 class="text-xs font-bold text-on-surface-variant mb-6 tracking-wide">
+                            MÃ HÀNG THEO KHÁCH HÀNG <span id="countMH" class="count-badge" style="display:none;">0</span>
+                        </h4>
+                        <div class="space-y-4 mb-4">
+                            <select id="selKH" class="input-field" onchange="onCustomerSelected()">
                                 <option value="">-- Chọn khách hàng --</option>
                             </select>
                             <div class="flex gap-3">
-                                <input type="text" id="newMH" class="input-field" placeholder="Tên mã hàng mới...">
+                                <input type="text" id="newMH" class="input-field" placeholder="Tên mã hàng mới..."
+                                       onkeydown="if(event.key==='Enter'){addMasterSubItem('ma-hang','selKH','newMH')}">
                                 <button onclick="addMasterSubItem('ma-hang', 'selKH', 'newMH')" class="btn-primary w-12 flex-shrink-0 flex items-center justify-center rounded-xl"><span class="material-symbols-outlined">add</span></button>
                             </div>
+                        </div>
+                        <div class="search-wrap mb-4">
+                            <span class="material-symbols-outlined search-icon">search</span>
+                            <input type="text" id="searchMH" class="input-field w-full" placeholder="Tìm mã hàng..."
+                                   oninput="filterList('listMH', this.value)">
                         </div>
                         <div id="listMH" class="list-container space-y-2"></div>
                     </div>
@@ -171,72 +134,135 @@
         </main>
     </div>
 
-    <!-- Toast -->
-    <div id="toast" class="toast flex items-center gap-3">
-        <span class="material-symbols-outlined" id="toastIcon">info</span>
-        <span id="toastMessage"></span>
-    </div>
+    {% include '_toast.html' %}
+    {% include '_base_scripts.html' %}
 
     <script>
-        const sidebarKey = 'qlcl_sidebar_collapsed';
-        function applySidebarState() {
-            const collapsed = localStorage.getItem(sidebarKey) === '1';
-            document.body.classList.toggle('sidebar-collapsed', collapsed);
-            const icon = document.querySelector('#sidebarToggle .material-symbols-outlined');
-            if (icon) icon.textContent = collapsed ? 'menu_open' : 'menu';
-        }
-        function toggleSidebar() {
-            const collapsed = localStorage.getItem(sidebarKey) === '1';
-            localStorage.setItem(sidebarKey, collapsed ? '0' : '1');
-            applySidebarState();
-        }
-
         document.addEventListener('DOMContentLoaded', () => {
-            const sidebarToggle = document.getElementById('sidebarToggle');
-            if (sidebarToggle) sidebarToggle.addEventListener('click', toggleSidebar);
-            applySidebarState();
             loadMasterKH();
         });
 
-        async function logout() {
-            try {
-                const res = await fetch('/logout', { method: 'POST' });
-                if (res.redirected) window.location.href = res.url;
-                else window.location.href = '/login';
-            } catch (e) {
-                window.location.href = '/login';
+        // --- Loading state helper ---
+        function showLoading(elemId) {
+            const container = document.getElementById(elemId);
+            container.innerHTML = `
+                <div class="flex flex-col items-center justify-center py-8 text-on-surface-variant">
+                    <span class="material-symbols-outlined loading-spinner text-3xl text-primary mb-2">progress_activity</span>
+                    <span class="text-sm">Đang tải...</span>
+                </div>`;
+        }
+
+        // --- Empty state helper ---
+        function showEmpty(elemId, type) {
+            const container = document.getElementById(elemId);
+            if (type === 'khach-hang') {
+                container.innerHTML = `
+                    <div class="flex flex-col items-center justify-center py-10 text-on-surface-variant">
+                        <span class="material-symbols-outlined text-4xl mb-3 opacity-40">group_off</span>
+                        <p class="text-sm font-medium mb-1">Chưa có khách hàng nào</p>
+                        <p class="text-xs opacity-70">Nhập tên khách hàng ở trên để bắt đầu thêm mới.</p>
+                    </div>`;
+            } else if (type === 'ma-hang') {
+                container.innerHTML = `
+                    <div class="flex flex-col items-center justify-center py-10 text-on-surface-variant">
+                        <span class="material-symbols-outlined text-4xl mb-3 opacity-40">inventory_2</span>
+                        <p class="text-sm font-medium mb-1">Chưa có mã hàng nào</p>
+                        <p class="text-xs opacity-70">Nhập tên mã hàng ở trên để thêm cho khách hàng đã chọn.</p>
+                    </div>`;
+            } else {
+                container.innerHTML = `
+                    <div class="flex flex-col items-center justify-center py-10 text-on-surface-variant">
+                        <span class="material-symbols-outlined text-4xl mb-3 opacity-40">touch_app</span>
+                        <p class="text-sm font-medium">Vui lòng chọn khách hàng</p>
+                    </div>`;
             }
         }
 
-        function showToast(msg, type = 'success') {
-            const t = document.getElementById('toast');
-            const msgEl = document.getElementById('toastMessage');
-            const iconEl = document.getElementById('toastIcon');
-            
-            msgEl.textContent = msg;
-            
-            if(type === 'success') {
-                t.className = 'toast toast-success show flex items-center gap-3';
-                iconEl.textContent = 'check_circle';
-            } else {
-                t.className = 'toast toast-error show flex items-center gap-3';
-                iconEl.textContent = 'error';
+        // --- Update count badge ---
+        function updateCount(badgeId, count) {
+            const badge = document.getElementById(badgeId);
+            badge.textContent = count;
+            badge.style.display = count > 0 ? 'inline-flex' : 'none';
+        }
+
+        // --- Highlight selected customer in left list ---
+        function highlightSelectedCustomer() {
+            const selVal = document.getElementById('selKH').value;
+            document.querySelectorAll('#listKH .list-item').forEach(el => {
+                if (el.dataset.id === selVal) {
+                    el.classList.add('list-item-selected');
+                } else {
+                    el.classList.remove('list-item-selected');
+                }
+            });
+        }
+
+        function onCustomerSelected() {
+            const selKH = document.getElementById('selKH');
+            highlightSelectedCustomer();
+            // Clear search for mã hàng
+            const searchMH = document.getElementById('searchMH');
+            if (searchMH) searchMH.value = '';
+            loadMasterSubItems('ma-hang', selKH.value, 'listMH');
+        }
+
+        // --- Client-side search/filter ---
+        function filterList(listId, query) {
+            const items = document.querySelectorAll(`#${listId} .list-item`);
+            const q = query.toLowerCase().trim();
+            let visibleCount = 0;
+            items.forEach(el => {
+                const name = (el.dataset.name || '').toLowerCase();
+                const match = !q || name.includes(q);
+                el.style.display = match ? '' : 'none';
+                if (match) visibleCount++;
+            });
+        }
+
+        // --- Inline delete confirm ---
+        let deleteTimers = {};
+        function requestDelete(type, id, listElementId, btnEl) {
+            const key = `${type}-${id}`;
+            // If already in confirm state, execute delete
+            if (btnEl.dataset.confirmState === 'yes') {
+                clearTimeout(deleteTimers[key]);
+                delete deleteTimers[key];
+                executeMasterDelete(type, id, listElementId);
+                return;
             }
-            
-            setTimeout(() => { t.classList.remove('show'); }, 3000);
+            // Enter confirm state
+            btnEl.dataset.confirmState = 'yes';
+            btnEl.classList.add('btn-delete-confirm');
+            btnEl.innerHTML = 'Xóa?';
+            // Revert after 3 seconds
+            deleteTimers[key] = setTimeout(() => {
+                btnEl.dataset.confirmState = '';
+                btnEl.classList.remove('btn-delete-confirm');
+                btnEl.innerHTML = '<span class="material-symbols-outlined text-[18px]">delete</span>';
+                delete deleteTimers[key];
+            }, 3000);
         }
 
         async function loadMasterKH() {
+            showLoading('listKH');
             try {
                 const res = await fetch('/api/dm/khach-hang');
                 const data = await res.json();
+
+                updateCount('countKH', data.rows ? data.rows.length : 0);
+
                 renderMasterList('listKH', data.rows, 'khach-hang', (id) => {
                     if (document.getElementById('selKH').value === id.toString()) {
-                        document.getElementById('listMH').innerHTML = '<p class="p-4 text-center text-sm font-medium text-on-surface-variant">Vui lòng chọn khách hàng</p>';
+                        showEmpty('listMH', 'select');
+                        updateCount('countMH', 0);
                     }
                     loadMasterKH();
                 });
-                
+
+                // Re-apply search filter if active
+                const searchKH = document.getElementById('searchKH');
+                if (searchKH && searchKH.value) filterList('listKH', searchKH.value);
+
                 const selKH = document.getElementById('selKH');
                 const prevVal = selKH.value;
                 selKH.innerHTML = '<option value="">-- Chọn khách hàng --</option>';
@@ -246,42 +272,74 @@
                     selKH.appendChild(opt);
                 });
                 selKH.value = prevVal;
+
+                highlightSelectedCustomer();
             } catch (e) { console.error(e); }
         }
 
         async function loadMasterSubItems(apiType, parentId, listElementId) {
             const list = document.getElementById(listElementId);
             if (!parentId) {
-                list.innerHTML = `<p class="p-4 text-center text-sm font-medium text-on-surface-variant">Vui lòng chọn mục cha</p>`;
+                showEmpty(listElementId, 'select');
+                updateCount('countMH', 0);
                 return;
             }
-            
+
+            showLoading(listElementId);
             let url = `/api/dm/${apiType}?khach_hang_id=${parentId}`;
 
             try {
                 const res = await fetch(url);
                 const data = await res.json();
+
+                updateCount('countMH', data.rows ? data.rows.length : 0);
+
                 renderMasterList(listElementId, data.rows, apiType, () => loadMasterSubItems(apiType, parentId, listElementId));
+
+                // Re-apply search filter if active
+                const searchMH = document.getElementById('searchMH');
+                if (searchMH && searchMH.value) filterList(listElementId, searchMH.value);
             } catch (e) { console.error(e); }
         }
 
         function renderMasterList(elemId, rows, type, onUpdatedSource) {
             const container = document.getElementById(elemId);
             if (!rows || rows.length === 0) {
-                container.innerHTML = '<p class="p-4 text-center text-sm font-medium text-on-surface-variant">Chưa có dữ liệu</p>';
+                showEmpty(elemId, type);
                 return;
             }
 
             const nameKey = type === 'khach-hang' ? 'ten_khach_hang' : 'ten_ma_hang';
+            const selVal = document.getElementById('selKH').value;
 
-            container.innerHTML = rows.map(r => `
-                <div class="flex items-center justify-between px-4 py-3 bg-surface-lowest rounded-xl group transition-all hover:shadow-[0_2px_8px_rgba(25,28,29,0.04)]">
+            container.innerHTML = rows.map(r => {
+                const isSelected = type === 'khach-hang' && selVal === r.id.toString();
+                return `
+                <div class="list-item flex items-center justify-between px-4 py-3 bg-surface-lowest rounded-xl group transition-all hover:shadow-[0_2px_8px_rgba(25,28,29,0.04)] ${isSelected ? 'list-item-selected' : ''}"
+                     data-id="${r.id}" data-name="${r[nameKey]}">
                     <span class="font-semibold text-on-surface text-sm">${r[nameKey]}</span>
-                    <button onclick="deleteMasterItem('${type}', ${r.id}, '${elemId}')" class="h-8 w-8 text-on-surface-variant hover:text-[crimson] hover:bg-error-container rounded-full opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                    <button onclick="requestDelete('${type}', ${r.id}, '${elemId}', this)"
+                            class="h-8 w-8 text-on-surface-variant hover:text-[crimson] hover:bg-error-container rounded-full opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
                         <span class="material-symbols-outlined text-[18px]">delete</span>
                     </button>
-                </div>
-            `).join('');
+                </div>`;
+            }).join('');
+        }
+
+        async function executeMasterDelete(type, id, listElementId) {
+            try {
+                const res = await fetch(`/api/dm/${type}/${id}`, { method: 'DELETE' });
+                if (res.ok) {
+                    showToast('Đã xoá thành công!');
+                    if (type === 'khach-hang') loadMasterKH();
+                    else loadMasterSubItems(type, document.getElementById('selKH').value, 'listMH');
+                } else {
+                    const err = await res.json();
+                    showToast(err.detail || 'Lỗi khi xoá', 'error');
+                }
+            } catch (e) {
+                showToast('Lỗi kết nối', 'error');
+            }
         }
 
         async function addMasterItem(type, inputId) {
@@ -298,6 +356,7 @@
                 });
                 if (res.ok) {
                     input.value = '';
+                    showToast('Đã thêm khách hàng thành công!', 'success');
                     loadMasterKH();
                 }
             } catch (e) { console.error(e); }
@@ -322,29 +381,16 @@
                 });
                 if (res.ok) {
                     input.value = '';
+                    showToast('Đã thêm mã hàng thành công!', 'success');
                     loadMasterSubItems(type, parentId, 'listMH');
                 }
             } catch (e) { console.error(e); }
         }
 
+        // Keep deleteMasterItem for backward compat but no longer called directly
         async function deleteMasterItem(type, id, listElementId) {
-            if (!confirm('Bạn có chắc chắn muốn xoá mục này không? Các dữ liệu liên quan có thể bị ảnh hưởng.')) return;
-            try {
-                const res = await fetch(`/api/dm/${type}/${id}`, { method: 'DELETE' });
-                if (res.ok) {
-                    showToast('Đã xoá thành công!');
-                    if (type === 'khach-hang') loadMasterKH();
-                    else loadMasterSubItems(type, document.getElementById('selKH').value, 'listMH');
-                } else {
-                    const err = await res.json();
-                    showToast(err.detail || 'Lỗi khi xoá', 'error');
-                }
-            } catch (e) { 
-                showToast('Lỗi kết nối', 'error');
-            }
+            executeMasterDelete(type, id, listElementId);
         }
     </script>
 </body>
 </html>
-
-

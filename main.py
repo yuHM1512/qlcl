@@ -267,6 +267,17 @@ def decode_ma_nv_cookie(value: Optional[str]) -> str:
         return value
 
 
+def normalize_bo_phan_value(value: Optional[str]) -> str:
+    """Normalize team input so 'To 3'/'Tổ 3' become '3'."""
+    raw = (value or "").strip()
+    if not raw:
+        return ""
+    match = re.search(r"(\d+)", raw)
+    if match:
+        return match.group(1)
+    return raw
+
+
 def get_authenticated_user(request: Request, qc_only: bool = False) -> Optional[Dict]:
     """Lấy thông tin nhân viên từ cookie; trả về None nếu chưa đăng nhập hoặc cookie không hợp lệ."""
     ma_nv_cookie = request.cookies.get("ma_nv")
@@ -2703,7 +2714,7 @@ def qc_page(request: Request):
         return RedirectResponse(url="/qc/dashboard", status_code=303)
     return templates.TemplateResponse(
         "qc.html",
-        build_qc_template_context(request, user_data, don_vi_options=DON_VI_OPTIONS),
+        build_qc_template_context(request, user_data, don_vi_options=DON_VI_OPTIONS, page_subtitle="Kế hoạch sản xuất", active_page="plan"),
     )
 
 
@@ -2756,7 +2767,7 @@ def qc_input_page(request: Request):
 
     return templates.TemplateResponse(
         "qc_input_sp.html",
-        build_qc_template_context(request, user_data, don_vi_options=DON_VI_OPTIONS),
+        build_qc_template_context(request, user_data, don_vi_options=DON_VI_OPTIONS, page_subtitle="Nhập liệu QC", active_page="input"),
     )
 
 
@@ -2773,7 +2784,7 @@ def qc_settings_customer(request: Request):
         return RedirectResponse(url="/qc", status_code=303)
     return templates.TemplateResponse(
         "qc_settings_customer.html",
-        build_qc_template_context(request, user),
+        build_qc_template_context(request, user, page_subtitle="Khách hàng & Mã hàng", active_page="settings_customer"),
     )
 
 @app.get("/qc/settings/details")
@@ -2785,7 +2796,7 @@ def qc_settings_details(request: Request):
         return RedirectResponse(url="/qc", status_code=303)
     return templates.TemplateResponse(
         "qc_settings_details.html",
-        build_qc_template_context(request, user),
+        build_qc_template_context(request, user, page_subtitle="Bộ phận & Chi tiết", active_page="settings_details"),
     )
 
 @app.get("/qc/settings/qc-list")
@@ -2797,7 +2808,7 @@ def qc_settings_qc_list(request: Request):
         return RedirectResponse(url="/qc", status_code=303)
     return templates.TemplateResponse(
         "qc_settings_qcs.html",
-        build_qc_template_context(request, user, don_vi_options=DON_VI_OPTIONS),
+        build_qc_template_context(request, user, don_vi_options=DON_VI_OPTIONS, page_subtitle="Danh sách QC", active_page="settings_qcs"),
     )
 
 @app.get("/qc/cap")
@@ -2805,14 +2816,17 @@ def qc_cap_page(request: Request):
     user = get_authenticated_user(request)
     if not user:
         return redirect_to_login_for_current_path(request)
-    return templates.TemplateResponse("cap.html", build_qc_template_context(request, user))
+    return templates.TemplateResponse("cap.html", build_qc_template_context(request, user, page_subtitle="Hành động khắc phục", active_page="cap"))
 
 @app.get("/qc/dashboard")
 def qc_dashboard_page(request: Request):
     user = get_authenticated_user(request)
     if not user:
         return redirect_to_login_for_current_path(request)
-    return templates.TemplateResponse("qc_dashboard.html", build_qc_template_context(request, user))
+    return templates.TemplateResponse(
+        "qc_dashboard.html",
+        build_qc_template_context(request, user, page_subtitle="Dashboard tỉ lệ lỗi", active_page="dashboard"),
+    )
 
 @app.get("/api/qc/dashboard/filters")
 def api_qc_dashboard_filters(
@@ -3570,6 +3584,7 @@ def get_qc_employees():
 
 @app.post("/api/qc/employees")
 def upsert_qc_employee(payload: QCEmployee):
+    bo_phan = normalize_bo_phan_value(payload.bo_phan)
     with get_db_connection() as conn:
         with conn.cursor() as cur:
             cur.execute("SELECT ma_nv FROM public.quality_employees WHERE ma_nv = %s", (payload.ma_nv,))
@@ -3579,12 +3594,12 @@ def upsert_qc_employee(payload: QCEmployee):
                     UPDATE public.quality_employees
                     SET ho_ten = %s, chuc_vu = %s, don_vi = %s, bo_phan = %s, station = %s
                     WHERE ma_nv = %s
-                """, (payload.ho_ten, payload.chuc_vu, payload.don_vi, payload.bo_phan, json.dumps(payload.station or []), payload.ma_nv))
+                """, (payload.ho_ten, payload.chuc_vu, payload.don_vi, bo_phan, json.dumps(payload.station or []), payload.ma_nv))
             else:
                 cur.execute("""
                     INSERT INTO public.quality_employees (ma_nv, ho_ten, chuc_vu, don_vi, bo_phan, station)
                     VALUES (%s, %s, %s, %s, %s, %s)
-                """, (payload.ma_nv, payload.ho_ten, payload.chuc_vu, payload.don_vi, payload.bo_phan, json.dumps(payload.station or [])))
+                """, (payload.ma_nv, payload.ho_ten, payload.chuc_vu, payload.don_vi, bo_phan, json.dumps(payload.station or [])))
         conn.commit()
     return {"status": "ok"}
 
@@ -5510,6 +5525,105 @@ def api_push_from_hanging_line(request: Request, payload: dict):
     }
 
 
+@app.post("/api/qc/employees/push-from-hl")
+def api_push_qc_employees_from_hanging_line(request: Request, payload: dict):
+    """Receive employee/operation assignments from hanging-line apps.
+
+    Body:
+      {
+        "don_vi": "XN2",
+        "employees": [
+          {"ma_nv": "A001", "ho_ten": "...", "bo_phan": "Tổ 3",
+           "station": ["Odr 1 - CẤP PHÔI", ...]}
+        ]
+      }
+    """
+    if _PUSH_API_KEY and request.headers.get("X-API-Key") != _PUSH_API_KEY:
+        raise HTTPException(status_code=403, detail="API key không hợp lệ")
+
+    don_vi = str(payload.get("don_vi") or "").strip()
+    employees = payload.get("employees") or []
+    replace_station_scope = bool(payload.get("replace_station_scope"))
+    if not don_vi:
+        raise HTTPException(status_code=422, detail="Thiếu don_vi")
+    if not isinstance(employees, list):
+        raise HTTPException(status_code=422, detail="employees phải là list")
+
+    inserted = updated = skipped = 0
+    warnings: list[str] = []
+
+    with get_db_connection() as conn:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            if replace_station_scope:
+                cur.execute(
+                    """
+                    UPDATE public.quality_employees
+                    SET station = '[]'::jsonb
+                    WHERE chuc_vu = 'QC' AND don_vi = %s
+                    """,
+                    (don_vi,),
+                )
+            for row in employees:
+                ma_nv = str(row.get("ma_nv") or "").strip()
+                ho_ten = str(row.get("ho_ten") or "").strip()
+                bo_phan = normalize_bo_phan_value(str(row.get("bo_phan") or "").strip())
+                raw_station = row.get("station") or []
+                if isinstance(raw_station, str):
+                    station_list = [raw_station.strip()] if raw_station.strip() else []
+                else:
+                    station_list = [
+                        str(item).strip()
+                        for item in raw_station
+                        if str(item or "").strip()
+                    ]
+
+                if not ma_nv or not ho_ten:
+                    skipped += 1
+                    warnings.append("Bỏ qua 1 nhân viên vì thiếu ma_nv/ho_ten")
+                    continue
+
+                cur.execute(
+                    "SELECT station FROM public.quality_employees WHERE ma_nv = %s",
+                    (ma_nv,),
+                )
+                existing = cur.fetchone()
+                if existing:
+                    cur.execute(
+                        """
+                        UPDATE public.quality_employees
+                        SET ho_ten = %s,
+                            chuc_vu = 'QC',
+                            don_vi = %s,
+                            bo_phan = %s,
+                            station = %s::jsonb
+                        WHERE ma_nv = %s
+                        """,
+                        (ho_ten, don_vi, bo_phan, json.dumps(sorted(set(station_list))), ma_nv),
+                    )
+                    updated += 1
+                else:
+                    cur.execute(
+                        """
+                        INSERT INTO public.quality_employees
+                            (ma_nv, ho_ten, chuc_vu, don_vi, bo_phan, station)
+                        VALUES (%s, %s, 'QC', %s, %s, %s::jsonb)
+                        """,
+                        (ma_nv, ho_ten, don_vi, bo_phan, json.dumps(sorted(set(station_list)))),
+                    )
+                    inserted += 1
+
+        conn.commit()
+
+    return {
+        "status": "ok",
+        "don_vi": don_vi,
+        "inserted": inserted,
+        "updated": updated,
+        "skipped": skipped,
+        "warnings": warnings[:20],
+    }
+
+
 @app.delete("/api/prod-plan/{plan_id}")
 def api_prod_plan_delete(plan_id: int):
     """Delete a prod_plan entry."""
@@ -5780,12 +5894,12 @@ def qc_settings_visual_picker_page(request: Request):
     if (user.get("department") or "").upper() != "QAQT":
         return templates.TemplateResponse(
             "qc_settings_visual_picker.html",
-            build_qc_template_context(request, user, forbidden=True),
+            build_qc_template_context(request, user, forbidden=True, page_subtitle="Sắp xếp vị trí", active_page="settings_visual"),
             status_code=403,
         )
     return templates.TemplateResponse(
         "qc_settings_visual_picker.html",
-        build_qc_template_context(request, user, forbidden=False),
+        build_qc_template_context(request, user, forbidden=False, page_subtitle="Sắp xếp vị trí", active_page="settings_visual"),
     )
 
 

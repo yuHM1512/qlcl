@@ -1,0 +1,43 @@
+{# ============================================================
+   _header.html — Unified header partial for QC module
+
+   Required context variables:
+     - page_subtitle: string — e.g. "Kế hoạch sản xuất", "Dashboard"
+     - user: dict|None — user object with .name, .don_vi, .bo_phan
+   ============================================================ #}
+
+<header class="glass-header sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
+        <div class="flex items-center gap-4">
+            <button id="sidebarToggle"
+                    class="flex items-center justify-center w-10 h-10 rounded-full bg-surface-lowest shadow-sm hover:shadow-cloud transition text-on-surface-variant"
+                    title="Thu gọn / Mở rộng menu">
+                <span class="material-symbols-outlined">menu</span>
+            </button>
+            <a href="/"
+               class="flex items-center justify-center w-10 h-10 rounded-full bg-surface-lowest shadow-sm hover:shadow-cloud transition text-on-surface-variant"
+               title="Về trang chính">
+                <span class="material-symbols-outlined">arrow_back</span>
+            </a>
+            <div>
+                <h1 class="text-xl font-display font-bold tracking-tight text-on-surface">QC Inline/Endline</h1>
+                <p class="text-xs font-medium text-on-surface-variant mt-0.5">{{ page_subtitle }}</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-3">
+            {% if user %}
+            <div class="text-right hidden sm:block">
+                <div class="text-sm font-semibold text-on-surface">{{ user.name }}</div>
+                <div class="text-[11px] text-on-surface-variant mt-0.5">{{ user.don_vi }} · {{ user.bo_phan }}</div>
+            </div>
+            <div class="h-10 w-10 rounded-full bg-surface-low flex items-center justify-center">
+                <span class="material-symbols-outlined text-primary text-[20px]">person</span>
+            </div>
+            <button onclick="logout()" class="btn-tertiary px-3 py-2 font-semibold text-sm flex items-center gap-1.5" title="Đăng xuất">
+                <span class="material-symbols-outlined text-[18px]">logout</span>
+                <span class="hidden sm:inline">Đăng xuất</span>
+            </button>
+            {% endif %}
+        </div>
+    </div>
+</header>

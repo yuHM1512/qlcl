@@ -1,132 +1,64 @@
-﻿﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Danh sách QC - QC Settings</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@500;700;800&display=swap" rel="stylesheet" />
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                        display: ['Manrope', 'sans-serif'],
-                    },
-                    colors: {
-                        surface: '#f8f9fa',
-                        'surface-lowest': '#ffffff',
-                        'surface-low': '#f3f4f6', 
-                        'surface-high': '#e7e8e9',
-                        'on-surface': '#191c1d',
-                        'on-surface-variant': '#424654',
-                        primary: '#0040a1',
-                        'primary-container': '#0056d2',
-                        'secondary-container': '#9cb4fe',
-                        'error-container': '#ffdad6',
-                    },
-                    boxShadow: {
-                        'cloud': '0px 20px 40px rgba(25, 28, 29, 0.05)',
-                    }
-                }
-            }
-        }
-    </script>
+    {% include '_base_styles.html' %}
     <style>
-        body { background-color: #f8f9fa; color: #191c1d; }
-        .glass-header { background: rgba(248, 249, 250, 0.8); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); }
-        .btn-primary { background: linear-gradient(135deg, #0040a1 0%, #0056d2 100%); color: #ffffff; border-radius: 0.75rem; transition: all 0.3s ease; }
-        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0px 8px 16px rgba(0, 64, 161, 0.2); }
-        .btn-tertiary { background: transparent; color: #0040a1; border-radius: 0.75rem; transition: all 0.3s ease; }
-        .btn-tertiary:hover { background-color: #f3f4f6; }
-        .input-field { background-color: #f3f4f6; border: none; border-radius: 0.75rem; padding: 12px 16px; font-size: 14px; color: #191c1d; transition: all 0.2s; width: 100%; }
-        .input-field:focus { outline: none; background-color: #ffffff; box-shadow: 0 0 0 1px rgba(0, 64, 161, 0.3); }
-        select.input-field { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23424654' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 16px center; padding-right: 40px; }
-        .toast { position: fixed; bottom: 32px; right: 32px; z-index: 200; padding: 16px 24px; border-radius: 0.75rem; font-size: 14px; font-weight: 500; color: #191c1d; transform: translateY(80px); opacity: 0; transition: all .3s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 0px 20px 40px rgba(25, 28, 29, 0.1); }
-        .toast.show { transform: translateY(0); opacity: 1; }
-        .toast-success { background: #9cb4fe; }
-        .toast-error { background: #ffdad6; }
-        @media (min-width: 768px) {
-            body.sidebar-collapsed aside {
-                width: 72px;
-            }
-            body.sidebar-collapsed aside a,
-            body.sidebar-collapsed aside button {
-                justify-content: center;
-                padding-left: 0.75rem;
-                padding-right: 0.75rem;
-                font-size: 0;
-            }
-            body.sidebar-collapsed aside span:not(.material-symbols-outlined) {
-                display: none;
-            }
-            body.sidebar-collapsed aside .material-symbols-outlined {
-                margin-right: 0;
-                font-size: 20px;
-            }
-            body.sidebar-collapsed aside #submenu-settings {
-                display: none !important;
-            }
+        .station-dropdown { position: relative; }
+        .station-trigger { width: 100%; min-height: 48px; border: none; border-radius: 0.75rem; padding: 12px 16px; background: #f3f4f6; color: #191c1d; display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 14px; font-weight: 500; text-align: left; }
+        .station-trigger-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .station-panel { position: absolute; top: calc(100% + 8px); left: 0; right: 0; z-index: 30; display: none; background: #ffffff; border-radius: 1rem; padding: 12px; box-shadow: 0px 20px 40px rgba(25, 28, 29, 0.12); }
+        .station-panel.open { display: block; }
+        .station-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+        .station-option { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; color: #424654; background: #f8f9fa; border-radius: 0.75rem; padding: 10px 12px; }
+
+        /* Filter chips */
+        .filter-chip {
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 6px 14px; border-radius: 9999px;
+            font-size: 13px; font-weight: 600;
+            background: #f3f4f6; color: #424654;
+            border: 1.5px solid transparent;
+            cursor: pointer; transition: all 0.15s ease;
+            user-select: none; white-space: nowrap;
+        }
+        .filter-chip:hover { background: #e7e8e9; }
+        .filter-chip.active {
+            background: #0040a1; color: #fff; border-color: #0040a1;
+        }
+
+        /* Loading spinner */
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-spin { animation: spin 0.8s linear infinite; }
+
+        /* Validation flash */
+        @keyframes flash-red {
+            0%, 100% { border-color: transparent; }
+            20%, 80% { border-color: #ef4444; }
+        }
+        .field-invalid {
+            animation: flash-red 0.6s ease;
+            border: 2px solid #ef4444 !important;
+        }
+
+        /* Delete confirm state */
+        .delete-confirm {
+            background: #ef4444 !important;
+            color: #fff !important;
+        }
+        .delete-confirm .material-symbols-outlined {
+            color: #fff !important;
         }
     </style>
 </head>
 <body class="font-sans antialiased min-h-screen pb-16">
-    <header class="glass-header sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-6 py-6 flex items-center justify-between">
-            <div class="flex items-center gap-6">
-                <button id="sidebarToggle" class="flex items-center justify-center w-10 h-10 rounded-full bg-surface-lowest shadow-sm hover:shadow-cloud transition text-on-surface-variant" title="Thu gọn / Mở rộng menu">
-                    <span class="material-symbols-outlined">menu</span>
-                </button>
-                <a href="/" class="flex items-center justify-center w-10 h-10 rounded-full bg-surface-lowest shadow-sm hover:shadow-cloud transition text-on-surface-variant">
-                    <span class="material-symbols-outlined">arrow_back</span>
-                </a>
-                <div>
-                    <h1 class="text-2xl font-display font-bold tracking-tight text-on-surface">QC Inline/Endline</h1>
-                    <p class="text-sm font-medium text-on-surface-variant mt-1">Cài đặt danh mục</p>
-                </div>
-            </div>
-            <div class="flex items-center gap-4">
-                <button onclick="logout()" class="btn-tertiary px-4 py-2 font-semibold text-sm flex items-center gap-2" title="Đăng xuất">
-                    <span class="material-symbols-outlined text-sm">logout</span> Đăng xuất
-                </button>
-            </div>
-        </div>
-    </header>
+    {% include '_header.html' %}
 
-    <div class="max-w-7xl mx-auto px-6 mt-12 flex flex-col md:flex-row gap-12">
-        <aside class="w-full md:w-64 shrink-0">
-            <div class="bg-surface-lowest rounded-2xl p-4 sticky top-32 shadow-cloud">
-                <a href="/qc" class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-low font-semibold transition mb-2">
-                    <span class="material-symbols-outlined">inventory_2</span>
-                    Kế hoạch sản xuất
-                </a>
-                <a href="/qc/dashboard" class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-low font-semibold transition mb-2">
-                    <span class="material-symbols-outlined">dashboard</span>
-                    Dashboard
-                </a>
-<a href="/qc/cap" class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-low font-semibold transition mb-2">
-    <span class="material-symbols-outlined">task_alt</span>
-    Hành động khắc phục
-</a>
-                <div>
-                    <button class="w-full flex items-center justify-between px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-low font-semibold transition">
-                        <div class="flex items-center gap-3">
-                            <span class="material-symbols-outlined text-primary">settings</span>
-                            <span class="text-primary">Cài đặt danh mục</span>
-                        </div>
-                        <span class="material-symbols-outlined text-sm text-primary">expand_more</span>
-                    </button>
-                    <div id="submenu-settings" class="flex flex-col pl-11 pr-4 py-2 space-y-2 mt-1">
-                        <a href="/qc/settings/customer" class="block py-1.5 text-sm font-medium text-on-surface-variant hover:text-primary transition">Khách hàng - Mã hàng</a>
-                        <a href="/qc/settings/details" class="block py-1.5 text-sm font-medium text-on-surface-variant hover:text-primary transition">Bộ phận - Chi tiết</a>
-                        <a href="/qc/settings/qc-list" class="block py-1.5 text-sm font-bold text-primary transition">Danh sách QC</a>
-                        <a href="/qc/settings/visual-picker" class="block py-1.5 text-sm font-medium text-on-surface-variant hover:text-primary transition">Sắp xếp vị trí</a>
-                    </div>
-                </div>
-            </div>
-        </aside>
+    <div class="max-w-7xl mx-auto px-6 mt-10 flex flex-col lg:flex-row gap-10">
+        {% include '_sidebar.html' %}
 
         <main class="flex-1 min-w-0">
             <div class="flex flex-col items-start gap-6 mb-12">
@@ -138,8 +70,15 @@
 
             <div class="bg-surface-lowest rounded-2xl p-8 shadow-cloud">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+                    <!-- Left panel: Form -->
                     <div class="bg-surface rounded-2xl p-6">
-                        <h4 class="text-xs font-bold text-on-surface-variant mb-6 tracking-wide">THÔNG TIN QC MỚI / SỬA</h4>
+                        <div class="flex items-center justify-between mb-6">
+                            <h4 id="formTitle" class="text-xs font-bold text-on-surface-variant tracking-wide">THÔNG TIN QC MỚI</h4>
+                            <button id="btnCancelEdit" onclick="cancelEdit()" class="hidden items-center gap-1 text-xs font-semibold text-[crimson] hover:text-red-700 transition cursor-pointer">
+                                <span class="material-symbols-outlined text-[16px]">close</span>
+                                Hủy sửa
+                            </button>
+                        </div>
                         <div class="space-y-5">
                             <div class="grid grid-cols-2 gap-5">
                                 <div>
@@ -171,30 +110,63 @@
                                 </div>
                                 <div class="col-span-2">
                                     <label class="block text-xs font-semibold text-on-surface-variant mb-2 tracking-wide">TRẠM</label>
-                                    <div id="stationChoices" class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                        <label class="flex items-center gap-2 text-sm font-semibold text-on-surface-variant bg-surface-lowest rounded-xl px-3 py-2 shadow-sm">
-                                            <input type="checkbox" name="qcStation" value="Trạm trước seam">
-                                            Trạm trước seam
-                                        </label>
-                                        <label class="flex items-center gap-2 text-sm font-semibold text-on-surface-variant bg-surface-lowest rounded-xl px-3 py-2 shadow-sm">
-                                            <input type="checkbox" name="qcStation" value="Trạm sau seam">
-                                            Trạm sau seam
-                                        </label>
-                                        <label class="flex items-center gap-2 text-sm font-semibold text-on-surface-variant bg-surface-lowest rounded-xl px-3 py-2 shadow-sm">
-                                            <input type="checkbox" name="qcStation" value="Trạm cuối chuyền">
-                                            Trạm cuối chuyền
-                                        </label>
+                                    <div class="station-dropdown">
+                                        <button type="button" id="stationTrigger" class="station-trigger" onclick="toggleStationDropdown()">
+                                            <span id="stationTriggerLabel" class="station-trigger-label">Chọn trạm</span>
+                                            <span class="material-symbols-outlined text-[20px]">expand_more</span>
+                                        </button>
+                                        <div id="stationPanel" class="station-panel">
+                                            <div id="stationChoices" class="station-options">
+                                                <label class="station-option">
+                                                    <input type="checkbox" name="qcStation" value="Trạm trước seam">
+                                                    Trạm trước seam
+                                                </label>
+                                                <label class="station-option">
+                                                    <input type="checkbox" name="qcStation" value="Trạm sau seam">
+                                                    Trạm sau seam
+                                                </label>
+                                                <label class="station-option">
+                                                    <input type="checkbox" name="qcStation" value="Trạm cuối chuyền">
+                                                    Trạm cuối chuyền
+                                                </label>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                            <button onclick="saveQCEmployee()" class="w-full btn-primary py-3 font-semibold text-sm mt-4">Lưu thông tin QC</button>
+                            <div class="flex gap-3 mt-4">
+                                <button id="btnSubmit" onclick="saveQCEmployee()" class="flex-1 btn-primary py-3 font-semibold text-sm flex items-center justify-center gap-2">
+                                    <span class="material-symbols-outlined text-[18px]" id="btnSubmitIcon">person_add</span>
+                                    <span id="btnSubmitLabel">Lưu thông tin QC</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
-                    
+
+                    <!-- Right panel: List -->
                     <div class="bg-surface rounded-2xl p-6 flex flex-col">
-                        <h4 class="text-xs font-bold text-on-surface-variant mb-6 tracking-wide">DANH SÁCH QC</h4>
+                        <div class="flex items-center justify-between mb-4">
+                            <h4 class="text-xs font-bold text-on-surface-variant tracking-wide">
+                                DANH SÁCH QC <span id="qcCount" class="text-on-surface-variant"></span>
+                            </h4>
+                        </div>
+
+                        <!-- Search -->
+                        <div class="relative mb-3">
+                            <span class="material-symbols-outlined text-[20px] text-on-surface-variant absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">search</span>
+                            <input type="text" id="searchInput" class="input-field w-full pl-10 pr-4" placeholder="Tìm theo mã NV hoặc tên..." oninput="applyFilters()">
+                        </div>
+
+                        <!-- Filter chips by don vi -->
+                        <div id="filterChips" class="flex flex-wrap gap-2 mb-4">
+                            <!-- Populated dynamically -->
+                        </div>
+
                         <div id="listQC" class="flex-1 overflow-y-auto max-h-[500px] space-y-2 pr-2">
-                            <div class="text-center text-on-surface-variant py-8 font-medium">Đang tải...</div>
+                            <div class="flex flex-col items-center justify-center py-12 text-on-surface-variant">
+                                <span class="material-symbols-outlined text-[36px] loading-spin mb-3">progress_activity</span>
+                                <span class="text-sm font-medium">Đang tải danh sách...</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -202,63 +174,44 @@
         </main>
     </div>
 
-    <div id="toast" class="toast flex items-center gap-3">
-        <span class="material-symbols-outlined" id="toastIcon">info</span>
-        <span id="toastMessage"></span>
-    </div>
+    {% include '_toast.html' %}
+    {% include '_base_scripts.html' %}
 
     <script>
-        const sidebarKey = 'qlcl_sidebar_collapsed';
-        function applySidebarState() {
-            const collapsed = localStorage.getItem(sidebarKey) === '1';
-            document.body.classList.toggle('sidebar-collapsed', collapsed);
-            const icon = document.querySelector('#sidebarToggle .material-symbols-outlined');
-            if (icon) icon.textContent = collapsed ? 'menu_open' : 'menu';
-        }
-        function toggleSidebar() {
-            const collapsed = localStorage.getItem(sidebarKey) === '1';
-            localStorage.setItem(sidebarKey, collapsed ? '0' : '1');
-            applySidebarState();
-        }
+        let allEmployees = [];
+        let activeFilterDonVi = '';
+        let isEditMode = false;
+        let editingMaNV = '';
 
         document.addEventListener('DOMContentLoaded', () => {
-            const sidebarToggle = document.getElementById('sidebarToggle');
-            if (sidebarToggle) sidebarToggle.addEventListener('click', toggleSidebar);
-            applySidebarState();
             loadQCEmployees();
+
+            // Enter key on bo phan field submits form
+            document.getElementById('fQCBoPhan').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    saveQCEmployee();
+                }
+            });
         });
-
-        async function logout() {
-            try {
-                const res = await fetch('/logout', { method: 'POST' });
-                if (res.redirected) window.location.href = res.url;
-                else window.location.href = '/login';
-            } catch (e) {
-                window.location.href = '/login';
-            }
-        }
-
-        function showToast(msg, type = 'success') {
-            const t = document.getElementById('toast');
-            const msgEl = document.getElementById('toastMessage');
-            const iconEl = document.getElementById('toastIcon');
-            
-            msgEl.textContent = msg;
-            
-            if(type === 'success') {
-                t.className = 'toast toast-success show flex items-center gap-3';
-                iconEl.textContent = 'check_circle';
-            } else {
-                t.className = 'toast toast-error show flex items-center gap-3';
-                iconEl.textContent = 'error';
-            }
-            
-            setTimeout(() => { t.classList.remove('show'); }, 3000);
-        }
 
         function getSelectedStations() {
             return Array.from(document.querySelectorAll('input[name="qcStation"]:checked'))
                 .map(el => el.value);
+        }
+
+        function updateStationTriggerLabel() {
+            const list = getSelectedStations();
+            const el = document.getElementById('stationTriggerLabel');
+            if (!el) return;
+            el.textContent = list.length ? list.join(', ') : 'Chọn trạm';
+        }
+
+        function toggleStationDropdown(forceOpen = null) {
+            const panel = document.getElementById('stationPanel');
+            if (!panel) return;
+            const open = forceOpen === null ? !panel.classList.contains('open') : !!forceOpen;
+            panel.classList.toggle('open', open);
         }
 
         function setSelectedStations(stations) {
@@ -266,6 +219,7 @@
             document.querySelectorAll('input[name="qcStation"]').forEach(el => {
                 el.checked = list.includes(el.value);
             });
+            updateStationTriggerLabel();
         }
 
         function normalizeStations(raw) {
@@ -279,40 +233,154 @@
             return [];
         }
 
+        // --- Form mode management ---
+        function setEditMode(maNV) {
+            isEditMode = true;
+            editingMaNV = maNV;
+            document.getElementById('formTitle').textContent = 'SỬA THÔNG TIN QC';
+            document.getElementById('btnSubmitIcon').textContent = 'save';
+            document.getElementById('btnSubmitLabel').textContent = 'Cập nhật';
+            const cancelBtn = document.getElementById('btnCancelEdit');
+            cancelBtn.classList.remove('hidden');
+            cancelBtn.classList.add('inline-flex');
+        }
+
+        function cancelEdit() {
+            isEditMode = false;
+            editingMaNV = '';
+            document.getElementById('formTitle').textContent = 'THÔNG TIN QC MỚI';
+            document.getElementById('btnSubmitIcon').textContent = 'person_add';
+            document.getElementById('btnSubmitLabel').textContent = 'Lưu thông tin QC';
+            const cancelBtn = document.getElementById('btnCancelEdit');
+            cancelBtn.classList.add('hidden');
+            cancelBtn.classList.remove('inline-flex');
+            // Reset form
+            document.getElementById('fQCMaNV').value = '';
+            document.getElementById('fQCHoTen').value = '';
+            document.getElementById('fQCDonVi').value = '';
+            document.getElementById('fQCBoPhan').value = '';
+            setSelectedStations([]);
+            toggleStationDropdown(false);
+            // Remove validation highlights
+            ['fQCMaNV', 'fQCHoTen', 'fQCDonVi', 'fQCBoPhan'].forEach(id => {
+                document.getElementById(id).classList.remove('field-invalid');
+            });
+        }
+
+        // --- Filter chips ---
+        function buildFilterChips() {
+            const donViSet = new Set();
+            allEmployees.forEach(r => { if (r.don_vi) donViSet.add(r.don_vi); });
+            const sorted = Array.from(donViSet).sort();
+
+            const container = document.getElementById('filterChips');
+            if (sorted.length <= 1) {
+                container.innerHTML = '';
+                return;
+            }
+
+            let html = `<button class="filter-chip ${!activeFilterDonVi ? 'active' : ''}" onclick="setFilterDonVi('')">Tất cả</button>`;
+            for (const dv of sorted) {
+                html += `<button class="filter-chip ${activeFilterDonVi === dv ? 'active' : ''}" onclick="setFilterDonVi('${dv}')">${dv}</button>`;
+            }
+            container.innerHTML = html;
+        }
+
+        function setFilterDonVi(dv) {
+            activeFilterDonVi = dv;
+            buildFilterChips();
+            applyFilters();
+        }
+
+        // --- Search + filter ---
+        function applyFilters() {
+            const query = (document.getElementById('searchInput').value || '').trim().toLowerCase();
+            const filtered = allEmployees.filter(r => {
+                if (activeFilterDonVi && r.don_vi !== activeFilterDonVi) return false;
+                if (query) {
+                    const haystack = `${r.ma_nv} ${r.ho_ten}`.toLowerCase();
+                    if (!haystack.includes(query)) return false;
+                }
+                return true;
+            });
+            renderEmployeeList(filtered);
+            updateCount(filtered.length);
+        }
+
+        function updateCount(count) {
+            document.getElementById('qcCount').textContent = `(${count})`;
+        }
+
+        // --- Render list ---
+        function renderEmployeeList(rows) {
+            const container = document.getElementById('listQC');
+
+            if (rows.length === 0) {
+                const hasAny = allEmployees.length > 0;
+                const icon = hasAny ? 'filter_list_off' : 'group_off';
+                const msg = hasAny
+                    ? 'Không tìm thấy QC phù hợp với bộ lọc'
+                    : 'Chưa có nhân viên QC nào. Thêm QC mới ở form bên trái.';
+                container.innerHTML = `
+                    <div class="flex flex-col items-center justify-center py-12 text-on-surface-variant">
+                        <span class="material-symbols-outlined text-[40px] mb-3 opacity-40">${icon}</span>
+                        <span class="text-sm font-medium text-center">${msg}</span>
+                    </div>`;
+                return;
+            }
+
+            let html = '';
+            for (let r of rows) {
+                const stations = normalizeStations(r.station);
+                const stationLabel = stations.length ? stations.join(', ') : '--';
+                const stationPayload = encodeURIComponent(JSON.stringify(stations));
+                const escapedHoTen = r.ho_ten.replace(/'/g, "\\'");
+                const escapedDonVi = r.don_vi.replace(/'/g, "\\'");
+                const escapedBoPhan = r.bo_phan.replace(/'/g, "\\'");
+                html += `
+                    <div class="flex items-center justify-between p-4 bg-surface-lowest rounded-xl mb-3 shadow-[0_2px_8px_rgba(25,28,29,0.04)] group transition-all hover:shadow-[0_4px_12px_rgba(25,28,29,0.06)]" data-manv="${r.ma_nv}">
+                        <div class="min-w-0 flex-1 mr-3">
+                            <div class="font-bold text-on-surface text-base truncate">${r.ma_nv} - ${r.ho_ten}</div>
+                            <div class="text-xs text-on-surface-variant font-medium uppercase mt-1 tracking-wide truncate">${r.don_vi} · ${r.bo_phan} · ${stationLabel}</div>
+                        </div>
+                        <div class="flex gap-2 flex-shrink-0">
+                            <button onclick="editQCEmployee('${r.ma_nv}', '${escapedHoTen}', '${escapedDonVi}', '${escapedBoPhan}', '${stationPayload}')" class="w-9 h-9 rounded-full bg-surface hover:bg-surface-high text-primary flex items-center justify-center transition" title="Sửa">
+                                <span class="material-symbols-outlined text-[18px]">edit</span>
+                            </button>
+                            <button onclick="confirmDeleteQC(this, '${r.ma_nv}', '${escapedHoTen}')" class="w-9 h-9 rounded-full bg-surface hover:bg-error-container text-[crimson] flex items-center justify-center transition delete-btn" title="Xoá">
+                                <span class="material-symbols-outlined text-[18px]">delete</span>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+            container.innerHTML = html;
+        }
+
+        // --- Load employees ---
         async function loadQCEmployees() {
+            const container = document.getElementById('listQC');
+            // Show loading spinner
+            container.innerHTML = `
+                <div class="flex flex-col items-center justify-center py-12 text-on-surface-variant">
+                    <span class="material-symbols-outlined text-[36px] loading-spin mb-3">progress_activity</span>
+                    <span class="text-sm font-medium">Đang tải danh sách...</span>
+                </div>`;
+
             try {
                 const res = await fetch('/api/qc/employees');
                 const data = await res.json();
-                const container = document.getElementById('listQC');
-                if (!data.rows || data.rows.length === 0) {
-                    container.innerHTML = '<p class="text-center text-on-surface-variant py-8 text-sm">Chưa có QC nào</p>';
-                    return;
-                }
-
-                let html = '';
-                for (let r of data.rows) {
-                    const stations = normalizeStations(r.station);
-                    const stationLabel = stations.length ? stations.join(', ') : '--';
-                    const stationPayload = encodeURIComponent(JSON.stringify(stations));
-                    html += `
-                        <div class="flex items-center justify-between p-4 bg-surface-lowest rounded-xl mb-3 shadow-[0_2px_8px_rgba(25,28,29,0.04)] group transition-all hover:shadow-[0_4px_12px_rgba(25,28,29,0.06)]">
-                            <div>
-                                <div class="font-bold text-on-surface text-base">${r.ma_nv} - ${r.ho_ten}</div>
-                                <div class="text-xs text-on-surface-variant font-medium uppercase mt-1 tracking-wide">${r.don_vi} · Tổ ${r.bo_phan} · ${stationLabel}</div>
-                            </div>
-                            <div class="flex gap-2">
-                                <button onclick="editQCEmployee('${r.ma_nv}', '${r.ho_ten}', '${r.don_vi}', '${r.bo_phan}', '${stationPayload}')" class="w-9 h-9 rounded-full bg-surface hover:bg-surface-high text-primary flex items-center justify-center transition" title="Sửa">
-                                    <span class="material-symbols-outlined text-[18px]">edit</span>
-                                </button>
-                                <button onclick="deleteQCEmployee('${r.ma_nv}')" class="w-9 h-9 rounded-full bg-surface hover:bg-error-container text-[crimson] flex items-center justify-center transition" title="Xoá">
-                                    <span class="material-symbols-outlined text-[18px]">delete</span>
-                                </button>
-                            </div>
-                        </div>
-                    `;
-                }
-                container.innerHTML = html;
-            } catch (e) { console.error(e); }
+                allEmployees = (data.rows || []);
+                buildFilterChips();
+                applyFilters();
+            } catch (e) {
+                console.error(e);
+                container.innerHTML = `
+                    <div class="flex flex-col items-center justify-center py-12 text-on-surface-variant">
+                        <span class="material-symbols-outlined text-[40px] mb-3 opacity-40">error</span>
+                        <span class="text-sm font-medium">Lỗi tải dữ liệu</span>
+                    </div>`;
+            }
         }
 
         function editQCEmployee(ma_nv, ho_ten, don_vi, bo_phan, stationPayload) {
@@ -327,6 +395,35 @@
             } catch (e) {
                 setSelectedStations([]);
             }
+            toggleStationDropdown(false);
+            setEditMode(ma_nv);
+            // Scroll form into view on mobile
+            document.getElementById('formTitle').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        // --- Form validation with highlight ---
+        function validateForm(payload) {
+            const fields = [
+                { id: 'fQCMaNV', value: payload.ma_nv },
+                { id: 'fQCHoTen', value: payload.ho_ten },
+                { id: 'fQCDonVi', value: payload.don_vi },
+                { id: 'fQCBoPhan', value: payload.bo_phan },
+            ];
+            let valid = true;
+            for (const f of fields) {
+                const el = document.getElementById(f.id);
+                if (!f.value) {
+                    valid = false;
+                    el.classList.remove('field-invalid');
+                    // Force reflow so animation restarts
+                    void el.offsetWidth;
+                    el.classList.add('field-invalid');
+                    el.addEventListener('animationend', () => {
+                        el.classList.remove('field-invalid');
+                    }, { once: true });
+                }
+            }
+            return valid;
         }
 
         async function saveQCEmployee() {
@@ -338,10 +435,12 @@
                 bo_phan: document.getElementById('fQCBoPhan').value.trim(),
                 station: getSelectedStations()
             };
-            if (!payload.ma_nv || !payload.ho_ten || !payload.don_vi || !payload.bo_phan) {
+
+            if (!validateForm(payload)) {
                 showToast('Vui lòng điền đủ các trường bắt buộc', 'error');
                 return;
             }
+
             try {
                 const res = await fetch('/api/qc/employees', {
                     method: 'POST',
@@ -349,11 +448,9 @@
                     body: JSON.stringify(payload)
                 });
                 if (res.ok) {
-                    showToast('Lưu thông tin QC thành công!', 'success');
-                    document.getElementById('fQCMaNV').value = '';
-                    document.getElementById('fQCHoTen').value = '';
-                    document.getElementById('fQCBoPhan').value = '';
-                    setSelectedStations([]);
+                    const action = isEditMode ? 'Cập nhật' : 'Thêm';
+                    showToast(`${action} thành công: ${payload.ho_ten} (${payload.ma_nv})`, 'success');
+                    cancelEdit();
                     loadQCEmployees();
                 } else {
                     showToast('Có lỗi xảy ra', 'error');
@@ -361,18 +458,63 @@
             } catch (e) { showToast('Lỗi kết nối', 'error'); }
         }
 
-        async function deleteQCEmployee(ma_nv) {
-            if (!confirm(`Xác nhận xoá QC ${ma_nv}?`)) return;
+        // --- Inline delete confirmation ---
+        function confirmDeleteQC(btn, ma_nv, ho_ten) {
+            // If already in confirm state, execute delete
+            if (btn.dataset.confirming === 'true') {
+                deleteQCEmployee(ma_nv, ho_ten);
+                return;
+            }
+
+            // Enter confirm state
+            btn.dataset.confirming = 'true';
+            btn.classList.add('delete-confirm');
+            btn.innerHTML = '<span class="text-xs font-bold whitespace-nowrap px-1">Xóa?</span>';
+            btn.title = 'Nhấn lần nữa để xoá';
+            btn.style.width = 'auto';
+            btn.style.minWidth = '36px';
+
+            // Revert after 3s
+            const timer = setTimeout(() => {
+                resetDeleteBtn(btn);
+            }, 3000);
+            btn.dataset.deleteTimer = timer;
+        }
+
+        function resetDeleteBtn(btn) {
+            if (btn.dataset.deleteTimer) {
+                clearTimeout(Number(btn.dataset.deleteTimer));
+            }
+            btn.dataset.confirming = '';
+            btn.classList.remove('delete-confirm');
+            btn.innerHTML = '<span class="material-symbols-outlined text-[18px]">delete</span>';
+            btn.title = 'Xoá';
+            btn.style.width = '';
+            btn.style.minWidth = '';
+        }
+
+        async function deleteQCEmployee(ma_nv, ho_ten) {
             try {
                 const res = await fetch(`/api/qc/employees/${ma_nv}`, { method: 'DELETE' });
                 if (res.ok) {
-                    showToast('Đã xoá QC', 'success');
+                    showToast(`Đã xoá QC: ${ho_ten || ma_nv}`, 'success');
+                    // If we were editing this employee, cancel edit
+                    if (isEditMode && editingMaNV === ma_nv) {
+                        cancelEdit();
+                    }
                     loadQCEmployees();
                 }
             } catch (e) { console.error(e); }
         }
+
+        document.addEventListener('change', (e) => {
+            if (e.target.matches('input[name="qcStation"]')) updateStationTriggerLabel();
+        });
+
+        document.addEventListener('click', (e) => {
+            const dropdown = document.querySelector('.station-dropdown');
+            if (dropdown && !dropdown.contains(e.target)) toggleStationDropdown(false);
+        });
     </script>
 </body>
 </html>
-
-

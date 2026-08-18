@@ -1,0 +1,72 @@
+{# ============================================================
+   _base_scripts.html — Shared JS for sidebar toggle, toast, logout
+
+   Include trước </body> trong mỗi trang:
+     {% include '_base_scripts.html' %}
+   ============================================================ #}
+
+<script>
+    /* ── Logout ── */
+    async function logout() {
+        try {
+            const res = await fetch('/logout', { method: 'POST' });
+            if (res.redirected) window.location.href = res.url;
+            else window.location.href = '/login';
+        } catch (e) {
+            window.location.href = '/login';
+        }
+    }
+
+    /* ── Toast notification ── */
+    function showToast(msg, type = 'success') {
+        const t = document.getElementById('toast');
+        const msgEl = document.getElementById('toastMessage');
+        const iconEl = document.getElementById('toastIcon');
+        if (!t || !msgEl) return;
+
+        msgEl.textContent = msg;
+
+        if (type === 'success') {
+            t.className = 'toast toast-success show flex items-center gap-3';
+            if (iconEl) iconEl.textContent = 'check_circle';
+        } else {
+            t.className = 'toast toast-error show flex items-center gap-3';
+            if (iconEl) iconEl.textContent = 'error';
+        }
+
+        setTimeout(() => { t.classList.remove('show'); }, 3000);
+    }
+
+    /* ── Sidebar toggle ── */
+    const sidebarKey = 'qlcl_sidebar_collapsed';
+
+    function applySidebarState() {
+        const collapsed = localStorage.getItem(sidebarKey) === '1';
+        document.body.classList.toggle('sidebar-collapsed', collapsed);
+        const icon = document.querySelector('#sidebarToggle .material-symbols-outlined');
+        if (icon) icon.textContent = collapsed ? 'menu_open' : 'menu';
+    }
+
+    function toggleSidebar() {
+        const collapsed = localStorage.getItem(sidebarKey) === '1';
+        localStorage.setItem(sidebarKey, collapsed ? '0' : '1');
+        applySidebarState();
+    }
+
+    /* ── Date formatter ── */
+    function fmtDate(val) {
+        if (!val) return '';
+        try {
+            const d = new Date(val);
+            if (isNaN(d.getTime())) return '';
+            return d.toLocaleDateString('vi-VN');
+        } catch { return ''; }
+    }
+
+    /* ── Init ── */
+    document.addEventListener('DOMContentLoaded', () => {
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        if (sidebarToggle) sidebarToggle.addEventListener('click', toggleSidebar);
+        applySidebarState();
+    });
+</script>

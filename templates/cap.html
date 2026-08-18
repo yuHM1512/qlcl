@@ -5,77 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>H&#x00E0;nh &#x0111;&#x1ED9;ng kh&#x1EAF;c ph&#x1EE5;c - QLCL</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@500;700;800&display=swap" rel="stylesheet" />
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                        display: ['Manrope', 'sans-serif'],
-                    },
-                    colors: {
-                        surface: '#f8f9fa',
-                        'surface-lowest': '#ffffff',
-                        'surface-low': '#f3f4f6',
-                        'surface-high': '#e7e8e9',
-                        'on-surface': '#191c1d',
-                        'on-surface-variant': '#424654',
-                        primary: '#0040a1',
-                        'primary-container': '#0056d2',
-                        'secondary-container': '#9cb4fe',
-                        'error-container': '#ffdad6',
-                    },
-                    boxShadow: {
-                        'cloud': '0px 20px 40px rgba(25, 28, 29, 0.05)',
-                    }
-                }
-            }
-        }
-    </script>
+    {% include '_base_styles.html' %}
     <style>
-        body { background-color: #f8f9fa; color: #191c1d; }
-        .glass-header {
-            background: rgba(248, 249, 250, 0.8);
-            backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
-        }
-        .btn-primary {
-            background: linear-gradient(135deg, #0040a1 0%, #0056d2 100%);
-            color: #ffffff;
-            border-radius: 0.75rem;
-            transition: all 0.3s ease;
-        }
-        .btn-primary:hover {
-            transform: translateY(-1px);
-            box-shadow: 0px 8px 16px rgba(0, 64, 161, 0.2);
-        }
-        .btn-tertiary {
-            background: transparent;
-            color: #0040a1;
-            border-radius: 0.75rem;
-            transition: all 0.3s ease;
-        }
-        .btn-tertiary:hover { background-color: #f3f4f6; }
-        .input-field {
-            width: 100%;
-            background-color: #f3f4f6;
-            border: 2px solid transparent;
-            border-radius: 0.75rem;
-            padding: 0.75rem 1rem;
-            color: #191c1d;
-            font-size: 0.875rem;
-            transition: all 0.3s ease;
-            outline: none;
-        }
-        .input-field:focus {
-            background-color: #ffffff;
-            border-color: rgba(0, 64, 161, 0.4);
-            box-shadow: 0px 4px 12px rgba(0, 64, 161, 0.08);
-        }
-        .input-field::placeholder { color: rgba(66, 70, 84, 0.5); }
         .pill {
             background: #f3f4f6;
             border-radius: 999px;
@@ -103,7 +35,6 @@
         .row-card { background: #ffffff; border-radius: 16px; }
         .fade-in { animation: fadeIn 0.4s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
-        .modal-backdrop { background: rgba(25, 28, 29, 0.35); }
         .alert-title { display: inline-flex; align-items: center; gap: 8px; border-radius: 999px; padding: 6px 12px; }
         .alert-over { background: rgba(255, 218, 214, 0.55); }
         .alert-serious { background: rgba(255, 218, 214, 0.75); }
@@ -122,80 +53,13 @@
             line-height: 1.5;
             pointer-events: none;
         }
-        @media (min-width: 1024px) {
-            body.sidebar-collapsed aside {
-                width: 72px;
-            }
-            body.sidebar-collapsed aside a,
-            body.sidebar-collapsed aside button {
-                justify-content: center;
-                padding-left: 0.75rem;
-                padding-right: 0.75rem;
-                font-size: 0;
-            }
-            body.sidebar-collapsed aside span:not(.material-symbols-outlined) {
-                display: none;
-            }
-            body.sidebar-collapsed aside .material-symbols-outlined {
-                margin-right: 0;
-                font-size: 20px;
-            }
-            body.sidebar-collapsed aside #submenu-settings {
-                display: none !important;
-            }
-        }
     </style>
 </head>
 <body class="min-h-screen">
-    <header class="glass-header sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-8 py-6 flex items-center justify-between">
-            <div class="flex items-center gap-4">
-                <button id="sidebarToggle" class="w-9 h-9 rounded-full bg-surface-lowest shadow-sm flex items-center justify-center text-on-surface-variant hover:text-primary transition" title="Thu gọn / Mở rộng menu">
-                    <span class="material-symbols-outlined">menu</span>
-                </button>
-                <a href="/qc" class="text-on-surface-variant hover:text-on-surface transition">
-                    <span class="material-symbols-outlined">arrow_back</span>
-                </a>
-                <div>
-                    <h1 class="font-display text-2xl font-bold">QC Inline/Endline</h1>
-                    <p class="text-xs text-on-surface-variant font-medium">H&#x00E0;nh &#x0111;&#x1ED9;ng kh&#x1EAF;c ph&#x1EE5;c</p>
-                </div>
-            </div>
-            <button onclick="logout()" class="btn-tertiary px-4 py-2 flex items-center gap-2">
-                <span class="material-symbols-outlined text-sm">logout</span> &#x0110;&#x0103;ng xu&#x1EA5;t
-            </button>
-        </div>
-    </header>
+    {% include '_header.html' %}
 
-    <div class="max-w-7xl mx-auto px-8 py-10 flex flex-col lg:flex-row gap-10">
-        <aside class="w-full lg:w-64 shrink-0">
-            <div class="rounded-2xl bg-surface-high/70 p-4 space-y-2">
-                {% if not is_qc_viewer_role %}
-                <a href="{{ '/qc-input' if is_qc_role else '/qc' }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-low transition font-semibold">
-                    <span class="material-symbols-outlined">inventory_2</span>
-                    {{ 'Nhập liệu' if is_qc_role else 'Kế hoạch sản xuất' }}
-                </a>
-                {% endif %}
-                <a href="/qc/dashboard" class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-low transition font-semibold">
-                    <span class="material-symbols-outlined">dashboard</span>
-                    Dashboard
-                </a>
-                <a href="/qc/cap" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-surface-lowest text-primary font-semibold">
-                    <span class="material-symbols-outlined">task_alt</span>
-                    H&#x00E0;nh &#x0111;&#x1ED9;ng kh&#x1EAF;c ph&#x1EE5;c
-                </a>
-                {% if is_qaqt_role %}
-                <a href="/qc/settings/details" class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-low transition font-semibold">
-                    <span class="material-symbols-outlined">settings</span>
-                    C&#x00E0;i &#x0111;&#x1EB7;t danh m&#x1EE5;c
-                </a>
-                <a href="/qc/settings/visual-picker" class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-low transition font-semibold">
-                    <span class="material-symbols-outlined">my_location</span>
-                    Sắp xếp vị trí
-                </a>
-                {% endif %}
-            </div>
-        </aside>
+    <div class="max-w-7xl mx-auto px-6 mt-10 flex flex-col lg:flex-row gap-10">
+        {% include '_sidebar.html' %}
 
         <main class="flex-1 space-y-10">
             <div class="space-y-2">
@@ -436,13 +300,6 @@
     <script>
         const canEditCap = {{ 'true' if is_qaqt_role else 'false' }};
 
-        function logout() {
-            fetch('/logout', { method: 'POST' }).then((res) => {
-                if (res.redirected) window.location.href = res.url;
-                else window.location.href = '/login';
-            }).catch(() => { window.location.href = '/login'; });
-        }
-
         function formatDateVN(dateStr) {
             if (!dateStr) return '';
             const [y, m, d] = dateStr.split('-');
@@ -458,20 +315,6 @@
         }
 
         let capLastHeartbeat = null;
-        const sidebarKey = 'qlcl_sidebar_collapsed';
-
-        function applySidebarState() {
-            const collapsed = localStorage.getItem(sidebarKey) === '1';
-            document.body.classList.toggle('sidebar-collapsed', collapsed);
-            const icon = document.querySelector('#sidebarToggle .material-symbols-outlined');
-            if (icon) icon.textContent = collapsed ? 'menu_open' : 'menu';
-        }
-
-        function toggleSidebar() {
-            const collapsed = localStorage.getItem(sidebarKey) === '1';
-            localStorage.setItem(sidebarKey, collapsed ? '0' : '1');
-            applySidebarState();
-        }
 
         async function loadCap(dateOverride = null) {
             const container = document.getElementById('capContainer');
@@ -1158,7 +1001,6 @@
             const donViSelect = document.getElementById('capDonVi');
             const boPhanSelect = document.getElementById('capBoPhan');
             const stationSelect = document.getElementById('capStation');
-            const sidebarToggle = document.getElementById('sidebarToggle');
             if (input) input.addEventListener('change', () => loadCap());
             if (todayBtn) todayBtn.addEventListener('click', () => {
                 if (input) input.value = today;
@@ -1168,12 +1010,13 @@
             if (donViSelect) donViSelect.addEventListener('change', onDonViChange);
             if (boPhanSelect) boPhanSelect.addEventListener('change', () => loadCap());
             if (stationSelect) stationSelect.addEventListener('change', () => loadCap());
-            if (sidebarToggle) sidebarToggle.addEventListener('click', toggleSidebar);
-            applySidebarState();
             applyActionMode();
             loadCapFilters().then(() => loadCap());
         });
     </script>
+
+    {% include '_toast.html' %}
+    {% include '_base_scripts.html' %}
 </body>
 </html>
 

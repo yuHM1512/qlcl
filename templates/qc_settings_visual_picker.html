@@ -4,35 +4,27 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tinh chỉnh vị trí lỗi - QC Settings</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    {% include '_base_styles.html' %}
     <style>
-        :root { --primary: #2563eb; --bg: #f8fafb; --card: #fff; --border: #e2e8f0; }
-        body { background: var(--bg); font-family: 'Roboto', system-ui, sans-serif; }
-        .container-wrap { max-width: 1400px; margin: 0 auto; padding: 1.5rem; }
-        .glass-header { position: sticky; top: 0; z-index: 1000; background: rgba(248, 250, 251, 0.95); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); padding: 1rem 1.5rem; display: flex; align-items: center; justify-content: space-between; }
-        .header-title { font-weight: 800; font-size: 1.15rem; color: var(--primary); margin: 0; }
-        .card-lite { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 1rem; box-shadow: 0 6px 16px rgba(15, 23, 42, 0.04); }
-        .label { font-size: 0.75rem; letter-spacing: 0.04em; text-transform: uppercase; color: #64748b; font-weight: 700; }
         .vp-nhom-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
         .vp-nhom-tab {
-            border: 1.5px solid #cbd5f5; background: #eef2ff; color: #1e40af;
+            border: 1.5px solid #9cb4fe; background: #eef2ff; color: #0040a1;
             font-weight: 700; border-radius: 999px; padding: 6px 14px; font-size: 0.85rem;
             cursor: pointer; transition: all 0.15s ease;
         }
-        .vp-nhom-tab.active { background: #1d4ed8; color: #fff; border-color: #1d4ed8; box-shadow: 0 6px 14px rgba(29, 78, 216, 0.25); }
+        .vp-nhom-tab.active { background: #0040a1; color: #fff; border-color: #0040a1; box-shadow: 0 6px 14px rgba(0, 64, 161, 0.25); }
         .vp-khoi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; }
         .vp-khoi-card {
-            border: 1.5px solid var(--border); border-radius: 10px; background: #fff;
+            border: 1.5px solid #e7e8e9; border-radius: 0.75rem; background: #fff;
             padding: 6px 4px 4px; text-align: center; cursor: pointer; transition: all 0.15s ease;
         }
-        .vp-khoi-card:hover { border-color: #93c5fd; }
-        .vp-khoi-card.active { border-color: #1d4ed8; background: #eff6ff; box-shadow: 0 6px 14px rgba(29, 78, 216, 0.18); }
-        .vp-khoi-card img { width: 100%; height: 72px; object-fit: contain; background: #f8fafc; border-radius: 6px; }
-        .vp-khoi-card .vp-khoi-name { font-size: 0.75rem; font-weight: 700; color: #0f172a; margin-top: 4px; line-height: 1.15; }
+        .vp-khoi-card:hover { border-color: #9cb4fe; }
+        .vp-khoi-card.active { border-color: #0040a1; background: #eef2ff; box-shadow: 0 6px 14px rgba(0, 64, 161, 0.18); }
+        .vp-khoi-card img { width: 100%; height: 72px; object-fit: contain; background: #f8f9fa; border-radius: 6px; }
+        .vp-khoi-card .vp-khoi-name { font-size: 0.75rem; font-weight: 700; color: #191c1d; margin-top: 4px; line-height: 1.15; }
 
-        .stage-wrap { position: relative; background: #f8fafc; border: 1.5px solid var(--border); border-radius: 14px; padding: 20px; }
+        .stage-wrap { position: relative; background: #f8f9fa; border: 1.5px solid #e7e8e9; border-radius: 0.75rem; padding: 20px; }
         .vp-img-holder { position: relative; display: inline-block; width: 100%; user-select: none; }
         .vp-img-holder img { display: block; width: 100%; height: auto; user-select: none; -webkit-user-drag: none; }
 
@@ -49,108 +41,112 @@
         .vp-hotspot.dirty { background: #10b981; }
         .vp-hotspot.dirty.dragging { background: #f59e0b; }
 
-        .stage-empty { min-height: 200px; display: flex; align-items: center; justify-content: center; color: #64748b; font-size: 0.95rem; }
+        .stage-empty { min-height: 200px; display: flex; align-items: center; justify-content: center; color: #424654; font-size: 0.95rem; }
         .save-bar {
-            position: sticky; bottom: 0; background: rgba(248, 250, 251, 0.97); backdrop-filter: blur(12px);
-            border-top: 1px solid var(--border); padding: 0.85rem 1rem; display: flex; align-items: center;
-            gap: 1rem; justify-content: space-between; margin-top: 1.25rem; border-radius: 14px;
+            position: sticky; bottom: 0; background: rgba(248, 249, 250, 0.97); backdrop-filter: blur(12px);
+            border-top: 1px solid #e7e8e9; padding: 0.85rem 1rem; display: flex; align-items: center;
+            gap: 1rem; justify-content: space-between; margin-top: 1.25rem; border-radius: 0.75rem;
         }
         .dirty-pill { background: #fef3c7; color: #92400e; border-radius: 999px; padding: 4px 10px; font-size: 0.78rem; font-weight: 700; }
-        .btn-save { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: #fff; border: none; border-radius: 12px; padding: 0.55rem 1.2rem; font-weight: 800; font-size: 0.9rem; box-shadow: 0 8px 16px rgba(37, 99, 235, 0.22); }
-        .btn-save:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
-        .hint { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; padding: 0.6rem 0.85rem; border-radius: 10px; font-size: 0.85rem; }
-        .toast {
-            position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
-            background: #0f172a; color: #fff; padding: 0.65rem 1rem; border-radius: 999px;
-            font-size: 0.88rem; box-shadow: 0 10px 24px rgba(15, 23, 42, 0.3); display: none; z-index: 1200;
-        }
     </style>
 </head>
-<body>
-    <div class="glass-header">
-        <a href="/qc" class="text-secondary text-decoration-none"><i class="fas fa-arrow-left fa-lg"></i></a>
-        <h1 class="header-title"><i class="fas fa-crosshairs me-2"></i>TINH CHỈNH VỊ TRÍ HOTSPOT</h1>
-        <div style="width: 24px;"></div>
-    </div>
+<body class="font-sans antialiased min-h-screen pb-16">
+    {% include '_header.html' %}
 
-    {% if forbidden %}
-    <div class="container-wrap">
-        <div class="card-lite" style="max-width: 560px; margin: 4rem auto; text-align: center;">
-            <i class="fas fa-lock fa-3x text-danger mb-3"></i>
-            <h5 class="fw-bold mb-2">Không có quyền truy cập</h5>
-            <p class="text-muted mb-1">Trang này dành riêng cho tài khoản <strong>QAQT</strong>.</p>
-            <p class="text-muted small">Tài khoản hiện tại: {{ user.name }} ({{ user.department }})</p>
-            <a href="/qc" class="btn btn-outline-primary mt-3"><i class="fas fa-arrow-left me-1"></i>Về trang QC</a>
-        </div>
-    </div>
-    {% else %}
-    <div class="container-wrap">
-        <div class="row g-3">
-            <div class="col-12 col-lg-4">
-                <div class="card-lite mb-3">
-                    <div class="label mb-2">Loại hàng</div>
-                    <select id="loaiHangSelect" class="form-select">
-                        <option value="">-- Chọn loại hàng --</option>
-                    </select>
-                </div>
+    <div class="max-w-7xl mx-auto px-6 mt-10 flex flex-col lg:flex-row gap-10">
+        {% include '_sidebar.html' %}
 
-                <div class="card-lite mb-3" id="nhomCard" style="display: none;">
-                    <div class="label mb-2">Nhóm</div>
-                    <div id="nhomTabs" class="vp-nhom-tabs"></div>
-                </div>
-
-                <div class="card-lite mb-3" id="khoiCard" style="display: none;">
-                    <div class="label mb-2">Khối (chọn để chỉnh sửa)</div>
-                    <div id="khoiGrid" class="vp-khoi-grid"></div>
-                </div>
-
-                <div class="hint">
-                    <i class="fas fa-info-circle me-1"></i>
-                    Bấm và <strong>kéo thả</strong> các hotspot trên ảnh đến vị trí thực tế. Bấm <strong>Lưu</strong> để cập nhật vào hệ thống.
+        <main class="flex-1 min-w-0">
+            {% if forbidden %}
+            <div class="bg-surface-lowest rounded-2xl p-8 shadow-cloud max-w-xl mx-auto mt-16 text-center">
+                <span class="material-symbols-outlined text-5xl text-red-500 mb-3">lock</span>
+                <h5 class="text-lg font-bold text-on-surface mb-2">Không có quyền truy cập</h5>
+                <p class="text-on-surface-variant text-sm mb-1">Trang này dành riêng cho tài khoản <strong>QAQT</strong>.</p>
+                <p class="text-on-surface-variant text-xs">Tài khoản hiện tại: {{ user.name }} ({{ user.department }})</p>
+                <a href="/qc" class="btn-primary inline-flex items-center gap-2 px-4 py-2 mt-4 text-sm font-semibold">
+                    <span class="material-symbols-outlined text-[18px]">arrow_back</span>Về trang QC
+                </a>
+            </div>
+            {% else %}
+            <div class="flex flex-col items-start gap-6 mb-8">
+                <div>
+                    <h2 class="text-3xl font-display font-bold text-on-surface tracking-tight mb-2">Tinh chỉnh vị trí Hotspot</h2>
+                    <p class="text-base text-on-surface-variant">Kéo thả hotspot trên ảnh để điều chỉnh vị trí lỗi trên sản phẩm.</p>
                 </div>
             </div>
 
-            <div class="col-12 col-lg-8">
-                <div class="card-lite">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <div class="label" id="stageTitle">Chọn 1 khối để bắt đầu</div>
-                        <div id="koiHotspotCount" class="text-muted small"></div>
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- Left panel: selectors -->
+                <div class="lg:col-span-4 space-y-4">
+                    <div class="bg-surface-lowest rounded-2xl p-5 shadow-cloud">
+                        <div class="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mb-3">Loại hàng</div>
+                        <select id="loaiHangSelect" class="input-field">
+                            <option value="">-- Chọn loại hàng --</option>
+                        </select>
                     </div>
-                    <div class="stage-wrap">
-                        <div id="stage" class="stage-empty">
-                            Chọn loại hàng → nhóm → khối phía bên trái để hiển thị ảnh và hotspot.
-                        </div>
+
+                    <div class="bg-surface-lowest rounded-2xl p-5 shadow-cloud" id="nhomCard" style="display: none;">
+                        <div class="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mb-3">Nhóm</div>
+                        <div id="nhomTabs" class="vp-nhom-tabs"></div>
                     </div>
-                    <div class="save-bar" id="saveBar" style="display: none;">
-                        <div>
-                            <span class="dirty-pill" id="dirtyPill"><i class="fas fa-circle-dot me-1"></i><span id="dirtyCount">0</span> thay đổi chưa lưu</span>
+
+                    <div class="bg-surface-lowest rounded-2xl p-5 shadow-cloud" id="khoiCard" style="display: none;">
+                        <div class="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mb-3">Khối (chọn để chỉnh sửa)</div>
+                        <div id="khoiGrid" class="vp-khoi-grid"></div>
+                    </div>
+
+                    <div class="bg-blue-50 border border-blue-200 text-primary rounded-xl p-4 text-sm flex items-start gap-2">
+                        <span class="material-symbols-outlined text-[18px] mt-0.5">info</span>
+                        <span>Bấm và <strong>kéo thả</strong> các hotspot trên ảnh đến vị trí thực tế. Bấm <strong>Lưu</strong> để cập nhật vào hệ thống.</span>
+                    </div>
+                </div>
+
+                <!-- Right panel: stage -->
+                <div class="lg:col-span-8">
+                    <div class="bg-surface-lowest rounded-2xl p-5 shadow-cloud">
+                        <div class="flex justify-between items-center mb-3">
+                            <div class="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider" id="stageTitle">Chọn 1 khối để bắt đầu</div>
+                            <div id="koiHotspotCount" class="text-on-surface-variant text-xs"></div>
                         </div>
-                        <div class="d-flex gap-2">
-                            <button class="btn btn-outline-secondary btn-sm" id="resetBtn">
-                                <i class="fas fa-rotate-left me-1"></i>Hoàn tác
-                            </button>
-                            <button class="btn-save" id="saveBtn">
-                                <i class="fas fa-save me-2"></i>LƯU VỊ TRÍ
-                            </button>
+                        <div class="stage-wrap">
+                            <div id="stage" class="stage-empty">
+                                Chọn loại hàng &rarr; nhóm &rarr; khối phía bên trái để hiển thị ảnh và hotspot.
+                            </div>
+                        </div>
+                        <div class="save-bar" id="saveBar" style="display: none;">
+                            <div>
+                                <span class="dirty-pill" id="dirtyPill">
+                                    <span class="material-symbols-outlined text-[14px] mr-1 align-middle">circle</span>
+                                    <span id="dirtyCount">0</span> thay đổi chưa lưu
+                                </span>
+                            </div>
+                            <div class="flex gap-2">
+                                <button class="btn-tertiary px-3 py-2 text-sm font-semibold flex items-center gap-1.5" id="resetBtn">
+                                    <span class="material-symbols-outlined text-[18px]">undo</span>Hoàn tác
+                                </button>
+                                <button class="btn-primary px-4 py-2 text-sm font-bold flex items-center gap-2" id="saveBtn">
+                                    <span class="material-symbols-outlined text-[18px]">save</span>LƯU VỊ TRÍ
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
+            {% endif %}
+        </main>
     </div>
 
-    {% endif %}
-
-    <div class="toast" id="toast"></div>
+    {% include '_toast.html' %}
+    {% include '_base_scripts.html' %}
 
     {% if not forbidden %}
     <script>
-        let visualPickerData = null;     // {has_visual_picker, nhoms: [...]}
+        let visualPickerData = null;
         let currentNhomKey = null;
         let currentBoPhanId = null;
-        let originalHotspots = {};        // chi_tiet_id -> {x_pct, y_pct} (snapshot of current khoi for reset)
-        let dirtyHotspots = {};           // chi_tiet_id -> {x_pct, y_pct} (current modified values)
-        let draggingState = null;         // {chi_tiet_id, startX, startY, baseLeftPx, baseTopPx, holderRect}
+        let originalHotspots = {};
+        let dirtyHotspots = {};
+        let draggingState = null;
 
         document.addEventListener('DOMContentLoaded', async () => {
             await loadLoaiHangList();
@@ -175,7 +171,7 @@
                 });
             } catch (e) {
                 console.error(e);
-                showToast('Lỗi tải danh sách loại hàng');
+                showToast('Lỗi tải danh sách loại hàng', 'error');
             }
         }
 
@@ -195,14 +191,14 @@
                 const res = await fetch(`/api/qc/visual-picker?loai_hang_id=${loaiHangId}`);
                 const data = await res.json();
                 if (!data.has_visual_picker) {
-                    showToast('Loại hàng này chưa có dữ liệu visual picker.');
+                    showToast('Loại hàng này chưa có dữ liệu visual picker.', 'error');
                     return;
                 }
                 visualPickerData = data;
                 renderNhomTabs();
             } catch (err) {
                 console.error(err);
-                showToast('Lỗi tải dữ liệu loại hàng');
+                showToast('Lỗi tải dữ liệu loại hàng', 'error');
             }
         }
 
@@ -240,15 +236,15 @@
             if (!nhom) { card.style.display = 'none'; return; }
             grid.innerHTML = '';
             nhom.khoi.forEach(k => {
-                const card = document.createElement('div');
-                card.className = 'vp-khoi-card' + (k.bo_phan_id === currentBoPhanId ? ' active' : '');
-                card.dataset.boPhanId = k.bo_phan_id;
-                card.innerHTML = `
+                const el = document.createElement('div');
+                el.className = 'vp-khoi-card' + (k.bo_phan_id === currentBoPhanId ? ' active' : '');
+                el.dataset.boPhanId = k.bo_phan_id;
+                el.innerHTML = `
                     <img src="${k.image_png}" alt="${k.ten_khoi}" loading="lazy">
                     <div class="vp-khoi-name">${k.ten_khoi}</div>
                 `;
-                card.addEventListener('click', () => selectKhoi(k.bo_phan_id));
-                grid.appendChild(card);
+                el.addEventListener('click', () => selectKhoi(k.bo_phan_id));
+                grid.appendChild(el);
             });
             card.style.display = 'block';
         }
@@ -279,7 +275,7 @@
         function resetStage() {
             const stage = document.getElementById('stage');
             stage.className = 'stage-empty';
-            stage.innerHTML = 'Chọn loại hàng → nhóm → khối phía bên trái để hiển thị ảnh và hotspot.';
+            stage.innerHTML = 'Chọn loại hàng &rarr; nhóm &rarr; khối phía bên trái để hiển thị ảnh và hotspot.';
             document.getElementById('stageTitle').textContent = 'Chọn 1 khối để bắt đầu';
             document.getElementById('koiHotspotCount').textContent = '';
             document.getElementById('saveBar').style.display = 'none';
@@ -345,28 +341,6 @@
                 dot.classList.add('dragging');
                 e.preventDefault();
             };
-            const onMove = (clientX, clientY) => {
-                if (!draggingState || draggingState.chi_tiet_id !== hotspot.chi_tiet_id) return;
-                const { holderRect, wPct, hPct, dot } = draggingState;
-                const cxPct = (clientX - holderRect.left) / holderRect.width;
-                const cyPct = (clientY - holderRect.top) / holderRect.height;
-                const clampedCx = Math.max(0, Math.min(1, cxPct));
-                const clampedCy = Math.max(0, Math.min(1, cyPct));
-                const newXPct = Math.max(0, Math.min(1 - wPct, clampedCx - wPct / 2));
-                const newYPct = Math.max(0, Math.min(1 - hPct, clampedCy - hPct / 2));
-                dirtyHotspots[hotspot.chi_tiet_id] = { x_pct: newXPct, y_pct: newYPct };
-                const cx = (newXPct + wPct / 2) * 100;
-                const cy = (newYPct + hPct / 2) * 100;
-                dot.style.left = `calc(${cx}% - 16px)`;
-                dot.style.top = `calc(${cy}% - 13px)`;
-            };
-            const onEnd = () => {
-                if (!draggingState) return;
-                draggingState.dot.classList.remove('dragging');
-                draggingState.dot.classList.add('dirty');
-                draggingState = null;
-                updateDirtyCount();
-            };
             dot.addEventListener('mousedown', e => onStart(e.clientX, e.clientY, e));
             dot.addEventListener('touchstart', e => {
                 const t = e.touches[0];
@@ -374,11 +348,9 @@
             }, { passive: false });
         }
 
-        // Window-level move/end to keep dragging smooth when cursor leaves the hotspot
         window.addEventListener('mousemove', e => {
             if (draggingState) {
                 e.preventDefault();
-                draggingState && document.querySelector(`.vp-hotspot[data-chi-tiet-id="${draggingState.chi_tiet_id}"]`);
                 const h = getCurrentKhoi()?.hotspots?.find(x => x.chi_tiet_id === draggingState.chi_tiet_id);
                 if (h) {
                     const { holderRect, wPct, hPct, dot } = draggingState;
@@ -456,7 +428,7 @@
             const btn = document.getElementById('saveBtn');
             const orig = btn.innerHTML;
             btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>ĐANG LƯU...';
+            btn.innerHTML = '<span class="material-symbols-outlined text-[18px] animate-spin mr-2">progress_activity</span>ĐANG LƯU...';
             try {
                 const res = await fetch('/api/qc/visual-picker/hotspots-batch', {
                     method: 'PATCH',
@@ -465,7 +437,6 @@
                 });
                 if (!res.ok) throw new Error('Save failed');
                 const data = await res.json();
-                // Merge saved values into the canonical visualPickerData so reload không cần
                 const khoi = getCurrentKhoi();
                 if (khoi) {
                     items.forEach(it => {
@@ -479,7 +450,7 @@
                 showToast(`Đã lưu ${data.updated || items.length} vị trí.`);
             } catch (e) {
                 console.error(e);
-                showToast('Lỗi khi lưu — vui lòng thử lại.');
+                showToast('Lỗi khi lưu — vui lòng thử lại.', 'error');
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = orig;
@@ -489,14 +460,6 @@
         function hasUnsavedAndConfirm() {
             if (Object.keys(dirtyHotspots).length === 0) return true;
             return confirm('Có thay đổi chưa lưu trong khối hiện tại. Bỏ và tiếp tục?');
-        }
-
-        function showToast(msg) {
-            const t = document.getElementById('toast');
-            t.textContent = msg;
-            t.style.display = 'block';
-            clearTimeout(t._timer);
-            t._timer = setTimeout(() => { t.style.display = 'none'; }, 2400);
         }
     </script>
     {% endif %}

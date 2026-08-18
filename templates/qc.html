@@ -1,294 +1,47 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>QC Inline/Endline - QLCL</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@500;700;800&display=swap" rel="stylesheet" />
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                        display: ['Manrope', 'sans-serif'],
-                    },
-                    colors: {
-                        surface: '#f8f9fa',
-                        'surface-lowest': '#ffffff',
-                        'surface-low': '#f3f4f6', /* equivalent for contrast */
-                        'surface-high': '#e7e8e9',
-                        'on-surface': '#191c1d',
-                        'on-surface-variant': '#424654',
-                        primary: '#0040a1',
-                        'primary-container': '#0056d2',
-                        'secondary-container': '#9cb4fe',
-                        'error-container': '#ffdad6',
-                    },
-                    boxShadow: {
-                        'cloud': '0px 20px 40px rgba(25, 28, 29, 0.05)',
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        body { background-color: #f8f9fa; color: #191c1d; }
-        
-        .glass-header {
-            background: rgba(248, 249, 250, 0.8);
-            backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
-        }
-        
-        .btn-primary {
-            background: linear-gradient(135deg, #0040a1 0%, #0056d2 100%);
-            color: #ffffff;
-            border-radius: 0.75rem;
-            transition: all 0.3s ease;
-        }
-        
-        .btn-primary:hover {
-            transform: translateY(-1px);
-            box-shadow: 0px 8px 16px rgba(0, 64, 161, 0.2);
-        }
-        
-        .btn-tertiary {
-            background: transparent;
-            color: #0040a1;
-            border-radius: 0.75rem;
-            transition: all 0.3s ease;
-        }
-        
-        .btn-tertiary:hover {
-            background-color: #f3f4f6;
-        }
-
-        .input-field {
-            background-color: #f3f4f6;
-            border: none;
-            border-radius: 0.75rem;
-            padding: 12px 16px;
-            font-size: 14px;
-            color: #191c1d;
-            transition: all 0.2s;
-            width: 100%;
-        }
-        
-        .input-field:focus {
-            outline: none;
-            background-color: #ffffff;
-            box-shadow: 0 0 0 1px rgba(0, 64, 161, 0.3);
-        }
-        
-        select.input-field {
-            appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23424654' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 16px center;
-            padding-right: 40px;
-        }
-
-        .data-table { width: 100%; border-collapse: collapse; }
-        .data-table th { 
-            background: transparent; 
-            font-size: 12px; 
-            font-weight: 600; 
-            color: #424654; 
-            padding: 16px 12px; 
-            position: sticky; 
-            top: 0; 
-            z-index: 10;
-        }
-        .data-table td { 
-            padding: 16px 12px; 
-            font-size: 14px; 
-            color: #191c1d; 
-            transition: background 0.2s;
-        }
-        /* No lines rule applied here */
-        .table-row {
-            border-radius: 0.75rem;
-            transition: all 0.2s;
-        }
-        .table-row:hover { background-color: #ffffff; box-shadow: 0px 4px 12px rgba(25, 28, 29, 0.03); }
-
-        .badge { 
-            display: inline-flex; 
-            align-items: center; 
-            padding: 4px 12px; 
-            border-radius: 9999px; 
-            font-size: 12px; 
-            font-weight: 600; 
-            font-family: 'Inter', sans-serif;
-            background-color: #e7e8e9;
-            color: #424654;
-        }
-        .badge-active { background: #9cb4fe; color: #0040a1; }
-        
-        .modal-overlay { 
-            position: fixed; 
-            inset: 0; 
-            background: rgba(25, 28, 29, 0.4); 
-            backdrop-filter: blur(4px);
-            z-index: 100; 
-            display: none; 
-            align-items: center; 
-            justify-content: center; 
-        }
-        .modal-overlay.active { display: flex; }
-        .modal-box { 
-            background: #ffffff; 
-            border-radius: 1rem; 
-            max-width: 720px; 
-            width: 95%; 
-            max-height: 90vh; 
-            overflow-y: auto; 
-            box-shadow: 0px 20px 40px rgba(25, 28, 29, 0.05); 
-        }
-
-        .toast { 
-            position: fixed; 
-            bottom: 32px; 
-            right: 32px; 
-            z-index: 200; 
-            padding: 16px 24px; 
-            border-radius: 0.75rem; 
-            font-size: 14px; 
-            font-weight: 500; 
-            color: #191c1d; 
-            transform: translateY(80px); 
-            opacity: 0; 
-            transition: all .3s cubic-bezier(0.16, 1, 0.3, 1); 
-            box-shadow: 0px 20px 40px rgba(25, 28, 29, 0.1);
-        }
-        .toast.show { transform: translateY(0); opacity: 1; }
-        .toast-success { background: #9cb4fe; }
-        .toast-error { background: #ffdad6; }
-        @media (min-width: 768px) {
-            body.sidebar-collapsed aside {
-                width: 72px;
-            }
-            body.sidebar-collapsed aside a,
-            body.sidebar-collapsed aside button {
-                justify-content: center;
-                padding-left: 0.75rem;
-                padding-right: 0.75rem;
-                font-size: 0;
-            }
-            body.sidebar-collapsed aside span:not(.material-symbols-outlined) {
-                display: none;
-            }
-            body.sidebar-collapsed aside .material-symbols-outlined {
-                margin-right: 0;
-                font-size: 20px;
-            }
-            body.sidebar-collapsed aside #submenu-settings {
-                display: none !important;
-            }
-        }
-    </style>
+    {% include '_base_styles.html' %}
 </head>
 <body class="font-sans antialiased min-h-screen pb-16">
-    <!-- Header: Glassmorphism effect -->
-    <header class="glass-header sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-6 py-6 flex items-center justify-between">
-            <div class="flex items-center gap-6">
-                <button id="sidebarToggle" class="flex items-center justify-center w-10 h-10 rounded-full bg-surface-lowest shadow-sm hover:shadow-cloud transition text-on-surface-variant" title="Thu gọn / Mở rộng menu">
-                    <span class="material-symbols-outlined">menu</span>
-                </button>
-                <!-- No explicit border, using spacing -->
-                <a href="/" class="flex items-center justify-center w-10 h-10 rounded-full bg-surface-lowest shadow-sm hover:shadow-cloud transition text-on-surface-variant">
-                    <span class="material-symbols-outlined">arrow_back</span>
-                </a>
-                <div>
-                    <!-- Display Font for Header -->
-                    <h1 class="text-2xl font-display font-bold tracking-tight text-on-surface">QC Inline/Endline</h1>
-                    <p class="text-sm font-medium text-on-surface-variant mt-1">Kế hoạch sản xuất & Kiểm soát chất lượng</p>
-                </div>
-            </div>
-            <div class="flex items-center gap-4">
-                {% if user %}
-                <div class="text-right">
-                    <div class="text-sm font-semibold text-on-surface">{{ user.name }}</div>
-                    <div class="text-xs text-on-surface-variant mt-0.5">{{ user.don_vi }} · {{ user.bo_phan }}</div>
-                </div>
-                <div class="h-12 w-12 rounded-full bg-surface-lowest shadow-sm flex items-center justify-center">
-                    <span class="material-symbols-outlined text-primary">person</span>
-                </div>
-                <button onclick="logout()" class="ml-4 btn-tertiary px-4 py-2 font-semibold text-sm flex items-center gap-2" title="Đăng xuất">
-                    <span class="material-symbols-outlined text-sm">logout</span> Đăng xuất
-                </button>
-                {% endif %}
-            </div>
-        </div>
-    </header>
 
-    <div class="max-w-7xl mx-auto px-6 mt-12 flex flex-col md:flex-row gap-12">
-        <!-- Sidebar -->
-        <aside class="w-full md:w-64 shrink-0">
-            <!-- Tonal layering: surface-lowest on surface -->
-            <div class="bg-surface-lowest rounded-2xl p-4 sticky top-32 shadow-cloud">
-                <a href="/qc" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-surface-low text-primary font-bold transition mb-2">
-                    <span class="material-symbols-outlined">inventory_2</span>
-                    Kế hoạch sản xuất
-                </a>
-<a href="/qc/cap" class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-low font-semibold transition mb-2">
-    <span class="material-symbols-outlined">task_alt</span>
-    Hành động khắc phục
-</a>
-<a href="/qc/dashboard" class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-low font-semibold transition mb-2">
-    <span class="material-symbols-outlined">dashboard</span>
-    Dashboard
-</a>
-                <div>
-                    <button onclick="document.getElementById('submenu-settings').classList.toggle('hidden')" class="w-full flex items-center justify-between px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-low font-semibold transition">
-                        <div class="flex items-center gap-3">
-                            <span class="material-symbols-outlined">settings</span>
-                            Cài đặt danh mục
-                        </div>
-                        <span class="material-symbols-outlined text-sm">expand_more</span>
-                    </button>
-                    <!-- Settings submenu -->
-                    <div id="submenu-settings" class="hidden flex flex-col pl-11 pr-4 py-2 space-y-2 mt-1">
-                        <a href="/qc/settings/customer" class="block py-1.5 text-sm font-medium text-on-surface-variant hover:text-primary transition">Khách hàng - Mã hàng</a>
-                        <a href="/qc/settings/details" class="block py-1.5 text-sm font-medium text-on-surface-variant hover:text-primary transition">Bộ phận - Chi tiết</a>
-                        <a href="/qc/settings/qc-list" class="block py-1.5 text-sm font-medium text-on-surface-variant hover:text-primary transition">Danh sách QC</a>
-                        <a href="/qc/settings/visual-picker" class="block py-1.5 text-sm font-medium text-on-surface-variant hover:text-primary transition">Sắp xếp vị trí</a>
-                    </div>
-                </div>
-            </div>
-        </aside>
+    {% include '_header.html' %}
+
+    <div class="max-w-7xl mx-auto px-6 mt-10 flex flex-col lg:flex-row gap-10">
+
+        {% include '_sidebar.html' %}
 
         <!-- Main Content -->
         <main class="flex-1 min-w-0">
             <!-- Action Bar -->
-            <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-12">
+            <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-10">
                 <div>
                     <h2 class="text-3xl font-display font-bold text-on-surface tracking-tight mb-2">Tổng quan Kế hoạch</h2>
-                    <p class="text-base text-on-surface-variant line-height-[1.6]">Quản lý và theo dõi tiến độ sản xuất hiện tại.</p>
+                    <p class="text-base text-on-surface-variant">Quản lý và theo dõi tiến độ sản xuất hiện tại.</p>
                 </div>
-                <div class="flex gap-4">
-                    <button onclick="syncQtcnPlans()" class="h-12 px-5 rounded-xl bg-surface-low hover:bg-surface-high font-semibold text-sm text-on-surface flex items-center gap-2 transition">
+                <div class="flex gap-3">
+                    <button onclick="syncQtcnPlans()" class="h-11 px-5 rounded-xl bg-surface-low hover:bg-surface-high font-semibold text-sm text-on-surface flex items-center gap-2 transition">
                         <span class="material-symbols-outlined text-lg">sync_alt</span>
                         Đồng bộ XNV2
                     </button>
-                    <button onclick="openCreateModal()" class="btn-primary px-5 py-3 font-semibold text-sm flex items-center gap-2">
+                    <button onclick="openCreateModal()" class="btn-primary px-5 py-2.5 font-semibold text-sm flex items-center gap-2">
                         <span class="material-symbols-outlined text-lg">add</span>
                         Thêm Kế hoạch
                     </button>
                 </div>
             </div>
 
-            <!-- Content Area (Surface Lowest) -->
+            <!-- Content Area -->
             <div class="bg-surface-lowest rounded-2xl p-8 shadow-cloud">
-            
+
                 <!-- Filters -->
-                <div class="mb-10 flex flex-wrap items-end gap-6 bg-surface-lowest">
+                <div class="mb-8 flex flex-wrap items-end gap-4">
                     <div class="flex-1 min-w-[200px]">
-                        <label class="block text-xs font-semibold text-on-surface-variant mb-2 tracking-wide">ĐƠN VỊ</label>
+                        <label class="block text-[11px] font-semibold text-on-surface-variant mb-2 uppercase tracking-wider">Đơn vị</label>
                         <select id="filterDonVi" class="input-field" onchange="loadData()">
                             <option value="">Tất cả đơn vị</option>
                             {% for dv in don_vi_options %}
@@ -297,10 +50,10 @@
                         </select>
                     </div>
                     <div class="flex-1 min-w-[200px]">
-                        <label class="block text-xs font-semibold text-on-surface-variant mb-2 tracking-wide">BỘ PHẬN (CÓ THỂ NHIỀU)</label>
+                        <label class="block text-[11px] font-semibold text-on-surface-variant mb-2 uppercase tracking-wider">Bộ phận (có thể nhiều)</label>
                         <input type="text" id="filterBoPhan" class="input-field" placeholder="VD: 2, 5 hoặc Tổ 2; Tổ 5" onchange="loadData()">
                     </div>
-                    <button onclick="loadData()" class="h-11 px-6 rounded-xl bg-surface-low hover:bg-surface-high font-semibold text-sm text-on-surface flex items-center gap-2 transition">
+                    <button onclick="loadData()" class="h-11 px-5 rounded-xl bg-surface-low hover:bg-surface-high font-semibold text-sm text-on-surface flex items-center gap-2 transition">
                         <span class="material-symbols-outlined text-sm">sync</span> Tải lại
                     </button>
                 </div>
@@ -310,14 +63,14 @@
                     <table class="data-table" id="planTable">
                         <thead>
                             <tr class="text-left border-b border-surface-low">
-                                <th class="w-12 text-center rounded-tl-xl text-[11px] uppercase tracking-wider">#</th>
-                                <th class="text-[11px] uppercase tracking-wider">Nhu cầu SX</th>
-                                <th class="text-[11px] uppercase tracking-wider">Đơn vị</th>
-                                <th class="text-[11px] uppercase tracking-wider">Bộ phận</th>
-                                <th class="text-[11px] uppercase tracking-wider">Khách hàng / Mã hàng</th>
-                                <th class="text-[11px] uppercase tracking-wider">Ngày RC</th>
-                                <th class="text-right text-[11px] uppercase tracking-wider">Sản lượng</th>
-                                <th class="text-center rounded-tr-xl text-[11px] uppercase tracking-wider">Thao tác</th>
+                                <th class="w-12 text-center">#</th>
+                                <th>Nhu cầu SX</th>
+                                <th>Đơn vị</th>
+                                <th>Bộ phận</th>
+                                <th>Khách hàng / Mã hàng</th>
+                                <th>Ngày RC</th>
+                                <th class="text-right">Sản lượng</th>
+                                <th class="text-center">Thao tác</th>
                             </tr>
                         </thead>
                         <tbody id="planBody">
@@ -348,7 +101,6 @@
     <!-- Create/Edit Modal -->
     <div id="modal" class="modal-overlay" onclick="if(event.target===this) closeModal()">
         <div class="modal-box">
-            <!-- Using spacing instead of border-bottom -->
             <div class="px-8 pt-8 pb-4 flex items-center justify-between">
                 <h3 id="modalTitle" class="text-2xl font-display font-bold text-on-surface">Thêm Kế hoạch mới</h3>
                 <button onclick="closeModal()" class="h-10 w-10 rounded-full bg-surface hover:bg-surface-high flex items-center justify-center transition text-on-surface-variant">
@@ -359,11 +111,11 @@
                 <input type="hidden" id="editId" value="">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
                     <div class="md:col-span-2">
-                        <label class="block text-xs font-semibold text-on-surface-variant mb-2 tracking-wide">NHU CẦU SẢN XUẤT</label>
+                        <label class="block text-[11px] font-semibold text-on-surface-variant mb-2 uppercase tracking-wider">Nhu cầu sản xuất</label>
                         <input type="text" id="fKeHoach" class="input-field" placeholder="Nhập nhu cầu sản xuất...">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-on-surface-variant mb-2 tracking-wide">ĐƠN VỊ <span class="text-red-500">*</span></label>
+                        <label class="block text-[11px] font-semibold text-on-surface-variant mb-2 uppercase tracking-wider">Đơn vị <span class="text-red-500">*</span></label>
                         <select id="fDonVi" class="input-field">
                             <option value="">-- Chọn Đơn vị --</option>
                             {% for dv in don_vi_options %}
@@ -372,7 +124,7 @@
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-on-surface-variant mb-2 tracking-wide">BỘ PHẬN (CÓ THỂ NHIỀU) <span class="text-red-500">*</span></label>
+                        <label class="block text-[11px] font-semibold text-on-surface-variant mb-2 uppercase tracking-wider">Bộ phận (có thể nhiều) <span class="text-red-500">*</span></label>
                         <div class="space-y-2">
                             <div class="flex gap-2">
                                 <input type="number" id="fBoPhanInput" class="input-field" placeholder="VD: 2" min="1">
@@ -383,40 +135,38 @@
                         </div>
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-on-surface-variant mb-2 tracking-wide">KHÁCH HÀNG</label>
+                        <label class="block text-[11px] font-semibold text-on-surface-variant mb-2 uppercase tracking-wider">Khách hàng</label>
                         <select id="fKhachHang" class="input-field" onchange="onCustomerChange(this.value)">
                             <option value="">-- Chọn khách hàng --</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-on-surface-variant mb-2 tracking-wide">MÃ HÀNG</label>
+                        <label class="block text-[11px] font-semibold text-on-surface-variant mb-2 uppercase tracking-wider">Mã hàng</label>
                         <select id="fMaHang" class="input-field">
                             <option value="">-- Chọn mã hàng --</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-on-surface-variant mb-2 tracking-wide">LOẠI HÀNG</label>
+                        <label class="block text-[11px] font-semibold text-on-surface-variant mb-2 uppercase tracking-wider">Loại hàng</label>
                         <select id="fLoaiHang" class="input-field">
                             <option value="">-- Chọn loại hàng --</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-on-surface-variant mb-2 tracking-wide">NGÀY RẢI CHUYỀN</label>
+                        <label class="block text-[11px] font-semibold text-on-surface-variant mb-2 uppercase tracking-wider">Ngày rải chuyền</label>
                         <input type="date" id="fNgayRC" class="input-field">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-on-surface-variant mb-2 tracking-wide">SẢN LƯỢNG</label>
+                        <label class="block text-[11px] font-semibold text-on-surface-variant mb-2 uppercase tracking-wider">Sản lượng</label>
                         <input type="number" id="fSanLuong" class="input-field" placeholder="0" min="0">
                     </div>
+                    <div></div>
                     <div>
-                        <!-- Container specifically for mau/size side by side spacing -->
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-on-surface-variant mb-2 tracking-wide">MÀU</label>
+                        <label class="block text-[11px] font-semibold text-on-surface-variant mb-2 uppercase tracking-wider">Màu</label>
                         <input type="text" id="fMau" class="input-field" placeholder="Nhập màu...">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-on-surface-variant mb-2 tracking-wide">SIZE</label>
+                        <label class="block text-[11px] font-semibold text-on-surface-variant mb-2 uppercase tracking-wider">Size</label>
                         <input type="text" id="fSize" class="input-field" placeholder="Nhập size...">
                     </div>
                 </div>
@@ -428,51 +178,11 @@
         </div>
     </div>
 
-    <!-- Toast Notification -->
-    <div id="toast" class="toast flex items-center gap-3">
-        <span class="material-symbols-outlined" id="toastIcon">info</span>
-        <span id="toastMessage"></span>
-    </div>
+    {% include '_toast.html' %}
+    {% include '_base_scripts.html' %}
 
-    <!-- JavaScript Data Logic (unchanged interface, modified rendering) -->
+    <!-- Page-specific scripts -->
     <script>
-        async function logout() {
-            try {
-                const res = await fetch('/logout', { method: 'POST' });
-                if (res.redirected) window.location.href = res.url;
-                else window.location.href = '/login';
-            } catch (e) {
-                window.location.href = '/login';
-            }
-        }
-
-        function fmtDate(val) {
-            if (!val) return '';
-            try {
-                const d = new Date(val);
-                if (isNaN(d.getTime())) return '';
-                return d.toLocaleDateString('vi-VN');
-            } catch { return ''; }
-        }
-
-        function showToast(msg, type = 'success') {
-            const t = document.getElementById('toast');
-            const msgEl = document.getElementById('toastMessage');
-            const iconEl = document.getElementById('toastIcon');
-            
-            msgEl.textContent = msg;
-            
-            if(type === 'success') {
-                t.className = 'toast toast-success show flex items-center gap-3';
-                iconEl.textContent = 'check_circle';
-            } else {
-                t.className = 'toast toast-error show flex items-center gap-3';
-                iconEl.textContent = 'error';
-            }
-            
-            setTimeout(() => { t.classList.remove('show'); }, 3000);
-        }
-
         function formatPoInfo(poInfo) {
             if (!Array.isArray(poInfo) || poInfo.length === 0) return '';
             return poInfo.map(item => {
@@ -499,19 +209,6 @@
             }
             if (parts.length >= 2) return parts.join(' - ');
             return row.ke_hoach || '-';
-        }
-
-        const sidebarKey = 'qlcl_sidebar_collapsed';
-        function applySidebarState() {
-            const collapsed = localStorage.getItem(sidebarKey) === '1';
-            document.body.classList.toggle('sidebar-collapsed', collapsed);
-            const icon = document.querySelector('#sidebarToggle .material-symbols-outlined');
-            if (icon) icon.textContent = collapsed ? 'menu_open' : 'menu';
-        }
-        function toggleSidebar() {
-            const collapsed = localStorage.getItem(sidebarKey) === '1';
-            localStorage.setItem(sidebarKey, collapsed ? '0' : '1');
-            applySidebarState();
         }
 
         async function loadData() {
@@ -586,23 +283,6 @@
             }
         }
 
-        async function syncHangingLinePlans() {
-            try {
-                showToast('Đang đồng bộ kế hoạch từ chuyền treo...', 'success');
-                const res = await fetch('/api/prod-plan/sync-hanging-line', { method: 'POST' });
-                const data = await res.json();
-                if (!res.ok) {
-                    showToast(data.detail || 'Lỗi khi đồng bộ chuyền treo', 'error');
-                    return;
-                }
-                const msg = `Đồng bộ chuyền treo xong: thêm ${data.inserted || 0}, cập nhật ${data.updated || 0}, bỏ qua ${data.skipped || 0}`;
-                showToast(msg);
-                loadData();
-            } catch (e) {
-                showToast('Lỗi kết nối máy chủ khi đồng bộ chuyền treo!', 'error');
-            }
-        }
-
         async function populatePlanMasterData() {
             try {
                 const res = await fetch('/api/dm/khach-hang');
@@ -611,7 +291,7 @@
                 select.innerHTML = '<option value="">-- Chọn khách hàng --</option>';
                 data.rows.forEach(r => {
                     const opt = document.createElement('option');
-                    opt.value = r.id; 
+                    opt.value = r.id;
                     opt.dataset.name = r.ten_khach_hang;
                     opt.textContent = r.ten_khach_hang;
                     select.appendChild(opt);
@@ -625,7 +305,7 @@
                 select.innerHTML = '<option value="">-- Chọn loại hàng --</option>';
                 data.rows.forEach(r => {
                     const opt = document.createElement('option');
-                    opt.value = r.ten_loai; 
+                    opt.value = r.ten_loai;
                     opt.textContent = r.ten_loai;
                     select.appendChild(opt);
                 });
@@ -641,7 +321,7 @@
                 const data = await res.json();
                 data.rows.forEach(r => {
                     const opt = document.createElement('option');
-                    opt.value = r.ten_ma_hang; 
+                    opt.value = r.ten_ma_hang;
                     opt.textContent = r.ten_ma_hang;
                     select.appendChild(opt);
                 });
@@ -683,7 +363,7 @@
             document.getElementById('fKeHoach').value = row.ke_hoach || '';
             document.getElementById('fDonVi').value = row.don_vi || '';
             setBoPhanListFromText(row.bo_phan || '');
-            
+
             await populatePlanMasterData();
 
             const khSelect = document.getElementById('fKhachHang');
@@ -730,7 +410,7 @@
                 ke_hoach: document.getElementById('fKeHoach').value,
                 don_vi: document.getElementById('fDonVi').value,
                 bo_phan: boPhanValue,
-                khach_hang: selectedKhName, 
+                khach_hang: selectedKhName,
                 ma_hang: document.getElementById('fMaHang').value,
                 loai_hang: document.getElementById('fLoaiHang').value,
                 ngay_rc: document.getElementById('fNgayRC').value || null,
@@ -761,27 +441,21 @@
         }
 
         async function deleteRow(id) {
-            if(!confirm('Bạn có chắc chắn muốn xoá kế hoạch này?')) return;
+            if (!confirm('Bạn có chắc chắn muốn xoá kế hoạch này?')) return;
             try {
                 const res = await fetch(`/api/prod-plan/${id}`, { method: 'DELETE' });
-                if(res.ok) {
+                if (res.ok) {
                     showToast('Đã xoá kế hoạch');
                     loadData();
                 } else {
                     showToast('Lỗi khi xoá', 'error');
                 }
-            } catch(e) {
+            } catch (e) {
                 showToast('Lỗi kết nối máy chủ!', 'error');
             }
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            const sidebarToggle = document.getElementById('sidebarToggle');
-            if (sidebarToggle) sidebarToggle.addEventListener('click', toggleSidebar);
-            applySidebarState();
-            loadData();
-        });
-
+        /* ── Bo phan chip list ── */
         function normalizeBoPhanItem(val) {
             if (!val) return '';
             const num = String(val).match(/\d+/);
@@ -852,11 +526,11 @@
             });
             syncBoPhanHidden();
         }
+
+        /* ── Init: load data on page ready ── */
+        document.addEventListener('DOMContentLoaded', () => {
+            loadData();
+        });
     </script>
 </body>
 </html>
-
-
-
-
-

@@ -37,6 +37,8 @@ from pathlib import Path
 from typing import Optional
 from xml.etree import ElementTree as ET
 
+from PIL import Image as PILImage
+
 NS = {
     "x": "http://schemas.openxmlformats.org/spreadsheetml/2006/main",
     "xdr": "http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing",
@@ -200,10 +202,21 @@ def parse_drawing(z: zipfile.ZipFile, drawing_xml_path: str) -> dict:
                             t = rid_to_target[rid_svg]
                             if t.lower().endswith(".svg"):
                                 svg_target = t
+            blip_fill = pic.find("xdr:blipFill", NS)
+            src_rect_el = blip_fill.find("a:srcRect", NS) if blip_fill is not None else None
+            src_rect = None
+            if src_rect_el is not None:
+                sl = int(src_rect_el.get("l") or 0)
+                st = int(src_rect_el.get("t") or 0)
+                sr = int(src_rect_el.get("r") or 0)
+                sb = int(src_rect_el.get("b") or 0)
+                if sl or st or sr or sb:
+                    src_rect = {"l": sl, "t": st, "r": sr, "b": sb}
             pics.append({
                 "rid": rid,
                 "target": target,
                 "svg_target": svg_target,
+                "src_rect": src_rect,
                 "from_row": from_row,
                 "to_row": to_row,
                 "off_x": int(off.get("x")),
@@ -387,6 +400,17 @@ def point_in_bbox(x: float, y: float, bb: dict) -> bool:
            bb["off_y"] <= y <= bb["off_y"] + bb["ext_cy"]
 
 
+def _crop_image(path: Path, src_rect: dict) -> None:
+    """Crop image according to Office srcRect (values in 1/100_000th)."""
+    with PILImage.open(path) as im:
+        w, h = im.size
+        left = int(w * src_rect["l"] / 100000)
+        top = int(h * src_rect["t"] / 100000)
+        right = w - int(w * src_rect["r"] / 100000)
+        bottom = h - int(h * src_rect["b"] / 100000)
+        im.crop((left, top, right, bottom)).save(path)
+
+
 def process_sheet(
     z: zipfile.ZipFile,
     sh: dict,
@@ -490,7 +514,10 @@ def process_sheet(
         svg_path = None
         if zip_path in z.namelist():
             fname = f"{base_name}.{ext}"
-            (img_dir / fname).write_bytes(z.read(zip_path))
+            out_file = img_dir / fname
+            out_file.write_bytes(z.read(zip_path))
+            if pic.get("src_rect") and ext in ("png", "jpg", "jpeg"):
+                _crop_image(out_file, pic["src_rect"])
             rel_path = f"positions/{slug}/{nhom_key}/{fname}"
             if ext == "png":
                 png_path = rel_path
