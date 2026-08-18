@@ -804,6 +804,783 @@
             }
           ],
           "orphan_textboxes": []
+        },
+        {
+          "nhom": "lop_2",
+          "sheet_name": "lop_2",
+          "khoi": [
+            {
+              "ten_khoi": "Thân trước (2)",
+              "prefix": "TT",
+              "image_emu": {
+                "off_x": 2290710,
+                "off_y": 2875313,
+                "cx": 10420349,
+                "cy": 6686549
+              },
+              "image_png": "positions/aokhoac_thethao/lop_2/lop_2_tt_1.png",
+              "image_svg": null,
+              "hotspots": [
+                {
+                  "ma": "TT(2) - 1",
+                  "label": "Nẹp che dây kéo",
+                  "x_pct": 0.26949,
+                  "y_pct": 0.11826,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TT(2) - 2",
+                  "label": "Dây kéo tà trước",
+                  "x_pct": 0.27607,
+                  "y_pct": 0.27825,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TT(2) - 3",
+                  "label": "Diễu dây kéo tà trước",
+                  "x_pct": 0.27652,
+                  "y_pct": 0.43922,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TT(2) - 4",
+                  "label": "Nẹp dây kéo",
+                  "x_pct": 0.28351,
+                  "y_pct": 0.60354,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TT(2) - 5",
+                  "label": "Can nẹp dây kéo",
+                  "x_pct": 0.29809,
+                  "y_pct": 0.76731,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TT(2) - 6",
+                  "label": "Vòng cổ",
+                  "x_pct": 0.32499,
+                  "y_pct": 0.19956,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TT(2) - 7",
+                  "label": "Vai",
+                  "x_pct": 0.42363,
+                  "y_pct": 0.1866,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TT(2) - 8",
+                  "label": "Thân trước",
+                  "x_pct": 0.38862,
+                  "y_pct": 0.30311,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TT(2) - 9",
+                  "label": "Chít ly nách",
+                  "x_pct": 0.42623,
+                  "y_pct": 0.42284,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TT(2) - 10",
+                  "label": "Lai thân trước",
+                  "x_pct": 0.39494,
+                  "y_pct": 0.80691,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TT(2) - 11",
+                  "label": "Đúp lai thân trước",
+                  "x_pct": 0.44728,
+                  "y_pct": 0.8345,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                }
+              ]
+            },
+            {
+              "ten_khoi": "Thân sau",
+              "prefix": "C",
+              "image_emu": {
+                "off_x": -1036581,
+                "off_y": 3005223,
+                "cx": 10420349,
+                "cy": 6686549
+              },
+              "image_png": "positions/aokhoac_thethao/lop_2/lop_2_c_2.png",
+              "image_svg": null,
+              "hotspots": [
+                {
+                  "ma": "C(2) - 1",
+                  "label": "Vòng cổ sau",
+                  "x_pct": 0.58381,
+                  "y_pct": 0.18229,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "C(2) - 2",
+                  "label": "Lưng",
+                  "x_pct": 0.6126,
+                  "y_pct": 0.34535,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "C(2) - 3",
+                  "label": "Sườn",
+                  "x_pct": 0.46308,
+                  "y_pct": 0.51885,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "C(2) - 4",
+                  "label": "Lai thân sau",
+                  "x_pct": 0.63064,
+                  "y_pct": 0.80244,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "C(2) - 5",
+                  "label": "Đúp lai thân sau",
+                  "x_pct": 0.48119,
+                  "y_pct": 0.83467,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "C(2) - 6",
+                  "label": "Bách cổ",
+                  "x_pct": 0.87459,
+                  "y_pct": 0.16477,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "C(2) - 7",
+                  "label": "Diễu bách cổ",
+                  "x_pct": 0.88823,
+                  "y_pct": 0.28098,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "C(2) - 8",
+                  "label": "Nút bách cổ",
+                  "x_pct": 0.88228,
+                  "y_pct": 0.39637,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                }
+              ]
+            },
+            {
+              "ten_khoi": "TAY (2)",
+              "prefix": "T",
+              "image_emu": {
+                "off_x": 4165036,
+                "off_y": 2430606,
+                "cx": 10420349,
+                "cy": 6686549
+              },
+              "image_png": "positions/aokhoac_thethao/lop_2/lop_2_t_3.png",
+              "image_svg": null,
+              "hotspots": [
+                {
+                  "ma": "T(2) - 1",
+                  "label": "Lót tay",
+                  "x_pct": 0.10817,
+                  "y_pct": 0.33874,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "T(2) - 2",
+                  "label": "Vòng nách",
+                  "x_pct": 0.17526,
+                  "y_pct": 0.26645,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "T(2) - 3",
+                  "label": "Sườn tay",
+                  "x_pct": 0.1896,
+                  "y_pct": 0.45104,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "T(2) - 4",
+                  "label": "Lai tay",
+                  "x_pct": 0.11658,
+                  "y_pct": 0.69533,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "T(2) - 5",
+                  "label": "Đúp lai tay",
+                  "x_pct": 0.15844,
+                  "y_pct": 0.71366,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "T(2) - 6",
+                  "label": "Bách lai tay",
+                  "x_pct": -0.03544,
+                  "y_pct": 0.5665,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "T(2) - 7",
+                  "label": "Diễu bách lai tay",
+                  "x_pct": -0.05272,
+                  "y_pct": 0.68387,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "T(2) - 8",
+                  "label": "Nút bách lai tay",
+                  "x_pct": -0.05135,
+                  "y_pct": 0.79926,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "nhom": "lop_3",
+          "sheet_name": "lop_3",
+          "khoi": [
+            {
+              "ten_khoi": "Cổ",
+              "prefix": "C",
+              "image_emu": {
+                "off_x": 396593,
+                "off_y": 3841071,
+                "cx": 5181599,
+                "cy": 5181599
+              },
+              "image_png": "positions/aokhoac_thethao/lop_3/lop_3_c_4.png",
+              "image_svg": null,
+              "hotspots": [
+                {
+                  "ma": "C(3) - 1",
+                  "label": "Lá cổ ngoài",
+                  "x_pct": 0.42359,
+                  "y_pct": 0.30471,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "C(3) - 2",
+                  "label": "Đường tra cổ",
+                  "x_pct": 0.32532,
+                  "y_pct": 0.34871,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "C(3) - 3",
+                  "label": "Đường can lá cổ",
+                  "x_pct": 1.49769,
+                  "y_pct": 0.17935,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "C(3) - 4",
+                  "label": "Lá cổ trong",
+                  "x_pct": 1.75863,
+                  "y_pct": 0.26354,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "C(3) - 5",
+                  "label": "Viền chân cổ",
+                  "x_pct": 1.6418,
+                  "y_pct": 0.31824,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "C(3) - 6",
+                  "label": "Diễu viền chân cổ",
+                  "x_pct": 1.39286,
+                  "y_pct": 0.33903,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                }
+              ]
+            },
+            {
+              "ten_khoi": "Thân trước",
+              "prefix": "TT",
+              "image_emu": {
+                "off_x": 3674254,
+                "off_y": 2346057,
+                "cx": 5543550,
+                "cy": 7210424
+              },
+              "image_png": "positions/aokhoac_thethao/lop_3/lop_3_tt_5.png",
+              "image_svg": null,
+              "hotspots": [
+                {
+                  "ma": "TT(3) - 1",
+                  "label": "Đầu dây kéo tà",
+                  "x_pct": 0.49678,
+                  "y_pct": 0.07266,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TT(3) - 2",
+                  "label": "Dây kéo tà",
+                  "x_pct": 0.50709,
+                  "y_pct": 0.13487,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TT(3) - 3",
+                  "label": "Diễu dây kéo tà",
+                  "x_pct": 0.48203,
+                  "y_pct": 0.24803,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TT(3) - 4",
+                  "label": "Vòng cổ trước",
+                  "x_pct": 0.39259,
+                  "y_pct": 0.16195,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TT(3) - 5",
+                  "label": "Vai",
+                  "x_pct": 0.27662,
+                  "y_pct": 0.14356,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TT(3) - 6",
+                  "label": "Bạ ngực",
+                  "x_pct": 0.30421,
+                  "y_pct": 0.23117,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TT(3) - 7",
+                  "label": "Decoup ngực",
+                  "x_pct": 0.27662,
+                  "y_pct": 0.32055,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TT(3) - 8",
+                  "label": "Thân trước",
+                  "x_pct": 0.37251,
+                  "y_pct": 0.39983,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TT(3) - 9",
+                  "label": "Bạ sườn",
+                  "x_pct": 0.27054,
+                  "y_pct": 0.51116,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TT(3) - 10",
+                  "label": "Decoup sườn trước",
+                  "x_pct": 0.32423,
+                  "y_pct": 0.56164,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TT(3) - 11",
+                  "label": "Lai thân trước",
+                  "x_pct": 0.26399,
+                  "y_pct": 0.85781,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TT(3) - 12",
+                  "label": "Viền lai thân trước",
+                  "x_pct": 0.22979,
+                  "y_pct": 0.89701,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TT(3) - 13",
+                  "label": "Diễu viền lai thân trước",
+                  "x_pct": 0.41837,
+                  "y_pct": 0.8978,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                }
+              ]
+            },
+            {
+              "ten_khoi": "Tay",
+              "prefix": "T",
+              "image_emu": {
+                "off_x": 3019075,
+                "off_y": 2021203,
+                "cx": 7143749,
+                "cy": 8086724
+              },
+              "image_png": "positions/aokhoac_thethao/lop_3/lop_3_t_6.png",
+              "image_svg": null,
+              "hotspots": [
+                {
+                  "ma": "T(3) - 1",
+                  "label": "Nách",
+                  "x_pct": 0.37501,
+                  "y_pct": 0.19497,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "T(3) - 2",
+                  "label": "Sườn tay",
+                  "x_pct": 0.5,
+                  "y_pct": 0.21429,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "T(3) - 3",
+                  "label": "Tay",
+                  "x_pct": 0.25757,
+                  "y_pct": 0.553,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "T(3) - 4",
+                  "label": "Lai tay",
+                  "x_pct": 0.26164,
+                  "y_pct": 0.87381,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "T(3) - 5",
+                  "label": "Thun lai tay",
+                  "x_pct": 0.23413,
+                  "y_pct": 0.86712,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "T(3) - 6",
+                  "label": "Diễu thun lai tay",
+                  "x_pct": 0.22683,
+                  "y_pct": 0.88501,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "T(3) - 7",
+                  "label": "Bách lai tay",
+                  "x_pct": 0.29729,
+                  "y_pct": 0.87184,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                }
+              ]
+            },
+            {
+              "ten_khoi": "Lưng",
+              "prefix": "L",
+              "image_emu": {
+                "off_x": 2620289,
+                "off_y": 2284641,
+                "cx": 6019799,
+                "cy": 7143749
+              },
+              "image_png": "positions/aokhoac_thethao/lop_3/lop_3_l_7.png",
+              "image_svg": null,
+              "hotspots": [
+                {
+                  "ma": "L(3) - 1",
+                  "label": "Vòng cổ",
+                  "x_pct": 0.42686,
+                  "y_pct": 0.12128,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "L(3) - 2",
+                  "label": "Đường sườn sau",
+                  "x_pct": 0.52514,
+                  "y_pct": 0.44262,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "L(3) - 3",
+                  "label": "Thân sau",
+                  "x_pct": 0.22882,
+                  "y_pct": 0.63036,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "L(3) - 4",
+                  "label": "Lai thân sau",
+                  "x_pct": 0.50634,
+                  "y_pct": 0.85912,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "L(3) - 5",
+                  "label": "Viền thun lai thân sau",
+                  "x_pct": 0.63101,
+                  "y_pct": 0.87591,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "L(3) - 6",
+                  "label": "Diễu viền thun lai thân sau",
+                  "x_pct": 0.78378,
+                  "y_pct": 0.8626,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "L(3) - 7",
+                  "label": "Bách cổ",
+                  "x_pct": 0.49723,
+                  "y_pct": 0.12715,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                }
+              ]
+            },
+            {
+              "ten_khoi": "Túi sườn",
+              "prefix": "TS",
+              "image_emu": {
+                "off_x": 3678990,
+                "off_y": 2275480,
+                "cx": 5543550,
+                "cy": 7210424
+              },
+              "image_png": "positions/aokhoac_thethao/lop_3/lop_3_ts_8.png",
+              "image_svg": null,
+              "hotspots": [
+                {
+                  "ma": "TS(3) - 1",
+                  "label": "Nẹp miệng túi sườn",
+                  "x_pct": 0.31063,
+                  "y_pct": 0.60119,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TS(3) - 2",
+                  "label": "Diễu miệng túi sườn",
+                  "x_pct": 0.33381,
+                  "y_pct": 0.62625,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TS(3) - 3",
+                  "label": "Bọ túi sườn",
+                  "x_pct": 0.31489,
+                  "y_pct": 0.77671,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TS(3) - 4",
+                  "label": "Đắp túi sườn",
+                  "x_pct": 0.37021,
+                  "y_pct": 0.80036,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TS(3) - 5",
+                  "label": "Diễu bao túi sườn",
+                  "x_pct": 0.30903,
+                  "y_pct": 0.87997,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                }
+              ]
+            },
+            {
+              "ten_khoi": "TÚI NGỰC",
+              "prefix": "TN",
+              "image_emu": {
+                "off_x": 4114883,
+                "off_y": 2781070,
+                "cx": 2962274,
+                "cy": 5981699
+              },
+              "image_png": "positions/aokhoac_thethao/lop_3/lop_3_tn_9.png",
+              "image_svg": null,
+              "hotspots": [
+                {
+                  "ma": "TN(3) - 1",
+                  "label": "Đầu cầm dây kéo túi ngực",
+                  "x_pct": 0.73407,
+                  "y_pct": 0.24922,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TN(3) - 2",
+                  "label": "Đầu dây kéo túi ngực",
+                  "x_pct": 0.78002,
+                  "y_pct": 0.19827,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TN(3) - 3",
+                  "label": "Dây kéo miệng túi ngực",
+                  "x_pct": 0.76301,
+                  "y_pct": 0.30655,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TN(3) - 4",
+                  "label": "Diễu dây kéo miệng túi ngực",
+                  "x_pct": 0.77198,
+                  "y_pct": 0.39823,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TN(3) - 5",
+                  "label": "Bao túi ngực",
+                  "x_pct": 0.67079,
+                  "y_pct": 0.48499,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                },
+                {
+                  "ma": "TN(3) - 6",
+                  "label": "Đường may bao túi ngực",
+                  "x_pct": 0.65192,
+                  "y_pct": 0.54473,
+                  "w_pct": 0.04,
+                  "h_pct": 0.04,
+                  "rotation": 0.0
+                }
+              ]
+            }
+          ]
         }
       ]
     }

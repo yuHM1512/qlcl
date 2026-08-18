@@ -199,6 +199,10 @@ def main() -> None:
                 "ALTER TABLE public.dm_chi_tiet "
                 "DROP CONSTRAINT IF EXISTS dm_chi_tiet_bo_phan_id_ten_chi_tiet_key"
             )
+            cur.execute(
+                "ALTER TABLE public.dm_bo_phan "
+                "DROP CONSTRAINT IF EXISTS dm_bo_phan_loai_hang_id_ten_bo_phan_key"
+            )
 
             for slug, entry in loai_hangs.items():
                 ten_loai = SLUG_TO_TEN_LOAI[slug]
