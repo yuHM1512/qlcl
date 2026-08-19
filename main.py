@@ -136,6 +136,7 @@ SCHEMA_BOOTSTRAP_FILES = [
     "alter_prod_plan_add_po_info.sql",
     "alter_prod_plan_add_sync_fields.sql",
     "alter_prod_plan_add_mono.sql",
+    "create_qc_hanging_output.sql",
 ]
 
 # Tạo thư mục lưu PDF và images nếu chưa có
@@ -156,7 +157,6 @@ def get_prod_factory_connection():
 HANGING_LINE_SQL_SERVER = os.getenv("HANGING_LINE_SQL_SERVER", r".\SQLEXPRESS")
 HANGING_LINE_APP_DB = os.getenv("HANGING_LINE_APP_DB", "hanging_app")
 HANGING_LINE_SQL_DRIVER = os.getenv("HANGING_LINE_SQL_DRIVER", "ODBC Driver 17 for SQL Server")
-HANGING_LINE_MES_DB = os.getenv("HANGING_LINE_MES_DB", "MSD")
 HANGING_LINE_DON_VI = os.getenv("QLCL_DON_VI", "Chuyền treo")  # don_vi for prod_plan sync
 
 
@@ -6557,7 +6557,7 @@ def api_qc_hanging_output(
     plan_id: int = Query(...),
     date_str: str = Query(..., alias="date"),
 ):
-    """Sản lượng ra chuyền từ MES cho kế hoạch chuyền treo (StRole=13, IsLastSeq=1)."""
+    """Sản lượng ra chuyền từ MES (đã được push từ hanging_app)."""
     with get_db_connection() as conn:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute(
@@ -6565,38 +6565,62 @@ def api_qc_hanging_output(
                 (plan_id,),
             )
             plan = cur.fetchone()
+            if not plan or plan.get("source_system") != HL_SOURCE_SYSTEM:
+                return {"qty": 0, "available": False}
 
-    if not plan or plan.get("source_system") != HL_SOURCE_SYSTEM:
-        return {"qty": 0, "available": False}
+            mono = (plan.get("mono") or "").strip()
+            if not mono:
+                return {"qty": 0, "available": False}
 
-    mono = (plan.get("mono") or "").strip()
-    if not mono:
-        return {"qty": 0, "available": False}
-
-    try:
-        hl_conn = get_hanging_line_connection()
-        try:
-            hl_cur = hl_conn.cursor()
-            mes = HANGING_LINE_MES_DB
-            hl_cur.execute(
-                f"""
-                SELECT COALESCE(SUM(rw.Qty), 0) AS total_qty
-                FROM [{mes}].dbo.tRecentWork rw
-                JOIN [{mes}].dbo.tStation st ON st.StNo = rw.StNo
-                WHERE rw.MONo = ?
-                  AND st.StRole = 13
-                  AND rw.IsLastSeq = 1
-                  AND CONVERT(DATE, rw.ShtDate) = ?
+            cur.execute(
+                """
+                SELECT qty FROM public.qc_hanging_output
+                WHERE mono = %s AND report_date = %s
+                ORDER BY synced_at DESC LIMIT 1
                 """,
                 (mono, date_str),
             )
-            row = hl_cur.fetchone()
-            qty = int(row[0]) if row else 0
-        finally:
-            hl_conn.close()
-        return {"qty": qty, "available": True}
-    except Exception:
-        return {"qty": 0, "available": False}
+            row = cur.fetchone()
+            return {"qty": int(row["qty"]) if row else 0, "available": True}
+
+
+@app.post("/api/qc/hanging-output/push")
+def api_qc_hanging_output_push(request: Request, payload: dict):
+    """Nhận batch output từ hanging_app. Auth: X-API-Key.
+
+    Body: {"don_vi": "XN2", "date": "2026-08-19",
+           "outputs": [{"mono": "...", "qty": 123}, ...]}
+    """
+    if _PUSH_API_KEY and request.headers.get("X-API-Key") != _PUSH_API_KEY:
+        raise HTTPException(status_code=403, detail="API key không hợp lệ")
+
+    don_vi = str(payload.get("don_vi") or "").strip()
+    date_str = str(payload.get("date") or "").strip()
+    outputs = payload.get("outputs") or []
+    if not don_vi or not date_str:
+        raise HTTPException(status_code=422, detail="Thiếu don_vi hoặc date")
+
+    upserted = 0
+    with get_db_connection() as conn:
+        with conn.cursor() as cur:
+            for item in outputs:
+                mono = str(item.get("mono") or "").strip()
+                qty = int(item.get("qty") or 0)
+                if not mono:
+                    continue
+                cur.execute(
+                    """
+                    INSERT INTO public.qc_hanging_output (don_vi, mono, report_date, qty, synced_at)
+                    VALUES (%s, %s, %s, %s, NOW())
+                    ON CONFLICT (don_vi, mono, report_date)
+                    DO UPDATE SET qty = EXCLUDED.qty, synced_at = NOW()
+                    """,
+                    (don_vi, mono, date_str, qty),
+                )
+                upserted += 1
+        conn.commit()
+
+    return {"status": "ok", "upserted": upserted}
 
 
 @app.get("/api/qc/input/pos-summary")
