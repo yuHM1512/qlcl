@@ -1159,6 +1159,8 @@
     let vpBlockState = {};           // blockId -> { nhom, bo_phan_id }
     let outputTotal = 0;
     let outputFailed = 0;
+    let hlPassedCount = 0;
+    let hlAutoRefreshTimer = null;
     let selectedTargetPercent = null;
     let pendingFailedCount = 0;
     let baseSpIndex = 0;
@@ -1993,7 +1995,9 @@
         chiTietOptionsByBlock = {};
         baseSpIndex = 0;
         pendingFailedCount = 0;
+        hlPassedCount = 0;
         setOutputDisplay(0, 0);
+        startHlAutoRefresh();
 
         try {
             const lhRes = await fetch('/api/dm/loai-hang');
@@ -2039,6 +2043,7 @@
     }
 
     function backToPlanSelection() {
+        stopHlAutoRefresh();
         document.getElementById('inputDataArea').style.display = 'none';
         document.getElementById('planSelectionArea').style.display = 'block';
         selectedPlanId = null;
@@ -2048,6 +2053,7 @@
         selectedLoaiHangId = null;
         selectedTargetPercent = null;
         quickDefectCombos = [];
+        hlPassedCount = 0;
         setOutputDisplay(0, 0);
         currentWorkTab = 'input';
         switchWorkTab('input');
@@ -2089,6 +2095,12 @@
         } catch (e) { console.error(e); }
     }
 
+    function isCurrentPlanHangingLine() {
+        if (!selectedPlanId) return false;
+        const plan = availablePlans.find(p => p.id == selectedPlanId);
+        return plan && plan.source_system === 'hanging_line';
+    }
+
     function renderOutputDisplay() {
         const totalElem = document.getElementById('lblOutputTotal');
         const passedElem = document.getElementById('lblOutputPassed');
@@ -2096,11 +2108,23 @@
         const rateElem = document.getElementById('lblDefectRate');
         const rateMetaElem = document.getElementById('lblDefectRateMeta');
         const rateBox = document.getElementById('defectRateBox');
-        const passed = Math.max(0, (outputTotal || 0) - (outputFailed || 0));
-        const rate = outputTotal > 0 ? (outputFailed / outputTotal) * 100 : 0;
-        if (totalElem) totalElem.textContent = outputTotal;
+
+        let passed, failed, total, rate;
+        if (isCurrentPlanHangingLine()) {
+            passed = hlPassedCount || 0;
+            failed = outputFailed || 0;
+            total = passed + failed;
+            rate = total > 0 ? (failed / total) * 100 : 0;
+        } else {
+            passed = Math.max(0, (outputTotal || 0) - (outputFailed || 0));
+            failed = outputFailed || 0;
+            total = outputTotal || 0;
+            rate = total > 0 ? (failed / total) * 100 : 0;
+        }
+
+        if (totalElem) totalElem.textContent = total;
         if (passedElem) passedElem.textContent = passed;
-        if (failedElem) failedElem.textContent = outputFailed;
+        if (failedElem) failedElem.textContent = failed;
         if (rateElem) rateElem.textContent = `${rate.toFixed(2)}%`;
         if (rateBox) rateBox.className = 'defect-rate-chip';
         if (rateElem) rateElem.className = 'defect-rate-chip-value';
@@ -2120,6 +2144,33 @@
         outputTotal = total || 0;
         outputFailed = failed || 0;
         renderOutputDisplay();
+    }
+
+    async function fetchHangingOutput() {
+        if (!selectedPlanId || !isCurrentPlanHangingLine()) return;
+        try {
+            const params = new URLSearchParams({ plan_id: selectedPlanId, date: reportDateStr });
+            const res = await fetch(`/api/qc/hanging-output?${params.toString()}`);
+            const data = await res.json();
+            if (data.available) {
+                hlPassedCount = data.qty || 0;
+                renderOutputDisplay();
+            }
+        } catch (e) {
+            console.error('[hanging-output]', e);
+        }
+    }
+
+    function startHlAutoRefresh() {
+        stopHlAutoRefresh();
+        if (isCurrentPlanHangingLine()) {
+            fetchHangingOutput();
+            hlAutoRefreshTimer = setInterval(fetchHangingOutput, 30_000);
+        }
+    }
+
+    function stopHlAutoRefresh() {
+        if (hlAutoRefreshTimer) { clearInterval(hlAutoRefreshTimer); hlAutoRefreshTimer = null; }
     }
 
     async function fetchOutputTotal() {

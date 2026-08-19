@@ -156,6 +156,7 @@ def get_prod_factory_connection():
 HANGING_LINE_SQL_SERVER = os.getenv("HANGING_LINE_SQL_SERVER", r".\SQLEXPRESS")
 HANGING_LINE_APP_DB = os.getenv("HANGING_LINE_APP_DB", "hanging_app")
 HANGING_LINE_SQL_DRIVER = os.getenv("HANGING_LINE_SQL_DRIVER", "ODBC Driver 17 for SQL Server")
+HANGING_LINE_MES_DB = os.getenv("HANGING_LINE_MES_DB", "MSD")
 HANGING_LINE_DON_VI = os.getenv("QLCL_DON_VI", "Chuyền treo")  # don_vi for prod_plan sync
 
 
@@ -6549,6 +6550,53 @@ def api_qc_output_sp_get(
             )
             row = cur.fetchone()
             return {"total": row[0], "passed_count": row[1], "failed_count": row[2]}
+
+
+@app.get("/api/qc/hanging-output")
+def api_qc_hanging_output(
+    plan_id: int = Query(...),
+    date_str: str = Query(..., alias="date"),
+):
+    """Sản lượng ra chuyền từ MES cho kế hoạch chuyền treo (StRole=13, IsLastSeq=1)."""
+    with get_db_connection() as conn:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(
+                "SELECT mono, source_system FROM public.prod_plan WHERE id = %s",
+                (plan_id,),
+            )
+            plan = cur.fetchone()
+
+    if not plan or plan.get("source_system") != HL_SOURCE_SYSTEM:
+        return {"qty": 0, "available": False}
+
+    mono = (plan.get("mono") or "").strip()
+    if not mono:
+        return {"qty": 0, "available": False}
+
+    try:
+        hl_conn = get_hanging_line_connection()
+        try:
+            hl_cur = hl_conn.cursor()
+            mes = HANGING_LINE_MES_DB
+            hl_cur.execute(
+                f"""
+                SELECT COALESCE(SUM(rw.Qty), 0) AS total_qty
+                FROM [{mes}].dbo.tRecentWork rw
+                JOIN [{mes}].dbo.tStation st ON st.StNo = rw.StNo
+                WHERE rw.MONo = ?
+                  AND st.StRole = 13
+                  AND rw.IsLastSeq = 1
+                  AND CONVERT(DATE, rw.ShtDate) = ?
+                """,
+                (mono, date_str),
+            )
+            row = hl_cur.fetchone()
+            qty = int(row[0]) if row else 0
+        finally:
+            hl_conn.close()
+        return {"qty": qty, "available": True}
+    except Exception:
+        return {"qty": 0, "available": False}
 
 
 @app.get("/api/qc/input/pos-summary")
