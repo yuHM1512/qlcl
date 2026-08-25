@@ -322,20 +322,33 @@ def require_authenticated_api_user(request: Request) -> Dict:
 
 def require_qaqt_api_user(request: Request) -> Dict:
     """Dependency chỉ cho QAQT (admin QA) — dùng cho thao tác tinh chỉnh master data."""
-    user = get_authenticated_user(request)
-    if not user:
-        raise HTTPException(status_code=401, detail="Chưa đăng nhập")
-    if (user.get("department") or "").upper() != "QAQT":
-        raise HTTPException(status_code=403, detail="Chỉ tài khoản QAQT mới có quyền thao tác này.")
-    return user
+    return require_qc_role(request, QC_SETTINGS_ROLES)
 
 
 QC_DON_VI_SCOPED_ROLES = {"FACTORY_MANAGER", "FACTORY_DIRECTOR"}
 
+QC_KNOWN_ROLES = {"QC", "QAQT", "FACTORY_MANAGER", "FACTORY_DIRECTOR"}
+QC_DASHBOARD_ROLES = {"QAQT", "FACTORY_MANAGER", "FACTORY_DIRECTOR"}
+QC_SETTINGS_ROLES = {"QAQT"}
+QC_PLAN_ROLES = {"QAQT"}
+
+
+def get_qc_role(user: Optional[Dict]) -> str:
+    return ((user or {}).get("department") or "").upper()
+
 
 def is_qc_don_vi_scoped_role(user: Optional[Dict]) -> bool:
-    role = ((user or {}).get("department") or "").upper()
-    return role in QC_DON_VI_SCOPED_ROLES
+    return get_qc_role(user) in QC_DON_VI_SCOPED_ROLES
+
+
+def require_qc_role(request: Request, allowed_roles: set) -> Dict:
+    user = get_authenticated_user(request)
+    if not user:
+        raise HTTPException(status_code=401, detail="Chưa đăng nhập")
+    role = get_qc_role(user)
+    if role not in allowed_roles:
+        raise HTTPException(status_code=403, detail="Tài khoản không có quyền truy cập chức năng này.")
+    return user
 
 
 def resolve_qc_don_vi_scope(request: Request, requested_don_vi: Optional[str]) -> Tuple[Optional[str], Dict]:
@@ -346,6 +359,9 @@ def resolve_qc_don_vi_scope(request: Request, requested_don_vi: Optional[str]) -
         if not scoped_don_vi:
             raise HTTPException(status_code=403, detail="Tài khoản chưa được gán đơn vị quản lý.")
         return scoped_don_vi, user
+    role = get_qc_role(user)
+    if role not in QC_DASHBOARD_ROLES:
+        raise HTTPException(status_code=403, detail="Tài khoản không có quyền xem dashboard.")
     return requested_don_vi, user
 
 
@@ -418,7 +434,7 @@ def resolve_dashboard_default_station(
 
 
 def build_qc_template_context(request: Request, user: Optional[Dict], **extra) -> Dict[str, Any]:
-    role = ((user or {}).get("department") or "").upper()
+    role = get_qc_role(user)
     context: Dict[str, Any] = {
         "request": request,
         "user": user,
@@ -2708,11 +2724,13 @@ def qc_page(request: Request):
     user_data = get_authenticated_user(request)
     if not user_data:
         return redirect_to_login_for_current_path(request)
-    role = (user_data.get("department") or "").upper()
+    role = get_qc_role(user_data)
     if role == "QC":
         return RedirectResponse(url="/qc-input", status_code=303)
     if role in QC_DON_VI_SCOPED_ROLES:
         return RedirectResponse(url="/qc/dashboard", status_code=303)
+    if role not in QC_KNOWN_ROLES:
+        return RedirectResponse(url="/", status_code=303)
     return templates.TemplateResponse(
         "qc.html",
         build_qc_template_context(request, user_data, don_vi_options=DON_VI_OPTIONS, page_subtitle="Kế hoạch sản xuất", active_page="plan"),
@@ -2781,7 +2799,7 @@ def qc_settings_customer(request: Request):
     user = get_authenticated_user(request)
     if not user:
         return redirect_to_login_for_current_path(request)
-    if (user.get("department") or "").upper() != "QAQT":
+    if get_qc_role(user) not in QC_SETTINGS_ROLES:
         return RedirectResponse(url="/qc", status_code=303)
     return templates.TemplateResponse(
         "qc_settings_customer.html",
@@ -2793,7 +2811,7 @@ def qc_settings_details(request: Request):
     user = get_authenticated_user(request)
     if not user:
         return redirect_to_login_for_current_path(request)
-    if (user.get("department") or "").upper() != "QAQT":
+    if get_qc_role(user) not in QC_SETTINGS_ROLES:
         return RedirectResponse(url="/qc", status_code=303)
     return templates.TemplateResponse(
         "qc_settings_details.html",
@@ -2805,7 +2823,7 @@ def qc_settings_qc_list(request: Request):
     user = get_authenticated_user(request)
     if not user:
         return redirect_to_login_for_current_path(request)
-    if (user.get("department") or "").upper() != "QAQT":
+    if get_qc_role(user) not in QC_SETTINGS_ROLES:
         return RedirectResponse(url="/qc", status_code=303)
     return templates.TemplateResponse(
         "qc_settings_qcs.html",
@@ -2817,6 +2835,9 @@ def qc_cap_page(request: Request):
     user = get_authenticated_user(request)
     if not user:
         return redirect_to_login_for_current_path(request)
+    role = get_qc_role(user)
+    if role not in QC_DASHBOARD_ROLES:
+        return RedirectResponse(url="/", status_code=303)
     return templates.TemplateResponse("cap.html", build_qc_template_context(request, user, page_subtitle="Hành động khắc phục", active_page="cap"))
 
 @app.get("/qc/dashboard")
@@ -2824,6 +2845,9 @@ def qc_dashboard_page(request: Request):
     user = get_authenticated_user(request)
     if not user:
         return redirect_to_login_for_current_path(request)
+    role = get_qc_role(user)
+    if role not in QC_DASHBOARD_ROLES:
+        return RedirectResponse(url="/", status_code=303)
     return templates.TemplateResponse(
         "qc_dashboard.html",
         build_qc_template_context(request, user, page_subtitle="Dashboard tỉ lệ lỗi", active_page="dashboard"),
@@ -5652,6 +5676,77 @@ def api_push_qc_employees_from_hanging_line(request: Request, payload: dict):
     }
 
 
+@app.get("/api/qc/hanging-output")
+def api_qc_hanging_output(
+    plan_id: int = Query(...),
+    date_str: str = Query(..., alias="date"),
+):
+    """Sản lượng ra chuyền từ MES (đã được push từ hanging_app)."""
+    with get_db_connection() as conn:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(
+                "SELECT mono, source_system FROM public.prod_plan WHERE id = %s",
+                (plan_id,),
+            )
+            plan = cur.fetchone()
+            if not plan or plan.get("source_system") != HL_SOURCE_SYSTEM:
+                return {"qty": 0, "available": False}
+
+            mono = (plan.get("mono") or "").strip()
+            if not mono:
+                return {"qty": 0, "available": False}
+
+            cur.execute(
+                """
+                SELECT qty FROM public.qc_hanging_output
+                WHERE mono = %s AND report_date = %s
+                ORDER BY synced_at DESC LIMIT 1
+                """,
+                (mono, date_str),
+            )
+            row = cur.fetchone()
+            return {"qty": int(row["qty"]) if row else 0, "available": True}
+
+
+@app.post("/api/qc/hanging-output/push")
+def api_qc_hanging_output_push(request: Request, payload: dict):
+    """Nhận batch output từ hanging_app. Auth: X-API-Key.
+
+    Body: {"don_vi": "XN2", "date": "2026-08-19",
+           "outputs": [{"mono": "...", "qty": 123}, ...]}
+    """
+    if _PUSH_API_KEY and request.headers.get("X-API-Key") != _PUSH_API_KEY:
+        raise HTTPException(status_code=403, detail="API key không hợp lệ")
+
+    don_vi = str(payload.get("don_vi") or "").strip()
+    date_str = str(payload.get("date") or "").strip()
+    outputs = payload.get("outputs") or []
+    if not don_vi or not date_str:
+        raise HTTPException(status_code=422, detail="Thiếu don_vi hoặc date")
+
+    upserted = 0
+    with get_db_connection() as conn:
+        with conn.cursor() as cur:
+            for item in outputs:
+                mono = str(item.get("mono") or "").strip()
+                qty = int(item.get("qty") or 0)
+                if not mono:
+                    continue
+                cur.execute(
+                    """
+                    INSERT INTO public.qc_hanging_output (don_vi, mono, report_date, qty, synced_at)
+                    VALUES (%s, %s, %s, %s, NOW())
+                    ON CONFLICT (don_vi, mono, report_date)
+                    DO UPDATE SET qty = EXCLUDED.qty, synced_at = NOW()
+                    """,
+                    (don_vi, mono, date_str, qty),
+                )
+                upserted += 1
+        conn.commit()
+
+    return {"status": "ok", "upserted": upserted}
+
+
 @app.delete("/api/prod-plan/{plan_id}")
 def api_prod_plan_delete(plan_id: int):
     """Delete a prod_plan entry."""
@@ -5919,7 +6014,7 @@ def qc_settings_visual_picker_page(request: Request):
     user = get_authenticated_user(request)
     if not user:
         return RedirectResponse(url="/qc-login", status_code=303)
-    if (user.get("department") or "").upper() != "QAQT":
+    if get_qc_role(user) not in QC_SETTINGS_ROLES:
         return templates.TemplateResponse(
             "qc_settings_visual_picker.html",
             build_qc_template_context(request, user, forbidden=True, page_subtitle="Sắp xếp vị trí", active_page="settings_visual"),
@@ -6579,77 +6674,6 @@ def api_qc_output_sp_get(
             return {"total": row[0], "passed_count": row[1], "failed_count": row[2]}
 
 
-@app.get("/api/qc/hanging-output")
-def api_qc_hanging_output(
-    plan_id: int = Query(...),
-    date_str: str = Query(..., alias="date"),
-):
-    """Sản lượng ra chuyền từ MES (đã được push từ hanging_app)."""
-    with get_db_connection() as conn:
-        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute(
-                "SELECT mono, source_system FROM public.prod_plan WHERE id = %s",
-                (plan_id,),
-            )
-            plan = cur.fetchone()
-            if not plan or plan.get("source_system") != HL_SOURCE_SYSTEM:
-                return {"qty": 0, "available": False}
-
-            mono = (plan.get("mono") or "").strip()
-            if not mono:
-                return {"qty": 0, "available": False}
-
-            cur.execute(
-                """
-                SELECT qty FROM public.qc_hanging_output
-                WHERE mono = %s AND report_date = %s
-                ORDER BY synced_at DESC LIMIT 1
-                """,
-                (mono, date_str),
-            )
-            row = cur.fetchone()
-            return {"qty": int(row["qty"]) if row else 0, "available": True}
-
-
-@app.post("/api/qc/hanging-output/push")
-def api_qc_hanging_output_push(request: Request, payload: dict):
-    """Nhận batch output từ hanging_app. Auth: X-API-Key.
-
-    Body: {"don_vi": "XN2", "date": "2026-08-19",
-           "outputs": [{"mono": "...", "qty": 123}, ...]}
-    """
-    if _PUSH_API_KEY and request.headers.get("X-API-Key") != _PUSH_API_KEY:
-        raise HTTPException(status_code=403, detail="API key không hợp lệ")
-
-    don_vi = str(payload.get("don_vi") or "").strip()
-    date_str = str(payload.get("date") or "").strip()
-    outputs = payload.get("outputs") or []
-    if not don_vi or not date_str:
-        raise HTTPException(status_code=422, detail="Thiếu don_vi hoặc date")
-
-    upserted = 0
-    with get_db_connection() as conn:
-        with conn.cursor() as cur:
-            for item in outputs:
-                mono = str(item.get("mono") or "").strip()
-                qty = int(item.get("qty") or 0)
-                if not mono:
-                    continue
-                cur.execute(
-                    """
-                    INSERT INTO public.qc_hanging_output (don_vi, mono, report_date, qty, synced_at)
-                    VALUES (%s, %s, %s, %s, NOW())
-                    ON CONFLICT (don_vi, mono, report_date)
-                    DO UPDATE SET qty = EXCLUDED.qty, synced_at = NOW()
-                    """,
-                    (don_vi, mono, date_str, qty),
-                )
-                upserted += 1
-        conn.commit()
-
-    return {"status": "ok", "upserted": upserted}
-
-
 @app.get("/api/qc/input/pos-summary")
 def api_qc_input_pos_summary(
     plan_id: int = Query(...),
@@ -7058,6 +7082,80 @@ def api_qc_input_quick_defect_combos(
                     catalog_code,
                     catalog_id,
                 ),
+            )
+            rows = cur.fetchall()
+
+    for r in rows:
+        muc_do_text = r.pop("muc_do_text", None)
+        try:
+            r["muc_do"] = json.loads(muc_do_text) if muc_do_text else None
+        except (TypeError, ValueError):
+            r["muc_do"] = muc_do_text
+        r["label"] = (
+            f"{r.get('ten_bo_phan') or ''} - "
+            f"{r.get('ten_chi_tiet') or ''} - "
+            f"{r.get('ten_ma') or ''}. {r.get('ten_mo_ta') or ''}"
+        )
+    return {"status": "ok", "rows": rows}
+
+
+@app.get("/api/qc/input/quick-defect-combos-today")
+def api_qc_input_quick_defect_combos_today(
+    plan_id: int = Query(...),
+    station: str = Query(...),
+    date_str: Optional[str] = Query(None, alias="date"),
+):
+    """Defect combos recorded today for this plan/station — covers new patterns not in cumulative history."""
+    station_clean = (station or "").strip()
+    if not station_clean:
+        return {"status": "ok", "rows": []}
+
+    target_date = date_str or str(date.today())
+
+    with get_db_connection() as conn:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            catalog_id = get_effective_defect_catalog_id(cur, date_str)
+            cur.execute(
+                """
+                SELECT
+                    d.bo_phan_id,
+                    bp.ten_bo_phan,
+                    d.chi_tiet_id,
+                    ct.ten_chi_tiet,
+                    d.ma_loi_id,
+                    ml.ten_ma,
+                    d.mo_ta_loi_id,
+                    mt.ten_mo_ta,
+                    d.defect_catalog_id AS catalog_id,
+                    dc.code AS catalog_code,
+                    nl.ten_nhom,
+                    MAX(mt.muc_do::text) AS muc_do_text,
+                    COUNT(*)::int AS defect_qty
+                FROM public.qc_defect d
+                JOIN public.qc_error_log_sp sp ON sp.id = d.error_log_sp_id
+                JOIN public.prod_plan p ON p.id = sp.plan_id
+                LEFT JOIN public.dm_bo_phan bp ON bp.id = d.bo_phan_id
+                LEFT JOIN public.dm_chi_tiet ct ON ct.id = d.chi_tiet_id
+                LEFT JOIN public.dm_ma_loi ml ON ml.id = d.ma_loi_id
+                LEFT JOIN public.dm_mo_ta_loi mt ON mt.ma_loi_id = ml.id AND mt.id = d.mo_ta_loi_id
+                LEFT JOIN public.dm_defect_catalog dc ON dc.id = d.defect_catalog_id
+                LEFT JOIN public.dm_nhom_loi nl ON nl.id = ml.nhom_loi_id
+                WHERE sp.plan_id = %s
+                  AND sp.date = %s
+                  AND COALESCE(sp.station, '') = %s
+                  AND d.bo_phan_id IS NOT NULL
+                  AND d.chi_tiet_id IS NOT NULL
+                  AND d.ma_loi_id IS NOT NULL
+                  AND d.mo_ta_loi_id IS NOT NULL
+                GROUP BY
+                    d.bo_phan_id, bp.ten_bo_phan,
+                    d.chi_tiet_id, ct.ten_chi_tiet,
+                    d.ma_loi_id, ml.ten_ma,
+                    d.mo_ta_loi_id, mt.ten_mo_ta,
+                    d.defect_catalog_id, dc.code, nl.ten_nhom
+                ORDER BY defect_qty DESC, bp.ten_bo_phan, ct.ten_chi_tiet, ml.ten_ma
+                """,
+                (plan_id, target_date, station_clean),
             )
             rows = cur.fetchall()
 

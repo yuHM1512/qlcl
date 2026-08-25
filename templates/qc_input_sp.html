@@ -1174,6 +1174,8 @@
     let selectedLoaiHangId = null;
     let clusterOptions = [];
     let quickDefectCombos = [];
+    let quickDefectCombosToday = [];
+    let quickComboMode = 'history';
 
     // Ngày báo cáo — mặc định hôm nay, có thể đổi qua picker
     function todayStr() {
@@ -1206,10 +1208,12 @@
             if (station || stationList.length === 0) {
                 loadExistingEntry();
                 fetchOutputTotal();
+                fetchHangingOutput();
             }
             if (currentWorkTab === 'rework') fetchInlineReworkData();
             loadPosSummary();
             loadQuickDefectCombos();
+            loadQuickDefectCombosToday();
         }
     }
 
@@ -1569,6 +1573,7 @@
         fetchOutputTotal();
         loadPosSummary();
         loadQuickDefectCombos();
+        loadQuickDefectCombosToday();
     }
 
     function getActiveStation() {
@@ -1595,16 +1600,25 @@
         const station = getActiveStation();
         const needsStation = !station && (stationMode === 'cluster' || stationList.length > 1);
         if (needsStation) return `Chọn ${getStationFieldLabel()} để tải top combo lỗi.`;
+        if (quickComboMode === 'today') {
+            if (!quickDefectCombosToday.length) return 'Chưa có lỗi nào trong ngày.';
+            return 'Chọn combo đã ghi nhận trong ngày.';
+        }
         if (!quickDefectCombos.length) return 'Chưa có lịch sử lỗi phù hợp cho lựa chọn này.';
         return `Chọn combo để tự điền vào vị trí trống gần nhất.`;
     }
 
+    function getActiveQuickCombos() {
+        return quickComboMode === 'today' ? quickDefectCombosToday : quickDefectCombos;
+    }
+
     function getQuickComboOptionsHtml() {
-        const placeholder = quickDefectCombos.length
-            ? '-- Chọn nhanh dạng lỗi --'
-            : '-- Chưa có combo lịch sử --';
+        const combos = getActiveQuickCombos();
+        const placeholder = quickComboMode === 'today'
+            ? (combos.length ? '-- Chọn dạng lỗi trong ngày --' : '-- Chưa có lỗi trong ngày --')
+            : (combos.length ? '-- Chọn nhanh dạng lỗi --' : '-- Chưa có combo lịch sử --');
         const options = [`<option value="">${placeholder}</option>`];
-        quickDefectCombos.forEach((combo, idx) => {
+        combos.forEach((combo, idx) => {
             const qty = Number(combo.defect_qty || 0);
             const qtyLabel = qty > 0 ? ` (${qty})` : '';
             options.push(`<option value="${idx}">${combo.label || '--'}${qtyLabel}</option>`);
@@ -1613,10 +1627,16 @@
     }
 
     function renderQuickComboSelect(productId) {
+        const combos = getActiveQuickCombos();
+        const isHistory = quickComboMode === 'history';
+        const isToday = quickComboMode === 'today';
         return `
             <div class="quick-combo-row" data-product-id="${productId}">
-                <label class="label text-primary mb-1">Chọn nhanh dạng lỗi</label>
-                <select class="form-select quick-combo-select" onchange="onQuickComboSelect(${productId}, this)" ${quickDefectCombos.length ? '' : 'disabled'}>
+                <div class="d-flex mb-1" style="gap:0;">
+                    <button type="button" class="btn btn-sm quick-combo-tab ${isHistory ? 'btn-primary' : 'btn-outline-primary'}" onclick="switchQuickComboMode('history')" style="border-radius:.375rem 0 0 .375rem; flex:1; font-size:.72rem; padding:4px 6px;">Lũy kế</button>
+                    <button type="button" class="btn btn-sm quick-combo-tab ${isToday ? 'btn-primary' : 'btn-outline-primary'}" onclick="switchQuickComboMode('today')" style="border-radius:0 .375rem .375rem 0; flex:1; font-size:.72rem; padding:4px 6px;">Trong ngày</button>
+                </div>
+                <select class="form-select quick-combo-select" onchange="onQuickComboSelect(${productId}, this)" ${combos.length ? '' : 'disabled'}>
                     ${getQuickComboOptionsHtml()}
                 </select>
                 <div class="quick-combo-hint">${getQuickComboHint()}</div>
@@ -1694,6 +1714,36 @@
         }
     }
 
+    async function loadQuickDefectCombosToday() {
+        quickDefectCombosToday = [];
+        const station = getActiveStation();
+        if (!selectedPlanId || (!station && (stationMode === 'cluster' || stationList.length > 1))) {
+            refreshQuickComboDropdowns();
+            return;
+        }
+        try {
+            const params = new URLSearchParams({ plan_id: selectedPlanId, station: station || '', date: reportDateStr });
+            const res = await fetch(`/api/qc/input/quick-defect-combos-today?${params.toString()}`);
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.detail || 'API Error');
+            quickDefectCombosToday = data.rows || [];
+            if (quickComboMode === 'today') refreshQuickComboDropdowns();
+        } catch (e) {
+            console.error(e);
+            quickDefectCombosToday = [];
+            if (quickComboMode === 'today') refreshQuickComboDropdowns();
+        }
+    }
+
+    function switchQuickComboMode(mode) {
+        if (quickComboMode === mode) return;
+        quickComboMode = mode;
+        if (mode === 'today' && !quickDefectCombosToday.length) {
+            loadQuickDefectCombosToday();
+        }
+        refreshQuickComboDropdowns();
+    }
+
     function normalizeMucDoText(value) {
         return (value || '')
             .toString()
@@ -1731,7 +1781,7 @@
     }
 
     async function applyQuickDefectCombo(productId, index) {
-        const combo = quickDefectCombos[index];
+        const combo = getActiveQuickCombos()[index];
         if (!combo) return;
         if (!ensureStationSelected()) return;
 
@@ -2023,6 +2073,7 @@
                     await loadExistingEntry();
                     await fetchOutputTotal();
                     await loadQuickDefectCombos();
+                    loadQuickDefectCombosToday();
                 } else {
                     setOutputDisplay(0, 0);
                     refreshQuickComboDropdowns();
@@ -2035,6 +2086,7 @@
                 renderOutputDisplay();
                 renderStationSelector();
                 quickDefectCombos = [];
+                quickDefectCombosToday = [];
                 refreshQuickComboDropdowns();
                 alert('Cảnh báo: Loại hàng này chưa được định nghĩa trong danh mục master!');
             }
@@ -2053,6 +2105,7 @@
         selectedLoaiHangId = null;
         selectedTargetPercent = null;
         quickDefectCombos = [];
+        quickDefectCombosToday = [];
         hlPassedCount = 0;
         setOutputDisplay(0, 0);
         currentWorkTab = 'input';
@@ -3445,6 +3498,7 @@
                 await fetchOutputTotal();
                 loadPosSummary();
                 loadQuickDefectCombos();
+                loadQuickDefectCombosToday();
                 setTimeout(() => {
                     btn.disabled = false;
                     btn.innerHTML = originalBtnHtml;
