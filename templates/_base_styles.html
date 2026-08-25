@@ -207,4 +207,20 @@
             display: none;
         }
     }
+
+    .combo-overflow {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .combo-overflow.open {
+        max-height: 2000px;
+    }
+    .expand-toggle-icon {
+        transition: transform 0.3s ease;
+        display: inline-flex;
+    }
+    .expand-toggle-icon.rotated {
+        transform: rotate(180deg);
+    }
 </style>

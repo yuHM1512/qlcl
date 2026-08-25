@@ -129,11 +129,12 @@
                     </div>
 
                     <!-- Combo lỗi giai đoạn From-To -->
-                    <div class="mt-6 border-t border-surface-low pt-4">
-                        <div class="flex items-center justify-between mb-3">
+                    <div class="mt-6 border-t border-surface-low pt-5">
+                        <div class="flex items-center justify-between mb-4">
                             <div class="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">Dạng lỗi trong giai đoạn</div>
+                            <div id="defectCombosCount" class="text-[10px] font-bold text-on-surface-variant/60"></div>
                         </div>
-                        <div id="defectCombosPanel" class="max-h-[220px] overflow-auto pr-1 space-y-1"></div>
+                        <div id="defectCombosPanel"></div>
                     </div>
                 </div>
                 <div class="bg-surface-lowest rounded-2xl p-6 shadow-cloud">
@@ -189,7 +190,7 @@
                         Dạng lỗi theo mốc
                     </div>
                     <div class="text-sm text-on-surface-variant mb-3">Bộ phận - Chi tiết - Dạng lỗi (theo ngày xem)</div>
-                    <div id="posStatsPanel" class="max-h-[340px] overflow-auto pr-1 space-y-4"></div>
+                    <div id="posStatsPanel" class="space-y-3"></div>
                 </div>
             </section>
             <section class="grid grid-cols-1 xl:grid-cols-3 gap-6">
@@ -479,6 +480,31 @@
             _loadTimer = setTimeout(() => loadDashboard(), delayMs);
         }
 
+        function toggleDefectCombos() {
+            const el = document.getElementById('defectCombosExpand');
+            const icon = document.getElementById('defectCombosToggleIcon');
+            const txt = document.getElementById('defectCombosToggleText');
+            if (!el) return;
+            const opening = !el.classList.contains('open');
+            el.classList.toggle('open');
+            if (icon) icon.classList.toggle('rotated');
+            if (txt) txt.textContent = opening ? 'Thu gọn' : txt.dataset.origText || 'Xem thêm';
+        }
+
+        function togglePosBucket(expandId, btn) {
+            const el = document.getElementById(expandId);
+            if (!el) return;
+            const opening = !el.classList.contains('open');
+            el.classList.toggle('open');
+            const icon = btn.querySelector('.expand-toggle-icon');
+            const txt = btn.querySelector('.toggle-text');
+            if (icon) icon.classList.toggle('rotated');
+            if (txt) {
+                if (!txt.dataset.origText) txt.dataset.origText = txt.textContent;
+                txt.textContent = opening ? 'Thu gọn' : txt.dataset.origText;
+            }
+        }
+
         async function applyToday() {
             const today = toYmd(new Date());
             setSingleDay(today);
@@ -570,30 +596,50 @@
 
             // Combo lỗi giai đoạn From-To (below chart A)
             const defectCombosPanel = document.getElementById('defectCombosPanel');
+            const defectCombosCount = document.getElementById('defectCombosCount');
             if (defectCombosPanel) {
                 const combos = data.defect_combos || [];
+                if (defectCombosCount) defectCombosCount.textContent = combos.length ? `${combos.length} dạng lỗi` : '';
                 if (!combos.length) {
                     defectCombosPanel.innerHTML = '<div class="text-on-surface-variant text-sm py-2">Không có dữ liệu</div>';
                 } else {
                     const maxCount = combos[0]?.count || 1;
-                    defectCombosPanel.innerHTML = combos.map((c, idx) => {
+                    const VISIBLE = 5;
+                    const renderRow = (c, idx) => {
                         const rel = Math.max(0, Math.min(100, (c.count / maxCount) * 100));
-                        const color = CHART_COLORS[idx % CHART_COLORS.length];
+                        const badgeColor = idx === 0 ? 'bg-primary text-white'
+                            : idx === 1 ? 'bg-primary-container text-white'
+                            : idx === 2 ? 'bg-secondary-container text-primary'
+                            : 'bg-surface-high text-on-surface-variant';
                         return `
-                            <div class="flex items-center justify-between gap-3">
-                                <div class="flex items-center gap-2 min-w-0">
-                                    <span class="text-xs font-bold text-on-surface-variant tabular-nums shrink-0 w-5 text-right">${idx + 1}</span>
-                                    <span class="truncate text-xs font-medium">${c.combo}</span>
-                                </div>
-                                <div class="flex items-center gap-2 shrink-0">
-                                    <div class="w-[70px] h-1.5 bg-surface-low rounded-full overflow-hidden">
-                                        <div class="h-full rounded-full" style="width:${rel}%; background:${color};"></div>
+                            <div class="py-2">
+                                <div class="flex items-start gap-2.5">
+                                    <span class="shrink-0 w-6 h-6 rounded-lg ${badgeColor} text-[11px] font-extrabold flex items-center justify-center mt-0.5">${idx + 1}</span>
+                                    <div class="min-w-0 flex-1">
+                                        <div class="flex items-start justify-between gap-2">
+                                            <span class="text-xs font-semibold text-on-surface leading-snug">${c.combo}</span>
+                                            <span class="text-sm font-extrabold tabular-nums text-primary shrink-0">${fmtNum(c.count)}</span>
+                                        </div>
+                                        <div class="mt-1.5 w-full h-1.5 bg-surface-low rounded-full overflow-hidden">
+                                            <div class="h-full rounded-full transition-all duration-500" style="width:${rel}%; background: linear-gradient(90deg, #0040a1, #0056d2);"></div>
+                                        </div>
                                     </div>
-                                    <span class="text-xs font-bold tabular-nums w-8 text-right">${fmtNum(c.count)}</span>
                                 </div>
-                            </div>
-                        `;
-                    }).join('');
+                            </div>`;
+                    };
+                    const topHtml = combos.slice(0, VISIBLE).map(renderRow).join('');
+                    let expandHtml = '';
+                    if (combos.length > VISIBLE) {
+                        const restHtml = combos.slice(VISIBLE).map(renderRow).join('');
+                        const moreCount = combos.length - VISIBLE;
+                        expandHtml = `
+                            <div id="defectCombosExpand" class="combo-overflow">${restHtml}</div>
+                            <button onclick="toggleDefectCombos()" class="w-full mt-2 py-2 rounded-xl bg-surface-low hover:bg-surface-high transition flex items-center justify-center gap-1.5 text-xs font-bold text-on-surface-variant">
+                                <span id="defectCombosToggleText" data-orig-text="Xem thêm ${moreCount} dạng lỗi">Xem thêm ${moreCount} dạng lỗi</span>
+                                <span id="defectCombosToggleIcon" class="material-symbols-outlined expand-toggle-icon text-[18px]">expand_more</span>
+                            </button>`;
+                    }
+                    defectCombosPanel.innerHTML = `<div class="divide-y divide-surface-low">${topHtml}</div>${expandHtml}`;
                 }
             }
 
@@ -760,23 +806,55 @@
             const posStatsPanel = document.getElementById('posStatsPanel');
             if (posStatsPanel) {
                 const buckets = data.pos_stats?.buckets || [];
-                const hasAny = buckets.some((b) => b.combos && b.combos.length > 0);
-                if (!hasAny) {
+                const filled = buckets.filter((b) => b.combos && b.combos.length > 0);
+                if (!filled.length) {
                     posStatsPanel.innerHTML = '<div class="text-on-surface-variant text-sm py-3">Không có dữ liệu</div>';
                 } else {
-                    posStatsPanel.innerHTML = buckets.filter((b) => b.combos && b.combos.length > 0).map((b) => {
-                        const rows = b.combos.map((c) => `
-                            <div class="flex items-start justify-between gap-2 py-1.5 border-b border-surface-low/50 last:border-0">
-                                <span class="text-xs leading-snug break-words min-w-0">${c.combo}</span>
-                                <span class="text-xs font-bold tabular-nums shrink-0">${fmtNum(c.count)}</span>
-                            </div>
-                        `).join('');
+                    posStatsPanel.innerHTML = filled.map((b, bIdx) => {
+                        const totalInBucket = b.combos.reduce((s, c) => s + c.count, 0);
+                        const top = b.combos[0];
+                        const rest = b.combos.slice(1);
+                        const expandId = `posBucket_${bIdx}`;
+
+                        const topRow = `
+                            <div class="flex items-start gap-2 mt-2">
+                                <span class="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 shrink-0"></span>
+                                <div class="flex-1 min-w-0 flex items-start justify-between gap-2">
+                                    <span class="text-xs font-semibold text-on-surface leading-snug">${top.combo}</span>
+                                    <span class="text-sm font-extrabold tabular-nums text-primary shrink-0">${fmtNum(top.count)}</span>
+                                </div>
+                            </div>`;
+
+                        let expandBlock = '';
+                        if (rest.length) {
+                            const restRows = rest.map(c => `
+                                <div class="flex items-start gap-2 py-1.5">
+                                    <span class="w-1 h-1 rounded-full bg-on-surface-variant/30 mt-1.5 shrink-0"></span>
+                                    <div class="flex-1 min-w-0 flex items-start justify-between gap-2">
+                                        <span class="text-xs text-on-surface-variant leading-snug">${c.combo}</span>
+                                        <span class="text-xs font-bold tabular-nums text-on-surface-variant shrink-0">${fmtNum(c.count)}</span>
+                                    </div>
+                                </div>`).join('');
+                            expandBlock = `
+                                <div id="${expandId}" class="combo-overflow pl-3.5">${restRows}</div>
+                                <button onclick="togglePosBucket('${expandId}', this)" class="mt-1.5 flex items-center gap-1 text-[11px] font-bold text-primary hover:text-primary-container transition pl-3.5">
+                                    <span class="toggle-text">${rest.length} dạng lỗi khác</span>
+                                    <span class="material-symbols-outlined expand-toggle-icon text-[16px]">expand_more</span>
+                                </button>`;
+                        }
+
                         return `
-                            <div>
-                                <div class="text-[10px] font-black uppercase tracking-widest text-primary-container mb-1.5">${b.time_bucket}</div>
-                                ${rows}
-                            </div>
-                        `;
+                            <div class="bg-surface-low/50 rounded-xl p-3">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="material-symbols-outlined text-[16px] text-primary-container">schedule</span>
+                                        <span class="text-xs font-display font-extrabold text-primary-container">${b.time_bucket}</span>
+                                    </div>
+                                    <span class="text-[10px] font-bold text-on-surface-variant/60 bg-surface-lowest px-2 py-0.5 rounded-md">${totalInBucket} lỗi</span>
+                                </div>
+                                ${topRow}
+                                ${expandBlock}
+                            </div>`;
                     }).join('');
                 }
             }
