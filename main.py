@@ -2832,112 +2832,82 @@ def qc_dashboard_page(request: Request):
 @app.get("/api/qc/dashboard/filters")
 def api_qc_dashboard_filters(
     request: Request,
+    date_from: Optional[str] = Query(None),
+    date_to: Optional[str] = Query(None),
     don_vi: Optional[str] = Query(None),
     bo_phan: Optional[str] = Query(None),
+    station: Optional[str] = Query(None),
     ma_hang: Optional[str] = Query(None),
     type_name: Optional[str] = Query(None),
 ):
-    """Return filter options for QC Dashboard."""
+    """Return cascading filter options for QC Dashboard."""
     don_vi, scoped_user = resolve_qc_don_vi_scope(request, don_vi)
+    if not date_to:
+        date_to = datetime.now().strftime("%Y-%m-%d")
+    if not date_from:
+        date_from = date_to
+
+    resolved_bo_phan_expr = "COALESCE(NULLIF(qe.bo_phan, ''), '')"
+
     with get_db_connection() as conn:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            don_vi_filter_params: List[Any] = []
-            don_vi_filter_sql = ""
-            if don_vi:
-                don_vi_filter_sql = "AND don_vi = %s"
-                don_vi_filter_params.append(don_vi)
-            cur.execute(
-                f"""
-                SELECT DISTINCT don_vi
-                FROM public.prod_plan
-                WHERE don_vi IS NOT NULL AND don_vi <> ''
-                  {don_vi_filter_sql}
-                ORDER BY don_vi
-                """,
-                tuple(don_vi_filter_params),
-            )
-            don_vi_options = [r["don_vi"] for r in cur.fetchall()]
+            def option_query(
+                select_expr: str,
+                not_blank_expr: str,
+                *,
+                apply_don_vi: bool = True,
+                include_bo_phan: bool = False,
+                include_station: bool = False,
+                include_ma_hang: bool = False,
+            ) -> Tuple[str, List[Any]]:
+                where_clauses = ["o.date BETWEEN %s AND %s", f"{not_blank_expr} IS NOT NULL", f"{not_blank_expr} <> ''"]
+                params: List[Any] = [date_from, date_to]
+                if apply_don_vi and don_vi:
+                    where_clauses.append("p.don_vi = %s")
+                    params.append(don_vi)
+                if include_bo_phan and bo_phan:
+                    where_clauses.append(f"{resolved_bo_phan_expr} = %s")
+                    params.append(bo_phan)
+                if include_station and station:
+                    where_clauses.append("COALESCE(o.station, '') = %s")
+                    params.append(station)
+                if include_ma_hang and ma_hang:
+                    where_clauses.append("COALESCE(p.ma_hang, '') = %s")
+                    params.append(ma_hang)
 
-            station_params = []
-            station_where = []
-            if don_vi:
-                station_where.append("p.don_vi = %s")
-                station_params.append(don_vi)
-            cur.execute(f"""
-                SELECT DISTINCT o.station
-                FROM public.qc_output_sp_log o
-                JOIN public.prod_plan p ON p.id = o.plan_id
-                WHERE o.station IS NOT NULL AND o.station <> ''
-                {("AND " + " AND ".join(station_where)) if station_where else ""}
-                ORDER BY o.station
-            """, tuple(station_params))
-            station_options = [r["station"] for r in cur.fetchall()]
+                sql = f"""
+                    SELECT DISTINCT {select_expr} AS value
+                    FROM public.qc_output_sp_log o
+                    JOIN public.prod_plan p ON p.id = o.plan_id
+                    LEFT JOIN public.quality_employees qe ON qe.ma_nv = o.ma_nv
+                    LEFT JOIN public.dm_loai_hang lh ON lh.ten_loai = p.loai_hang
+                    LEFT JOIN public.dm_loai_hang_target tgt ON tgt.id_type = lh.id_type
+                    WHERE {" AND ".join(where_clauses)}
+                    ORDER BY value
+                """
+                return sql, params
+
+            sql, params = option_query("p.don_vi", "p.don_vi", apply_don_vi=is_qc_don_vi_scoped_role(scoped_user))
+            cur.execute(sql, tuple(params))
+            don_vi_options = [r["value"] for r in cur.fetchall()]
 
             # "Tổ" on QC dashboard must reflect QC employee team (quality_employees.bo_phan),
             # i.e. filter by the team of the QC employee code (ma_nv) that created each row.
-            bo_phan_params: List = []
-            bo_phan_where = ["qe.bo_phan IS NOT NULL", "qe.bo_phan <> ''"]
-            if don_vi:
-                bo_phan_where.append("p.don_vi = %s")
-                bo_phan_params.append(don_vi)
-            cur.execute(
-                f"""
-                SELECT DISTINCT qe.bo_phan AS bo_phan
-                FROM public.qc_output_sp_log o
-                JOIN public.prod_plan p ON p.id = o.plan_id
-                LEFT JOIN public.quality_employees qe ON qe.ma_nv = o.ma_nv
-                WHERE {" AND ".join(bo_phan_where)}
-                ORDER BY qe.bo_phan
-                """,
-                tuple(bo_phan_params),
-            )
-            bo_phan_options = [r["bo_phan"] for r in cur.fetchall()]
-            if not bo_phan_options:
-                fallback_params: List = []
-                fallback_where = ["chuc_vu = 'QC'", "bo_phan IS NOT NULL", "bo_phan <> ''"]
-                if don_vi:
-                    fallback_where.append("don_vi = %s")
-                    fallback_params.append(don_vi)
-                cur.execute(
-                    f"""
-                    SELECT DISTINCT bo_phan
-                    FROM public.quality_employees
-                    WHERE {" AND ".join(fallback_where)}
-                    ORDER BY bo_phan
-                    """,
-                    tuple(fallback_params),
-                )
-                bo_phan_options = [r["bo_phan"] for r in cur.fetchall()]
+            sql, params = option_query(resolved_bo_phan_expr, resolved_bo_phan_expr)
+            cur.execute(sql, tuple(params))
+            bo_phan_options = [r["value"] for r in cur.fetchall()]
 
-            ma_hang_params = []
-            ma_hang_where = []
-            if don_vi:
-                ma_hang_where.append("p.don_vi = %s")
-                ma_hang_params.append(don_vi)
-            cur.execute(f"""
-                SELECT DISTINCT p.ma_hang
-                FROM public.prod_plan p
-                WHERE p.ma_hang IS NOT NULL AND p.ma_hang <> ''
-                {("AND " + " AND ".join(ma_hang_where)) if ma_hang_where else ""}
-                ORDER BY p.ma_hang
-            """, tuple(ma_hang_params))
-            ma_hang_options = [r["ma_hang"] for r in cur.fetchall()]
+            sql, params = option_query("o.station", "o.station", include_bo_phan=True)
+            cur.execute(sql, tuple(params))
+            station_options = [r["value"] for r in cur.fetchall()]
 
-            type_params = []
-            type_where = []
-            if don_vi:
-                type_where.append("p.don_vi = %s")
-                type_params.append(don_vi)
-            cur.execute(f"""
-                SELECT DISTINCT tgt.type
-                FROM public.prod_plan p
-                JOIN public.dm_loai_hang lh ON lh.ten_loai = p.loai_hang
-                JOIN public.dm_loai_hang_target tgt ON tgt.id_type = lh.id_type
-                WHERE tgt.type IS NOT NULL AND tgt.type <> ''
-                {("AND " + " AND ".join(type_where)) if type_where else ""}
-                ORDER BY tgt.type
-            """, tuple(type_params))
-            type_options = [r["type"] for r in cur.fetchall()]
+            sql, params = option_query("p.ma_hang", "p.ma_hang", include_bo_phan=True, include_station=True)
+            cur.execute(sql, tuple(params))
+            ma_hang_options = [r["value"] for r in cur.fetchall()]
+
+            sql, params = option_query("tgt.type", "tgt.type", include_bo_phan=True, include_station=True, include_ma_hang=True)
+            cur.execute(sql, tuple(params))
+            type_options = [r["value"] for r in cur.fetchall()]
             default_type_name = type_name or ("Thường" if "Thường" in type_options else None)
             default_station = resolve_dashboard_default_station(
                 cur,
@@ -2946,6 +2916,8 @@ def api_qc_dashboard_filters(
                 bo_phan=bo_phan,
                 ma_hang=ma_hang,
                 type_name=default_type_name,
+                date_from=date_from,
+                date_to=date_to,
             )
 
     return {

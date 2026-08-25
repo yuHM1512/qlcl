@@ -267,6 +267,7 @@
             if (keepValue && [...el.options].some((o) => o.value === keepValue)) {
                 el.value = keepValue;
             }
+            return el.value || '';
         }
 
         function fmtNum(v) {
@@ -411,8 +412,10 @@
             };
         }
 
-        async function loadFilters() {
+        async function loadFilters(depth = 0) {
             const keep = {
+                date_from: document.getElementById('fDateFrom').value,
+                date_to: document.getElementById('fDateTo').value,
                 don_vi: document.getElementById('fDonVi').value,
                 bo_phan: document.getElementById('fBoPhan').value,
                 station: document.getElementById('fStation').value,
@@ -420,19 +423,43 @@
                 type_name: document.getElementById('fType').value,
             };
             const params = new URLSearchParams();
+            if (keep.date_from) params.set('date_from', keep.date_from);
+            if (keep.date_to) params.set('date_to', keep.date_to);
             if (keep.don_vi) params.set('don_vi', keep.don_vi);
             if (keep.bo_phan) params.set('bo_phan', keep.bo_phan);
+            if (keep.station) params.set('station', keep.station);
             if (keep.ma_hang) params.set('ma_hang', keep.ma_hang);
             if (keep.type_name) params.set('type_name', keep.type_name);
             const res = await fetch(`/api/qc/dashboard/filters?${params.toString()}`);
             const data = await res.json();
             if (!keep.type_name && (data.type || []).includes('Thường')) keep.type_name = 'Thường';
             if (!keep.station && data.default_station) keep.station = data.default_station;
-            buildSelect(document.getElementById('fDonVi'), data.don_vi || [], 'Tất cả', keep.don_vi);
-            buildSelect(document.getElementById('fBoPhan'), data.bo_phan || [], 'Tất cả', keep.bo_phan);
-            buildSelect(document.getElementById('fStation'), data.station || [], isQcViewerRole ? 'Chọn trạm' : 'Trạm sau seam (mặc định)', keep.station);
-            buildSelect(document.getElementById('fMaHang'), data.ma_hang || [], 'Tất cả', keep.ma_hang);
-            buildSelect(document.getElementById('fType'), data.type || [], 'Tất cả', keep.type_name);
+
+            const selected = {
+                don_vi: buildSelect(document.getElementById('fDonVi'), data.don_vi || [], 'Tất cả', keep.don_vi),
+                bo_phan: buildSelect(document.getElementById('fBoPhan'), data.bo_phan || [], 'Tất cả', keep.bo_phan),
+                station: buildSelect(document.getElementById('fStation'), data.station || [], isQcViewerRole ? 'Chọn trạm' : 'Trạm sau seam (mặc định)', keep.station),
+                ma_hang: buildSelect(document.getElementById('fMaHang'), data.ma_hang || [], 'Tất cả', keep.ma_hang),
+                type_name: buildSelect(document.getElementById('fType'), data.type || [], 'Tất cả', keep.type_name),
+            };
+
+            const changed = ['don_vi', 'bo_phan', 'station', 'ma_hang', 'type_name']
+                .some((key) => (keep[key] || '') !== (selected[key] || ''));
+            if (changed && depth < 1) {
+                await loadFilters(depth + 1);
+            }
+        }
+
+        async function refreshFiltersAndDashboard() {
+            await loadFilters();
+            scheduleLoad(0);
+        }
+
+        function clearFilters(ids) {
+            ids.forEach((id) => {
+                const el = document.getElementById(id);
+                if (el) el.value = '';
+            });
         }
 
         function toYmd(d) {
@@ -457,6 +484,7 @@
         async function applyToday() {
             const today = toYmd(new Date());
             setSingleDay(today);
+            await loadFilters();
             await loadDashboard();
         }
 
@@ -482,6 +510,7 @@
                 return;
             }
             setSingleDay(data.date);
+            await loadFilters();
             await loadDashboard();
         }
 
@@ -863,16 +892,25 @@
             await loadDashboard();
 
             document.getElementById('fDonVi')?.addEventListener('change', async () => {
-                await loadFilters();
-                scheduleLoad(0);
+                clearFilters(['fBoPhan', 'fStation', 'fMaHang', 'fType']);
+                await refreshFiltersAndDashboard();
             });
 
             // Auto-load when any filter changes (no need for an Apply button).
-            document.getElementById('fDateFrom')?.addEventListener('change', () => scheduleLoad());
-            document.getElementById('fDateTo')?.addEventListener('change', () => scheduleLoad());
-            document.getElementById('fBoPhan')?.addEventListener('change', () => scheduleLoad());
-            document.getElementById('fStation')?.addEventListener('change', () => scheduleLoad());
-            document.getElementById('fMaHang')?.addEventListener('change', () => scheduleLoad());
+            document.getElementById('fDateFrom')?.addEventListener('change', refreshFiltersAndDashboard);
+            document.getElementById('fDateTo')?.addEventListener('change', refreshFiltersAndDashboard);
+            document.getElementById('fBoPhan')?.addEventListener('change', async () => {
+                clearFilters(['fStation', 'fMaHang', 'fType']);
+                await refreshFiltersAndDashboard();
+            });
+            document.getElementById('fStation')?.addEventListener('change', async () => {
+                clearFilters(['fMaHang', 'fType']);
+                await refreshFiltersAndDashboard();
+            });
+            document.getElementById('fMaHang')?.addEventListener('change', async () => {
+                clearFilters(['fType']);
+                await refreshFiltersAndDashboard();
+            });
             document.getElementById('fType')?.addEventListener('change', () => scheduleLoad());
             document.getElementById('fFocusDate')?.addEventListener('change', () => scheduleLoad(0));
             document.getElementById('cBoPhan')?.addEventListener('change', () => scheduleLoad(0));
