@@ -3248,8 +3248,10 @@ def api_qc_dashboard(
             cur.execute(
                 f"""
                 SELECT
+                    {_bucket_case("timezone('Asia/Bangkok', sp.created_at)::time")} AS time_bucket,
                     COALESCE(NULLIF(bp.ten_bo_phan, ''), '(Trống)') AS bo_phan_name,
                     COALESCE(NULLIF(ct.ten_chi_tiet, ''), '(Trống)') AS chi_tiet_name,
+                    COALESCE(NULLIF(ml.ten_ma, ''), '(Trống)') AS ma_loi_name,
                     COUNT(*) AS qty
                 FROM public.qc_defect d
                 JOIN public.qc_error_log_sp sp ON sp.id = d.error_log_sp_id
@@ -3260,8 +3262,9 @@ def api_qc_dashboard(
                 LEFT JOIN public.dm_loai_hang_target tgt ON tgt.id_type = lh.id_type
                 LEFT JOIN public.dm_bo_phan bp ON bp.id = d.bo_phan_id
                 LEFT JOIN public.dm_chi_tiet ct ON ct.id = d.chi_tiet_id
+                LEFT JOIN public.dm_ma_loi ml ON ml.id = d.ma_loi_id
                 WHERE {pos_where_sql}
-                GROUP BY bo_phan_name, chi_tiet_name
+                GROUP BY time_bucket, bo_phan_name, chi_tiet_name, ma_loi_name
                 """,
                 tuple(pos_params),
             )
@@ -3360,27 +3363,28 @@ def api_qc_dashboard(
             "target_rate": _to_float(r.get("target_rate")),
         })
 
-    pos_bp: Dict[str, Dict[str, int]] = {}
-    pos_bp_totals: Dict[str, int] = {}
+    combo_by_bucket: Dict[str, Dict[str, int]] = {}
     for r in (pos_rows or []):
+        bucket = r.get("time_bucket") or "N/A"
         bp_name = r.get("bo_phan_name") or "(Trống)"
         ct_name = r.get("chi_tiet_name") or "(Trống)"
+        ml_name = r.get("ma_loi_name") or "(Trống)"
         qty = int(r.get("qty") or 0)
         if qty <= 0:
             continue
-        if bp_name not in pos_bp:
-            pos_bp[bp_name] = {}
-        pos_bp[bp_name][ct_name] = pos_bp[bp_name].get(ct_name, 0) + qty
-        pos_bp_totals[bp_name] = pos_bp_totals.get(bp_name, 0) + qty
+        combo_key = f"{bp_name} - {ct_name} - {ml_name}"
+        combo_by_bucket.setdefault(bucket, {})
+        combo_by_bucket[bucket][combo_key] = combo_by_bucket[bucket].get(combo_key, 0) + qty
 
-    pos_items = []
-    for bp_name, total in sorted(pos_bp_totals.items(), key=lambda x: (-x[1], x[0])):
-        details_map = pos_bp.get(bp_name, {})
-        details = []
-        for ct_name, cnt in sorted(details_map.items(), key=lambda x: (-x[1], x[0])):
-            details.append({"chi_tiet": ct_name, "count": int(cnt)})
-        pos_items.append({"bo_phan": bp_name, "count": int(total), "details": details})
-    pos_stats = {"date": focus_date, "items": pos_items}
+    pos_buckets = []
+    for b in bucket_order:
+        combos_map = combo_by_bucket.get(b, {})
+        combos = sorted(combos_map.items(), key=lambda x: (-x[1], x[0]))
+        pos_buckets.append({
+            "time_bucket": b,
+            "combos": [{"combo": k, "count": v} for k, v in combos],
+        })
+    pos_stats = {"date": focus_date, "buckets": pos_buckets}
 
     by_bucket = []
     for b in bucket_order:
@@ -3458,11 +3462,61 @@ def api_qc_dashboard(
         for name, cnt in top_ma_loi_items
     ]
 
+    defect_combo_counts: Dict[str, int] = {}
+    for r in defect_agg_rows:
+        bp_name = r.get("bo_phan_name") or "(Trống)"
+        ct_name = r.get("chi_tiet_name") or "(Trống)"
+        ml_name = r.get("ma_loi_name") or "(Trống)"
+        qty = int(r.get("qty") or 0)
+        if qty <= 0:
+            continue
+        combo_key = f"{bp_name} - {ct_name} - {ml_name}"
+        defect_combo_counts[combo_key] = defect_combo_counts.get(combo_key, 0) + qty
+    defect_combos = [
+        {"combo": k, "count": v}
+        for k, v in sorted(defect_combo_counts.items(), key=lambda x: (-x[1], x[0]))
+    ]
+
     defect_filter_bo_phan = sorted(bo_phan_counts.keys())
     if ma_loi_bo_phan:
         defect_filter_chi_tiet = sorted((chi_tiet_by_bo_phan.get(ma_loi_bo_phan) or {}).keys())
     else:
         defect_filter_chi_tiet = sorted(all_chi_tiet.keys())
+
+    # Adjust inspected_total for hanging_line plans: add MES output from qc_hanging_output.
+    # For these plans, qc_output_sp_log only has Failed entries ("+1 Đạt" hidden),
+    # so inspected_total would equal defect_total without this correction.
+    hl_by_date: Dict[str, int] = {}
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+                hl_clauses = ["p.source_system = 'hanging_line'", "ho.report_date BETWEEN %s AND %s"]
+                hl_params: List = [date_from, date_to]
+                if don_vi:
+                    hl_clauses.append("ho.don_vi = %s")
+                    hl_params.append(don_vi)
+                if ma_hang:
+                    hl_clauses.append("COALESCE(p.ma_hang, '') = %s")
+                    hl_params.append(ma_hang)
+                cur.execute(
+                    f"""
+                    SELECT ho.report_date, SUM(ho.qty) AS mes_qty
+                    FROM public.qc_hanging_output ho
+                    JOIN public.prod_plan p ON p.mono = ho.mono AND p.don_vi = ho.don_vi AND p.source_system = 'hanging_line'
+                    WHERE {" AND ".join(hl_clauses)}
+                    GROUP BY ho.report_date
+                    """,
+                    tuple(hl_params),
+                )
+                hl_by_date = {str(r["report_date"]): int(r["mes_qty"] or 0) for r in cur.fetchall()}
+    except Exception:
+        pass
+
+    for d in daily:
+        mes_add = hl_by_date.get(d["date"], 0)
+        if mes_add > 0:
+            d["inspected_total"] += mes_add
+            d["defect_rate"] = round(d["defect_total"] * 100.0 / d["inspected_total"], 4) if d["inspected_total"] > 0 else 0.0
 
     totals = {
         "inspected_total": sum(x["inspected_total"] for x in daily),
@@ -3496,6 +3550,7 @@ def api_qc_dashboard(
             "total": ma_loi_total,
             "items": top_ma_loi,
         },
+        "defect_combos": defect_combos,
         "defect_filters": {
             "bo_phan": defect_filter_bo_phan,
             "chi_tiet": defect_filter_chi_tiet,

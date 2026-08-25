@@ -127,6 +127,14 @@
                     <div class="relative h-64 w-full">
                         <canvas id="dailyChart"></canvas>
                     </div>
+
+                    <!-- Combo lỗi giai đoạn From-To -->
+                    <div class="mt-6 border-t border-surface-low pt-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">Dạng lỗi trong giai đoạn</div>
+                        </div>
+                        <div id="defectCombosPanel" class="max-h-[220px] overflow-auto pr-1 space-y-1"></div>
+                    </div>
                 </div>
                 <div class="bg-surface-lowest rounded-2xl p-6 shadow-cloud">
                     <div class="inline-flex items-center px-4 py-2 rounded-xl bg-primary-container text-white font-display font-extrabold tracking-tight mb-4">
@@ -178,20 +186,10 @@
 
                 <div class="bg-surface-lowest rounded-2xl p-6 shadow-cloud">
                     <div class="inline-flex items-center px-4 py-2 rounded-xl bg-primary-container text-white font-display font-extrabold tracking-tight mb-4">
-                        Thống kê theo vị trí
+                        Dạng lỗi theo mốc
                     </div>
-                    <div class="text-sm text-on-surface-variant mb-3">Bộ phận / Chi tiết (theo ngày xem)</div>
-                    <div class="max-h-[220px] overflow-auto pr-1">
-                        <table class="w-full text-sm">
-                            <thead class="text-left text-on-surface-variant bg-surface-low/70">
-                                <tr>
-                                    <th class="py-2 px-3 rounded-l-lg">Bộ phận</th>
-                                    <th class="py-2 px-3 text-right rounded-r-lg">Số lần gặp lỗi</th>
-                                </tr>
-                            </thead>
-                            <tbody id="posStatsBody"></tbody>
-                        </table>
-                    </div>
+                    <div class="text-sm text-on-surface-variant mb-3">Bộ phận - Chi tiết - Dạng lỗi (theo ngày xem)</div>
+                    <div id="posStatsPanel" class="max-h-[340px] overflow-auto pr-1 space-y-4"></div>
                 </div>
             </section>
             <section class="grid grid-cols-1 xl:grid-cols-3 gap-6">
@@ -570,6 +568,35 @@
                 `;
             }).join('') || '<tr><td colspan="3" class="py-3 text-on-surface-variant">Không có dữ liệu</td></tr>';
 
+            // Combo lỗi giai đoạn From-To (below chart A)
+            const defectCombosPanel = document.getElementById('defectCombosPanel');
+            if (defectCombosPanel) {
+                const combos = data.defect_combos || [];
+                if (!combos.length) {
+                    defectCombosPanel.innerHTML = '<div class="text-on-surface-variant text-sm py-2">Không có dữ liệu</div>';
+                } else {
+                    const maxCount = combos[0]?.count || 1;
+                    defectCombosPanel.innerHTML = combos.map((c, idx) => {
+                        const rel = Math.max(0, Math.min(100, (c.count / maxCount) * 100));
+                        const color = CHART_COLORS[idx % CHART_COLORS.length];
+                        return `
+                            <div class="flex items-center justify-between gap-3">
+                                <div class="flex items-center gap-2 min-w-0">
+                                    <span class="text-xs font-bold text-on-surface-variant tabular-nums shrink-0 w-5 text-right">${idx + 1}</span>
+                                    <span class="truncate text-xs font-medium">${c.combo}</span>
+                                </div>
+                                <div class="flex items-center gap-2 shrink-0">
+                                    <div class="w-[70px] h-1.5 bg-surface-low rounded-full overflow-hidden">
+                                        <div class="h-full rounded-full" style="width:${rel}%; background:${color};"></div>
+                                    </div>
+                                    <span class="text-xs font-bold tabular-nums w-8 text-right">${fmtNum(c.count)}</span>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+            }
+
             const valueLabelPlugin = {
                 id: 'valueLabelPlugin',
                 afterDatasetsDraw(chart) {
@@ -729,70 +756,28 @@
                 plugins: [valueLabelPlugin],
             });
 
-            // "Thống kê theo vị trí" (B-side panel)
-            const posStatsBody = document.getElementById('posStatsBody');
-            if (posStatsBody) {
-                const items = data.pos_stats?.items || [];
-                if (!items.length) {
-                    posStatsBody.innerHTML = '<tr><td colspan="2" class="py-3 px-3 text-on-surface-variant">Không có dữ liệu</td></tr>';
+            // "Dạng lỗi theo mốc" (B-side panel)
+            const posStatsPanel = document.getElementById('posStatsPanel');
+            if (posStatsPanel) {
+                const buckets = data.pos_stats?.buckets || [];
+                const hasAny = buckets.some((b) => b.combos && b.combos.length > 0);
+                if (!hasAny) {
+                    posStatsPanel.innerHTML = '<div class="text-on-surface-variant text-sm py-3">Không có dữ liệu</div>';
                 } else {
-                    posStatsBody.innerHTML = items.map((x, idx) => {
-                        const details = (x.details || []);
-                        const detailsRows = details.length
-                            ? details.map((d) => `
-                                <tr class="border-t border-surface-low/70">
-                                    <td class="py-1.5 px-2">${d.chi_tiet}</td>
-                                    <td class="py-1.5 px-2 text-right font-semibold tabular-nums">${fmtNum(d.count)}</td>
-                                </tr>
-                            `).join('')
-                            : '<tr><td colspan="2" class="py-2 px-2 text-on-surface-variant">Không có chi tiết</td></tr>';
-
+                    posStatsPanel.innerHTML = buckets.filter((b) => b.combos && b.combos.length > 0).map((b) => {
+                        const rows = b.combos.map((c) => `
+                            <div class="flex items-start justify-between gap-2 py-1.5 border-b border-surface-low/50 last:border-0">
+                                <span class="text-xs leading-snug break-words min-w-0">${c.combo}</span>
+                                <span class="text-xs font-bold tabular-nums shrink-0">${fmtNum(c.count)}</span>
+                            </div>
+                        `).join('');
                         return `
-                            <tr class="border-b border-surface-low">
-                                <td class="py-2 px-3">
-                                    <button type="button" class="w-full inline-flex items-center gap-2 text-left" data-pos-toggle="${idx}">
-                                        <span class="material-symbols-outlined text-on-surface-variant text-[18px]" data-pos-arrow="${idx}" style="transition: transform .15s ease;">expand_more</span>
-                                        <span class="truncate font-medium">${x.bo_phan}</span>
-                                    </button>
-                                </td>
-                                <td class="py-2 px-3 text-right font-bold tabular-nums">${fmtNum(x.count)}</td>
-                            </tr>
-                            <tr id="posDetailsRow-${idx}" class="hidden">
-                                <td colspan="2" class="px-3 pb-3">
-                                    <div class="bg-surface-low/70 rounded-xl p-3">
-                                        <table class="w-full text-xs">
-                                            <thead class="text-left text-on-surface-variant">
-                                                <tr>
-                                                    <th class="py-1 px-2">Chi tiết</th>
-                                                    <th class="py-1 px-2 text-right">Số lần</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                ${detailsRows}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </td>
-                            </tr>
+                            <div>
+                                <div class="text-[10px] font-black uppercase tracking-widest text-primary-container mb-1.5">${b.time_bucket}</div>
+                                ${rows}
+                            </div>
                         `;
                     }).join('');
-
-                    posStatsBody.querySelectorAll('button[data-pos-toggle]').forEach((btn) => {
-                        btn.addEventListener('click', () => {
-                            const idx = btn.getAttribute('data-pos-toggle');
-                            const row = document.getElementById(`posDetailsRow-${idx}`);
-                            const arrow = posStatsBody.querySelector(`[data-pos-arrow="${idx}"]`);
-                            if (!row) return;
-                            const isOpen = !row.classList.contains('hidden');
-                            if (isOpen) {
-                                row.classList.add('hidden');
-                                if (arrow) arrow.style.transform = 'rotate(0deg)';
-                            } else {
-                                row.classList.remove('hidden');
-                                if (arrow) arrow.style.transform = 'rotate(180deg)';
-                            }
-                        });
-                    });
                 }
             }
 
