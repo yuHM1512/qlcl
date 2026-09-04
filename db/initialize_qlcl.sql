@@ -85,49 +85,36 @@ ON CONFLICT (ma_nv) DO UPDATE SET
     chuc_vu = EXCLUDED.chuc_vu;
 
 -- Seed tasks_qa (idempotent)
+DELETE FROM public.tasks_qa WHERE chuc_vu IN ('QAPL','QANL','QAQT');
+
 -- QAPL tasks
 INSERT INTO public.tasks_qa (chuc_vu, task_name) VALUES
 ('QAPL','Kiểm tra chất lượng lô phụ liệu'),
-('QAPL','Làm việc với khách hàng'),
-('QAPL','Giải quyết phát sinh trong sản xuất'),
-('QAPL','Xây dựng Control plan'),
-('QAPL','Kiểm tra sự tuân thủ Control Plan'),
-('QAPL','Lập báo cáo và lưu hồ sơ'),
-('QAPL','Chuẩn bị cho các đánh giá về chất lượng')
+('QAPL','Xây dựng Control Plan'),
+('QAPL','Đánh giá nhà cung ứng'),
+('QAPL','Gemba Control Plan')
 ON CONFLICT (chuc_vu, task_name) DO NOTHING;
 
 -- QANL tasks
 INSERT INTO public.tasks_qa (chuc_vu, task_name) VALUES
 ('QANL','Kiểm tra chất lượng lô nguyên liệu'),
-('QANL','Làm việc với khách hàng'),
-('QANL','Làm việc với nhà cung ứng'),
-('QANL','Giải quyết phát sinh trong sản xuất'),
 ('QANL','Kiểm tra % thay thân lỗi'),
 ('QANL','Xác nhận quyết toán'),
-('QANL','Xây dựng Control plan'),
-('QANL','Gemba Control Plan'),
-('QANL','Lập báo cáo và lưu hồ sơ'),
-('QANL','Chuẩn bị cho đánh giá chất lượng')
+('QANL','Xây dựng Control Plan'),
+('QANL','Đánh giá nhà cung ứng'),
+('QANL','Gemba Control Plan')
 ON CONFLICT (chuc_vu, task_name) DO NOTHING;
 
 -- QAQT tasks
 INSERT INTO public.tasks_qa (chuc_vu, task_name) VALUES
-('QAQT','Họp Triển khai Sản xuất'),
-('QAQT','Kiểm BTP hình in/ thêu gia công'),
-('QAQT','Góp ý chất lượng hàng đầu chuyền'),
-('QAQT','Kiểm Endline'),
-('QAQT','Kiểm packing'),
-('QAQT','Kiểm pre - Final/Final'),
-('QAQT','Theo dõi thực hiện HĐKP của xí nghiệp'),
-('QAQT','Kiểm tra sự tuân thủ QT/QĐ liên quan đến chất lượng của xí nghiệp'),
-('QAQT','Báo cáo theo yêu cầu của khách hàng'),
-('QAQT','Kiểm mẫu'),
-('QAQT','Phối hợp khi khách hàng làm việc tại công ty'),
 ('QAQT','Xây dựng control plan'),
-('QAQT','Gemba control plan'),
-('QAQT','Bàn giao khi luân chuyển xí nghiệp'),
-('QAQT','Chuẩn bị cho các đánh giá về chất lượng'),
-('QAQT','Kiểm thùng đầu vào')
+('QAQT','Họp triển khai sản xuất'),
+('QAQT','Kiểm Endline'),
+('QAQT','Kiểm pre-final/ Final'),
+('QAQT','Kiểm thùng đầu vào'),
+('QAQT','Kiểm tra sự tuân thủ QT/ QĐ liên quan đến chất lượng của xí nghiệp'),
+('QAQT','Theo dõi thực hiện HĐKP của xí nghiệp'),
+('QAQT','Gemba Control Plan')
 ON CONFLICT (chuc_vu, task_name) DO NOTHING;
 
 COMMIT;
@@ -177,49 +164,36 @@ ON CONFLICT (ma_nv) DO UPDATE SET
     chuc_vu = EXCLUDED.chuc_vu;
 
 -- Seed tasks_qa (idempotent)
+DELETE FROM public.tasks_qa WHERE chuc_vu IN ('QAPL','QANL','QAQT');
+
 -- QAPL tasks
 INSERT INTO public.tasks_qa (chuc_vu, task_name) VALUES
 ('QAPL','Kiểm tra chất lượng lô phụ liệu'),
-('QAPL','Làm việc với khách hàng'),
-('QAPL','Giải quyết phát sinh trong sản xuất'),
-('QAPL','Xây dựng Control plan'),
-('QAPL','Kiểm tra sự tuân thủ Control Plan'),
-('QAPL','Lập báo cáo và lưu hồ sơ'),
-('QAPL','Chuẩn bị cho các đánh giá về chất lượng')
+('QAPL','Xây dựng Control Plan'),
+('QAPL','Đánh giá nhà cung ứng'),
+('QAPL','Gemba Control Plan')
 ON CONFLICT (chuc_vu, task_name) DO NOTHING;
 
 -- QANL tasks
 INSERT INTO public.tasks_qa (chuc_vu, task_name) VALUES
 ('QANL','Kiểm tra chất lượng lô nguyên liệu'),
-('QANL','Làm việc với khách hàng'),
-('QANL','Làm việc với nhà cung ứng'),
-('QANL','Giải quyết phát sinh trong sản xuất'),
 ('QANL','Kiểm tra % thay thân lỗi'),
 ('QANL','Xác nhận quyết toán'),
-('QANL','Xây dựng Control plan'),
-('QANL','Gemba Control Plan'),
-('QANL','Lập báo cáo và lưu hồ sơ'),
-('QANL','Chuẩn bị cho đánh giá chất lượng')
+('QANL','Xây dựng Control Plan'),
+('QANL','Đánh giá nhà cung ứng'),
+('QANL','Gemba Control Plan')
 ON CONFLICT (chuc_vu, task_name) DO NOTHING;
 
 -- QAQT tasks
 INSERT INTO public.tasks_qa (chuc_vu, task_name) VALUES
-('QAQT','Họp Triển khai Sản xuất'),
-('QAQT','Kiểm BTP hình in/ thêu gia công'),
-('QAQT','Góp ý chất lượng hàng đầu chuyền'),
-('QAQT','Kiểm Endline'),
-('QAQT','Kiểm packing'),
-('QAQT','Kiểm pre - Final/Final'),
-('QAQT','Theo dõi thực hiện HĐKP của xí nghiệp'),
-('QAQT','Kiểm tra sự tuân thủ QT/QĐ liên quan đến chất lượng của xí nghiệp'),
-('QAQT','Báo cáo theo yêu cầu của khách hàng'),
-('QAQT','Kiểm mẫu'),
-('QAQT','Phối hợp khi khách hàng làm việc tại công ty'),
 ('QAQT','Xây dựng control plan'),
-('QAQT','Gemba control plan'),
-('QAQT','Bàn giao khi luân chuyển xí nghiệp'),
-('QAQT','Chuẩn bị cho các đánh giá về chất lượng'),
-('QAQT','Kiểm thùng đầu vào')
+('QAQT','Họp triển khai sản xuất'),
+('QAQT','Kiểm Endline'),
+('QAQT','Kiểm pre-final/ Final'),
+('QAQT','Kiểm thùng đầu vào'),
+('QAQT','Kiểm tra sự tuân thủ QT/ QĐ liên quan đến chất lượng của xí nghiệp'),
+('QAQT','Theo dõi thực hiện HĐKP của xí nghiệp'),
+('QAQT','Gemba Control Plan')
 ON CONFLICT (chuc_vu, task_name) DO NOTHING;
 
 COMMIT;
