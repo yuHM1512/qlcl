@@ -120,6 +120,7 @@ SCHEMA_BOOTSTRAP_FILES = [
     "create_qc_output_sp_log.sql",
     "migrate_qc_output_sp_log_status.sql",
     "migrate_tasks_qa_20260904.sql",
+    "migrate_error_classification_20260909.sql",
     "create_qc_error_hierarchy.sql",
     "create_qc_cum.sql",
     "migrate_dm_loai_hang_type.sql",
