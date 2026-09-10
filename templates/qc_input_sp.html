@@ -1199,6 +1199,9 @@
         reportDateStr = value;
         reworkDateStr = value;
         await loadMasterMaLoiOptions();
+        if (selectedLoaiHangId) {
+            await loadProductVisualCatalog(selectedLoaiHangId);
+        }
         // Cập nhật label trong compact plan header (nếu đang có kế hoạch được chọn)
         const lbl = document.getElementById('lblReportDateCompact');
         if (lbl) lbl.textContent = fmtDate(value);
@@ -1215,6 +1218,26 @@
             loadQuickDefectCombos();
             loadQuickDefectCombosToday();
         }
+    }
+
+    async function loadProductVisualCatalog(loaiHangId) {
+        const params = new URLSearchParams({
+            loai_hang_id: String(loaiHangId),
+            date: reportDateStr,
+        });
+        const [bpRes, vpRes] = await Promise.all([
+            fetch(`/api/dm/bo-phan?${params.toString()}`),
+            fetch(`/api/qc/visual-picker?${params.toString()}`),
+        ]);
+        if (!bpRes.ok || !vpRes.ok) {
+            throw new Error('Không thể tải danh mục vị trí theo ngày báo cáo.');
+        }
+        const bpData = await bpRes.json();
+        const vpData = await vpRes.json();
+        masterBoPhan = bpData.rows || [];
+        visualPickerData = vpData && vpData.has_visual_picker ? vpData : null;
+        vpBlockState = {};
+        chiTietOptionsByBlock = {};
     }
 
     function resetReportDateToToday() {
@@ -2057,17 +2080,8 @@
                 selectedLoaiHangId = lh.id;
                 selectedTargetPercent = lh.target_percent != null ? Number(lh.target_percent) : null;
                 renderOutputDisplay();
-                const requests = [
-                    fetch(`/api/dm/bo-phan?loai_hang_id=${lh.id}`),
-                    fetch(`/api/qc/visual-picker?loai_hang_id=${lh.id}`)
-                ];
-                const [bpRes, vpRes] = await Promise.all(requests);
-                const bpData = await bpRes.json();
-                masterBoPhan = bpData.rows || [];
-                const vpData = await vpRes.json();
-                visualPickerData = vpData && vpData.has_visual_picker ? vpData : null;
+                await loadProductVisualCatalog(lh.id);
                 await loadClusterOptions(lh.id);
-                vpBlockState = {};
                 renderStationSelector();
                 if (getActiveStation()) {
                     await loadExistingEntry();

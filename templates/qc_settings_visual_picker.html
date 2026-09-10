@@ -34,10 +34,11 @@
             font-size: 0.78rem; font-weight: 800; display: inline-flex; align-items: center; justify-content: center;
             box-shadow: 0 2px 8px rgba(0,0,0,0.22); border: 2px solid #fff;
             cursor: grab; touch-action: none; user-select: none; z-index: 5;
+            transform: translate(-50%, -50%);
             transition: transform 0.08s ease, box-shadow 0.12s ease;
         }
-        .vp-hotspot:hover { transform: scale(1.08); }
-        .vp-hotspot.dragging { cursor: grabbing; background: #f59e0b; color: #111827; box-shadow: 0 0 0 5px rgba(245, 158, 11, 0.35), 0 6px 14px rgba(245, 158, 11, 0.5); z-index: 10; transform: scale(1.12); }
+        .vp-hotspot:hover { transform: translate(-50%, -50%) scale(1.08); }
+        .vp-hotspot.dragging { cursor: grabbing; background: #f59e0b; color: #111827; box-shadow: 0 0 0 5px rgba(245, 158, 11, 0.35), 0 6px 14px rgba(245, 158, 11, 0.5); z-index: 10; transform: translate(-50%, -50%) scale(1.12); }
         .vp-hotspot.dirty { background: #10b981; }
         .vp-hotspot.dirty.dragging { background: #f59e0b; }
 
@@ -83,6 +84,8 @@
                         <select id="loaiHangSelect" class="input-field">
                             <option value="">-- Chọn loại hàng --</option>
                         </select>
+                        <div class="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mt-4 mb-2">Ngày hiệu lực</div>
+                        <input id="visualDate" type="date" class="input-field">
                     </div>
 
                     <div class="bg-surface-lowest rounded-2xl p-5 shadow-cloud" id="nhomCard" style="display: none;">
@@ -149,14 +152,27 @@
         let draggingState = null;
 
         document.addEventListener('DOMContentLoaded', async () => {
+            document.getElementById('visualDate').value = todayStr();
             await loadLoaiHangList();
             document.getElementById('loaiHangSelect').addEventListener('change', onLoaiHangChange);
+            document.getElementById('visualDate').addEventListener('change', () => {
+                const select = document.getElementById('loaiHangSelect');
+                if (select.value) onLoaiHangChange({ target: select });
+            });
             document.getElementById('saveBtn').addEventListener('click', saveDirtyHotspots);
             document.getElementById('resetBtn').addEventListener('click', resetCurrentKhoi);
             window.addEventListener('resize', () => {
                 if (currentBoPhanId) repositionHotspots();
             });
         });
+
+        function todayStr() {
+            const now = new Date();
+            const y = now.getFullYear();
+            const m = String(now.getMonth() + 1).padStart(2, '0');
+            const d = String(now.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
 
         async function loadLoaiHangList() {
             try {
@@ -188,7 +204,11 @@
             resetStage();
             if (!loaiHangId) return;
             try {
-                const res = await fetch(`/api/qc/visual-picker?loai_hang_id=${loaiHangId}`);
+                const params = new URLSearchParams({
+                    loai_hang_id: loaiHangId,
+                    date: document.getElementById('visualDate').value || todayStr(),
+                });
+                const res = await fetch(`/api/qc/visual-picker?${params.toString()}`);
                 const data = await res.json();
                 if (!data.has_visual_picker) {
                     showToast('Loại hàng này chưa có dữ liệu visual picker.', 'error');
@@ -316,8 +336,8 @@
                 dot.title = h.label || '';
                 const cx = (cur.x_pct + (h.w_pct || 0) / 2) * 100;
                 const cy = (cur.y_pct + (h.h_pct || 0) / 2) * 100;
-                dot.style.left = `calc(${cx}% - 16px)`;
-                dot.style.top = `calc(${cy}% - 13px)`;
+                dot.style.left = `${cx}%`;
+                dot.style.top = `${cy}%`;
                 dot.dataset.wPct = h.w_pct || 0;
                 dot.dataset.hPct = h.h_pct || 0;
                 attachDragHandlers(dot, h);
@@ -363,8 +383,8 @@
                     dirtyHotspots[h.chi_tiet_id] = { x_pct: newXPct, y_pct: newYPct };
                     const cx = (newXPct + wPct / 2) * 100;
                     const cy = (newYPct + hPct / 2) * 100;
-                    dot.style.left = `calc(${cx}% - 16px)`;
-                    dot.style.top = `calc(${cy}% - 13px)`;
+                    dot.style.left = `${cx}%`;
+                    dot.style.top = `${cy}%`;
                 }
             }
         });
@@ -390,8 +410,8 @@
                 dirtyHotspots[chi_tiet_id] = { x_pct: newXPct, y_pct: newYPct };
                 const cx = (newXPct + wPct / 2) * 100;
                 const cy = (newYPct + hPct / 2) * 100;
-                dot.style.left = `calc(${cx}% - 16px)`;
-                dot.style.top = `calc(${cy}% - 13px)`;
+                dot.style.left = `${cx}%`;
+                dot.style.top = `${cy}%`;
             }
         }, { passive: false });
         window.addEventListener('touchend', () => {

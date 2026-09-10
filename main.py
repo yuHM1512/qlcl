@@ -124,6 +124,9 @@ SCHEMA_BOOTSTRAP_FILES = [
     "create_qc_error_hierarchy.sql",
     "create_qc_cum.sql",
     "migrate_dm_loai_hang_type.sql",
+    "migrate_aovest_visual_picker.sql",
+    "migrate_dm_chi_tiet_drop_ten_unique.sql",
+    "migrate_visual_catalog_versioning.sql",
     "create_qc_error_log_sp.sql",
     "alter_qc_output_sp_log_add_station.sql",
     "alter_qc_sp_add_ma_nv.sql",
@@ -194,6 +197,39 @@ def get_effective_defect_catalog_id(cur, effective_date: Optional[str] = None) -
     if isinstance(row, dict):
         return row.get("id")
     return row[0] if row else None
+
+
+def get_effective_visual_catalog(cur, loai_hang_id: int, effective_date: date) -> Tuple[Optional[Dict], bool]:
+    """Return the product visual version for a business date.
+
+    The boolean says whether the product has any version records. It lets old,
+    unversioned installations continue to use rows with visual_catalog_id NULL,
+    while a date outside a versioned product's ranges correctly returns no rows.
+    """
+    cur.execute(
+        """
+        SELECT id, version_code, name, effective_from, effective_to, source_file
+        FROM public.dm_visual_catalog
+        WHERE loai_hang_id = %s
+          AND effective_from <= %s
+          AND (effective_to IS NULL OR effective_to >= %s)
+        ORDER BY effective_from DESC, id DESC
+        LIMIT 1
+        """,
+        (loai_hang_id, effective_date, effective_date),
+    )
+    row = cur.fetchone()
+    if row:
+        return dict(row), True
+    cur.execute(
+        "SELECT EXISTS(SELECT 1 FROM public.dm_visual_catalog WHERE loai_hang_id = %s)",
+        (loai_hang_id,),
+    )
+    exists_row = cur.fetchone()
+    has_versions = bool(
+        exists_row.get("exists") if isinstance(exists_row, dict) else exists_row[0]
+    )
+    return None, has_versions
 
 
 def bootstrap_qlcl_schema():
@@ -5820,12 +5856,39 @@ def api_dm_loai_hang_target():
             return {"rows": cur.fetchall()}
 
 @app.get("/api/dm/bo-phan")
-def api_dm_bo_phan(loai_hang_id: int = Query(...)):
-    """Lấy danh sách Bộ phận theo loai_hang_id."""
+def api_dm_bo_phan(
+    loai_hang_id: int = Query(...),
+    as_of: Optional[date] = Query(None, alias="date"),
+):
+    """Lấy Bộ phận thuộc phiên bản visual có hiệu lực tại ngày báo cáo."""
     with get_db_connection() as conn:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute("SELECT id, ten_bo_phan FROM public.dm_bo_phan WHERE loai_hang_id = %s ORDER BY ten_bo_phan", (loai_hang_id,))
-            return {"rows": cur.fetchall()}
+            catalog, has_versions = get_effective_visual_catalog(
+                cur, loai_hang_id, as_of or date.today()
+            )
+            if catalog:
+                cur.execute(
+                    """
+                    SELECT id, ten_bo_phan
+                    FROM public.dm_bo_phan
+                    WHERE loai_hang_id = %s AND visual_catalog_id = %s
+                    ORDER BY ten_bo_phan, id
+                    """,
+                    (loai_hang_id, catalog["id"]),
+                )
+            elif has_versions:
+                return {"rows": [], "visual_catalog": None}
+            else:
+                cur.execute(
+                    """
+                    SELECT id, ten_bo_phan
+                    FROM public.dm_bo_phan
+                    WHERE loai_hang_id = %s AND visual_catalog_id IS NULL
+                    ORDER BY ten_bo_phan, id
+                    """,
+                    (loai_hang_id,),
+                )
+            return {"rows": cur.fetchall(), "visual_catalog": catalog}
 
 @app.get("/api/dm/qc-cum")
 def api_dm_qc_cum(
@@ -5854,10 +5917,19 @@ def api_dm_qc_cum(
 async def api_dm_bo_phan_create(request: Request):
     body = await request.json()
     with get_db_connection() as conn:
-        with conn.cursor() as cur:
-            cur.execute("INSERT INTO public.dm_bo_phan (loai_hang_id, ten_bo_phan) VALUES (%s, %s) RETURNING id", 
-                        (body["loai_hang_id"], body["ten_bo_phan"]))
-            new_id = cur.fetchone()[0]
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            loai_hang_id = int(body["loai_hang_id"])
+            catalog, _ = get_effective_visual_catalog(cur, loai_hang_id, date.today())
+            cur.execute(
+                """
+                INSERT INTO public.dm_bo_phan
+                    (loai_hang_id, ten_bo_phan, visual_catalog_id)
+                VALUES (%s, %s, %s)
+                RETURNING id
+                """,
+                (loai_hang_id, body["ten_bo_phan"], catalog["id"] if catalog else None),
+            )
+            new_id = cur.fetchone()["id"]
             conn.commit()
     return {"id": new_id}
 
@@ -5903,29 +5975,47 @@ NHOM_LABELS = {"chinh": "Chính", "lot": "Lót", "nhan_dien": "Nhận diện",
                "lop_1": "Lớp 1", "lop_2": "Lớp 2", "lop_3": "Lớp 3"}
 
 @app.get("/api/qc/visual-picker")
-def api_qc_visual_picker(loai_hang_id: int = Query(...)):
+def api_qc_visual_picker(
+    loai_hang_id: int = Query(...),
+    as_of: Optional[date] = Query(None, alias="date"),
+):
     with get_db_connection() as conn:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            catalog, has_versions = get_effective_visual_catalog(
+                cur, loai_hang_id, as_of or date.today()
+            )
+            if catalog:
+                catalog_clause = "bp.visual_catalog_id = %s"
+                params = (loai_hang_id, catalog["id"])
+            elif has_versions:
+                return {"has_visual_picker": False, "nhoms": [], "visual_catalog": None}
+            else:
+                catalog_clause = "bp.visual_catalog_id IS NULL"
+                params = (loai_hang_id,)
             cur.execute(
-                """
+                f"""
                 SELECT bp.id AS bo_phan_id, bp.ten_bo_phan, bp.nhom, bp.image_png, bp.image_svg, bp.sort_order,
                        ct.id AS chi_tiet_id, ct.ma_vi_tri, ct.ten_chi_tiet,
                        ct.x_pct, ct.y_pct, ct.w_pct, ct.h_pct, ct.rotation
                 FROM public.dm_bo_phan bp
                 LEFT JOIN public.dm_chi_tiet ct ON ct.bo_phan_id = bp.id
-                WHERE bp.loai_hang_id = %s
+                WHERE bp.loai_hang_id = %s AND {catalog_clause}
                 ORDER BY bp.sort_order, bp.id, ct.ma_vi_tri NULLS LAST, ct.id
                 """,
-                (loai_hang_id,),
+                params,
             )
             rows = cur.fetchall()
 
     has_picker = any(r["image_png"] and r["nhom"] for r in rows)
     if not has_picker:
-        return {"has_visual_picker": False, "nhoms": []}
+        return {"has_visual_picker": False, "nhoms": [], "visual_catalog": catalog}
 
     by_nhom: Dict[str, Dict[int, dict]] = {}
     for r in rows:
+        # Legacy catalog blocks can coexist with digitized blocks for a product.
+        # They have no image/coordinate frame and must not become empty picker cards.
+        if not r["image_png"] or not r["nhom"]:
+            continue
         nhom = r["nhom"] or "khac"
         bp_id = r["bo_phan_id"]
         if nhom not in by_nhom:
@@ -5965,7 +6055,7 @@ def api_qc_visual_picker(loai_hang_id: int = Query(...)):
         khoi_list = sorted(bps.values(), key=lambda x: (x["sort_order"], x["bo_phan_id"]))
         nhoms.append({"nhom": key, "label": NHOM_LABELS.get(key, key.title()), "khoi": khoi_list})
 
-    return {"has_visual_picker": True, "nhoms": nhoms}
+    return {"has_visual_picker": True, "nhoms": nhoms, "visual_catalog": catalog}
 
 
 @app.get("/api/qc/visual-picker/loai-hang-list")
