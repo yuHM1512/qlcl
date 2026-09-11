@@ -4663,6 +4663,8 @@ def backfill_qc_cap(
 
 QTCN_LOAI_HANG_MAP = {
     "AOVES": "Áo vest",
+    "BOMBER": "Áo vest",
+    "GHILE": "Áo vest",
     "QUANVES": "Quần tây",
 }
 QTCN_SYNC_PLAN_PREFIX = "SYNC-QTCN-XNV2-"
