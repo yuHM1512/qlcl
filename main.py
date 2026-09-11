@@ -6107,7 +6107,7 @@ async def api_qc_visual_picker_update_hotspots(
 def qc_settings_visual_picker_page(request: Request):
     user = get_authenticated_user(request)
     if not user:
-        return RedirectResponse(url="/qc-login", status_code=303)
+        return redirect_to_login_for_current_path(request)
     if get_qc_role(user) not in QC_SETTINGS_ROLES:
         return templates.TemplateResponse(
             "qc_settings_visual_picker.html",
