@@ -13,6 +13,9 @@ from pathlib import Path as PathLib
 import unicodedata
 from urllib.parse import quote, unquote
 
+from flat_line_sync import fetch_sheet_values as fetch_flat_line_sheet_values
+from flat_line_sync import parse_flat_line_plans
+
 # Load environment variables from .env file
 from dotenv import load_dotenv
 load_dotenv()
@@ -95,6 +98,37 @@ XNV2_SQL_SERVER = os.getenv("XNV2_SQL_SERVER", "")
 XNV2_APP_DB     = os.getenv("XNV2_APP_DB", "hanging_app")
 XNV2_SQL_DRIVER = os.getenv("XNV2_SQL_DRIVER", "ODBC Driver 17 for SQL Server")
 XNV2_DON_VI     = os.getenv("XNV2_DON_VI", "XNV2")
+
+# --- Kế hoạch chuyền bệt từ Google Sheets ---
+FLAT_LINE_GOOGLE_SERVICE_ACCOUNT_FILE = os.getenv(
+    "FLAT_LINE_GOOGLE_SERVICE_ACCOUNT_FILE", "credentials_m29.json"
+)
+FLAT_LINE_SHEET_WORKSHEET = os.getenv("FLAT_LINE_SHEET_WORKSHEET", "Rải chuyền")
+FLAT_LINE_SHEET_RANGE = os.getenv("FLAT_LINE_SHEET_RANGE", "A2:M")
+FLAT_LINE_AUTO_SYNC_ENABLED = env_flag("FLAT_LINE_AUTO_SYNC_ENABLED", default=False)
+try:
+    FLAT_LINE_AUTO_SYNC_INTERVAL_MINUTES = max(
+        1, int(os.getenv("FLAT_LINE_AUTO_SYNC_INTERVAL_MINUTES", "60"))
+    )
+except ValueError:
+    FLAT_LINE_AUTO_SYNC_INTERVAL_MINUTES = 60
+FLAT_LINE_SOURCES = {
+    "XN1-V1": {
+        "spreadsheet_id": os.getenv("FLAT_LINE_XN1_SPREADSHEET_ID", "").strip(),
+        "unit_number": 1,
+    },
+    "XN2": {
+        "spreadsheet_id": os.getenv("FLAT_LINE_XN2_SPREADSHEET_ID", "").strip(),
+        "unit_number": 2,
+    },
+    "XN3": {
+        "spreadsheet_id": os.getenv(
+            "FLAT_LINE_XN3_SPREADSHEET_ID",
+            "13vX5BhwE9l7QkTWN-30JyaipyVJLiHPtHHCgNFDe9cw",
+        ).strip(),
+        "unit_number": 3,
+    },
+}
 
 DB_SCRIPTS_DIR = PathLib(__file__).resolve().parent / "db"
 GEMBA_CP_BASE_DIR = PathLib(__file__).resolve().parent / "gemba_cp"
@@ -1278,6 +1312,7 @@ app.include_router(gemba_admin_router.router, dependencies=[Depends(require_auth
 def startup_auto_sync():
     start_qtcn_auto_sync_if_enabled()
     start_xnv2_auto_sync_if_enabled()
+    start_flat_line_auto_sync_if_enabled()
 
 
 @app.get("/")
@@ -5082,6 +5117,167 @@ def start_qtcn_auto_sync_if_enabled() -> None:
         _qtcn_auto_sync_started = True
 
 
+# ==================== FLAT LINE GOOGLE SHEETS SYNC ====================
+FLAT_LINE_SOURCE_SYSTEM = "flat_line_sheet"
+_flat_line_auto_sync_started = False
+_flat_line_auto_sync_lock = threading.Lock()
+
+
+def normalize_flat_line_don_vi(value: Any) -> str:
+    raw = str(value or "").strip().upper()
+    aliases = {"XN1": "XN1-V1", "XN1-V1": "XN1-V1", "XN2": "XN2", "XN3": "XN3"}
+    return aliases.get(raw, raw)
+
+
+def get_flat_line_credentials_path() -> PathLib:
+    path = PathLib(FLAT_LINE_GOOGLE_SERVICE_ACCOUNT_FILE)
+    return path if path.is_absolute() else PathLib(__file__).resolve().parent / path
+
+
+def sync_flat_line_prod_plan(don_vi: str) -> Dict[str, Any]:
+    don_vi = normalize_flat_line_don_vi(don_vi)
+    config = FLAT_LINE_SOURCES.get(don_vi)
+    if not config:
+        raise ValueError(f"Chưa hỗ trợ nguồn Chuyền bệt cho đơn vị {don_vi}")
+    spreadsheet_id = config["spreadsheet_id"]
+    if not spreadsheet_id:
+        raise ValueError(f"Chưa cấu hình Google Sheet Chuyền bệt cho {don_vi}")
+    credentials_path = get_flat_line_credentials_path()
+    if not credentials_path.is_file():
+        raise FileNotFoundError(f"Không tìm thấy Google service account: {credentials_path}")
+
+    values = fetch_flat_line_sheet_values(
+        credentials_path,
+        spreadsheet_id,
+        FLAT_LINE_SHEET_WORKSHEET,
+        FLAT_LINE_SHEET_RANGE,
+    )
+    plans, warnings, matched = parse_flat_line_plans(
+        values, don_vi, int(config["unit_number"])
+    )
+    can_reconcile_missing = not warnings
+    inserted = updated = deactivated = 0
+    source_ids = [plan["source_record_id"] for plan in plans]
+
+    with get_db_connection() as conn:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute("SELECT ten_loai FROM public.dm_loai_hang")
+            known_product_types = {row["ten_loai"] for row in cur.fetchall()}
+
+            for plan in plans:
+                if plan["loai_hang"] not in known_product_types:
+                    can_reconcile_missing = False
+                    warnings.append(
+                        f"Dòng {plan['sheet_row']}: loại hàng chưa có trong QLCL: {plan['loai_hang']}"
+                    )
+                    continue
+                params = (
+                    plan["ke_hoach"],
+                    plan["don_vi"],
+                    json.dumps(plan["bo_phan"], ensure_ascii=False),
+                    plan["khach_hang"],
+                    plan["ma_hang"],
+                    plan["loai_hang"],
+                    plan["ngay_rc"],
+                    plan["san_luong"],
+                    FLAT_LINE_SOURCE_SYSTEM,
+                    plan["source_record_id"],
+                )
+                cur.execute(
+                    """
+                    UPDATE public.prod_plan
+                    SET ke_hoach=%s, don_vi=%s, bo_phan=%s::jsonb,
+                        khach_hang=%s, ma_hang=%s, loai_hang=%s,
+                        ngay_rc=%s, san_luong=%s,
+                        source_status='active', is_active=TRUE,
+                        last_synced_at=NOW(), updated_at=NOW()
+                    WHERE source_system=%s AND source_record_id=%s
+                    """,
+                    params,
+                )
+                if cur.rowcount:
+                    updated += 1
+                    continue
+                cur.execute(
+                    """
+                    INSERT INTO public.prod_plan
+                        (ke_hoach, don_vi, bo_phan, khach_hang, ma_hang, loai_hang,
+                         ngay_rc, san_luong, mau, size, po_info,
+                         source_system, source_record_id, source_status, is_active, last_synced_at)
+                    VALUES (%s,%s,%s::jsonb,%s,%s,%s,%s,%s,'','','[]'::jsonb,%s,%s,'active',TRUE,NOW())
+                    """,
+                    params,
+                )
+                inserted += 1
+
+            if can_reconcile_missing:
+                cur.execute(
+                    """
+                    UPDATE public.prod_plan
+                    SET source_status='inactive', is_active=FALSE,
+                        last_synced_at=NOW(), updated_at=NOW()
+                    WHERE source_system=%s AND don_vi=%s
+                      AND NOT (source_record_id = ANY(%s))
+                      AND COALESCE(is_active, TRUE)=TRUE
+                    """,
+                    (FLAT_LINE_SOURCE_SYSTEM, don_vi, source_ids),
+                )
+                deactivated = cur.rowcount
+            conn.commit()
+
+    return {
+        "status": "ok",
+        "source": FLAT_LINE_SOURCE_SYSTEM,
+        "don_vi": don_vi,
+        "matched": matched,
+        "inserted": inserted,
+        "updated": updated,
+        "skipped": len(warnings),
+        "deactivated": deactivated,
+        "warnings": warnings[:20],
+    }
+
+
+def run_flat_line_auto_sync_loop() -> None:
+    logger.info(
+        "Flat-line Sheets auto-sync started, interval=%s minutes",
+        FLAT_LINE_AUTO_SYNC_INTERVAL_MINUTES,
+    )
+    while True:
+        for don_vi, config in FLAT_LINE_SOURCES.items():
+            if not config["spreadsheet_id"]:
+                continue
+            try:
+                result = sync_flat_line_prod_plan(don_vi)
+                logger.info(
+                    "Flat-line sync %s ok — matched=%s inserted=%s updated=%s deactivated=%s",
+                    don_vi,
+                    result["matched"],
+                    result["inserted"],
+                    result["updated"],
+                    result["deactivated"],
+                )
+            except Exception:
+                logger.exception("Flat-line sync %s failed", don_vi)
+        time.sleep(FLAT_LINE_AUTO_SYNC_INTERVAL_MINUTES * 60)
+
+
+def start_flat_line_auto_sync_if_enabled() -> None:
+    global _flat_line_auto_sync_started
+    if not FLAT_LINE_AUTO_SYNC_ENABLED:
+        return
+    with _flat_line_auto_sync_lock:
+        if _flat_line_auto_sync_started:
+            return
+        thread = threading.Thread(
+            target=run_flat_line_auto_sync_loop,
+            name="flat-line-auto-sync",
+            daemon=True,
+        )
+        thread.start()
+        _flat_line_auto_sync_started = True
+
+
 # ==================== HANGING LINE SYNC ====================
 # Đồng bộ kế hoạch từ SQL Server chuyền treo → PostgreSQL QLCL
 HL_SOURCE_SYSTEM = "hanging_line"
@@ -5488,6 +5684,31 @@ def api_prod_plan_sync_qtcn(request: Request):
     if not user:
         raise HTTPException(status_code=401, detail="Bạn chưa đăng nhập")
     return sync_qtcn_prod_plan()
+
+
+@app.post("/api/prod-plan/sync-flat-line")
+def api_prod_plan_sync_flat_line(
+    request: Request,
+    don_vi: Optional[str] = Query(None),
+):
+    """Sync plans marked `Chuyền bệt` from the configured factory Google Sheet."""
+    user = get_authenticated_user(request)
+    if not user:
+        raise HTTPException(status_code=401, detail="Bạn chưa đăng nhập")
+    requested_don_vi = normalize_flat_line_don_vi(don_vi or user.get("don_vi"))
+    if not requested_don_vi:
+        raise HTTPException(status_code=422, detail="Thiếu đơn vị cần đồng bộ")
+    if get_qc_role(user) == "QC":
+        user_don_vi = normalize_flat_line_don_vi(user.get("don_vi"))
+        if requested_don_vi != user_don_vi:
+            raise HTTPException(status_code=403, detail="QC chỉ được đồng bộ đơn vị của mình")
+    try:
+        return sync_flat_line_prod_plan(requested_don_vi)
+    except (ValueError, FileNotFoundError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    except Exception as exc:
+        logger.exception("Flat-line Sheet sync failed for %s", requested_don_vi)
+        raise HTTPException(status_code=502, detail=f"Không đọc được Google Sheet Chuyền bệt: {exc}")
 
 
 @app.post("/api/prod-plan/sync-hanging-line")

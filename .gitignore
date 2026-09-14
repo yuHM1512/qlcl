@@ -6,6 +6,7 @@ __pycache__/
 
 .env
 *.log
+credentials_m29.json
 
 images/*
 !images/positions/

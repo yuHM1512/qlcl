@@ -28,6 +28,10 @@
                         <span class="material-symbols-outlined text-lg">sync_alt</span>
                         Đồng bộ XNV2
                     </button>
+                    <button onclick="syncFlatLinePlans('XN3')" class="h-11 px-5 rounded-xl bg-surface-low hover:bg-surface-high font-semibold text-sm text-on-surface flex items-center gap-2 transition">
+                        <span class="material-symbols-outlined text-lg">table_view</span>
+                        Đồng bộ Chuyền bệt XN3
+                    </button>
                     <button onclick="openCreateModal()" class="btn-primary px-5 py-2.5 font-semibold text-sm flex items-center gap-2">
                         <span class="material-symbols-outlined text-lg">add</span>
                         Thêm Kế hoạch
@@ -280,6 +284,23 @@
                 loadData();
             } catch (e) {
                 showToast('Lỗi kết nối máy chủ khi đồng bộ!', 'error');
+            }
+        }
+
+        async function syncFlatLinePlans(donVi) {
+            try {
+                showToast(`Đang đồng bộ kế hoạch Chuyền bệt ${donVi}...`, 'success');
+                const params = new URLSearchParams({ don_vi: donVi });
+                const res = await fetch(`/api/prod-plan/sync-flat-line?${params.toString()}`, { method: 'POST' });
+                const data = await res.json();
+                if (!res.ok) {
+                    showToast(data.detail || 'Lỗi khi đồng bộ Chuyền bệt', 'error');
+                    return;
+                }
+                showToast(`Chuyền bệt ${donVi}: thêm ${data.inserted || 0}, cập nhật ${data.updated || 0}, ngừng hiệu lực ${data.deactivated || 0}, bỏ qua ${data.skipped || 0}`);
+                loadData();
+            } catch (e) {
+                showToast('Lỗi kết nối máy chủ khi đồng bộ Chuyền bệt!', 'error');
             }
         }
 

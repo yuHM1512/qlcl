@@ -987,6 +987,11 @@
                 <button type="button" class="btn btn-sm btn-outline-primary" style="border-radius: 8px; font-weight: 700;" onclick="syncQtcnPlans()">
                     <i class="fas fa-sync-alt me-1"></i> XNV2
                 </button>
+                {% if user.don_vi in ['XN1-V1', 'XN2', 'XN3'] %}
+                <button type="button" class="btn btn-sm btn-outline-success" style="border-radius: 8px; font-weight: 700;" onclick="syncFlatLinePlans()">
+                    <i class="fas fa-table me-1"></i> Chuyền bệt
+                </button>
+                {% endif %}
             </div>
         </div>
         <div id="plansList" class="d-flex flex-column gap-3">
@@ -1996,6 +2001,29 @@
         } catch (e) {
             if (!options.silent) {
                 alert('Lỗi kết nối máy chủ khi đồng bộ.');
+            }
+            return null;
+        }
+    }
+
+    async function syncFlatLinePlans(options = {}) {
+        try {
+            const res = await fetch('/api/prod-plan/sync-flat-line', { method: 'POST' });
+            const data = await res.json();
+            if (!res.ok) {
+                if (!options.silent) {
+                    alert(data.detail || 'Không thể đồng bộ kế hoạch Chuyền bệt.');
+                }
+                return null;
+            }
+            if (!options.silent) {
+                alert(`Đồng bộ Chuyền bệt xong. Thêm ${data.inserted || 0}, cập nhật ${data.updated || 0}, ngừng hiệu lực ${data.deactivated || 0}, bỏ qua ${data.skipped || 0}.`);
+                await loadPlans();
+            }
+            return data;
+        } catch (e) {
+            if (!options.silent) {
+                alert('Lỗi kết nối máy chủ khi đồng bộ Chuyền bệt.');
             }
             return null;
         }
