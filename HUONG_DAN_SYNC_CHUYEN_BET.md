@@ -36,7 +36,7 @@ FLAT_LINE_SHEET_RANGE=A2:M
 FLAT_LINE_XN3_SPREADSHEET_ID=13vX5BhwE9l7QkTWN-30JyaipyVJLiHPtHHCgNFDe9cw
 FLAT_LINE_XN2_SPREADSHEET_ID=1HvyqiIuV8gWXRpELT2UuSXoxNYYOuCCuC7ZtbfBBxK0
 FLAT_LINE_XN1_SPREADSHEET_ID=1esz95MLJKBsgSHPnrmsKLRETzG1814QuAn8EuummsZw
-FLAT_LINE_AUTO_SYNC_ENABLED=false
+FLAT_LINE_AUTO_SYNC_ENABLED=true
 FLAT_LINE_AUTO_SYNC_INTERVAL_MINUTES=60
 ```
 
@@ -47,7 +47,8 @@ QLCL quy đổi alias `XN1` thành đơn vị hiện hành `XN1-V1`.
 - QAQT: vào trang Kế hoạch sản xuất và bấm nút Chuyền bệt tương ứng XN1-V1, XN2 hoặc XN3.
 - QC XN1-V1/XN2/XN3: bấm `Chuyền bệt` tại màn hình chọn kế hoạch; backend tự lấy
   đơn vị từ tài khoản và không cho QC sync chéo xí nghiệp.
-- Có thể bật auto-sync bằng `FLAT_LINE_AUTO_SYNC_ENABLED=true`, mặc định mỗi 60 phút.
+- Auto-sync được bật bằng `FLAT_LINE_AUTO_SYNC_ENABLED=true`: chạy ngay khi app khởi động,
+  sau đó lặp mỗi 60 phút. Các nút đồng bộ thủ công vẫn hoạt động độc lập.
 
 API dùng cho kiểm thử:
 
