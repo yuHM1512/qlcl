@@ -114,18 +114,18 @@ except ValueError:
     FLAT_LINE_AUTO_SYNC_INTERVAL_MINUTES = 60
 FLAT_LINE_SOURCES = {
     "XN1-V1": {
-        "spreadsheet_id": os.getenv("FLAT_LINE_XN1_SPREADSHEET_ID", "").strip(),
+        "spreadsheet_id": os.getenv("FLAT_LINE_XN1_SPREADSHEET_ID", "").strip()
+        or "1esz95MLJKBsgSHPnrmsKLRETzG1814QuAn8EuummsZw",
         "unit_number": 1,
     },
     "XN2": {
-        "spreadsheet_id": os.getenv("FLAT_LINE_XN2_SPREADSHEET_ID", "").strip(),
+        "spreadsheet_id": os.getenv("FLAT_LINE_XN2_SPREADSHEET_ID", "").strip()
+        or "1HvyqiIuV8gWXRpELT2UuSXoxNYYOuCCuC7ZtbfBBxK0",
         "unit_number": 2,
     },
     "XN3": {
-        "spreadsheet_id": os.getenv(
-            "FLAT_LINE_XN3_SPREADSHEET_ID",
-            "13vX5BhwE9l7QkTWN-30JyaipyVJLiHPtHHCgNFDe9cw",
-        ).strip(),
+        "spreadsheet_id": os.getenv("FLAT_LINE_XN3_SPREADSHEET_ID", "").strip()
+        or "13vX5BhwE9l7QkTWN-30JyaipyVJLiHPtHHCgNFDe9cw",
         "unit_number": 3,
     },
 }

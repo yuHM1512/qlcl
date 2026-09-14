@@ -51,7 +51,7 @@ def parse_sheet_date(value: Any) -> date | None:
 
 def parse_unit_and_teams(value: Any) -> tuple[int | None, list[str]]:
     text = str(value or "").strip()
-    unit_match = re.search(r"\bU\s*(\d+)\b", text, flags=re.IGNORECASE)
+    unit_match = re.search(r"\b(?:U|XN)\s*(\d+)\b", text, flags=re.IGNORECASE)
     unit_number = int(unit_match.group(1)) if unit_match else None
     line_match = re.search(r"\bL\s*(.*)$", text, flags=re.IGNORECASE)
     line_numbers = re.findall(r"\d+", line_match.group(1)) if line_match else []

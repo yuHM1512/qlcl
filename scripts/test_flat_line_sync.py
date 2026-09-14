@@ -52,6 +52,7 @@ class FlatLineParserTests(unittest.TestCase):
 
     def test_multiple_lines_and_wrong_unit(self):
         self.assertEqual(parse_unit_and_teams("U3 - L1+8"), (3, ["Tổ 1", "Tổ 8"]))
+        self.assertEqual(parse_unit_and_teams("XN1-V1-L2"), (1, ["Tổ 2"]))
         values = [HEADERS, [
             "1", "A", "NC-1", "10", "", "", "U2-L1", "", "",
             "Áo vest", "Chuyền bệt", "1/9/2026", "KH",

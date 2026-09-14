@@ -23,15 +23,22 @@
                     <h2 class="text-3xl font-display font-bold text-on-surface tracking-tight mb-2">Tổng quan Kế hoạch</h2>
                     <p class="text-base text-on-surface-variant">Quản lý và theo dõi tiến độ sản xuất hiện tại.</p>
                 </div>
-                <div class="flex gap-3">
+                <div class="flex flex-wrap justify-end gap-3">
                     <button onclick="syncQtcnPlans()" class="h-11 px-5 rounded-xl bg-surface-low hover:bg-surface-high font-semibold text-sm text-on-surface flex items-center gap-2 transition">
                         <span class="material-symbols-outlined text-lg">sync_alt</span>
                         Đồng bộ XNV2
                     </button>
-                    <button onclick="syncFlatLinePlans('XN3')" class="h-11 px-5 rounded-xl bg-surface-low hover:bg-surface-high font-semibold text-sm text-on-surface flex items-center gap-2 transition">
-                        <span class="material-symbols-outlined text-lg">table_view</span>
-                        Đồng bộ Chuyền bệt XN3
-                    </button>
+                    <div class="flex flex-wrap items-center justify-end gap-2">
+                        <button onclick="syncFlatLinePlans('XN1-V1')" class="h-11 px-3 rounded-xl bg-surface-low hover:bg-surface-high font-semibold text-sm text-on-surface flex items-center gap-2 transition whitespace-nowrap">
+                            <span class="material-symbols-outlined text-lg">table_view</span> Chuyền bệt XN1-V1
+                        </button>
+                        <button onclick="syncFlatLinePlans('XN2')" class="h-11 px-3 rounded-xl bg-surface-low hover:bg-surface-high font-semibold text-sm text-on-surface flex items-center gap-2 transition whitespace-nowrap">
+                            <span class="material-symbols-outlined text-lg">table_view</span> Chuyền bệt XN2
+                        </button>
+                        <button onclick="syncFlatLinePlans('XN3')" class="h-11 px-3 rounded-xl bg-surface-low hover:bg-surface-high font-semibold text-sm text-on-surface flex items-center gap-2 transition whitespace-nowrap">
+                            <span class="material-symbols-outlined text-lg">table_view</span> Chuyền bệt XN3
+                        </button>
+                    </div>
                     <button onclick="openCreateModal()" class="btn-primary px-5 py-2.5 font-semibold text-sm flex items-center gap-2">
                         <span class="material-symbols-outlined text-lg">add</span>
                         Thêm Kế hoạch
