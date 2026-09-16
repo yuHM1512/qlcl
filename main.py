@@ -404,6 +404,7 @@ QC_DON_VI_SCOPED_ROLES = {"FACTORY_ADMIN", "QC"}
 QC_KNOWN_ROLES = {"QC", "QA_ADMIN", "FACTORY_ADMIN"}
 QC_DASHBOARD_ROLES = QC_KNOWN_ROLES
 QC_SETTINGS_ROLES = {"QA_ADMIN"}
+QC_EMPLOYEE_MGMT_ROLES = {"QA_ADMIN", "FACTORY_ADMIN"}
 QC_PLAN_ROLES = {"QA_ADMIN", "FACTORY_ADMIN"}
 
 
@@ -433,6 +434,11 @@ def require_qc_api_user(request: Request) -> Dict:
 
 def require_qc_input_user(request: Request) -> Dict:
     return require_qc_role(request, {"QC"})
+
+
+def require_employee_mgmt_user(request: Request) -> Dict:
+    """QA_ADMIN or FACTORY_ADMIN — for employee management."""
+    return require_qc_role(request, QC_EMPLOYEE_MGMT_ROLES)
 
 
 def require_plan_admin(request: Request) -> Dict:
@@ -1357,6 +1363,8 @@ app.include_router(gemba_admin_router.router, dependencies=[Depends(require_auth
 
 
 def startup_auto_sync():
+    from xndt_sync import start_auto_sync
+    start_auto_sync(get_db_connection, DATABASE_URL)
     start_qtcn_auto_sync_if_enabled()
     start_xnv2_auto_sync_if_enabled()
     start_flat_line_auto_sync_if_enabled()
@@ -2945,7 +2953,7 @@ def qc_settings_qc_list(request: Request):
     user = get_authenticated_user(request)
     if not user:
         return redirect_to_login_for_current_path(request)
-    if get_qc_role(user) not in QC_SETTINGS_ROLES:
+    if get_qc_role(user) not in QC_EMPLOYEE_MGMT_ROLES:
         return RedirectResponse(url="/qc", status_code=303)
     return templates.TemplateResponse(
         "qc_settings_qcs.html",
@@ -3749,25 +3757,49 @@ def normalize_qc_cap_loai_loi(loai_loi: Optional[str], ma_loi: Optional[str], vi
         return "CAP theo combo lỗi"
     return normalized
 
-@app.get("/api/qc/employees", dependencies=[Depends(require_qa_admin_api_user)])
-def get_qc_employees():
+@app.get("/api/qc/employees", dependencies=[Depends(require_employee_mgmt_user)])
+def get_qc_employees(request: Request):
+    actor = require_employee_mgmt_user(request)
+    actor_role = get_qc_role(actor)
     with get_db_connection() as conn:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute("SELECT ma_nv, ho_ten, chuc_vu, qc_role, don_vi, bo_phan, station FROM public.quality_employees ORDER BY ma_nv")
+            if actor_role == "FACTORY_ADMIN":
+                cur.execute(
+                    "SELECT ma_nv, ho_ten, chuc_vu, qc_role, don_vi, bo_phan, station FROM public.quality_employees WHERE don_vi = %s ORDER BY ma_nv",
+                    (actor.get("don_vi"),),
+                )
+            else:
+                cur.execute("SELECT ma_nv, ho_ten, chuc_vu, qc_role, don_vi, bo_phan, station FROM public.quality_employees ORDER BY ma_nv")
             rows = cur.fetchall()
             return {"status": "ok", "rows": rows}
 
-@app.post("/api/qc/employees", dependencies=[Depends(require_qa_admin_api_user)])
+@app.post("/api/qc/employees", dependencies=[Depends(require_employee_mgmt_user)])
 def upsert_qc_employee(payload: QCEmployee, request: Request):
-    actor = require_qa_admin_api_user(request)
+    actor = require_employee_mgmt_user(request)
+    actor_role = get_qc_role(actor)
     if payload.qc_role not in QC_KNOWN_ROLES | {None}:
         raise HTTPException(status_code=422, detail="Role không hợp lệ")
     if payload.qc_role in QC_DON_VI_SCOPED_ROLES and payload.don_vi not in DON_VI_OPTIONS:
         raise HTTPException(status_code=422, detail="QC và FACTORY_ADMIN phải được gán Xí nghiệp hợp lệ")
     if not payload.ma_nv.strip() or not payload.ho_ten.strip() or not payload.chuc_vu.strip():
         raise HTTPException(status_code=422, detail="Thiếu mã nhân viên, họ tên hoặc chức vụ")
-    if payload.ma_nv == actor['ma_nv'] and payload.qc_role != 'QA_ADMIN':
+    if actor_role == "QA_ADMIN" and payload.ma_nv == actor['ma_nv'] and payload.qc_role != 'QA_ADMIN':
         raise HTTPException(status_code=400, detail="Không thể tự thu hồi quyền QA_ADMIN của mình")
+    if actor_role == "FACTORY_ADMIN":
+        actor_don_vi = (actor.get("don_vi") or "").strip()
+        if payload.don_vi != actor_don_vi:
+            raise HTTPException(status_code=403, detail="Chỉ được quản lý tài khoản thuộc đơn vị của mình")
+        if payload.qc_role and payload.qc_role not in {"QC", None}:
+            raise HTTPException(status_code=403, detail="FACTORY_ADMIN chỉ được gán quyền QC hoặc bỏ trống")
+        with get_db_connection() as conn:
+            with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+                cur.execute("SELECT qc_role, don_vi FROM public.quality_employees WHERE ma_nv = %s", (payload.ma_nv,))
+                existing_emp = cur.fetchone()
+        if existing_emp:
+            if existing_emp["qc_role"] in {"QA_ADMIN", "FACTORY_ADMIN"}:
+                raise HTTPException(status_code=403, detail="Không có quyền chỉnh sửa tài khoản QA_ADMIN hoặc FACTORY_ADMIN")
+            if existing_emp["don_vi"] != actor_don_vi:
+                raise HTTPException(status_code=403, detail="Tài khoản này không thuộc đơn vị của bạn")
     bo_phan = normalize_bo_phan_value(payload.bo_phan)
     with get_db_connection() as conn:
         with conn.cursor() as cur:
@@ -3945,8 +3977,22 @@ def get_qc_cap_action(
     row["ngay_hoan_thanh"] = str(row["ngay_hoan_thanh"]) if row.get("ngay_hoan_thanh") else None
     return {"status": "ok", "row": row}
 
-@app.delete("/api/qc/employees/{ma_nv}", dependencies=[Depends(require_qa_admin_api_user)])
-def delete_qc_employee(ma_nv: str):
+@app.delete("/api/qc/employees/{ma_nv}", dependencies=[Depends(require_employee_mgmt_user)])
+def delete_qc_employee(ma_nv: str, request: Request):
+    actor = require_employee_mgmt_user(request)
+    actor_role = get_qc_role(actor)
+    if actor_role == "FACTORY_ADMIN":
+        actor_don_vi = (actor.get("don_vi") or "").strip()
+        with get_db_connection() as conn:
+            with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+                cur.execute("SELECT qc_role, don_vi FROM public.quality_employees WHERE ma_nv = %s", (ma_nv,))
+                target = cur.fetchone()
+        if not target:
+            raise HTTPException(status_code=404, detail="Không tìm thấy tài khoản")
+        if target["don_vi"] != actor_don_vi:
+            raise HTTPException(status_code=403, detail="Không có quyền xóa tài khoản ngoài đơn vị của mình")
+        if target["qc_role"] != "QC":
+            raise HTTPException(status_code=403, detail="FACTORY_ADMIN chỉ được xóa tài khoản có quyền QC")
     with get_db_connection() as conn:
         with conn.cursor() as cur:
             cur.execute("DELETE FROM public.quality_employees WHERE ma_nv = %s AND qc_role = 'QC'", (ma_nv,))
@@ -5624,6 +5670,13 @@ def api_prod_plan_list(
                         for item in items:
                             or_clauses.append("bo_phan @> %s::jsonb")
                             params.append(json.dumps([item]))
+                            # b_line's direct publisher may still send UDT - L1.
+                            # Match the entire code within XNDT only (L1 != L10).
+                            if re.fullmatch(r"Tổ \d+", item):
+                                or_clauses.append("""(don_vi = 'XNDT' AND EXISTS (
+                                    SELECT 1 FROM jsonb_array_elements_text(bo_phan) AS team(value)
+                                    WHERE team.value ~* %s))""")
+                                params.append(r"^\s*UDT\s*-\s*L0*" + item[3:] + r"\s*$")
                         clauses.append("(" + " OR ".join(or_clauses) + ")")
                 else:
                     clauses.append("bo_phan = %s")
@@ -5650,6 +5703,9 @@ def api_prod_plan_list(
             rows = cur.fetchall()
             # Serialize dates
             for r in rows:
+                if r.get('don_vi') == 'XNDT':
+                    from xndt_sync import normalize_teams
+                    r['bo_phan'] = ', '.join(normalize_teams(r['bo_phan']))
                 for k in ('ngay_rc', 'created_at', 'updated_at', 'last_synced_at'):
                     if r.get(k):
                         r[k] = str(r[k])
@@ -5779,6 +5835,22 @@ def api_prod_plan_sync_qtcn(request: Request):
     user = require_plan_admin(request)
     check_factory_access(user, "XNV2")
     return sync_qtcn_prod_plan()
+
+
+@app.post("/api/prod-plan/sync-xndt")
+def api_prod_plan_sync_xndt(request: Request):
+    user = require_plan_admin(request)
+    check_factory_access(user, "XNDT")
+    from xndt_sync import sync
+    try:
+        return sync(get_db_connection, DATABASE_URL)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("XNDT PostgreSQL sync failed")
+        raise HTTPException(status_code=502, detail="Không đồng bộ được b_line. Kiểm tra kết nối PostgreSQL và nhật ký máy chủ.")
 
 
 @app.post("/api/prod-plan/sync-flat-line")

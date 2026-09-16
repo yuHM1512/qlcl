@@ -55,13 +55,14 @@
             <span>Hành động KP</span>
         </a>
 
-        {# ── Nhóm: Cài đặt — chỉ QA_ADMIN thấy ── #}
-        {% if is_qa_admin %}
+        {# ── Nhóm: Cài đặt — QA_ADMIN thấy tất cả, FACTORY_ADMIN thấy Tài khoản ── #}
+        {% if is_qa_admin or can_manage_plans %}
         <div class="h-px bg-surface-high mx-3 my-2"></div>
         <div class="px-3 pt-1 pb-1">
             <span class="text-[10px] font-bold uppercase tracking-[0.12em] text-on-surface-variant/50">Cài đặt</span>
         </div>
 
+        {% if is_qa_admin %}
         <a href="/qc/settings/customer"
            class="flex items-center gap-3 px-4 py-2.5 rounded-xl font-semibold transition
                   {% if active_page == 'settings_customer' %}bg-primary/8 text-primary{% else %}text-on-surface-variant hover:bg-surface-low{% endif %}">
@@ -75,6 +76,7 @@
             <span class="material-symbols-outlined text-[20px]">precision_manufacturing</span>
             <span>Bộ phận – Chi tiết</span>
         </a>
+        {% endif %}
 
         <a href="/qc/settings/qc-list"
            class="flex items-center gap-3 px-4 py-2.5 rounded-xl font-semibold transition
@@ -83,12 +85,14 @@
             <span>Tài khoản & phân quyền</span>
         </a>
 
+        {% if is_qa_admin %}
         <a href="/qc/settings/visual-picker"
            class="flex items-center gap-3 px-4 py-2.5 rounded-xl font-semibold transition
                   {% if active_page == 'settings_visual' %}bg-primary/8 text-primary{% else %}text-on-surface-variant hover:bg-surface-low{% endif %}">
             <span class="material-symbols-outlined text-[20px]">my_location</span>
             <span>Sắp xếp vị trí</span>
         </a>
+        {% endif %}
         {% endif %}
 
     </div>

@@ -24,6 +24,11 @@
                     <p class="text-base text-on-surface-variant">Quản lý và theo dõi tiến độ sản xuất hiện tại.</p>
                 </div>
                 <div class="flex flex-wrap justify-end gap-3">
+                    {% if is_qa_admin or (qc_role == 'FACTORY_ADMIN' and qc_scope_don_vi == 'XNDT') %}
+                    <button id="syncXndtButton" onclick="syncXndtPlans()" class="h-11 px-5 rounded-xl bg-surface-low hover:bg-surface-high font-semibold text-sm text-on-surface flex items-center gap-2 transition">
+                        <span class="material-symbols-outlined text-lg">sync_alt</span> Sync XNDT
+                    </button>
+                    {% endif %}
                     {% if is_qa_admin or (qc_role == 'FACTORY_ADMIN' and qc_scope_don_vi == 'XNV2') %}<button onclick="syncQtcnPlans()" class="h-11 px-5 rounded-xl bg-surface-low hover:bg-surface-high font-semibold text-sm text-on-surface flex items-center gap-2 transition">
                         <span class="material-symbols-outlined text-lg">sync_alt</span>
                         Sync XNV2
@@ -299,6 +304,27 @@
                 loadData();
             } catch (e) {
                 showToast('Lỗi kết nối máy chủ khi đồng bộ!', 'error');
+            }
+        }
+
+        async function syncXndtPlans() {
+            const button = document.getElementById('syncXndtButton');
+            button.disabled = true;
+            try {
+                showToast('Đang đồng bộ nhu cầu và sản lượng 2 giờ XNDT...');
+                const res = await fetch('/api/prod-plan/sync-xndt', { method: 'POST' });
+                const data = await res.json();
+                if (!res.ok) {
+                    showToast(data.detail || 'Lỗi đồng bộ XNDT', 'error');
+                    return;
+                }
+                const summary = `XNDT: thêm ${data.inserted}, cập nhật ${data.updated}, ngừng hiệu lực ${data.deactivated}, ${data.outputs} bản ghi sản lượng theo nhu cầu/ngày.`;
+                showToast(summary + (data.warnings.length ? ' Cảnh báo: ' + data.warnings.join('; ') : ''), data.warnings.length ? 'error' : 'success');
+                await loadData();
+            } catch (e) {
+                showToast('Lỗi kết nối máy chủ khi đồng bộ XNDT', 'error');
+            } finally {
+                button.disabled = false;
             }
         }
 

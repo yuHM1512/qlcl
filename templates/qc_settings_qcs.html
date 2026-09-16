@@ -7,15 +7,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     {% include '_base_styles.html' %}
     <style>
-        .station-dropdown { position: relative; }
-        .station-trigger { width: 100%; min-height: 48px; border: none; border-radius: 0.75rem; padding: 12px 16px; background: #f3f4f6; color: #191c1d; display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 14px; font-weight: 500; text-align: left; }
-        .station-trigger-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .station-panel { position: absolute; top: calc(100% + 8px); left: 0; right: 0; z-index: 30; display: none; background: #ffffff; border-radius: 1rem; padding: 12px; box-shadow: 0px 20px 40px rgba(25, 28, 29, 0.12); }
-        .station-panel.open { display: block; }
-        .station-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
-        .station-option { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; color: #424654; background: #f8f9fa; border-radius: 0.75rem; padding: 10px 12px; }
-
-        /* Filter chips */
         .filter-chip {
             display: inline-flex; align-items: center; gap: 4px;
             padding: 6px 14px; border-radius: 9999px;
@@ -26,15 +17,11 @@
             user-select: none; white-space: nowrap;
         }
         .filter-chip:hover { background: #e7e8e9; }
-        .filter-chip.active {
-            background: #0040a1; color: #fff; border-color: #0040a1;
-        }
+        .filter-chip.active { background: #0040a1; color: #fff; border-color: #0040a1; }
 
-        /* Loading spinner */
         @keyframes spin { to { transform: rotate(360deg); } }
         .loading-spin { animation: spin 0.8s linear infinite; }
 
-        /* Validation flash */
         @keyframes flash-red {
             0%, 100% { border-color: transparent; }
             20%, 80% { border-color: #ef4444; }
@@ -44,14 +31,38 @@
             border: 2px solid #ef4444 !important;
         }
 
-        /* Delete confirm state */
-        .delete-confirm {
-            background: #ef4444 !important;
-            color: #fff !important;
-        }
-        .delete-confirm .material-symbols-outlined {
-            color: #fff !important;
-        }
+        /* Role badge colors */
+        .role-qa-admin { background: linear-gradient(135deg, #0040a1, #0056d2); color: #fff; }
+        .role-factory-admin { background: #dbeafe; color: #1e40af; }
+        .role-qc { background: #d1fae5; color: #065f46; }
+        .role-none { background: #f3f4f6; color: #9ca3af; }
+
+        /* Table row hover */
+        .emp-row { transition: all 0.15s ease; cursor: pointer; }
+        .emp-row:hover { background: #ffffff; box-shadow: 0 2px 8px rgba(25,28,29,0.04); }
+
+        /* Station checkboxes in modal */
+        .station-dropdown { position: relative; }
+        .station-trigger { width: 100%; min-height: 48px; border: none; border-radius: 0.75rem; padding: 12px 16px; background: #f3f4f6; color: #191c1d; display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 14px; font-weight: 500; text-align: left; }
+        .station-trigger-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .station-panel { position: absolute; top: calc(100% + 8px); left: 0; right: 0; z-index: 130; display: none; background: #ffffff; border-radius: 1rem; padding: 12px; box-shadow: 0px 20px 40px rgba(25, 28, 29, 0.12); }
+        .station-panel.open { display: block; }
+        .station-options { display: grid; grid-template-columns: 1fr; gap: 8px; }
+        .station-option { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; color: #424654; background: #f8f9fa; border-radius: 0.75rem; padding: 10px 12px; }
+
+        /* Modal animation */
+        .modal-overlay { transition: opacity 0.2s ease; }
+        .modal-box { transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease; }
+        .modal-overlay:not(.active) .modal-box { transform: translateY(12px) scale(0.97); opacity: 0; }
+        .modal-overlay.active .modal-box { transform: translateY(0) scale(1); opacity: 1; }
+
+        /* Delete confirm */
+        .delete-confirm { background: #ef4444 !important; color: #fff !important; }
+        .delete-confirm .material-symbols-outlined { color: #fff !important; }
+
+        /* Sort indicator */
+        .sort-header { cursor: pointer; user-select: none; }
+        .sort-header:hover { color: #0040a1; }
     </style>
 </head>
 <body class="font-sans antialiased min-h-screen pb-16">
@@ -61,219 +72,291 @@
         {% include '_sidebar.html' %}
 
         <main class="flex-1 min-w-0">
-            <div class="flex flex-col items-start gap-6 mb-12">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
                 <div>
-                    <h2 class="text-3xl font-display font-bold text-on-surface tracking-tight mb-2">Tài khoản & phân quyền</h2>
-                    <p class="text-base text-on-surface-variant line-height-[1.6]">Phân quyền QA_ADMIN, FACTORY_ADMIN và QC; giữ riêng chức vụ nhân sự.</p>
+                    <h2 class="text-3xl font-display font-bold text-on-surface tracking-tight mb-1">Tài khoản & phân quyền</h2>
+                    <p class="text-sm text-on-surface-variant">
+                        {% if is_qa_admin %}Quản lý tài khoản và phân quyền QC, FACTORY_ADMIN, QA_ADMIN{% else %}Quản lý tài khoản QC thuộc {{ user.don_vi }}{% endif %}
+                    </p>
+                </div>
+                <button onclick="openModal()" class="btn-primary px-5 py-3 font-semibold text-sm flex items-center gap-2 self-start">
+                    <span class="material-symbols-outlined text-[18px]">person_add</span>
+                    Thêm tài khoản
+                </button>
+            </div>
+
+            <!-- Stats cards -->
+            <div id="statsCards" class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+                <div class="bg-surface-lowest rounded-xl p-4 shadow-cloud">
+                    <div class="text-2xl font-bold text-on-surface" id="statTotal">--</div>
+                    <div class="text-xs font-semibold text-on-surface-variant mt-1">Tổng tài khoản</div>
+                </div>
+                <div class="bg-surface-lowest rounded-xl p-4 shadow-cloud">
+                    <div class="text-2xl font-bold text-[#0040a1]" id="statQaAdmin">--</div>
+                    <div class="text-xs font-semibold text-on-surface-variant mt-1">QA_ADMIN</div>
+                </div>
+                <div class="bg-surface-lowest rounded-xl p-4 shadow-cloud">
+                    <div class="text-2xl font-bold text-[#1e40af]" id="statFactoryAdmin">--</div>
+                    <div class="text-xs font-semibold text-on-surface-variant mt-1">FACTORY_ADMIN</div>
+                </div>
+                <div class="bg-surface-lowest rounded-xl p-4 shadow-cloud">
+                    <div class="text-2xl font-bold text-[#065f46]" id="statQc">--</div>
+                    <div class="text-xs font-semibold text-on-surface-variant mt-1">QC</div>
                 </div>
             </div>
 
-            <div class="bg-surface-lowest rounded-2xl p-8 shadow-cloud">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
-                    <!-- Left panel: Form -->
-                    <div class="bg-surface rounded-2xl p-6">
-                        <div class="flex items-center justify-between mb-6">
-                            <h4 id="formTitle" class="text-xs font-bold text-on-surface-variant tracking-wide">THÔNG TIN TÀI KHOẢN</h4>
-                            <button id="btnCancelEdit" onclick="cancelEdit()" class="hidden items-center gap-1 text-xs font-semibold text-[crimson] hover:text-red-700 transition cursor-pointer">
-                                <span class="material-symbols-outlined text-[16px]">close</span>
-                                Hủy sửa
-                            </button>
-                        </div>
-                        <div class="space-y-5">
-                            <div class="grid grid-cols-2 gap-5">
-                                <div>
-                                    <label class="block text-xs font-semibold text-on-surface-variant mb-2 tracking-wide">MÃ NV <span class="text-red-500">*</span></label>
-                                    <input type="text" id="fQCMaNV" class="input-field" placeholder="VD: T0154">
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-semibold text-on-surface-variant mb-2 tracking-wide">HỌ TÊN <span class="text-red-500">*</span></label>
-                                    <input type="text" id="fQCHoTen" class="input-field" placeholder="VD: Nguyễn Văn A">
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-semibold text-on-surface-variant mb-2 tracking-wide">CHỨC VỤ <span class="text-red-500">*</span></label>
-                                    <input id="fQCChucVu" class="input-field" value="QC" placeholder="QAQT, QC, Công nhân...">
-                                </div>
-                                <div class="col-span-2">
-                                    <label class="block text-xs font-semibold text-on-surface-variant mb-2">QUYỀN QC</label>
-                                    <select id="fQCRole" class="input-field">
-                                        <option value="QC">QC — Nhập liệu & báo cáo Xí nghiệp</option>
-                                        <option value="FACTORY_ADMIN">FACTORY_ADMIN — Kế hoạch Xí nghiệp</option>
-                                        <option value="QA_ADMIN">QA_ADMIN — Quản trị toàn bộ</option>
-                                        <option value="">Chưa cấp quyền QC</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-semibold text-on-surface-variant mb-2 tracking-wide">ĐƠN VỊ <span class="text-red-500">*</span></label>
-                                    <select id="fQCDonVi" class="input-field">
-                                        <option value="">-- Chọn --</option>
-                                        {% for dv in don_vi_options %}
-                                        <option value="{{ dv }}">{{ dv }}</option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                                <div class="col-span-2">
-                                    <label class="block text-xs font-semibold text-on-surface-variant mb-2 tracking-wide">BỘ PHẬN / TỔ</label>
-                                    <input type="text" id="fQCBoPhan" class="input-field" placeholder="VD: 1">
-                                </div>
-                                <div class="col-span-2">
-                                    <label class="block text-xs font-semibold text-on-surface-variant mb-2 tracking-wide">TRẠM</label>
-                                    <div class="station-dropdown">
-                                        <button type="button" id="stationTrigger" class="station-trigger" onclick="toggleStationDropdown()">
-                                            <span id="stationTriggerLabel" class="station-trigger-label">Chọn trạm</span>
-                                            <span class="material-symbols-outlined text-[20px]">expand_more</span>
-                                        </button>
-                                        <div id="stationPanel" class="station-panel">
-                                            <div id="stationChoices" class="station-options">
-                                                <label class="station-option">
-                                                    <input type="checkbox" name="qcStation" value="Trạm trước seam">
-                                                    Trạm trước seam
-                                                </label>
-                                                <label class="station-option">
-                                                    <input type="checkbox" name="qcStation" value="Trạm sau seam">
-                                                    Trạm sau seam
-                                                </label>
-                                                <label class="station-option">
-                                                    <input type="checkbox" name="qcStation" value="Trạm cuối chuyền">
-                                                    Trạm cuối chuyền
-                                                </label>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="flex gap-3 mt-4">
-                                <button id="btnSubmit" onclick="saveQCEmployee()" class="flex-1 btn-primary py-3 font-semibold text-sm flex items-center justify-center gap-2">
-                                    <span class="material-symbols-outlined text-[18px]" id="btnSubmitIcon">person_add</span>
-                                    <span id="btnSubmitLabel">Lưu tài khoản</span>
-                                </button>
-                            </div>
-                        </div>
+            <!-- Filters bar -->
+            <div class="bg-surface-lowest rounded-2xl shadow-cloud p-5 mb-6">
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <div class="relative flex-1">
+                        <span class="material-symbols-outlined text-[20px] text-on-surface-variant absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">search</span>
+                        <input type="text" id="searchInput" class="input-field w-full pl-10 pr-4" placeholder="Tìm mã NV, tên, bộ phận..." oninput="applyFilters()">
                     </div>
-
-                    <!-- Right panel: List -->
-                    <div class="bg-surface rounded-2xl p-6 flex flex-col">
-                        <div class="flex items-center justify-between mb-4">
-                            <h4 class="text-xs font-bold text-on-surface-variant tracking-wide">
-                                DANH SÁCH TÀI KHOẢN <span id="qcCount" class="text-on-surface-variant"></span>
-                            </h4>
-                        </div>
-
-                        <!-- Search -->
-                        <div class="relative mb-3">
-                            <span class="material-symbols-outlined text-[20px] text-on-surface-variant absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">search</span>
-                            <input type="text" id="searchInput" class="input-field w-full pl-10 pr-4" placeholder="Tìm theo mã NV hoặc tên..." oninput="applyFilters()">
-                        </div>
-
-                        <!-- Filter chips by don vi -->
-                        <div id="filterChips" class="flex flex-wrap gap-2 mb-4">
-                            <!-- Populated dynamically -->
-                        </div>
-
-                        <div id="listQC" class="flex-1 overflow-y-auto max-h-[500px] space-y-2 pr-2">
-                            <div class="flex flex-col items-center justify-center py-12 text-on-surface-variant">
-                                <span class="material-symbols-outlined text-[36px] loading-spin mb-3">progress_activity</span>
-                                <span class="text-sm font-medium">Đang tải danh sách...</span>
-                            </div>
-                        </div>
-                    </div>
+                    <select id="filterRole" class="input-field w-auto min-w-[180px]" onchange="applyFilters()">
+                        <option value="">Tất cả quyền</option>
+                        <option value="QA_ADMIN">QA_ADMIN</option>
+                        <option value="FACTORY_ADMIN">FACTORY_ADMIN</option>
+                        <option value="QC">QC</option>
+                        <option value="__none__">Chưa cấp quyền</option>
+                    </select>
                 </div>
+                <div id="filterChips" class="flex flex-wrap gap-2 mt-3"></div>
+            </div>
+
+            <!-- Table -->
+            <div class="bg-surface-lowest rounded-2xl shadow-cloud overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="data-table w-full">
+                        <thead>
+                            <tr class="border-b border-surface-high/50">
+                                <th class="text-left sort-header" onclick="sortBy('ma_nv')">
+                                    Mã NV <span class="material-symbols-outlined text-[14px] align-middle" id="sort_ma_nv">unfold_more</span>
+                                </th>
+                                <th class="text-left sort-header" onclick="sortBy('ho_ten')">
+                                    Họ tên <span class="material-symbols-outlined text-[14px] align-middle" id="sort_ho_ten">unfold_more</span>
+                                </th>
+                                <th class="text-left">Chức vụ</th>
+                                <th class="text-left sort-header" onclick="sortBy('qc_role')">
+                                    Quyền QC <span class="material-symbols-outlined text-[14px] align-middle" id="sort_qc_role">unfold_more</span>
+                                </th>
+                                <th class="text-left sort-header" onclick="sortBy('don_vi')">
+                                    Đơn vị <span class="material-symbols-outlined text-[14px] align-middle" id="sort_don_vi">unfold_more</span>
+                                </th>
+                                <th class="text-left">Bộ phận</th>
+                                <th class="text-left hidden lg:table-cell">Trạm</th>
+                                <th class="text-right w-24"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody">
+                            <tr>
+                                <td colspan="8" class="text-center py-12">
+                                    <span class="material-symbols-outlined text-[36px] loading-spin mb-3 text-on-surface-variant">progress_activity</span>
+                                    <div class="text-sm font-medium text-on-surface-variant">Đang tải danh sách...</div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div id="tableFooter" class="px-5 py-3 border-t border-surface-high/50 text-xs text-on-surface-variant font-medium"></div>
             </div>
         </main>
+    </div>
+
+    <!-- Edit/Create Modal -->
+    <div id="empModal" class="modal-overlay" onclick="if(event.target===this)closeModal()">
+        <div class="modal-box p-0" style="max-width: 540px;">
+            <div class="flex items-center justify-between px-6 py-5 border-b border-surface-high/30">
+                <h3 id="modalTitle" class="text-lg font-display font-bold text-on-surface">Thêm tài khoản</h3>
+                <button onclick="closeModal()" class="w-9 h-9 rounded-full hover:bg-surface-low flex items-center justify-center transition">
+                    <span class="material-symbols-outlined text-[20px] text-on-surface-variant">close</span>
+                </button>
+            </div>
+            <div class="px-6 py-5 space-y-5">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-on-surface-variant mb-2 tracking-wide">MÃ NV <span class="text-red-500">*</span></label>
+                        <input type="text" id="fQCMaNV" class="input-field" placeholder="VD: T0154">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-on-surface-variant mb-2 tracking-wide">HỌ TÊN <span class="text-red-500">*</span></label>
+                        <input type="text" id="fQCHoTen" class="input-field" placeholder="VD: Nguyễn Văn A">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-on-surface-variant mb-2 tracking-wide">CHỨC VỤ <span class="text-red-500">*</span></label>
+                    <input id="fQCChucVu" class="input-field" value="QC" placeholder="QAQT, QC, Công nhân...">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-on-surface-variant mb-2">QUYỀN QC</label>
+                    <select id="fQCRole" class="input-field">
+                        <option value="QC">QC — Nhập liệu & báo cáo Xí nghiệp</option>
+                        {% if is_qa_admin %}
+                        <option value="FACTORY_ADMIN">FACTORY_ADMIN — Kế hoạch Xí nghiệp</option>
+                        <option value="QA_ADMIN">QA_ADMIN — Quản trị toàn bộ</option>
+                        {% endif %}
+                        <option value="">Chưa cấp quyền QC</option>
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-on-surface-variant mb-2 tracking-wide">ĐƠN VỊ <span class="text-red-500">*</span></label>
+                        <select id="fQCDonVi" class="input-field">
+                            <option value="">-- Chọn --</option>
+                            {% for dv in don_vi_options %}
+                            <option value="{{ dv }}">{{ dv }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-on-surface-variant mb-2 tracking-wide">BỘ PHẬN / TỔ</label>
+                        <input type="text" id="fQCBoPhan" class="input-field" placeholder="VD: 1">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-on-surface-variant mb-2 tracking-wide">TRẠM</label>
+                    <div class="station-dropdown">
+                        <button type="button" id="stationTrigger" class="station-trigger" onclick="toggleStationDropdown()">
+                            <span id="stationTriggerLabel" class="station-trigger-label">Chọn trạm</span>
+                            <span class="material-symbols-outlined text-[20px]">expand_more</span>
+                        </button>
+                        <div id="stationPanel" class="station-panel">
+                            <div id="stationChoices" class="station-options">
+                                <label class="station-option"><input type="checkbox" name="qcStation" value="Trạm trước seam"> Trạm trước seam</label>
+                                <label class="station-option"><input type="checkbox" name="qcStation" value="Trạm sau seam"> Trạm sau seam</label>
+                                <label class="station-option"><input type="checkbox" name="qcStation" value="Trạm cuối chuyền"> Trạm cuối chuyền</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="px-6 py-4 border-t border-surface-high/30 flex items-center gap-3 justify-end">
+                <button onclick="closeModal()" class="btn-tertiary px-5 py-2.5 text-sm font-semibold">Hủy</button>
+                <button id="btnSubmit" onclick="saveQCEmployee()" class="btn-primary px-6 py-2.5 font-semibold text-sm flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[18px]" id="btnSubmitIcon">save</span>
+                    <span id="btnSubmitLabel">Lưu</span>
+                </button>
+            </div>
+        </div>
     </div>
 
     {% include '_toast.html' %}
     {% include '_base_scripts.html' %}
 
     <script>
+        const ACTOR_ROLE = '{{ qc_role }}';
+        const IS_QA_ADMIN = ACTOR_ROLE === 'QA_ADMIN';
+        const ACTOR_DON_VI = '{{ qc_scope_don_vi }}';
+
         let allEmployees = [];
         let activeFilterDonVi = '';
         let isEditMode = false;
         let editingMaNV = '';
+        let currentSort = { field: 'ma_nv', dir: 'asc' };
 
         document.addEventListener('DOMContentLoaded', () => {
             loadQCEmployees();
-
-            // Enter key on bo phan field submits form
             document.getElementById('fQCBoPhan').addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    saveQCEmployee();
-                }
+                if (e.key === 'Enter') { e.preventDefault(); saveQCEmployee(); }
             });
         });
 
-        function getSelectedStations() {
-            return Array.from(document.querySelectorAll('input[name="qcStation"]:checked'))
-                .map(el => el.value);
+        function canEditEmployee(emp) {
+            if (IS_QA_ADMIN) return true;
+            if (!emp) return true;
+            return !emp.qc_role || emp.qc_role === 'QC';
         }
 
+        // --- Modal ---
+        function openModal(employee) {
+            if (employee && !canEditEmployee(employee)) {
+                showToast('Không có quyền chỉnh sửa tài khoản ' + (employee.qc_role || ''), 'error');
+                return;
+            }
+            const modal = document.getElementById('empModal');
+            resetForm();
+            if (employee) {
+                isEditMode = true;
+                editingMaNV = employee.ma_nv;
+                document.getElementById('modalTitle').textContent = 'Sửa tài khoản';
+                document.getElementById('btnSubmitLabel').textContent = 'Cập nhật';
+                document.getElementById('fQCMaNV').value = employee.ma_nv;
+                document.getElementById('fQCHoTen').value = employee.ho_ten || '';
+                document.getElementById('fQCChucVu').value = employee.chuc_vu || 'QC';
+                document.getElementById('fQCRole').value = employee.qc_role || '';
+                const dvSelect = document.getElementById('fQCDonVi');
+                if (employee.don_vi && !Array.from(dvSelect.options).some(o => o.value === employee.don_vi)) {
+                    dvSelect.add(new Option(employee.don_vi, employee.don_vi));
+                }
+                dvSelect.value = employee.don_vi || '';
+                document.getElementById('fQCBoPhan').value = employee.bo_phan || '';
+                setSelectedStations(normalizeStations(employee.station));
+            } else {
+                isEditMode = false;
+                editingMaNV = '';
+                document.getElementById('modalTitle').textContent = 'Thêm tài khoản';
+                document.getElementById('btnSubmitLabel').textContent = 'Lưu';
+                if (!IS_QA_ADMIN && ACTOR_DON_VI) {
+                    document.getElementById('fQCDonVi').value = ACTOR_DON_VI;
+                }
+            }
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+            setTimeout(() => document.getElementById('fQCMaNV').focus(), 100);
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('empModal');
+            modal.classList.remove('active');
+            document.body.style.overflow = '';
+            toggleStationDropdown(false);
+        }
+
+        function resetForm() {
+            document.getElementById('fQCMaNV').value = '';
+            document.getElementById('fQCHoTen').value = '';
+            document.getElementById('fQCChucVu').value = 'QC';
+            document.getElementById('fQCRole').value = 'QC';
+            document.getElementById('fQCDonVi').value = '';
+            document.getElementById('fQCBoPhan').value = '';
+            setSelectedStations([]);
+            toggleStationDropdown(false);
+            ['fQCMaNV', 'fQCHoTen', 'fQCDonVi', 'fQCChucVu'].forEach(id => {
+                document.getElementById(id).classList.remove('field-invalid');
+            });
+        }
+
+        // --- Station dropdown ---
+        function getSelectedStations() {
+            return Array.from(document.querySelectorAll('input[name="qcStation"]:checked')).map(el => el.value);
+        }
         function updateStationTriggerLabel() {
             const list = getSelectedStations();
             const el = document.getElementById('stationTriggerLabel');
-            if (!el) return;
-            el.textContent = list.length ? list.join(', ') : 'Chọn trạm';
+            if (el) el.textContent = list.length ? list.join(', ') : 'Chọn trạm';
         }
-
         function toggleStationDropdown(forceOpen = null) {
             const panel = document.getElementById('stationPanel');
             if (!panel) return;
             const open = forceOpen === null ? !panel.classList.contains('open') : !!forceOpen;
             panel.classList.toggle('open', open);
         }
-
         function setSelectedStations(stations) {
             const list = Array.isArray(stations) ? stations : [];
-            document.querySelectorAll('input[name="qcStation"]').forEach(el => {
-                el.checked = list.includes(el.value);
-            });
+            document.querySelectorAll('input[name="qcStation"]').forEach(el => { el.checked = list.includes(el.value); });
             updateStationTriggerLabel();
         }
-
         function normalizeStations(raw) {
             if (Array.isArray(raw)) return raw.filter(Boolean);
-            try {
-                if (typeof raw === 'string') {
-                    const parsed = JSON.parse(raw);
-                    if (Array.isArray(parsed)) return parsed.filter(Boolean);
-                }
-            } catch (e) {}
+            try { if (typeof raw === 'string') { const p = JSON.parse(raw); if (Array.isArray(p)) return p.filter(Boolean); } } catch(e) {}
             return [];
         }
 
-        // --- Form mode management ---
-        function setEditMode(maNV) {
-            isEditMode = true;
-            editingMaNV = maNV;
-            document.getElementById('formTitle').textContent = 'SỬA TÀI KHOẢN';
-            document.getElementById('btnSubmitIcon').textContent = 'save';
-            document.getElementById('btnSubmitLabel').textContent = 'Cập nhật';
-            const cancelBtn = document.getElementById('btnCancelEdit');
-            cancelBtn.classList.remove('hidden');
-            cancelBtn.classList.add('inline-flex');
-        }
-
-        function cancelEdit() {
-            isEditMode = false;
-            editingMaNV = '';
-            document.getElementById('formTitle').textContent = 'THÔNG TIN TÀI KHOẢN';
-            document.getElementById('btnSubmitIcon').textContent = 'person_add';
-            document.getElementById('btnSubmitLabel').textContent = 'Lưu tài khoản';
-            const cancelBtn = document.getElementById('btnCancelEdit');
-            cancelBtn.classList.add('hidden');
-            cancelBtn.classList.remove('inline-flex');
-            // Reset form
-            document.getElementById('fQCChucVu').value = 'QC';
-            document.getElementById('fQCRole').value = 'QC';
-            document.getElementById('fQCMaNV').value = '';
-            document.getElementById('fQCHoTen').value = '';
-            document.getElementById('fQCDonVi').value = '';
-            document.getElementById('fQCBoPhan').value = '';
-            setSelectedStations([]);
-            toggleStationDropdown(false);
-            // Remove validation highlights
-            ['fQCMaNV', 'fQCHoTen', 'fQCDonVi', 'fQCBoPhan'].forEach(id => {
-                document.getElementById(id).classList.remove('field-invalid');
-            });
+        // --- Stats ---
+        function updateStats() {
+            document.getElementById('statTotal').textContent = allEmployees.length;
+            document.getElementById('statQaAdmin').textContent = allEmployees.filter(r => r.qc_role === 'QA_ADMIN').length;
+            document.getElementById('statFactoryAdmin').textContent = allEmployees.filter(r => r.qc_role === 'FACTORY_ADMIN').length;
+            document.getElementById('statQc').textContent = allEmployees.filter(r => r.qc_role === 'QC').length;
         }
 
         // --- Filter chips ---
@@ -281,142 +364,128 @@
             const donViSet = new Set();
             allEmployees.forEach(r => { if (r.don_vi) donViSet.add(r.don_vi); });
             const sorted = Array.from(donViSet).sort();
-
             const container = document.getElementById('filterChips');
-            if (sorted.length <= 1) {
-                container.innerHTML = '';
-                return;
-            }
-
+            if (sorted.length <= 1) { container.innerHTML = ''; return; }
             let html = `<button class="filter-chip ${!activeFilterDonVi ? 'active' : ''}" onclick="setFilterDonVi('')">Tất cả</button>`;
             for (const dv of sorted) {
                 html += `<button class="filter-chip ${activeFilterDonVi === dv ? 'active' : ''}" onclick="setFilterDonVi('${dv}')">${dv}</button>`;
             }
             container.innerHTML = html;
         }
+        function setFilterDonVi(dv) { activeFilterDonVi = dv; buildFilterChips(); applyFilters(); }
 
-        function setFilterDonVi(dv) {
-            activeFilterDonVi = dv;
-            buildFilterChips();
+        // --- Sort ---
+        function sortBy(field) {
+            if (currentSort.field === field) {
+                currentSort.dir = currentSort.dir === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSort = { field, dir: 'asc' };
+            }
+            document.querySelectorAll('[id^="sort_"]').forEach(el => el.textContent = 'unfold_more');
+            const icon = document.getElementById('sort_' + field);
+            if (icon) icon.textContent = currentSort.dir === 'asc' ? 'expand_less' : 'expand_more';
             applyFilters();
         }
 
-        // --- Search + filter ---
+        // --- Filter + Search ---
         function applyFilters() {
             const query = (document.getElementById('searchInput').value || '').trim().toLowerCase();
-            const filtered = allEmployees.filter(r => {
+            const roleFilter = document.getElementById('filterRole').value;
+            let filtered = allEmployees.filter(r => {
                 if (activeFilterDonVi && r.don_vi !== activeFilterDonVi) return false;
+                if (roleFilter === '__none__' && r.qc_role) return false;
+                if (roleFilter && roleFilter !== '__none__' && r.qc_role !== roleFilter) return false;
                 if (query) {
-                    const haystack = `${r.ma_nv} ${r.ho_ten}`.toLowerCase();
+                    const haystack = `${r.ma_nv} ${r.ho_ten} ${r.bo_phan || ''} ${r.don_vi || ''}`.toLowerCase();
                     if (!haystack.includes(query)) return false;
                 }
                 return true;
             });
-            renderEmployeeList(filtered);
-            updateCount(filtered.length);
+            // Sort
+            const { field, dir } = currentSort;
+            filtered.sort((a, b) => {
+                const va = (a[field] || '').toString().toLowerCase();
+                const vb = (b[field] || '').toString().toLowerCase();
+                const cmp = va.localeCompare(vb, 'vi');
+                return dir === 'asc' ? cmp : -cmp;
+            });
+            renderTable(filtered);
+            document.getElementById('tableFooter').textContent = `Hiển thị ${filtered.length} / ${allEmployees.length} tài khoản`;
         }
 
-        function updateCount(count) {
-            document.getElementById('qcCount').textContent = `(${count})`;
+        // --- Render table ---
+        function getRoleBadge(role) {
+            if (role === 'QA_ADMIN') return '<span class="badge role-qa-admin">QA_ADMIN</span>';
+            if (role === 'FACTORY_ADMIN') return '<span class="badge role-factory-admin">FACTORY_ADMIN</span>';
+            if (role === 'QC') return '<span class="badge role-qc">QC</span>';
+            return '<span class="badge role-none">Chưa cấp</span>';
         }
 
-        // --- Render list ---
-        function renderEmployeeList(rows) {
-            const container = document.getElementById('listQC');
-
+        function renderTable(rows) {
+            const tbody = document.getElementById('tableBody');
             if (rows.length === 0) {
                 const hasAny = allEmployees.length > 0;
-                const icon = hasAny ? 'filter_list_off' : 'group_off';
-                const msg = hasAny
-                    ? 'Không tìm thấy QC phù hợp với bộ lọc'
-                    : 'Chưa có tài khoản nào. Thêm tài khoản ở form bên trái.';
-                container.innerHTML = `
-                    <div class="flex flex-col items-center justify-center py-12 text-on-surface-variant">
-                        <span class="material-symbols-outlined text-[40px] mb-3 opacity-40">${icon}</span>
-                        <span class="text-sm font-medium text-center">${msg}</span>
-                    </div>`;
+                tbody.innerHTML = `<tr><td colspan="8" class="text-center py-12">
+                    <span class="material-symbols-outlined text-[40px] mb-3 opacity-40 text-on-surface-variant">${hasAny ? 'filter_list_off' : 'group_off'}</span>
+                    <div class="text-sm font-medium text-on-surface-variant">${hasAny ? 'Không tìm thấy tài khoản phù hợp' : 'Chưa có tài khoản nào'}</div>
+                </td></tr>`;
                 return;
             }
-
             let html = '';
-            for (let r of rows) {
+            for (const r of rows) {
                 const stations = normalizeStations(r.station);
-                const stationLabel = stations.length ? stations.join(', ') : '--';
-                const stationPayload = encodeURIComponent(JSON.stringify(stations));
-                const escapedHoTen = (r.ho_ten || '').replace(/'/g, "\\'");
-                const escapedDonVi = (r.don_vi || '').replace(/'/g, "\\'");
-                const escapedBoPhan = (r.bo_phan || '').replace(/'/g, "\\'");
+                const stationLabel = stations.length ? stations.map(s => `<span class="inline-block bg-surface-low rounded px-2 py-0.5 text-xs font-medium text-on-surface-variant mr-1 mb-0.5">${s}</span>`).join('') : '<span class="text-on-surface-variant/40">--</span>';
+                const idx = allEmployees.indexOf(r);
+                const editable = canEditEmployee(r);
+                const canDelete = editable && r.qc_role === 'QC';
                 html += `
-                    <div class="flex items-center justify-between p-4 bg-surface-lowest rounded-xl mb-3 shadow-[0_2px_8px_rgba(25,28,29,0.04)] group transition-all hover:shadow-[0_4px_12px_rgba(25,28,29,0.06)]" data-manv="${r.ma_nv}">
-                        <div class="min-w-0 flex-1 mr-3">
-                            <div class="font-bold text-on-surface text-base truncate">${r.ma_nv} - ${r.ho_ten}</div>
-                            <div class="text-xs text-on-surface-variant font-medium uppercase mt-1 tracking-wide truncate">${r.qc_role || "Chưa cấp quyền QC"} · ${r.don_vi || ""} · ${r.bo_phan || ""} · ${stationLabel}</div>
-                        </div>
-                        <div class="flex gap-2 flex-shrink-0">
-                            <button onclick="editQCEmployee('${r.ma_nv}', '${escapedHoTen}', '${escapedDonVi}', '${escapedBoPhan}', '${stationPayload}')" class="w-9 h-9 rounded-full bg-surface hover:bg-surface-high text-primary flex items-center justify-center transition" title="Sửa">
-                                <span class="material-symbols-outlined text-[18px]">edit</span>
-                            </button>
-                            ${r.qc_role === 'QC' ? `<button onclick="confirmDeleteQC(this, '${r.ma_nv}', '${escapedHoTen}')" class="w-9 h-9 rounded-full bg-surface hover:bg-error-container text-[crimson] flex items-center justify-center transition delete-btn" title="Xoá">
-                                <span class="material-symbols-outlined text-[18px]">delete</span>
-                            </button>` : ''}
-                        </div>
-                    </div>
-                `;
+                    <tr class="emp-row border-b border-surface-high/20 ${editable ? '' : 'opacity-70'}" ${editable ? `onclick="openModal(allEmployees[${idx}])"` : ''} ${editable ? '' : 'style="cursor:default"'}>
+                        <td class="font-bold text-on-surface whitespace-nowrap">${r.ma_nv}</td>
+                        <td class="font-medium">${r.ho_ten}</td>
+                        <td class="text-on-surface-variant text-sm">${r.chuc_vu || '--'}</td>
+                        <td>${getRoleBadge(r.qc_role)}</td>
+                        <td class="text-sm">${r.don_vi || '--'}</td>
+                        <td class="text-sm text-on-surface-variant">${r.bo_phan || '--'}</td>
+                        <td class="hidden lg:table-cell text-sm">${stationLabel}</td>
+                        <td class="text-right" onclick="event.stopPropagation()">
+                            <div class="flex gap-1 justify-end">
+                                ${editable ? `<button onclick="openModal(allEmployees[${idx}])" class="w-8 h-8 rounded-lg hover:bg-surface-low text-primary flex items-center justify-center transition" title="Sửa">
+                                    <span class="material-symbols-outlined text-[18px]">edit</span>
+                                </button>` : ''}
+                                ${canDelete ? `<button onclick="confirmDeleteQC(this, '${r.ma_nv}', '${(r.ho_ten||'').replace(/'/g,"\\'")}')" class="w-8 h-8 rounded-lg hover:bg-error-container text-[crimson] flex items-center justify-center transition delete-btn" title="Xoá">
+                                    <span class="material-symbols-outlined text-[18px]">delete</span>
+                                </button>` : ''}
+                            </div>
+                        </td>
+                    </tr>`;
             }
-            container.innerHTML = html;
+            tbody.innerHTML = html;
         }
 
         // --- Load employees ---
         async function loadQCEmployees() {
-            const container = document.getElementById('listQC');
-            // Show loading spinner
-            container.innerHTML = `
-                <div class="flex flex-col items-center justify-center py-12 text-on-surface-variant">
-                    <span class="material-symbols-outlined text-[36px] loading-spin mb-3">progress_activity</span>
-                    <span class="text-sm font-medium">Đang tải danh sách...</span>
-                </div>`;
-
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = `<tr><td colspan="8" class="text-center py-12">
+                <span class="material-symbols-outlined text-[36px] loading-spin mb-3 text-on-surface-variant">progress_activity</span>
+                <div class="text-sm font-medium text-on-surface-variant">Đang tải danh sách...</div>
+            </td></tr>`;
             try {
                 const res = await fetch('/api/qc/employees');
                 const data = await res.json();
-                allEmployees = (data.rows || []);
+                allEmployees = data.rows || [];
+                updateStats();
                 buildFilterChips();
                 applyFilters();
             } catch (e) {
                 console.error(e);
-                container.innerHTML = `
-                    <div class="flex flex-col items-center justify-center py-12 text-on-surface-variant">
-                        <span class="material-symbols-outlined text-[40px] mb-3 opacity-40">error</span>
-                        <span class="text-sm font-medium">Lỗi tải dữ liệu</span>
-                    </div>`;
+                tbody.innerHTML = `<tr><td colspan="8" class="text-center py-12">
+                    <span class="material-symbols-outlined text-[40px] mb-3 opacity-40 text-on-surface-variant">error</span>
+                    <div class="text-sm font-medium text-on-surface-variant">Lỗi tải dữ liệu</div>
+                </td></tr>`;
             }
         }
 
-        function editQCEmployee(ma_nv, ho_ten, don_vi, bo_phan, stationPayload) {
-            document.getElementById('fQCMaNV').value = ma_nv;
-            document.getElementById('fQCHoTen').value = ho_ten;
-            const employee = allEmployees.find(r => r.ma_nv === ma_nv);
-            document.getElementById('fQCChucVu').value = employee?.chuc_vu || '';
-            document.getElementById('fQCRole').value = employee?.qc_role || '';
-            const dvSelect = document.getElementById('fQCDonVi');
-            if (don_vi && !Array.from(dvSelect.options).some(o => o.value === don_vi)) {
-                dvSelect.add(new Option(don_vi, don_vi));
-            }
-            document.getElementById('fQCDonVi').value = don_vi;
-            document.getElementById('fQCBoPhan').value = bo_phan;
-            try {
-                const stations = stationPayload ? JSON.parse(decodeURIComponent(stationPayload)) : [];
-                setSelectedStations(stations);
-            } catch (e) {
-                setSelectedStations([]);
-            }
-            toggleStationDropdown(false);
-            setEditMode(ma_nv);
-            // Scroll form into view on mobile
-            document.getElementById('formTitle').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }
-
-        // --- Form validation with highlight ---
+        // --- Form validation ---
         function validateForm(payload) {
             const fields = [
                 { id: 'fQCMaNV', value: payload.ma_nv },
@@ -430,12 +499,9 @@
                 if (!f.value) {
                     valid = false;
                     el.classList.remove('field-invalid');
-                    // Force reflow so animation restarts
                     void el.offsetWidth;
                     el.classList.add('field-invalid');
-                    el.addEventListener('animationend', () => {
-                        el.classList.remove('field-invalid');
-                    }, { once: true });
+                    el.addEventListener('animationend', () => el.classList.remove('field-invalid'), { once: true });
                 }
             }
             return valid;
@@ -451,12 +517,7 @@
                 bo_phan: document.getElementById('fQCBoPhan').value.trim(),
                 station: getSelectedStations()
             };
-
-            if (!validateForm(payload)) {
-                showToast('Vui lòng điền đủ các trường bắt buộc', 'error');
-                return;
-            }
-
+            if (!validateForm(payload)) { showToast('Vui lòng điền đủ các trường bắt buộc', 'error'); return; }
             try {
                 const res = await fetch('/api/qc/employees', {
                     method: 'POST',
@@ -466,7 +527,7 @@
                 if (res.ok) {
                     const action = isEditMode ? 'Cập nhật' : 'Thêm';
                     showToast(`${action} thành công: ${payload.ho_ten} (${payload.ma_nv})`, 'success');
-                    cancelEdit();
+                    closeModal();
                     loadQCEmployees();
                 } else {
                     const data = await res.json();
@@ -475,62 +536,45 @@
             } catch (e) { showToast('Lỗi kết nối', 'error'); }
         }
 
-        // --- Inline delete confirmation ---
+        // --- Delete ---
         function confirmDeleteQC(btn, ma_nv, ho_ten) {
-            // If already in confirm state, execute delete
-            if (btn.dataset.confirming === 'true') {
-                deleteQCEmployee(ma_nv, ho_ten);
-                return;
-            }
-
-            // Enter confirm state
+            if (btn.dataset.confirming === 'true') { deleteQCEmployee(ma_nv, ho_ten); return; }
             btn.dataset.confirming = 'true';
             btn.classList.add('delete-confirm');
             btn.innerHTML = '<span class="text-xs font-bold whitespace-nowrap px-1">Xóa?</span>';
             btn.title = 'Nhấn lần nữa để xoá';
-            btn.style.width = 'auto';
-            btn.style.minWidth = '36px';
-
-            // Revert after 3s
-            const timer = setTimeout(() => {
-                resetDeleteBtn(btn);
-            }, 3000);
+            btn.style.width = 'auto'; btn.style.minWidth = '32px';
+            const timer = setTimeout(() => resetDeleteBtn(btn), 3000);
             btn.dataset.deleteTimer = timer;
         }
-
         function resetDeleteBtn(btn) {
-            if (btn.dataset.deleteTimer) {
-                clearTimeout(Number(btn.dataset.deleteTimer));
-            }
+            if (btn.dataset.deleteTimer) clearTimeout(Number(btn.dataset.deleteTimer));
             btn.dataset.confirming = '';
             btn.classList.remove('delete-confirm');
             btn.innerHTML = '<span class="material-symbols-outlined text-[18px]">delete</span>';
-            btn.title = 'Xoá';
-            btn.style.width = '';
-            btn.style.minWidth = '';
+            btn.title = 'Xoá'; btn.style.width = ''; btn.style.minWidth = '';
         }
-
         async function deleteQCEmployee(ma_nv, ho_ten) {
             try {
                 const res = await fetch(`/api/qc/employees/${ma_nv}`, { method: 'DELETE' });
                 if (res.ok) {
-                    showToast(`Đã xoá QC: ${ho_ten || ma_nv}`, 'success');
-                    // If we were editing this employee, cancel edit
-                    if (isEditMode && editingMaNV === ma_nv) {
-                        cancelEdit();
-                    }
+                    showToast(`Đã xoá: ${ho_ten || ma_nv}`, 'success');
+                    if (isEditMode && editingMaNV === ma_nv) closeModal();
                     loadQCEmployees();
                 }
             } catch (e) { console.error(e); }
         }
 
+        // --- Event listeners ---
         document.addEventListener('change', (e) => {
             if (e.target.matches('input[name="qcStation"]')) updateStationTriggerLabel();
         });
-
         document.addEventListener('click', (e) => {
             const dropdown = document.querySelector('.station-dropdown');
             if (dropdown && !dropdown.contains(e.target)) toggleStationDropdown(false);
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeModal();
         });
     </script>
 </body>

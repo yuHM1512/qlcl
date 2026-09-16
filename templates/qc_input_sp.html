@@ -2204,9 +2204,9 @@
 
         let passed, failed, total, rate;
         if (isCurrentPlanFlatLine()) {
-            total = flatOutput?.available ? flatOutput.qty : null;
+            passed = flatOutput?.available ? flatOutput.qty : null;
             failed = flatOutput?.records === 0 ? null : flatOutput?.defects ?? outputFailed ?? 0;
-            passed = total == null || failed == null ? null : Math.max(0,total-failed);
+            total = passed == null || failed == null ? null : passed + failed;
             rate = total > 0 && failed != null ? failed / total * 100 : null;
         } else if (isCurrentPlanHangingLine()) {
             passed = hlPassedCount || 0;

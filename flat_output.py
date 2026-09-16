@@ -15,7 +15,7 @@ DDL = """CREATE TABLE IF NOT EXISTS public.qc_flat_output (
 
 def validate(payload):
     unit = str(payload.get('don_vi') or '').strip()
-    if unit not in ('XN1-V1', 'XN2', 'XN3'):
+    if unit not in ('XN1-V1', 'XN2', 'XN3', 'XNDT'):
         raise HTTPException(422, 'Đơn vị không hợp lệ')
     rows = payload.get('outputs')
     if not isinstance(rows, list):
@@ -49,8 +49,9 @@ def get_output(cur, plan, day):
     summary = cur.fetchone()
     defects = int(summary['defects'])
     qty = float(row['qty']) if row and row['qty'] is not None else None
+    inspected = qty + defects if qty is not None else None
     return dict(source='flat_line_sheet',qty=qty,available=qty is not None,defects=defects,records=summary['records'],
-        rate=round(defects/qty*100,1) if summary['records'] and qty and qty>0 else None,
+        rate=round(defects/inspected*100,1) if summary['records'] and inspected and inspected>0 else None,
         slots=row['slots'] if row else [],synced_at=row['synced_at'].isoformat() if row else None)
 
 
@@ -90,7 +91,7 @@ def register(app, connect, api_key):
         if not api_key or request.headers.get('X-API-Key') != api_key:
             raise HTTPException(403, 'API key không hợp lệ')
         qlcl_unit = 'XN1-V1' if don_vi == 'XN1' else don_vi
-        if qlcl_unit not in ('XN1-V1', 'XN2', 'XN3'):
+        if qlcl_unit not in ('XN1-V1', 'XN2', 'XN3', 'XNDT'):
             raise HTTPException(422, 'Đơn vị không hợp lệ')
         with connect() as conn:
             with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:

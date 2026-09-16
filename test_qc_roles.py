@@ -91,11 +91,23 @@ class QCRolesTest(unittest.TestCase):
         response = self.client.post('/api/dm/khach-hang', json={'ten_khach_hang':'ROLE TEST CUSTOMER'})
         self.assertEqual(response.status_code, 200, response.text)
 
-    def test_factory_cannot_change_roles_or_visuals(self):
+    def test_factory_manages_local_qc_but_not_admin_roles_or_visuals(self):
         self.login('H1289')
-        for path, method in [('/api/qc/employees','POST'),('/api/qc/visual-picker/hotspots-batch','PATCH')]:
-            response=self.client.request(method,path,json={})
-            self.assertEqual(response.status_code,403,response.text)
+        local_qc = {'ma_nv':'ROLE_TEST_QC','ho_ten':'Role Test QC','chuc_vu':'QC',
+                    'don_vi':'XN2','bo_phan':'1','station':['Trạm cuối chuyền'],'qc_role':'QC'}
+        response = self.client.post('/api/qc/employees', json=local_qc)
+        self.assertEqual(response.status_code, 200, response.text)
+
+        for changes in [
+            {**local_qc, 'don_vi':'XN3'},
+            {**local_qc, 'qc_role':'FACTORY_ADMIN'},
+            {**local_qc, 'qc_role':'QA_ADMIN'},
+        ]:
+            response = self.client.post('/api/qc/employees', json=changes)
+            self.assertEqual(response.status_code, 403, response.text)
+
+        response = self.client.patch('/api/qc/visual-picker/hotspots-batch', json={})
+        self.assertEqual(response.status_code, 403, response.text)
 
     def test_factory_plan_list_ignores_other_factory_filter(self):
         for account, factory in [('B0443','XN3'),('H1289','XN2'),(self.qc,'XN2')]:
