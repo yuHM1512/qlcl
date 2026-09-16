@@ -3,7 +3,8 @@ import json
 import math
 from datetime import date
 from contextlib import asynccontextmanager
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request, Query
+import psycopg2.extras
 
 DDL = """CREATE TABLE IF NOT EXISTS public.qc_flat_output (
     don_vi TEXT NOT NULL, source_record_id TEXT NOT NULL, report_date DATE NOT NULL,
@@ -82,5 +83,47 @@ def register(app, connect, api_key):
             conn.commit()
         missing=sorted({r['source_record_id'] for r in rows}-known)
         return dict(status='ok',upserted=len(rows),missing_plans=missing)
+
+    @router.get('/api/tv3/flat-qc-data')
+    def flat_quality(request: Request, demand: str, don_vi: str,
+                     day: date = Query(..., alias='date')):
+        if not api_key or request.headers.get('X-API-Key') != api_key:
+            raise HTTPException(403, 'API key không hợp lệ')
+        qlcl_unit = 'XN1-V1' if don_vi == 'XN1' else don_vi
+        if qlcl_unit not in ('XN1-V1', 'XN2', 'XN3'):
+            raise HTTPException(422, 'Đơn vị không hợp lệ')
+        with connect() as conn:
+            with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+                cur.execute('SET LOCAL statement_timeout=4000')
+                cur.execute("SELECT id FROM public.prod_plan WHERE source_system='flat_line_sheet' AND source_record_id=%s AND don_vi=%s", (f"{qlcl_unit}:{demand}", qlcl_unit))
+                plan = cur.fetchone()
+                if not plan:
+                    return {"status": "empty", "message": "Chưa có kế hoạch mẹ trong QLCL"}
+                cur.execute("SELECT COUNT(*) AS records, COALESCE(SUM(defect_count),0) AS defects FROM public.qc_error_log_sp WHERE plan_id=%s AND date=%s AND BTRIM(station)='Trạm cuối chuyền'", (plan['id'], day))
+                summary = dict(cur.fetchone())
+                cur.execute("""SELECT COALESCE(bp.ten_bo_phan,'Chưa phân loại') AS department,
+                    COALESCE(ct.ten_chi_tiet,'') AS detail, COALESCE(ml.ten_ma,'Chưa phân loại') AS defect, COUNT(*) AS quantity
+                    FROM public.qc_defect d JOIN public.qc_error_log_sp sp ON sp.id=d.error_log_sp_id
+                    LEFT JOIN public.dm_bo_phan bp ON bp.id=d.bo_phan_id
+                    LEFT JOIN public.dm_chi_tiet ct ON ct.id=d.chi_tiet_id
+                    LEFT JOIN public.dm_ma_loi ml ON ml.id=d.ma_loi_id
+                    WHERE sp.plan_id=%s AND sp.date=%s AND BTRIM(sp.station)='Trạm cuối chuyền' GROUP BY bp.ten_bo_phan,ct.ten_chi_tiet,ml.ten_ma ORDER BY COUNT(*) DESC""", (plan['id'], day))
+                details = [dict(r) for r in cur.fetchall()]
+                cur.execute("""WITH garments AS (
+                    SELECT d.error_log_sp_id, d.sp_index, MIN(d.created_at) AS created_at
+                    FROM public.qc_defect d JOIN public.qc_error_log_sp sp ON sp.id=d.error_log_sp_id
+                    WHERE sp.plan_id=%s AND sp.date=%s AND BTRIM(sp.station)='Trạm cuối chuyền'
+                    GROUP BY d.error_log_sp_id,d.sp_index
+                ) SELECT CASE
+                    WHEN timezone('Asia/Ho_Chi_Minh',created_at)::time < '09:30' THEN 1
+                    WHEN timezone('Asia/Ho_Chi_Minh',created_at)::time < '11:30' THEN 2
+                    WHEN timezone('Asia/Ho_Chi_Minh',created_at)::time < '14:30' THEN 3
+                    WHEN timezone('Asia/Ho_Chi_Minh',created_at)::time < '16:30' THEN 4 ELSE 5 END AS slot,
+                    COUNT(*) AS defects FROM garments GROUP BY slot""", (plan['id'], day))
+                slots = [dict(r) for r in cur.fetchall()]
+                cur.execute("SELECT time,bo_phan,chi_tiet,ma_loi FROM public.qc_defect_multi WHERE plan_id=%s AND date=%s AND BTRIM(station)='Trạm cuối chuyền' ORDER BY time", (plan['id'], day))
+                alerts = [dict(time=str(r['time'])[:5], text=' · '.join(str(r[k]) for k in ('bo_phan','chi_tiet','ma_loi') if r[k])) for r in cur.fetchall()]
+                return dict(status="ok" if summary['records'] else "empty", **summary,
+                    plan_id=plan['id'], details=details, slots=slots, alerts=alerts)
 
     app.include_router(router)
