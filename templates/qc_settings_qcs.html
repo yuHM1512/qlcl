@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Danh sách QC - QC Settings</title>
+    <title>Tài khoản & phân quyền - QC Settings</title>
     <script src="https://cdn.tailwindcss.com"></script>
     {% include '_base_styles.html' %}
     <style>
@@ -63,8 +63,8 @@
         <main class="flex-1 min-w-0">
             <div class="flex flex-col items-start gap-6 mb-12">
                 <div>
-                    <h2 class="text-3xl font-display font-bold text-on-surface tracking-tight mb-2">Danh mục QC</h2>
-                    <p class="text-base text-on-surface-variant line-height-[1.6]">Quản lý tài khoản đăng nhập cho nhân viên QC vào mobile web.</p>
+                    <h2 class="text-3xl font-display font-bold text-on-surface tracking-tight mb-2">Tài khoản & phân quyền</h2>
+                    <p class="text-base text-on-surface-variant line-height-[1.6]">Phân quyền QA_ADMIN, FACTORY_ADMIN và QC; giữ riêng chức vụ nhân sự.</p>
                 </div>
             </div>
 
@@ -73,7 +73,7 @@
                     <!-- Left panel: Form -->
                     <div class="bg-surface rounded-2xl p-6">
                         <div class="flex items-center justify-between mb-6">
-                            <h4 id="formTitle" class="text-xs font-bold text-on-surface-variant tracking-wide">THÔNG TIN QC MỚI</h4>
+                            <h4 id="formTitle" class="text-xs font-bold text-on-surface-variant tracking-wide">THÔNG TIN TÀI KHOẢN</h4>
                             <button id="btnCancelEdit" onclick="cancelEdit()" class="hidden items-center gap-1 text-xs font-semibold text-[crimson] hover:text-red-700 transition cursor-pointer">
                                 <span class="material-symbols-outlined text-[16px]">close</span>
                                 Hủy sửa
@@ -91,8 +91,15 @@
                                 </div>
                                 <div>
                                     <label class="block text-xs font-semibold text-on-surface-variant mb-2 tracking-wide">CHỨC VỤ <span class="text-red-500">*</span></label>
-                                    <select id="fQCChucVu" class="input-field">
-                                        <option value="QC">QC</option>
+                                    <input id="fQCChucVu" class="input-field" value="QC" placeholder="QAQT, QC, Công nhân...">
+                                </div>
+                                <div class="col-span-2">
+                                    <label class="block text-xs font-semibold text-on-surface-variant mb-2">QUYỀN QC</label>
+                                    <select id="fQCRole" class="input-field">
+                                        <option value="QC">QC — Nhập liệu & báo cáo Xí nghiệp</option>
+                                        <option value="FACTORY_ADMIN">FACTORY_ADMIN — Kế hoạch Xí nghiệp</option>
+                                        <option value="QA_ADMIN">QA_ADMIN — Quản trị toàn bộ</option>
+                                        <option value="">Chưa cấp quyền QC</option>
                                     </select>
                                 </div>
                                 <div>
@@ -105,7 +112,7 @@
                                     </select>
                                 </div>
                                 <div class="col-span-2">
-                                    <label class="block text-xs font-semibold text-on-surface-variant mb-2 tracking-wide">BỘ PHẬN (SỐ TỔ) <span class="text-red-500">*</span></label>
+                                    <label class="block text-xs font-semibold text-on-surface-variant mb-2 tracking-wide">BỘ PHẬN / TỔ</label>
                                     <input type="text" id="fQCBoPhan" class="input-field" placeholder="VD: 1">
                                 </div>
                                 <div class="col-span-2">
@@ -137,7 +144,7 @@
                             <div class="flex gap-3 mt-4">
                                 <button id="btnSubmit" onclick="saveQCEmployee()" class="flex-1 btn-primary py-3 font-semibold text-sm flex items-center justify-center gap-2">
                                     <span class="material-symbols-outlined text-[18px]" id="btnSubmitIcon">person_add</span>
-                                    <span id="btnSubmitLabel">Lưu thông tin QC</span>
+                                    <span id="btnSubmitLabel">Lưu tài khoản</span>
                                 </button>
                             </div>
                         </div>
@@ -147,7 +154,7 @@
                     <div class="bg-surface rounded-2xl p-6 flex flex-col">
                         <div class="flex items-center justify-between mb-4">
                             <h4 class="text-xs font-bold text-on-surface-variant tracking-wide">
-                                DANH SÁCH QC <span id="qcCount" class="text-on-surface-variant"></span>
+                                DANH SÁCH TÀI KHOẢN <span id="qcCount" class="text-on-surface-variant"></span>
                             </h4>
                         </div>
 
@@ -237,7 +244,7 @@
         function setEditMode(maNV) {
             isEditMode = true;
             editingMaNV = maNV;
-            document.getElementById('formTitle').textContent = 'SỬA THÔNG TIN QC';
+            document.getElementById('formTitle').textContent = 'SỬA TÀI KHOẢN';
             document.getElementById('btnSubmitIcon').textContent = 'save';
             document.getElementById('btnSubmitLabel').textContent = 'Cập nhật';
             const cancelBtn = document.getElementById('btnCancelEdit');
@@ -248,13 +255,15 @@
         function cancelEdit() {
             isEditMode = false;
             editingMaNV = '';
-            document.getElementById('formTitle').textContent = 'THÔNG TIN QC MỚI';
+            document.getElementById('formTitle').textContent = 'THÔNG TIN TÀI KHOẢN';
             document.getElementById('btnSubmitIcon').textContent = 'person_add';
-            document.getElementById('btnSubmitLabel').textContent = 'Lưu thông tin QC';
+            document.getElementById('btnSubmitLabel').textContent = 'Lưu tài khoản';
             const cancelBtn = document.getElementById('btnCancelEdit');
             cancelBtn.classList.add('hidden');
             cancelBtn.classList.remove('inline-flex');
             // Reset form
+            document.getElementById('fQCChucVu').value = 'QC';
+            document.getElementById('fQCRole').value = 'QC';
             document.getElementById('fQCMaNV').value = '';
             document.getElementById('fQCHoTen').value = '';
             document.getElementById('fQCDonVi').value = '';
@@ -320,7 +329,7 @@
                 const icon = hasAny ? 'filter_list_off' : 'group_off';
                 const msg = hasAny
                     ? 'Không tìm thấy QC phù hợp với bộ lọc'
-                    : 'Chưa có nhân viên QC nào. Thêm QC mới ở form bên trái.';
+                    : 'Chưa có tài khoản nào. Thêm tài khoản ở form bên trái.';
                 container.innerHTML = `
                     <div class="flex flex-col items-center justify-center py-12 text-on-surface-variant">
                         <span class="material-symbols-outlined text-[40px] mb-3 opacity-40">${icon}</span>
@@ -334,22 +343,22 @@
                 const stations = normalizeStations(r.station);
                 const stationLabel = stations.length ? stations.join(', ') : '--';
                 const stationPayload = encodeURIComponent(JSON.stringify(stations));
-                const escapedHoTen = r.ho_ten.replace(/'/g, "\\'");
-                const escapedDonVi = r.don_vi.replace(/'/g, "\\'");
-                const escapedBoPhan = r.bo_phan.replace(/'/g, "\\'");
+                const escapedHoTen = (r.ho_ten || '').replace(/'/g, "\\'");
+                const escapedDonVi = (r.don_vi || '').replace(/'/g, "\\'");
+                const escapedBoPhan = (r.bo_phan || '').replace(/'/g, "\\'");
                 html += `
                     <div class="flex items-center justify-between p-4 bg-surface-lowest rounded-xl mb-3 shadow-[0_2px_8px_rgba(25,28,29,0.04)] group transition-all hover:shadow-[0_4px_12px_rgba(25,28,29,0.06)]" data-manv="${r.ma_nv}">
                         <div class="min-w-0 flex-1 mr-3">
                             <div class="font-bold text-on-surface text-base truncate">${r.ma_nv} - ${r.ho_ten}</div>
-                            <div class="text-xs text-on-surface-variant font-medium uppercase mt-1 tracking-wide truncate">${r.don_vi} · ${r.bo_phan} · ${stationLabel}</div>
+                            <div class="text-xs text-on-surface-variant font-medium uppercase mt-1 tracking-wide truncate">${r.qc_role || "Chưa cấp quyền QC"} · ${r.don_vi || ""} · ${r.bo_phan || ""} · ${stationLabel}</div>
                         </div>
                         <div class="flex gap-2 flex-shrink-0">
                             <button onclick="editQCEmployee('${r.ma_nv}', '${escapedHoTen}', '${escapedDonVi}', '${escapedBoPhan}', '${stationPayload}')" class="w-9 h-9 rounded-full bg-surface hover:bg-surface-high text-primary flex items-center justify-center transition" title="Sửa">
                                 <span class="material-symbols-outlined text-[18px]">edit</span>
                             </button>
-                            <button onclick="confirmDeleteQC(this, '${r.ma_nv}', '${escapedHoTen}')" class="w-9 h-9 rounded-full bg-surface hover:bg-error-container text-[crimson] flex items-center justify-center transition delete-btn" title="Xoá">
+                            ${r.qc_role === 'QC' ? `<button onclick="confirmDeleteQC(this, '${r.ma_nv}', '${escapedHoTen}')" class="w-9 h-9 rounded-full bg-surface hover:bg-error-container text-[crimson] flex items-center justify-center transition delete-btn" title="Xoá">
                                 <span class="material-symbols-outlined text-[18px]">delete</span>
-                            </button>
+                            </button>` : ''}
                         </div>
                     </div>
                 `;
@@ -386,7 +395,13 @@
         function editQCEmployee(ma_nv, ho_ten, don_vi, bo_phan, stationPayload) {
             document.getElementById('fQCMaNV').value = ma_nv;
             document.getElementById('fQCHoTen').value = ho_ten;
-            document.getElementById('fQCChucVu').value = 'QC';
+            const employee = allEmployees.find(r => r.ma_nv === ma_nv);
+            document.getElementById('fQCChucVu').value = employee?.chuc_vu || '';
+            document.getElementById('fQCRole').value = employee?.qc_role || '';
+            const dvSelect = document.getElementById('fQCDonVi');
+            if (don_vi && !Array.from(dvSelect.options).some(o => o.value === don_vi)) {
+                dvSelect.add(new Option(don_vi, don_vi));
+            }
             document.getElementById('fQCDonVi').value = don_vi;
             document.getElementById('fQCBoPhan').value = bo_phan;
             try {
@@ -406,8 +421,8 @@
             const fields = [
                 { id: 'fQCMaNV', value: payload.ma_nv },
                 { id: 'fQCHoTen', value: payload.ho_ten },
-                { id: 'fQCDonVi', value: payload.don_vi },
-                { id: 'fQCBoPhan', value: payload.bo_phan },
+                { id: 'fQCDonVi', value: ['QC', 'FACTORY_ADMIN'].includes(payload.qc_role) ? payload.don_vi : true },
+                { id: 'fQCChucVu', value: payload.chuc_vu },
             ];
             let valid = true;
             for (const f of fields) {
@@ -430,7 +445,8 @@
             const payload = {
                 ma_nv: document.getElementById('fQCMaNV').value.trim(),
                 ho_ten: document.getElementById('fQCHoTen').value.trim(),
-                chuc_vu: document.getElementById('fQCChucVu').value,
+                chuc_vu: document.getElementById('fQCChucVu').value.trim(),
+                qc_role: document.getElementById('fQCRole').value || null,
                 don_vi: document.getElementById('fQCDonVi').value,
                 bo_phan: document.getElementById('fQCBoPhan').value.trim(),
                 station: getSelectedStations()
@@ -453,7 +469,8 @@
                     cancelEdit();
                     loadQCEmployees();
                 } else {
-                    showToast('Có lỗi xảy ra', 'error');
+                    const data = await res.json();
+                    showToast(typeof data.detail === 'string' ? data.detail : 'Thông tin không hợp lệ', 'error');
                 }
             } catch (e) { showToast('Lỗi kết nối', 'error'); }
         }

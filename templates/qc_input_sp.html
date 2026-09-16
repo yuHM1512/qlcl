@@ -983,16 +983,7 @@
     <div id="planSelectionArea">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h6 class="text-muted fw-bold mb-0 ms-1" style="font-size: 0.85rem; letter-spacing: 0.5px;">KẾ HOẠCH CÓ SẴN</h6>
-            <div class="d-flex gap-2">
-                <button type="button" class="btn btn-sm btn-outline-primary" style="border-radius: 8px; font-weight: 700;" onclick="syncQtcnPlans()">
-                    <i class="fas fa-sync-alt me-1"></i> XNV2
-                </button>
-                {% if user.don_vi in ['XN1-V1', 'XN2', 'XN3'] %}
-                <button type="button" class="btn btn-sm btn-outline-success" style="border-radius: 8px; font-weight: 700;" onclick="syncFlatLinePlans()">
-                    <i class="fas fa-table me-1"></i> Chuyền bệt
-                </button>
-                {% endif %}
-            </div>
+
         </div>
         <div id="plansList" class="d-flex flex-column gap-3">
             <div class="text-center text-muted my-4" id="loadingPlansMsg">
@@ -1165,6 +1156,7 @@
     let outputTotal = 0;
     let outputFailed = 0;
     let hlPassedCount = 0;
+    let flatOutput = null;
     let hlAutoRefreshTimer = null;
     let selectedTargetPercent = null;
     let pendingFailedCount = 0;
@@ -2077,18 +2069,20 @@
         if (lblDate) lblDate.textContent = fmtDate(reportDateStr);
 
         // Nhận diện kế hoạch từ chuyền treo → ẩn "+1 Đạt"
-        const isHangingLine = plan.source_system === 'hanging_line';
+        const isHangingLine = ['hanging_line','flat_line_sheet'].includes(plan.source_system);
+        flatOutput = null;
         const btnPlusDat = document.getElementById('btnPlusDat');
         if (btnPlusDat) {
             btnPlusDat.style.display = isHangingLine ? 'none' : '';
             // Tooltip giải thích khi ẩn (nếu cần debug)
             btnPlusDat.title = isHangingLine
-                ? 'Sản lượng lấy tự động từ chuyền treo'
+                ? 'Sản lượng lấy tự động từ dashboard sản xuất'
                 : '';
         }
         // Hiện/ẩn badge "Chuyền treo"
         const badgeWrap = document.getElementById('hangingBadgeWrap');
         if (badgeWrap) badgeWrap.style.display = isHangingLine ? '' : 'none';
+        if (badgeWrap) badgeWrap.querySelector('.hanging-badge').textContent = plan.source_system === 'flat_line_sheet' ? 'Chuyền bệt · BP / 2 giờ' : 'Chuyền treo';
 
         switchWorkTab(currentWorkTab);
 
@@ -2193,7 +2187,11 @@
     function isCurrentPlanHangingLine() {
         if (!selectedPlanId) return false;
         const plan = availablePlans.find(p => p.id == selectedPlanId);
-        return plan && plan.source_system === 'hanging_line';
+        return plan && ['hanging_line','flat_line_sheet'].includes(plan.source_system);
+    }
+
+    function isCurrentPlanFlatLine() {
+        return availablePlans.find(p => p.id == selectedPlanId)?.source_system === 'flat_line_sheet';
     }
 
     function renderOutputDisplay() {
@@ -2205,7 +2203,12 @@
         const rateBox = document.getElementById('defectRateBox');
 
         let passed, failed, total, rate;
-        if (isCurrentPlanHangingLine()) {
+        if (isCurrentPlanFlatLine()) {
+            total = flatOutput?.available ? flatOutput.qty : null;
+            failed = flatOutput?.records === 0 ? null : flatOutput?.defects ?? outputFailed ?? 0;
+            passed = total == null || failed == null ? null : Math.max(0,total-failed);
+            rate = total > 0 && failed != null ? failed / total * 100 : null;
+        } else if (isCurrentPlanHangingLine()) {
             passed = hlPassedCount || 0;
             failed = outputFailed || 0;
             total = passed + failed;
@@ -2217,13 +2220,15 @@
             rate = total > 0 ? (failed / total) * 100 : 0;
         }
 
-        if (totalElem) totalElem.textContent = total;
-        if (passedElem) passedElem.textContent = passed;
-        if (failedElem) failedElem.textContent = failed;
-        if (rateElem) rateElem.textContent = `${rate.toFixed(2)}%`;
+        if (totalElem) totalElem.textContent = total ?? '—';
+        if (passedElem) passedElem.textContent = passed ?? '—';
+        if (failedElem) failedElem.textContent = failed ?? '—';
+        if (rateElem) rateElem.textContent = rate == null ? '—' : `${rate.toFixed(2)}%`;
         if (rateBox) rateBox.className = 'defect-rate-chip';
         if (rateElem) rateElem.className = 'defect-rate-chip-value';
-        if (selectedTargetPercent != null) {
+        if (rate == null) {
+            if (rateMetaElem) rateMetaElem.textContent = total > 0 ? 'Chưa có ghi nhận QC cho ngày báo cáo' : 'Chưa có sản lượng BP dương cho ngày báo cáo';
+        } else if (selectedTargetPercent != null) {
             const isPass = rate <= selectedTargetPercent;
             if (rateBox) rateBox.classList.add(isPass ? 'good' : 'bad');
             if (rateElem) rateElem.classList.add(isPass ? 'good' : 'bad');
@@ -2243,15 +2248,27 @@
 
     async function fetchHangingOutput() {
         if (!selectedPlanId || !isCurrentPlanHangingLine()) return;
+        const planId = selectedPlanId, day = reportDateStr;
         try {
             const params = new URLSearchParams({ plan_id: selectedPlanId, date: reportDateStr });
             const res = await fetch(`/api/qc/hanging-output?${params.toString()}`);
             const data = await res.json();
+            if (selectedPlanId != planId || reportDateStr !== day) return;
+            if (!res.ok) throw new Error('Không đọc được sản lượng');
+            if (isCurrentPlanFlatLine()) {
+                flatOutput = data;
+                renderOutputDisplay();
+                return;
+            }
             if (data.available) {
                 hlPassedCount = data.qty || 0;
                 renderOutputDisplay();
             }
         } catch (e) {
+            if (selectedPlanId == planId && reportDateStr === day && isCurrentPlanFlatLine()) {
+                flatOutput = null;
+                renderOutputDisplay();
+            }
             console.error('[hanging-output]', e);
         }
     }
@@ -2281,6 +2298,7 @@
             const res = await fetch(`/api/qc/output-sp?${params.toString()}`);
             const data = await res.json();
             setOutputDisplay(data.total || 0, data.failed_count || 0);
+            if (isCurrentPlanFlatLine()) await fetchHangingOutput();
         } catch (e) {
             console.error(e);
         }

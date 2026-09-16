@@ -1,5 +1,6 @@
 ﻿from datetime import date, datetime
 from typing import Any, List, Optional, Dict, Tuple
+from contextlib import asynccontextmanager
 from datetime import timedelta
 from pydantic import BaseModel
 import os
@@ -145,6 +146,7 @@ SCHEMA_BOOTSTRAP_FILES = [
     "initialize_qlcl.sql",
     "migrate_ds_qa_to_quality_employees.sql",
     "alter_quality_employees_add_station.sql",
+    "migrate_qc_roles_20260916.sql",
     "create_customer_hierarchy.sql",
     "create_error_classification.sql",
     "create_error_catalog_versioning.sql",
@@ -363,13 +365,13 @@ def get_authenticated_user(request: Request, qc_only: bool = False) -> Optional[
         return None
 
     query = """
-        SELECT ma_nv, ho_ten as name, chuc_vu as department, don_vi, bo_phan, station
+        SELECT ma_nv, ho_ten as name, chuc_vu as department, qc_role, don_vi, bo_phan, station
         FROM public.quality_employees
         WHERE ma_nv = ANY(%s)
     """
     params: List[Any] = [ma_nv_variants]
     if qc_only:
-        query += " AND chuc_vu = 'QC'"
+        query += " AND qc_role = 'QC'"
     query += """
         ORDER BY CASE WHEN ma_nv = %s THEN 0 ELSE 1 END
         LIMIT 1
@@ -392,21 +394,21 @@ def require_authenticated_api_user(request: Request) -> Dict:
     return user
 
 
-def require_qaqt_api_user(request: Request) -> Dict:
-    """Dependency chỉ cho QAQT (admin QA) — dùng cho thao tác tinh chỉnh master data."""
+def require_qa_admin_api_user(request: Request) -> Dict:
+    """Dependency chỉ cho QA_ADMIN — dùng cho thao tác tinh chỉnh master data."""
     return require_qc_role(request, QC_SETTINGS_ROLES)
 
 
-QC_DON_VI_SCOPED_ROLES = {"FACTORY_MANAGER", "FACTORY_DIRECTOR"}
+QC_DON_VI_SCOPED_ROLES = {"FACTORY_ADMIN", "QC"}
 
-QC_KNOWN_ROLES = {"QC", "QAQT", "FACTORY_MANAGER", "FACTORY_DIRECTOR"}
-QC_DASHBOARD_ROLES = {"QAQT", "FACTORY_MANAGER", "FACTORY_DIRECTOR"}
-QC_SETTINGS_ROLES = {"QAQT"}
-QC_PLAN_ROLES = {"QAQT"}
+QC_KNOWN_ROLES = {"QC", "QA_ADMIN", "FACTORY_ADMIN"}
+QC_DASHBOARD_ROLES = QC_KNOWN_ROLES
+QC_SETTINGS_ROLES = {"QA_ADMIN"}
+QC_PLAN_ROLES = {"QA_ADMIN", "FACTORY_ADMIN"}
 
 
 def get_qc_role(user: Optional[Dict]) -> str:
-    return ((user or {}).get("department") or "").upper()
+    return ((user or {}).get("qc_role") or "").upper()
 
 
 def is_qc_don_vi_scoped_role(user: Optional[Dict]) -> bool:
@@ -420,12 +422,49 @@ def require_qc_role(request: Request, allowed_roles: set) -> Dict:
     role = get_qc_role(user)
     if role not in allowed_roles:
         raise HTTPException(status_code=403, detail="Tài khoản không có quyền truy cập chức năng này.")
+    if role in QC_DON_VI_SCOPED_ROLES and (user.get("don_vi") or "").strip() not in DON_VI_OPTIONS:
+        raise HTTPException(status_code=403, detail="Tài khoản chưa được gán Xí nghiệp hợp lệ.")
+    return user
+
+
+def require_qc_api_user(request: Request) -> Dict:
+    return require_qc_role(request, QC_KNOWN_ROLES)
+
+
+def require_qc_input_user(request: Request) -> Dict:
+    return require_qc_role(request, {"QC"})
+
+
+def require_plan_admin(request: Request) -> Dict:
+    return require_qc_role(request, QC_PLAN_ROLES)
+
+
+def check_factory_access(user: Dict, don_vi: Optional[str]) -> None:
+    if is_qc_don_vi_scoped_role(user):
+        scope = (user.get("don_vi") or "").strip()
+        if scope not in DON_VI_OPTIONS or don_vi != scope:
+            raise HTTPException(status_code=403, detail="Không có quyền thao tác ngoài Xí nghiệp được gán.")
+
+
+def check_plan_access(user: Dict, plan_id: int) -> None:
+    with get_db_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT don_vi FROM public.prod_plan WHERE id = %s", (plan_id,))
+            row = cur.fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="Không tìm thấy kế hoạch")
+    check_factory_access(user, row[0])
+
+
+def require_plan_reader(request: Request, plan_id: int = Query(...)) -> Dict:
+    user = require_qc_api_user(request)
+    check_plan_access(user, plan_id)
     return user
 
 
 def resolve_qc_don_vi_scope(request: Request, requested_don_vi: Optional[str]) -> Tuple[Optional[str], Dict]:
-    """Return the effective QC don_vi filter for view-only factory roles."""
-    user = require_authenticated_api_user(request)
+    """Resolve the factory filter from application permissions, never from position."""
+    user = require_qc_api_user(request)
     if is_qc_don_vi_scoped_role(user):
         scoped_don_vi = (user.get("don_vi") or "").strip()
         if not scoped_don_vi:
@@ -512,11 +551,14 @@ def build_qc_template_context(request: Request, user: Optional[Dict], **extra) -
         "user": user,
         "qc_role": role,
         "is_qc_role": role == "QC",
-        "is_qaqt_role": role == "QAQT",
+        "is_qa_admin": role == "QA_ADMIN",
+        "can_manage_plans": role in QC_PLAN_ROLES,
         "is_qc_viewer_role": role in QC_DON_VI_SCOPED_ROLES,
         "qc_scope_don_vi": ((user or {}).get("don_vi") or "") if role in QC_DON_VI_SCOPED_ROLES else "",
     }
     context.update(extra)
+    if role in QC_DON_VI_SCOPED_ROLES and "don_vi_options" in context:
+        context["don_vi_options"] = [user.get("don_vi")] if user.get("don_vi") in DON_VI_OPTIONS else []
     return context
 
 
@@ -1290,7 +1332,13 @@ def create_hdkp_pdf(error_id: int, hdkp_data: Dict) -> str:
         raise HTTPException(status_code=500, detail=f"Lỗi khi tạo file PDF: {str(e)}")
 
 
-app = FastAPI(title="QLCL KPI")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    startup_auto_sync()
+    yield
+
+
+app = FastAPI(title="QLCL KPI", lifespan=lifespan)
 # app.add_middleware(SessionMiddleware, secret_key="qlcl-kpi-secret-please-change")
 templates = Jinja2Templates(directory=TEMPLATES_DIR)
 gemba_cp_templates = Jinja2Templates(directory=str(GEMBA_CP_TEMPLATES_DIR))
@@ -1308,7 +1356,6 @@ app.include_router(gemba_dashboard_router.router, dependencies=[Depends(require_
 app.include_router(gemba_admin_router.router, dependencies=[Depends(require_authenticated_api_user)])
 
 
-@app.on_event("startup")
 def startup_auto_sync():
     start_qtcn_auto_sync_if_enabled()
     start_xnv2_auto_sync_if_enabled()
@@ -1803,7 +1850,7 @@ async def api_input_edit_update(item_id: int, request: Request):
 
 @app.get("/api/summary")
 def api_summary(
-    chuc_vu: str = Query(..., regex="^(QAPL|QANL|QAQT)$"),
+    chuc_vu: str = Query(..., pattern="^(QAPL|QANL|QAQT)$"),
     week: Optional[int] = Query(None, ge=1, le=53),
     year: Optional[int] = Query(None, ge=2000, le=2100)
 ):
@@ -1917,7 +1964,7 @@ def _normalize_month_filter(month_str: Optional[str]) -> Optional[str]:
 
 @app.get("/api/summary/monthly")
 def api_summary_monthly(
-    chuc_vu: str = Query(..., regex="^(QAPL|QANL|QAQT)$"),
+    chuc_vu: str = Query(..., pattern="^(QAPL|QANL|QAQT)$"),
     month: Optional[str] = Query(None)
 ):
     month_filter = _normalize_month_filter(month)
@@ -2044,7 +2091,7 @@ def api_summary_monthly(
 
 
 @app.get("/api/errors")
-def api_errors(chuc_vu: Optional[str] = Query(None, regex="^(QAPL|QANL|QAQT)$")):
+def api_errors(chuc_vu: Optional[str] = Query(None, pattern="^(QAPL|QANL|QAQT)$")):
     with get_db_connection() as conn:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             base = (
@@ -2797,10 +2844,11 @@ def qc_page(request: Request):
     user_data = get_authenticated_user(request)
     if not user_data:
         return redirect_to_login_for_current_path(request)
+    require_qc_api_user(request)
     role = get_qc_role(user_data)
     if role == "QC":
         return RedirectResponse(url="/qc-input", status_code=303)
-    if role in QC_DON_VI_SCOPED_ROLES:
+    if role not in QC_PLAN_ROLES:
         return RedirectResponse(url="/qc/dashboard", status_code=303)
     if role not in QC_KNOWN_ROLES:
         return RedirectResponse(url="/", status_code=303)
@@ -2812,7 +2860,7 @@ def qc_page(request: Request):
 
 @app.get("/qc-login")
 def qc_login_page(request: Request):
-    if get_authenticated_user(request, qc_only=True):
+    if get_authenticated_user(request):
         return RedirectResponse(url="/qc", status_code=303)
     return templates.TemplateResponse("login.html", {"request": request, "qc_mode": True})
 
@@ -2829,7 +2877,7 @@ def qc_login(request: Request, ma_nv: str = Form(...)):
                 """
                 SELECT ma_nv, ho_ten, chuc_vu
                 FROM public.quality_employees
-                WHERE ma_nv = ANY(%s) AND chuc_vu = 'QC'
+                WHERE ma_nv = ANY(%s) AND qc_role IN ('QA_ADMIN', 'FACTORY_ADMIN', 'QC')
                 ORDER BY CASE WHEN ma_nv = %s THEN 0 ELSE 1 END
                 LIMIT 1
                 """,
@@ -2837,7 +2885,7 @@ def qc_login(request: Request, ma_nv: str = Form(...)):
             )
             user_row = cur.fetchone()
             if not user_row:
-                return templates.TemplateResponse("login.html", {"request": request, "error": "Bạn không có quyền QC (chuc_vu != 'QC') hoặc mã nhân viên không đúng", "qc_mode": True}, status_code=401)
+                return templates.TemplateResponse("login.html", {"request": request, "error": "Tài khoản chưa được cấp quyền QC hoặc mã nhân viên không đúng", "qc_mode": True}, status_code=401)
 
     response = RedirectResponse(url="/qc", status_code=303)
     response.set_cookie(
@@ -2856,6 +2904,7 @@ def qc_input_page(request: Request):
     if not user_data:
         # Require login if missing or not QC
         return RedirectResponse(url="/qc-login", status_code=303)
+    require_qc_input_user(request)
 
     return templates.TemplateResponse(
         "qc_input_sp.html",
@@ -2900,7 +2949,7 @@ def qc_settings_qc_list(request: Request):
         return RedirectResponse(url="/qc", status_code=303)
     return templates.TemplateResponse(
         "qc_settings_qcs.html",
-        build_qc_template_context(request, user, don_vi_options=DON_VI_OPTIONS, page_subtitle="Danh sách QC", active_page="settings_qcs"),
+        build_qc_template_context(request, user, don_vi_options=DON_VI_OPTIONS, page_subtitle="Tài khoản & phân quyền", active_page="settings_qcs"),
     )
 
 @app.get("/qc/cap")
@@ -3661,6 +3710,7 @@ class QCEmployee(BaseModel):
     don_vi: str
     bo_phan: str
     station: Optional[List[str]] = None
+    qc_role: Optional[str] = None
 
 class QcErrorDpsPayload(BaseModel):
     plan_id: int
@@ -3699,16 +3749,25 @@ def normalize_qc_cap_loai_loi(loai_loi: Optional[str], ma_loi: Optional[str], vi
         return "CAP theo combo lỗi"
     return normalized
 
-@app.get("/api/qc/employees")
+@app.get("/api/qc/employees", dependencies=[Depends(require_qa_admin_api_user)])
 def get_qc_employees():
     with get_db_connection() as conn:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute("SELECT ma_nv, ho_ten, chuc_vu, don_vi, bo_phan, station FROM public.quality_employees WHERE chuc_vu = 'QC' ORDER BY ma_nv")
+            cur.execute("SELECT ma_nv, ho_ten, chuc_vu, qc_role, don_vi, bo_phan, station FROM public.quality_employees ORDER BY ma_nv")
             rows = cur.fetchall()
             return {"status": "ok", "rows": rows}
 
-@app.post("/api/qc/employees")
-def upsert_qc_employee(payload: QCEmployee):
+@app.post("/api/qc/employees", dependencies=[Depends(require_qa_admin_api_user)])
+def upsert_qc_employee(payload: QCEmployee, request: Request):
+    actor = require_qa_admin_api_user(request)
+    if payload.qc_role not in QC_KNOWN_ROLES | {None}:
+        raise HTTPException(status_code=422, detail="Role không hợp lệ")
+    if payload.qc_role in QC_DON_VI_SCOPED_ROLES and payload.don_vi not in DON_VI_OPTIONS:
+        raise HTTPException(status_code=422, detail="QC và FACTORY_ADMIN phải được gán Xí nghiệp hợp lệ")
+    if not payload.ma_nv.strip() or not payload.ho_ten.strip() or not payload.chuc_vu.strip():
+        raise HTTPException(status_code=422, detail="Thiếu mã nhân viên, họ tên hoặc chức vụ")
+    if payload.ma_nv == actor['ma_nv'] and payload.qc_role != 'QA_ADMIN':
+        raise HTTPException(status_code=400, detail="Không thể tự thu hồi quyền QA_ADMIN của mình")
     bo_phan = normalize_bo_phan_value(payload.bo_phan)
     with get_db_connection() as conn:
         with conn.cursor() as cur:
@@ -3717,21 +3776,21 @@ def upsert_qc_employee(payload: QCEmployee):
             if existing:
                 cur.execute("""
                     UPDATE public.quality_employees
-                    SET ho_ten = %s, chuc_vu = %s, don_vi = %s, bo_phan = %s, station = %s
+                    SET ho_ten = %s, chuc_vu = %s, don_vi = %s, bo_phan = %s, station = %s, qc_role = %s
                     WHERE ma_nv = %s
-                """, (payload.ho_ten, payload.chuc_vu, payload.don_vi, bo_phan, json.dumps(payload.station or []), payload.ma_nv))
+                """, (payload.ho_ten, payload.chuc_vu, payload.don_vi, bo_phan, json.dumps(payload.station or []), payload.qc_role, payload.ma_nv))
             else:
                 cur.execute("""
-                    INSERT INTO public.quality_employees (ma_nv, ho_ten, chuc_vu, don_vi, bo_phan, station)
-                    VALUES (%s, %s, %s, %s, %s, %s)
-                """, (payload.ma_nv, payload.ho_ten, payload.chuc_vu, payload.don_vi, bo_phan, json.dumps(payload.station or [])))
+                    INSERT INTO public.quality_employees (ma_nv, ho_ten, chuc_vu, don_vi, bo_phan, station, qc_role)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                """, (payload.ma_nv, payload.ho_ten, payload.chuc_vu, payload.don_vi, bo_phan, json.dumps(payload.station or []), payload.qc_role))
         conn.commit()
     return {"status": "ok"}
 
 @app.post("/api/qc/cap/action")
 def upsert_qc_cap_action(
     payload: QcErrorDpsPayload,
-    _user: Dict = Depends(require_qaqt_api_user),
+    _user: Dict = Depends(require_qa_admin_api_user),
 ):
     loai_loi = normalize_qc_cap_loai_loi(payload.loai_loi, payload.ma_loi, payload.vi_tri)
     if not loai_loi:
@@ -3886,11 +3945,11 @@ def get_qc_cap_action(
     row["ngay_hoan_thanh"] = str(row["ngay_hoan_thanh"]) if row.get("ngay_hoan_thanh") else None
     return {"status": "ok", "row": row}
 
-@app.delete("/api/qc/employees/{ma_nv}")
+@app.delete("/api/qc/employees/{ma_nv}", dependencies=[Depends(require_qa_admin_api_user)])
 def delete_qc_employee(ma_nv: str):
     with get_db_connection() as conn:
         with conn.cursor() as cur:
-            cur.execute("DELETE FROM public.quality_employees WHERE ma_nv = %s AND chuc_vu = 'QC'", (ma_nv,))
+            cur.execute("DELETE FROM public.quality_employees WHERE ma_nv = %s AND qc_role = 'QC'", (ma_nv,))
         conn.commit()
     return {"status": "ok"}
 
@@ -4684,7 +4743,7 @@ def api_qc_cap_filters(request: Request, don_vi: Optional[str] = Query(None)):
     }
 
 
-@app.post("/api/qc/cap/backfill")
+@app.post("/api/qc/cap/backfill", dependencies=[Depends(require_qa_admin_api_user)])
 def backfill_qc_cap(
     request: Request,
     date: Optional[str] = Query(None),
@@ -5238,6 +5297,30 @@ def sync_flat_line_prod_plan(don_vi: str) -> Dict[str, Any]:
     }
 
 
+def sync_all_flat_line_prod_plans() -> Dict[str, Any]:
+    """Sync every configured flat-line source and report each factory separately."""
+    results = []
+    errors = []
+    totals = {"inserted": 0, "updated": 0, "deactivated": 0, "skipped": 0}
+    for don_vi, config in FLAT_LINE_SOURCES.items():
+        if not config.get("spreadsheet_id"):
+            continue
+        try:
+            result = sync_flat_line_prod_plan(don_vi)
+            results.append(result)
+            for key in totals:
+                totals[key] += int(result.get(key) or 0)
+        except Exception as exc:
+            logger.exception("Flat-line Sheet sync failed for %s", don_vi)
+            errors.append({"don_vi": don_vi, "detail": str(exc)})
+    return {
+        "status": "ok" if not errors else "partial",
+        "factories": results,
+        "errors": errors,
+        **totals,
+    }
+
+
 def run_flat_line_auto_sync_loop() -> None:
     logger.info(
         "Flat-line Sheets auto-sync started, interval=%s minutes",
@@ -5510,7 +5593,8 @@ def api_prod_plan_list(
     bo_phan: Optional[str] = Query(None),
     only_active: bool = Query(False),
 ):
-    """List prod_plan rows, optionally filtered by don_vi and bo_phan."""
+    """List production plans within the account scope."""
+    don_vi, _ = resolve_qc_don_vi_scope(request, don_vi)
 
     with get_db_connection() as conn:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
@@ -5575,9 +5659,11 @@ def api_prod_plan_list(
 @app.post("/api/prod-plan")
 async def api_prod_plan_create(request: Request):
     """Create a new prod_plan entry."""
+    user = require_plan_admin(request)
     body = await request.json()
     ke_hoach = (body.get("ke_hoach") or "").strip()
     don_vi = (body.get("don_vi") or "").strip()
+    check_factory_access(user, don_vi)
     bo_phan_raw = (body.get("bo_phan") or "").strip()
     khach_hang = (body.get("khach_hang") or "").strip()
     ma_hang = (body.get("ma_hang") or "").strip()
@@ -5626,7 +5712,13 @@ async def api_prod_plan_create(request: Request):
 @app.patch("/api/prod-plan/{plan_id}")
 async def api_prod_plan_update(plan_id: int, request: Request):
     """Update an existing prod_plan entry."""
+    user = require_plan_admin(request)
+    check_plan_access(user, plan_id)
     body = await request.json()
+    if "don_vi" in body:
+        if body["don_vi"] not in DON_VI_OPTIONS:
+            raise HTTPException(status_code=400, detail="Xí nghiệp không hợp lệ")
+        check_factory_access(user, body["don_vi"])
 
     # Build dynamic SET clause
     allowed_fields = ["ke_hoach", "don_vi", "khach_hang", "ma_hang",
@@ -5664,11 +5756,15 @@ async def api_prod_plan_update(plan_id: int, request: Request):
         params.append(json.dumps(normalize_po_info(body.get("po_info"))))
 
     params.append(plan_id)
+    scope_clause = ""
+    if is_qc_don_vi_scoped_role(user):
+        scope_clause = " AND don_vi = %s"
+        params.append(user['don_vi'])
 
     with get_db_connection() as conn:
         with conn.cursor() as cur:
             cur.execute(
-                f"UPDATE public.prod_plan SET {', '.join(sets)} WHERE id = %s",
+                f"UPDATE public.prod_plan SET {', '.join(sets)} WHERE id = %s{scope_clause}",
                 params
             )
             if cur.rowcount == 0:
@@ -5680,9 +5776,8 @@ async def api_prod_plan_update(plan_id: int, request: Request):
 @app.post("/api/prod-plan/sync-qtcn")
 def api_prod_plan_sync_qtcn(request: Request):
     """Sync active XNV2 plans from prod_factory.qtcn_input into qlcl.prod_plan."""
-    user = get_authenticated_user(request)
-    if not user:
-        raise HTTPException(status_code=401, detail="Bạn chưa đăng nhập")
+    user = require_plan_admin(request)
+    check_factory_access(user, "XNV2")
     return sync_qtcn_prod_plan()
 
 
@@ -5690,18 +5785,18 @@ def api_prod_plan_sync_qtcn(request: Request):
 def api_prod_plan_sync_flat_line(
     request: Request,
     don_vi: Optional[str] = Query(None),
+    all_factories: bool = Query(False),
 ):
     """Sync plans marked `Chuyền bệt` from the configured factory Google Sheet."""
-    user = get_authenticated_user(request)
-    if not user:
-        raise HTTPException(status_code=401, detail="Bạn chưa đăng nhập")
+    user = require_plan_admin(request)
+    if all_factories:
+        if get_qc_role(user) != "QA_ADMIN":
+            raise HTTPException(status_code=403, detail="Chỉ QA_ADMIN được đồng bộ tất cả Xí nghiệp")
+        return sync_all_flat_line_prod_plans()
     requested_don_vi = normalize_flat_line_don_vi(don_vi or user.get("don_vi"))
     if not requested_don_vi:
         raise HTTPException(status_code=422, detail="Thiếu đơn vị cần đồng bộ")
-    if get_qc_role(user) == "QC":
-        user_don_vi = normalize_flat_line_don_vi(user.get("don_vi"))
-        if requested_don_vi != user_don_vi:
-            raise HTTPException(status_code=403, detail="QC chỉ được đồng bộ đơn vị của mình")
+    check_factory_access(user, requested_don_vi)
     try:
         return sync_flat_line_prod_plan(requested_don_vi)
     except (ValueError, FileNotFoundError) as exc:
@@ -5716,9 +5811,8 @@ def api_prod_plan_sync_hanging_line(request: Request):
     """Sync plans from hanging-line SQL Server (tPlanMaster) into qlcl.prod_plan.
     Dùng khi QLCL và hanging line chạy cùng máy (local dev).
     """
-    user = get_authenticated_user(request)
-    if not user:
-        raise HTTPException(status_code=401, detail="Bạn chưa đăng nhập")
+    user = require_plan_admin(request)
+    check_factory_access(user, HANGING_LINE_DON_VI)
     result = sync_hanging_line_prod_plan()
     if result.get("status") == "error":
         raise HTTPException(status_code=500, detail=result.get("detail", "Lỗi đồng bộ"))
@@ -5740,7 +5834,7 @@ def api_push_from_hanging_line(request: Request, payload: dict):
                                         customer, loai_hang, first_hang, san_luong}, ...]}
     """
     # Kiểm tra API key nếu đã cấu hình
-    if _PUSH_API_KEY and request.headers.get("X-API-Key") != _PUSH_API_KEY:
+    if not _PUSH_API_KEY or request.headers.get("X-API-Key") != _PUSH_API_KEY:
         raise HTTPException(status_code=403, detail="API key không hợp lệ")
 
     don_vi = str(payload.get("don_vi") or "").strip()
@@ -5851,7 +5945,7 @@ def api_push_qc_employees_from_hanging_line(request: Request, payload: dict):
         ]
       }
     """
-    if _PUSH_API_KEY and request.headers.get("X-API-Key") != _PUSH_API_KEY:
+    if not _PUSH_API_KEY or request.headers.get("X-API-Key") != _PUSH_API_KEY:
         raise HTTPException(status_code=403, detail="API key không hợp lệ")
 
     don_vi = str(payload.get("don_vi") or "").strip()
@@ -5872,7 +5966,7 @@ def api_push_qc_employees_from_hanging_line(request: Request, payload: dict):
                     """
                     UPDATE public.quality_employees
                     SET station = '[]'::jsonb
-                    WHERE chuc_vu = 'QC' AND don_vi = %s
+                    WHERE qc_role = 'QC' AND don_vi = %s
                     """,
                     (don_vi,),
                 )
@@ -5896,11 +5990,15 @@ def api_push_qc_employees_from_hanging_line(request: Request, payload: dict):
                     continue
 
                 cur.execute(
-                    "SELECT station FROM public.quality_employees WHERE ma_nv = %s",
+                    "SELECT station, qc_role, don_vi FROM public.quality_employees WHERE ma_nv = %s",
                     (ma_nv,),
                 )
                 existing = cur.fetchone()
                 if existing:
+                    if existing['qc_role'] != 'QC' or existing['don_vi'] != don_vi:
+                        skipped += 1
+                        warnings.append(f"Bỏ qua {ma_nv}: tài khoản chưa được cấp QC tại Xí nghiệp này")
+                        continue
                     cur.execute(
                         """
                         UPDATE public.quality_employees
@@ -5918,8 +6016,8 @@ def api_push_qc_employees_from_hanging_line(request: Request, payload: dict):
                     cur.execute(
                         """
                         INSERT INTO public.quality_employees
-                            (ma_nv, ho_ten, chuc_vu, don_vi, bo_phan, station)
-                        VALUES (%s, %s, 'QC', %s, %s, %s::jsonb)
+                            (ma_nv, ho_ten, chuc_vu, don_vi, bo_phan, station, qc_role)
+                        VALUES (%s, %s, 'QC', %s, %s, %s::jsonb, 'QC')
                         """,
                         (ma_nv, ho_ten, don_vi, bo_phan, json.dumps(sorted(set(station_list)))),
                     )
@@ -5937,7 +6035,7 @@ def api_push_qc_employees_from_hanging_line(request: Request, payload: dict):
     }
 
 
-@app.get("/api/qc/hanging-output")
+@app.get("/api/qc/hanging-output", dependencies=[Depends(require_plan_reader)])
 def api_qc_hanging_output(
     plan_id: int = Query(...),
     date_str: str = Query(..., alias="date"),
@@ -5946,10 +6044,13 @@ def api_qc_hanging_output(
     with get_db_connection() as conn:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute(
-                "SELECT mono, source_system FROM public.prod_plan WHERE id = %s",
+                "SELECT id, mono, source_system, source_record_id, don_vi FROM public.prod_plan WHERE id = %s",
                 (plan_id,),
             )
             plan = cur.fetchone()
+            if plan and plan.get('source_system') == FLAT_LINE_SOURCE_SYSTEM:
+                from flat_output import get_output
+                return get_output(cur, plan, date_str)
             if not plan or plan.get("source_system") != HL_SOURCE_SYSTEM:
                 return {"qty": 0, "available": False}
 
@@ -5960,10 +6061,10 @@ def api_qc_hanging_output(
             cur.execute(
                 """
                 SELECT qty FROM public.qc_hanging_output
-                WHERE mono = %s AND report_date = %s
+                WHERE mono = %s AND report_date = %s AND don_vi = %s
                 ORDER BY synced_at DESC LIMIT 1
                 """,
-                (mono, date_str),
+                (mono, date_str, plan['don_vi']),
             )
             row = cur.fetchone()
             return {"qty": int(row["qty"]) if row else 0, "available": True}
@@ -5976,7 +6077,7 @@ def api_qc_hanging_output_push(request: Request, payload: dict):
     Body: {"don_vi": "XN2", "date": "2026-08-19",
            "outputs": [{"mono": "...", "qty": 123}, ...]}
     """
-    if _PUSH_API_KEY and request.headers.get("X-API-Key") != _PUSH_API_KEY:
+    if not _PUSH_API_KEY or request.headers.get("X-API-Key") != _PUSH_API_KEY:
         raise HTTPException(status_code=403, detail="API key không hợp lệ")
 
     don_vi = str(payload.get("don_vi") or "").strip()
@@ -6009,11 +6110,16 @@ def api_qc_hanging_output_push(request: Request, payload: dict):
 
 
 @app.delete("/api/prod-plan/{plan_id}")
-def api_prod_plan_delete(plan_id: int):
+def api_prod_plan_delete(plan_id: int, request: Request):
     """Delete a prod_plan entry."""
+    user = require_plan_admin(request)
+    check_plan_access(user, plan_id)
     with get_db_connection() as conn:
         with conn.cursor() as cur:
-            cur.execute("DELETE FROM public.prod_plan WHERE id = %s", (plan_id,))
+            if is_qc_don_vi_scoped_role(user):
+                cur.execute("DELETE FROM public.prod_plan WHERE id = %s AND don_vi = %s", (plan_id, user['don_vi']))
+            else:
+                cur.execute("DELETE FROM public.prod_plan WHERE id = %s", (plan_id,))
             if cur.rowcount == 0:
                 raise HTTPException(status_code=404, detail="Không tìm thấy kế hoạch")
             conn.commit()
@@ -6036,7 +6142,7 @@ def api_dm_loai_hang():
             """)
             return {"rows": cur.fetchall()}
 
-@app.post("/api/dm/loai-hang")
+@app.post("/api/dm/loai-hang", dependencies=[Depends(require_qa_admin_api_user)])
 async def api_dm_loai_hang_create(request: Request):
     body = await request.json()
     with get_db_connection() as conn:
@@ -6058,7 +6164,7 @@ async def api_dm_loai_hang_create(request: Request):
             conn.commit()
     return {"id": new_id}
 
-@app.delete("/api/dm/loai-hang/{id}")
+@app.delete("/api/dm/loai-hang/{id}", dependencies=[Depends(require_qa_admin_api_user)])
 def api_dm_loai_hang_delete(id: int):
     with get_db_connection() as conn:
         with conn.cursor() as cur:
@@ -6136,7 +6242,7 @@ def api_dm_qc_cum(
             )
             return {"rows": cur.fetchall()}
 
-@app.post("/api/dm/bo-phan")
+@app.post("/api/dm/bo-phan", dependencies=[Depends(require_qa_admin_api_user)])
 async def api_dm_bo_phan_create(request: Request):
     body = await request.json()
     with get_db_connection() as conn:
@@ -6156,7 +6262,7 @@ async def api_dm_bo_phan_create(request: Request):
             conn.commit()
     return {"id": new_id}
 
-@app.delete("/api/dm/bo-phan/{id}")
+@app.delete("/api/dm/bo-phan/{id}", dependencies=[Depends(require_qa_admin_api_user)])
 def api_dm_bo_phan_delete(id: int):
     with get_db_connection() as conn:
         with conn.cursor() as cur:
@@ -6172,7 +6278,7 @@ def api_dm_chi_tiet(bo_phan_id: int = Query(...)):
             cur.execute("SELECT id, ten_chi_tiet FROM public.dm_chi_tiet WHERE bo_phan_id = %s ORDER BY ten_chi_tiet", (bo_phan_id,))
             return {"rows": cur.fetchall()}
 
-@app.post("/api/dm/chi-tiet")
+@app.post("/api/dm/chi-tiet", dependencies=[Depends(require_qa_admin_api_user)])
 async def api_dm_chi_tiet_create(request: Request):
     body = await request.json()
     with get_db_connection() as conn:
@@ -6183,7 +6289,7 @@ async def api_dm_chi_tiet_create(request: Request):
             conn.commit()
     return {"id": new_id}
 
-@app.delete("/api/dm/chi-tiet/{id}")
+@app.delete("/api/dm/chi-tiet/{id}", dependencies=[Depends(require_qa_admin_api_user)])
 def api_dm_chi_tiet_delete(id: int):
     with get_db_connection() as conn:
         with conn.cursor() as cur:
@@ -6301,9 +6407,9 @@ def api_qc_visual_picker_loai_hang_list():
 @app.patch("/api/qc/visual-picker/hotspots-batch")
 async def api_qc_visual_picker_update_hotspots(
     request: Request,
-    _user: Dict = Depends(require_qaqt_api_user),
+    _user: Dict = Depends(require_qa_admin_api_user),
 ):
-    """Bulk update x_pct/y_pct cho 1 nhóm chi_tiet (1 khoi). Chỉ QAQT.
+    """Bulk update x_pct/y_pct cho 1 nhóm chi_tiet (1 khoi). Chỉ QA_ADMIN.
     Body: {"items": [{"chi_tiet_id": int, "x_pct": float, "y_pct": float}, ...]}
     """
     body = await request.json()
@@ -6349,7 +6455,7 @@ def api_dm_khach_hang():
             cur.execute("SELECT id, ten_khach_hang FROM public.dm_khach_hang ORDER BY ten_khach_hang")
             return {"rows": cur.fetchall()}
 
-@app.post("/api/dm/khach-hang")
+@app.post("/api/dm/khach-hang", dependencies=[Depends(require_qa_admin_api_user)])
 async def api_dm_khach_hang_create(request: Request):
     body = await request.json()
     with get_db_connection() as conn:
@@ -6359,7 +6465,7 @@ async def api_dm_khach_hang_create(request: Request):
             conn.commit()
     return {"id": new_id}
 
-@app.delete("/api/dm/khach-hang/{id}")
+@app.delete("/api/dm/khach-hang/{id}", dependencies=[Depends(require_qa_admin_api_user)])
 def api_dm_khach_hang_delete(id: int):
     with get_db_connection() as conn:
         with conn.cursor() as cur:
@@ -6375,7 +6481,7 @@ def api_dm_ma_hang(khach_hang_id: int = Query(...)):
             cur.execute("SELECT id, ten_ma_hang FROM public.dm_ma_hang WHERE khach_hang_id = %s ORDER BY ten_ma_hang", (khach_hang_id,))
             return {"rows": cur.fetchall()}
 
-@app.post("/api/dm/ma-hang")
+@app.post("/api/dm/ma-hang", dependencies=[Depends(require_qa_admin_api_user)])
 async def api_dm_ma_hang_create(request: Request):
     body = await request.json()
     with get_db_connection() as conn:
@@ -6386,7 +6492,7 @@ async def api_dm_ma_hang_create(request: Request):
             conn.commit()
     return {"id": new_id}
 
-@app.delete("/api/dm/ma-hang/{id}")
+@app.delete("/api/dm/ma-hang/{id}", dependencies=[Depends(require_qa_admin_api_user)])
 def api_dm_ma_hang_delete(id: int):
     with get_db_connection() as conn:
         with conn.cursor() as cur:
@@ -6412,7 +6518,7 @@ def api_dm_nhom_loi(date_str: Optional[str] = Query(None, alias="date")):
             )
             return {"rows": cur.fetchall()}
 
-@app.post("/api/dm/nhom-loi")
+@app.post("/api/dm/nhom-loi", dependencies=[Depends(require_qa_admin_api_user)])
 async def api_dm_nhom_loi_create(request: Request):
     body = await request.json()
     with get_db_connection() as conn:
@@ -6426,7 +6532,7 @@ async def api_dm_nhom_loi_create(request: Request):
             conn.commit()
     return {"id": new_id}
 
-@app.delete("/api/dm/nhom-loi/{id}")
+@app.delete("/api/dm/nhom-loi/{id}", dependencies=[Depends(require_qa_admin_api_user)])
 def api_dm_nhom_loi_delete(id: int):
     with get_db_connection() as conn:
         with conn.cursor() as cur:
@@ -6441,7 +6547,7 @@ def api_dm_ma_loi(nhom_loi_id: int = Query(...)):
             cur.execute("SELECT id, ten_ma FROM public.dm_ma_loi WHERE nhom_loi_id = %s ORDER BY ten_ma", (nhom_loi_id,))
             return {"rows": cur.fetchall()}
 
-@app.post("/api/dm/ma-loi")
+@app.post("/api/dm/ma-loi", dependencies=[Depends(require_qa_admin_api_user)])
 async def api_dm_ma_loi_create(request: Request):
     body = await request.json()
     with get_db_connection() as conn:
@@ -6452,7 +6558,7 @@ async def api_dm_ma_loi_create(request: Request):
             conn.commit()
     return {"id": new_id}
 
-@app.delete("/api/dm/ma-loi/{id}")
+@app.delete("/api/dm/ma-loi/{id}", dependencies=[Depends(require_qa_admin_api_user)])
 def api_dm_ma_loi_delete(id: int):
     with get_db_connection() as conn:
         with conn.cursor() as cur:
@@ -6467,7 +6573,7 @@ def api_dm_mo_ta_loi(ma_loi_id: int = Query(...)):
             cur.execute("SELECT id, ten_mo_ta FROM public.dm_mo_ta_loi WHERE ma_loi_id = %s ORDER BY ten_mo_ta", (ma_loi_id,))
             return {"rows": cur.fetchall()}
 
-@app.post("/api/dm/mo-ta-loi")
+@app.post("/api/dm/mo-ta-loi", dependencies=[Depends(require_qa_admin_api_user)])
 async def api_dm_mo_ta_loi_create(request: Request):
     body = await request.json()
     with get_db_connection() as conn:
@@ -6478,7 +6584,7 @@ async def api_dm_mo_ta_loi_create(request: Request):
             conn.commit()
     return {"id": new_id}
 
-@app.delete("/api/dm/mo-ta-loi/{id}")
+@app.delete("/api/dm/mo-ta-loi/{id}", dependencies=[Depends(require_qa_admin_api_user)])
 def api_dm_mo_ta_loi_delete(id: int):
     with get_db_connection() as conn:
         with conn.cursor() as cur:
@@ -6530,6 +6636,7 @@ def api_dm_ma_loi_options(date_str: Optional[str] = Query(None, alias="date")):
 @app.post("/api/qc/error-log-sp")
 async def api_qc_error_log_sp_create(request: Request):
     """Ghi nhận lỗi QC theo sản phẩm (real-time, không chọn mốc thời gian)."""
+    user = require_qc_input_user(request)
     body = await request.json()
     ma_nv_cookie = request.cookies.get("ma_nv")
     ma_nv_db = None
@@ -6542,7 +6649,7 @@ async def api_qc_error_log_sp_create(request: Request):
                     """
                     SELECT ma_nv
                     FROM public.quality_employees
-                    WHERE ma_nv = ANY(%s) AND chuc_vu = 'QC'
+                    WHERE ma_nv = ANY(%s) AND qc_role = 'QC'
                     ORDER BY CASE WHEN ma_nv = %s THEN 0 ELSE 1 END
                     LIMIT 1
                     """,
@@ -6552,6 +6659,7 @@ async def api_qc_error_log_sp_create(request: Request):
                 if row_nv:
                     ma_nv_db = row_nv.get("ma_nv")
     plan_id = body.get("plan_id")
+    check_plan_access(user, plan_id)
     ensure_prod_plan_is_active(plan_id)
     date_str = body.get("date") or datetime.now().strftime("%Y-%m-%d")
     station = (body.get("station") or "").strip()
@@ -6859,7 +6967,7 @@ async def api_qc_error_log_sp_create(request: Request):
     return {"status": "ok", "id": log_id, "updated": updated}
 
 
-@app.post("/api/qc/upload-sp-image")
+@app.post("/api/qc/upload-sp-image", dependencies=[Depends(require_qc_input_user)])
 async def api_qc_upload_sp_image(file: UploadFile = File(...)):
     """Upload anh chup san pham loi QC (SP mode)."""
     import uuid
@@ -6879,6 +6987,7 @@ async def api_qc_upload_sp_image(file: UploadFile = File(...)):
 @app.post("/api/qc/output-sp-log")
 async def api_qc_output_sp_log_create(request: Request):
     """Ghi nhận thao tác +1/-1 cho số sản phẩm đã kiểm (theo sản phẩm)."""
+    user = require_qc_input_user(request)
     body = await request.json()
     ma_nv_cookie = request.cookies.get("ma_nv")
     if not ma_nv_cookie:
@@ -6891,7 +7000,7 @@ async def api_qc_output_sp_log_create(request: Request):
                 """
                 SELECT ma_nv
                 FROM public.quality_employees
-                WHERE ma_nv = ANY(%s) AND chuc_vu = 'QC'
+                WHERE ma_nv = ANY(%s) AND qc_role = 'QC'
                 ORDER BY CASE WHEN ma_nv = %s THEN 0 ELSE 1 END
                 LIMIT 1
                 """,
@@ -6902,6 +7011,7 @@ async def api_qc_output_sp_log_create(request: Request):
                 raise HTTPException(status_code=403, detail="Không có quyền (QC only)")
             ma_nv_db = row_nv["ma_nv"]
     plan_id = body.get("plan_id")
+    check_plan_access(user, plan_id)
     ensure_prod_plan_is_active(plan_id)
     date_str = body.get("date") or datetime.now().strftime("%Y-%m-%d")
     station = (body.get("station") or "").strip()
@@ -6965,7 +7075,7 @@ async def api_qc_output_sp_log_create(request: Request):
     }
 
 
-@app.get("/api/qc/output-sp")
+@app.get("/api/qc/output-sp", dependencies=[Depends(require_plan_reader)])
 def api_qc_output_sp_get(
     plan_id: int = Query(...),
     date_str: str = Query(..., alias="date"),
@@ -6989,7 +7099,7 @@ def api_qc_output_sp_get(
             return {"total": row[0], "passed_count": row[1], "failed_count": row[2]}
 
 
-@app.get("/api/qc/input/pos-summary")
+@app.get("/api/qc/input/pos-summary", dependencies=[Depends(require_plan_reader)])
 def api_qc_input_pos_summary(
     plan_id: int = Query(...),
     date_str: str = Query(..., alias="date"),
@@ -7232,7 +7342,7 @@ def api_qc_input_pos_summary(
     return {"status": "ok", "plan_id": plan_id, "date": date_str, "station": station or "", "buckets": buckets}
 
 
-@app.get("/api/qc/input/quick-defect-combos")
+@app.get("/api/qc/input/quick-defect-combos", dependencies=[Depends(require_plan_reader)])
 def api_qc_input_quick_defect_combos(
     plan_id: int = Query(...),
     station: str = Query(...),
@@ -7414,7 +7524,7 @@ def api_qc_input_quick_defect_combos(
     return {"status": "ok", "rows": rows}
 
 
-@app.get("/api/qc/input/quick-defect-combos-today")
+@app.get("/api/qc/input/quick-defect-combos-today", dependencies=[Depends(require_plan_reader)])
 def api_qc_input_quick_defect_combos_today(
     plan_id: int = Query(...),
     station: str = Query(...),
@@ -7488,7 +7598,7 @@ def api_qc_input_quick_defect_combos_today(
     return {"status": "ok", "rows": rows}
 
 
-@app.get("/api/qc/error-log-sp")
+@app.get("/api/qc/error-log-sp", dependencies=[Depends(require_plan_reader)])
 def api_qc_error_log_sp_get(
     plan_id: int = Query(...),
     date_str: str = Query(..., alias="date"),
@@ -7552,6 +7662,7 @@ def api_qc_error_log_sp_get(
 
 @app.get("/qc-input/rework")
 def qc_rework_page(request: Request):
+    require_qc_input_user(request)
     ma_nv_cookie = request.cookies.get("ma_nv")
     if not ma_nv_cookie:
         return RedirectResponse(url="/qc-login", status_code=303)
@@ -7582,12 +7693,13 @@ def qc_rework_sp_page(request: Request):
     return RedirectResponse(url="/qc-input/rework", status_code=303)
 
 
-@app.get("/api/qc/rework-2")
+@app.get("/api/qc/rework-2", dependencies=[Depends(require_qc_input_user)])
 def api_qc_rework_sp(
     request: Request,
     date_str: str = Query(None),
     plan_id: Optional[int] = Query(None),
 ):
+    user = require_qc_input_user(request)
     if not date_str:
         date_str = datetime.now().strftime("%Y-%m-%d")
     ma_nv_cookie = request.cookies.get("ma_nv")
@@ -7595,7 +7707,7 @@ def api_qc_rework_sp(
     ma_nv_variants = generate_ma_nv_variants(ma_nv)
     with get_db_connection() as conn:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            params: List[Any] = [date_str, ma_nv_variants]
+            params: List[Any] = [date_str, ma_nv_variants, user['don_vi']]
             plan_where = ""
             if plan_id:
                 plan_where = " AND e.plan_id = %s"
@@ -7620,6 +7732,7 @@ def api_qc_rework_sp(
                 LEFT JOIN public.dm_ma_loi ml ON d.ma_loi_id = ml.id
                 WHERE e.date = %s
                   AND e.ma_nv = ANY(%s)
+                  AND p.don_vi = %s
                   {plan_where}
                 GROUP BY e.id, e.plan_id, e.created_at, p.ke_hoach, p.ma_hang, p.loai_hang, d.sp_index
                 ORDER BY e.created_at ASC, d.sp_index ASC
@@ -7631,8 +7744,9 @@ def api_qc_rework_sp(
             return {"rows": rows}
 
 
-@app.patch("/api/qc/rework-2/{log_id}/{sp_index}")
+@app.patch("/api/qc/rework-2/{log_id}/{sp_index}", dependencies=[Depends(require_qc_input_user)])
 async def api_update_rework_sp(log_id: int, sp_index: int, request: Request):
+    user = require_qc_input_user(request)
     body = await request.json()
     rework_done = bool(body.get("rework_done"))
     ma_nv_cookie = request.cookies.get("ma_nv")
@@ -7647,10 +7761,10 @@ async def api_update_rework_sp(log_id: int, sp_index: int, request: Request):
                 WHERE error_log_sp_id = %s
                   AND sp_index = %s
                   AND error_log_sp_id IN (
-                      SELECT id FROM public.qc_error_log_sp WHERE ma_nv = ANY(%s)
+                      SELECT e.id FROM public.qc_error_log_sp e JOIN public.prod_plan p ON p.id = e.plan_id WHERE e.ma_nv = ANY(%s) AND p.don_vi = %s
                   )
                 """,
-                (rework_done, log_id, sp_index, ma_nv_variants)
+                (rework_done, log_id, sp_index, ma_nv_variants, user['don_vi'])
             )
         conn.commit()
     return {"status": "ok", "rework_done": rework_done}
@@ -7688,6 +7802,7 @@ def _tv3_bucket_sql(time_expr: str) -> str:
 
 @app.get("/api/tv3/qc-data")
 def api_tv3_qc_data(
+    request: Request,
     mono: str = Query(..., description="MONo từ chuyền treo (prod_plan.mono)"),
     date: str = Query(..., description="Ngày YYYY-MM-DD"),
 ):
@@ -7696,14 +7811,18 @@ def api_tv3_qc_data(
     Lọc theo MONo (qua prod_plan.mono) + date.
     Endpoint này được gọi từ hanging line app backend.
     """
+    # Backend integrations use the shared key; browser requests follow account scope.
+    scoped_factory = None
+    if not (_PUSH_API_KEY and request.headers.get("X-API-Key") == _PUSH_API_KEY):
+        scoped_factory, _ = resolve_qc_don_vi_scope(request, None)
     try:
         with get_db_connection() as conn:
             with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
 
                 # ── 1. Resolve plan_id từ mono ──────────────────────────
                 cur.execute(
-                    "SELECT id FROM public.prod_plan WHERE mono = %s LIMIT 1",
-                    (mono,),
+                    "SELECT id FROM public.prod_plan WHERE mono = %s AND (%s IS NULL OR don_vi = %s) LIMIT 1",
+                    (mono, scoped_factory, scoped_factory),
                 )
                 plan_row = cur.fetchone()
                 if not plan_row:
@@ -7856,6 +7975,9 @@ def api_tv3_qc_data(
         logger.error("api_tv3_qc_data error: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=f"Lỗi truy vấn QC data: {str(e)}")
 
+
+from flat_output import register as register_flat_output
+register_flat_output(app, get_db_connection, _PUSH_API_KEY)
 
 if __name__ == "__main__":
     import uvicorn

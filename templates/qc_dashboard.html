@@ -246,6 +246,7 @@
 
     <script>
         const isQcViewerRole = {{ is_qc_viewer_role | tojson }};
+        const factoryScope = {{ qc_scope_don_vi | tojson }};
         let dailyChart;
         let bucketChart;
         let posChart;
@@ -441,6 +442,12 @@
                 ma_hang: buildSelect(document.getElementById('fMaHang'), data.ma_hang || [], 'Tất cả', keep.ma_hang),
                 type_name: buildSelect(document.getElementById('fType'), data.type || [], 'Tất cả', keep.type_name),
             };
+            if (factoryScope) {
+                const factorySelect = document.getElementById('fDonVi');
+                factorySelect.replaceChildren(new Option(factoryScope, factoryScope, true, true));
+                factorySelect.disabled = true;
+                selected.don_vi = factoryScope;
+            }
 
             const changed = ['don_vi', 'bo_phan', 'station', 'ma_hang', 'type_name']
                 .some((key) => (keep[key] || '') !== (selected[key] || ''));

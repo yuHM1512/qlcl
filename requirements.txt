@@ -6,6 +6,7 @@ python-multipart==0.0.9
 openpyxl==3.1.2
 pywin32==311; platform_system == "Windows"
 python-dotenv==1.0.0
+httpx==0.28.1
 sqlalchemy==2.0.40
 pydantic-settings==2.8.1
 psycopg[binary]==3.2.6

@@ -7,7 +7,7 @@
          'settings_customer', 'settings_details',
          'settings_qcs', 'settings_visual'
      - is_qc_role: bool
-     - is_qaqt_role: bool
+     - is_qa_admin: bool
      - is_qc_viewer_role: bool
    ============================================================ #}
 
@@ -19,8 +19,8 @@
             <span class="text-[10px] font-bold uppercase tracking-[0.12em] text-on-surface-variant/50">Vận hành</span>
         </div>
 
-        {# Kế hoạch SX — chỉ QAQT thấy #}
-        {% if is_qaqt_role %}
+        {# Kế hoạch SX — chỉ QA_ADMIN thấy #}
+        {% if can_manage_plans %}
         <a href="/qc"
            class="flex items-center gap-3 px-4 py-2.5 rounded-xl font-semibold transition
                   {% if active_page == 'plan' %}bg-primary/8 text-primary{% else %}text-on-surface-variant hover:bg-surface-low{% endif %}">
@@ -55,8 +55,8 @@
             <span>Hành động KP</span>
         </a>
 
-        {# ── Nhóm: Cài đặt — chỉ QAQT thấy ── #}
-        {% if is_qaqt_role %}
+        {# ── Nhóm: Cài đặt — chỉ QA_ADMIN thấy ── #}
+        {% if is_qa_admin %}
         <div class="h-px bg-surface-high mx-3 my-2"></div>
         <div class="px-3 pt-1 pb-1">
             <span class="text-[10px] font-bold uppercase tracking-[0.12em] text-on-surface-variant/50">Cài đặt</span>
@@ -80,7 +80,7 @@
            class="flex items-center gap-3 px-4 py-2.5 rounded-xl font-semibold transition
                   {% if active_page == 'settings_qcs' %}bg-primary/8 text-primary{% else %}text-on-surface-variant hover:bg-surface-low{% endif %}">
             <span class="material-symbols-outlined text-[20px]">badge</span>
-            <span>Danh sách QC</span>
+            <span>Tài khoản & phân quyền</span>
         </a>
 
         <a href="/qc/settings/visual-picker"

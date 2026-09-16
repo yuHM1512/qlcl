@@ -24,21 +24,15 @@
                     <p class="text-base text-on-surface-variant">Quản lý và theo dõi tiến độ sản xuất hiện tại.</p>
                 </div>
                 <div class="flex flex-wrap justify-end gap-3">
-                    <button onclick="syncQtcnPlans()" class="h-11 px-5 rounded-xl bg-surface-low hover:bg-surface-high font-semibold text-sm text-on-surface flex items-center gap-2 transition">
+                    {% if is_qa_admin or (qc_role == 'FACTORY_ADMIN' and qc_scope_don_vi == 'XNV2') %}<button onclick="syncQtcnPlans()" class="h-11 px-5 rounded-xl bg-surface-low hover:bg-surface-high font-semibold text-sm text-on-surface flex items-center gap-2 transition">
                         <span class="material-symbols-outlined text-lg">sync_alt</span>
-                        Đồng bộ XNV2
-                    </button>
-                    <div class="flex flex-wrap items-center justify-end gap-2">
-                        <button onclick="syncFlatLinePlans('XN1-V1')" class="h-11 px-3 rounded-xl bg-surface-low hover:bg-surface-high font-semibold text-sm text-on-surface flex items-center gap-2 transition whitespace-nowrap">
-                            <span class="material-symbols-outlined text-lg">table_view</span> Chuyền bệt XN1-V1
-                        </button>
-                        <button onclick="syncFlatLinePlans('XN2')" class="h-11 px-3 rounded-xl bg-surface-low hover:bg-surface-high font-semibold text-sm text-on-surface flex items-center gap-2 transition whitespace-nowrap">
-                            <span class="material-symbols-outlined text-lg">table_view</span> Chuyền bệt XN2
-                        </button>
-                        <button onclick="syncFlatLinePlans('XN3')" class="h-11 px-3 rounded-xl bg-surface-low hover:bg-surface-high font-semibold text-sm text-on-surface flex items-center gap-2 transition whitespace-nowrap">
-                            <span class="material-symbols-outlined text-lg">table_view</span> Chuyền bệt XN3
-                        </button>
-                    </div>
+                        Sync XNV2
+                    </button>{% endif %}
+                    {% if is_qa_admin %}<button onclick="syncAllFlatLinePlans()" class="h-11 px-5 rounded-xl bg-surface-low hover:bg-surface-high font-semibold text-sm text-on-surface flex items-center gap-2 transition whitespace-nowrap">
+                        <span class="material-symbols-outlined text-lg">table_view</span> Sync bệt
+                    </button>{% elif qc_role == 'FACTORY_ADMIN' and qc_scope_don_vi in ['XN1-V1', 'XN2', 'XN3'] %}<button onclick="syncFlatLinePlans('{{ qc_scope_don_vi }}')" class="h-11 px-5 rounded-xl bg-surface-low hover:bg-surface-high font-semibold text-sm text-on-surface flex items-center gap-2 transition whitespace-nowrap">
+                        <span class="material-symbols-outlined text-lg">table_view</span> Sync bệt {{ qc_scope_don_vi }}
+                    </button>{% endif %}
                     <button onclick="openCreateModal()" class="btn-primary px-5 py-2.5 font-semibold text-sm flex items-center gap-2">
                         <span class="material-symbols-outlined text-lg">add</span>
                         Thêm Kế hoạch
@@ -54,7 +48,7 @@
                     <div class="flex-1 min-w-[200px]">
                         <label class="block text-[11px] font-semibold text-on-surface-variant mb-2 uppercase tracking-wider">Đơn vị</label>
                         <select id="filterDonVi" class="input-field" onchange="loadData()">
-                            <option value="">Tất cả đơn vị</option>
+                            {% if not qc_scope_don_vi %}<option value="">Tất cả đơn vị</option>{% endif %}
                             {% for dv in don_vi_options %}
                             <option value="{{ dv }}">{{ dv }}</option>
                             {% endfor %}
@@ -97,9 +91,14 @@
                     <h3 class="text-lg font-display font-bold text-on-surface mb-2">Chưa có kế hoạch</h3>
                     <p class="text-on-surface-variant mb-6 max-w-sm mx-auto">Không tìm thấy kế hoạch sản xuất nào. Bạn có thể thêm kế hoạch tĩnh hoặc đồng bộ hệ thống.</p>
                     <div class="flex items-center justify-center gap-3">
-                        <button onclick="syncQtcnPlans()" class="h-11 px-6 rounded-xl bg-surface-low hover:bg-surface-high font-semibold text-sm text-on-surface inline-flex items-center gap-2 transition">
-                            <span class="material-symbols-outlined text-sm">sync_alt</span> Đồng bộ XNV2
-                        </button>
+                        {% if is_qa_admin or (qc_role == 'FACTORY_ADMIN' and qc_scope_don_vi == 'XNV2') %}<button onclick="syncQtcnPlans()" class="h-11 px-6 rounded-xl bg-surface-low hover:bg-surface-high font-semibold text-sm text-on-surface inline-flex items-center gap-2 transition">
+                            <span class="material-symbols-outlined text-sm">sync_alt</span> Sync XNV2
+                        </button>{% endif %}
+                        {% if is_qa_admin %}<button onclick="syncAllFlatLinePlans()" class="h-11 px-6 rounded-xl bg-surface-low hover:bg-surface-high font-semibold text-sm text-on-surface inline-flex items-center gap-2 transition">
+                            <span class="material-symbols-outlined text-sm">table_view</span> Sync bệt
+                        </button>{% elif qc_role == 'FACTORY_ADMIN' and qc_scope_don_vi in ['XN1-V1', 'XN2', 'XN3'] %}<button onclick="syncFlatLinePlans('{{ qc_scope_don_vi }}')" class="h-11 px-6 rounded-xl bg-surface-low hover:bg-surface-high font-semibold text-sm text-on-surface inline-flex items-center gap-2 transition">
+                            <span class="material-symbols-outlined text-sm">table_view</span> Sync bệt {{ qc_scope_don_vi }}
+                        </button>{% endif %}
                         <button onclick="openCreateModal()" class="btn-primary px-6 py-2.5 font-semibold text-sm inline-flex items-center gap-2">
                             <span class="material-symbols-outlined text-sm">add</span> Thêm Kế hoạch mới
                         </button>
@@ -128,7 +127,7 @@
                     <div>
                         <label class="block text-[11px] font-semibold text-on-surface-variant mb-2 uppercase tracking-wider">Đơn vị <span class="text-red-500">*</span></label>
                         <select id="fDonVi" class="input-field">
-                            <option value="">-- Chọn Đơn vị --</option>
+                            {% if not qc_scope_don_vi %}<option value="">-- Chọn Đơn vị --</option>{% endif %}
                             {% for dv in don_vi_options %}
                             <option value="{{ dv }}">{{ dv }}</option>
                             {% endfor %}
@@ -194,6 +193,7 @@
 
     <!-- Page-specific scripts -->
     <script>
+        const factoryScope = {{ qc_scope_don_vi | tojson }};
         function formatPoInfo(poInfo) {
             if (!Array.isArray(poInfo) || poInfo.length === 0) return '';
             return poInfo.map(item => {
@@ -211,6 +211,8 @@
 
         function formatPlanDisplay(row) {
             if (!row) return '-';
+            const planName = String(row.ke_hoach || '').trim();
+            if (planName) return planName;
             const parts = [];
             if (row.ma_hang) parts.push(row.ma_hang);
             if (row.ngay_rc) parts.push(fmtDate(row.ngay_rc));
@@ -220,6 +222,12 @@
             }
             if (parts.length >= 2) return parts.join(' - ');
             return row.ke_hoach || '-';
+        }
+
+        function escapePlanText(value) {
+            const el = document.createElement('span');
+            el.textContent = value;
+            return el.innerHTML;
         }
 
         async function loadData() {
@@ -248,18 +256,18 @@
                 empty.classList.add('hidden');
                 body.innerHTML = rows.map((r, i) => `
                     <tr class="table-row">
-                        <td class="text-center text-on-surface-variant font-mono text-xs rounded-l-xl">${i + 1}</td>
-                        <td class="font-semibold">${formatPlanDisplay(r)}</td>
+                        <td class="text-center text-on-surface-variant text-sm tabular-nums rounded-l-xl">${i + 1}</td>
+                        <td class="font-semibold text-sm break-words">${escapePlanText(formatPlanDisplay(r))}</td>
                         <td><span class="badge whitespace-nowrap">${r.don_vi || ''}</span></td>
                         <td><span class="badge badge-active whitespace-nowrap">${r.bo_phan || ''}</span></td>
                         <td>
                             <div class="font-medium text-sm text-primary mb-0.5">${r.khach_hang || '-'}</div>
-                            <div class="font-mono text-xs text-on-surface-variant">${r.ma_hang || '-'} <span class="mx-1">·</span> ${r.loai_hang || '-'}</div>
+                            <div class="text-xs text-on-surface-variant">${r.ma_hang || '-'} <span class="mx-1">·</span> ${r.loai_hang || '-'}</div>
                             ${formatPoInfo(r.po_info) ? `<div class="text-xs text-on-surface-variant mt-1">PO: ${formatPoInfo(r.po_info)}</div>` : ''}
                             <div class="text-xs text-on-surface-variant mt-1">Màu: ${r.mau || '-'} | Size: ${r.size || '-'}</div>
                         </td>
                         <td class="text-sm">${fmtDate(r.ngay_rc)}</td>
-                        <td class="text-right font-mono text-primary font-semibold text-lg">${r.san_luong != null ? Number(r.san_luong).toLocaleString('vi-VN') : '-'}</td>
+                        <td class="text-right text-primary font-semibold text-sm tabular-nums">${r.san_luong != null ? Number(r.san_luong).toLocaleString('vi-VN') : '-'}</td>
                         <td class="text-center rounded-r-xl">
                             <div class="flex items-center justify-center gap-2">
                                 <button onclick='openEditModal(${JSON.stringify(r)})' class="w-9 h-9 rounded-full bg-surface hover:bg-surface-high text-primary flex items-center justify-center transition" title="Sửa">
@@ -305,6 +313,25 @@
                     return;
                 }
                 showToast(`Chuyền bệt ${donVi}: thêm ${data.inserted || 0}, cập nhật ${data.updated || 0}, ngừng hiệu lực ${data.deactivated || 0}, bỏ qua ${data.skipped || 0}`);
+                loadData();
+            } catch (e) {
+                showToast('Lỗi kết nối máy chủ khi đồng bộ Chuyền bệt!', 'error');
+            }
+        }
+
+        async function syncAllFlatLinePlans() {
+            try {
+                showToast('Đang đồng bộ kế hoạch Chuyền bệt tất cả Xí nghiệp...', 'success');
+                const res = await fetch('/api/prod-plan/sync-flat-line?all_factories=true', { method: 'POST' });
+                const data = await res.json();
+                if (!res.ok) {
+                    showToast(data.detail || 'Lỗi khi đồng bộ Chuyền bệt', 'error');
+                    return;
+                }
+                const synced = (data.factories || []).map(item => item.don_vi).join(', ');
+                const failed = (data.errors || []).map(item => item.don_vi).join(', ');
+                const summary = `Sync bệt ${synced || 'không có nguồn'}: thêm ${data.inserted || 0}, cập nhật ${data.updated || 0}, ngừng hiệu lực ${data.deactivated || 0}, bỏ qua ${data.skipped || 0}`;
+                showToast(failed ? `${summary}. Lỗi: ${failed}` : summary, failed ? 'error' : 'success');
                 loadData();
             } catch (e) {
                 showToast('Lỗi kết nối máy chủ khi đồng bộ Chuyền bệt!', 'error');
@@ -380,6 +407,7 @@
             ['fKeHoach','fDonVi','fBoPhan','fKhachHang','fMaHang','fLoaiHang','fNgayRC','fSanLuong','fMau','fSize'].forEach(id => {
                 document.getElementById(id).value = '';
             });
+            document.getElementById('fDonVi').value = factoryScope || '';
             resetBoPhanList();
             await populatePlanMasterData();
             document.getElementById('modal').classList.add('active');
