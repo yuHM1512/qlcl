@@ -94,7 +94,7 @@ class QCRolesTest(unittest.TestCase):
     def test_factory_manages_local_qc_but_not_admin_roles_or_visuals(self):
         self.login('H1289')
         local_qc = {'ma_nv':'ROLE_TEST_QC','ho_ten':'Role Test QC','chuc_vu':'QC',
-                    'don_vi':'XN2','bo_phan':'1','station':['Trạm cuối chuyền'],'qc_role':'QC'}
+                    'don_vi':'XN2','bo_phan':'1','station':['QC kiểm thành phẩm'],'qc_role':'QC'}
         response = self.client.post('/api/qc/employees', json=local_qc)
         self.assertEqual(response.status_code, 200, response.text)
 
@@ -187,7 +187,7 @@ class QCRolesTest(unittest.TestCase):
     def test_plan_reports_cannot_cross_factory(self):
         self.login(self.qc)
         for path in ['/api/qc/output-sp','/api/qc/error-log-sp','/api/qc/hanging-output','/api/qc/input/pos-summary','/api/qc/input/quick-defect-combos','/api/qc/input/quick-defect-combos-today']:
-            response=self.client.get(path,params={'plan_id':-916002,'date':'2026-09-16','station':'Trạm sau seam'})
+            response=self.client.get(path,params={'plan_id':-916002,'date':'2026-09-16','station':'QC sau seam'})
             self.assertEqual(response.status_code,403,response.text)
 
     def test_integration_report_follows_scope(self):

@@ -173,6 +173,7 @@ SCHEMA_BOOTSTRAP_FILES = [
     "alter_qc_error_dps_add_keys.sql",
     "alter_qc_error_dps_add_station.sql",
     "alter_qc_error_dps_add_bo_phan.sql",
+    "migrate_qc_station_names_20260917.sql",
     "create_qc_hdkp_endline.sql",
     "alter_prod_plan_add_po_info.sql",
     "alter_prod_plan_add_sync_fields.sql",
@@ -508,7 +509,7 @@ def resolve_dashboard_default_station(
         return station_clean
 
     if not is_qc_don_vi_scoped_role(scoped_user):
-        return "Trạm sau seam"
+        return "QC sau seam"
 
     where_clauses = ["o.station IS NOT NULL", "o.station <> ''"]
     params: List[Any] = []

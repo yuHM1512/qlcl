@@ -45,7 +45,7 @@ def get_output(cur, plan, day):
     cur.execute('SELECT qty,slots,synced_at FROM public.qc_flat_output WHERE don_vi=%s AND source_record_id=%s AND report_date=%s',
                 (plan['don_vi'],plan['source_record_id'],day))
     row = cur.fetchone()
-    cur.execute("SELECT COUNT(*) AS records, COALESCE(SUM(defect_count),0) AS defects FROM public.qc_error_log_sp WHERE plan_id=%s AND date=%s AND BTRIM(station)='Trạm cuối chuyền'", (plan['id'],day))
+    cur.execute("SELECT COUNT(*) AS records, COALESCE(SUM(defect_count),0) AS defects FROM public.qc_error_log_sp WHERE plan_id=%s AND date=%s AND BTRIM(station)='QC kiểm thành phẩm'", (plan['id'],day))
     summary = cur.fetchone()
     defects = int(summary['defects'])
     qty = float(row['qty']) if row and row['qty'] is not None else None
@@ -100,7 +100,7 @@ def register(app, connect, api_key):
                 plan = cur.fetchone()
                 if not plan:
                     return {"status": "empty", "message": "Chưa có kế hoạch mẹ trong QLCL"}
-                cur.execute("SELECT COUNT(*) AS records, COALESCE(SUM(defect_count),0) AS defects FROM public.qc_error_log_sp WHERE plan_id=%s AND date=%s AND BTRIM(station)='Trạm cuối chuyền'", (plan['id'], day))
+                cur.execute("SELECT COUNT(*) AS records, COALESCE(SUM(defect_count),0) AS defects FROM public.qc_error_log_sp WHERE plan_id=%s AND date=%s AND BTRIM(station)='QC kiểm thành phẩm'", (plan['id'], day))
                 summary = dict(cur.fetchone())
                 cur.execute("""SELECT COALESCE(bp.ten_bo_phan,'Chưa phân loại') AS department,
                     COALESCE(ct.ten_chi_tiet,'') AS detail, COALESCE(ml.ten_ma,'Chưa phân loại') AS defect, COUNT(*) AS quantity
@@ -108,12 +108,12 @@ def register(app, connect, api_key):
                     LEFT JOIN public.dm_bo_phan bp ON bp.id=d.bo_phan_id
                     LEFT JOIN public.dm_chi_tiet ct ON ct.id=d.chi_tiet_id
                     LEFT JOIN public.dm_ma_loi ml ON ml.id=d.ma_loi_id
-                    WHERE sp.plan_id=%s AND sp.date=%s AND BTRIM(sp.station)='Trạm cuối chuyền' GROUP BY bp.ten_bo_phan,ct.ten_chi_tiet,ml.ten_ma ORDER BY COUNT(*) DESC""", (plan['id'], day))
+                    WHERE sp.plan_id=%s AND sp.date=%s AND BTRIM(sp.station)='QC kiểm thành phẩm' GROUP BY bp.ten_bo_phan,ct.ten_chi_tiet,ml.ten_ma ORDER BY COUNT(*) DESC""", (plan['id'], day))
                 details = [dict(r) for r in cur.fetchall()]
                 cur.execute("""WITH garments AS (
                     SELECT d.error_log_sp_id, d.sp_index, MIN(d.created_at) AS created_at
                     FROM public.qc_defect d JOIN public.qc_error_log_sp sp ON sp.id=d.error_log_sp_id
-                    WHERE sp.plan_id=%s AND sp.date=%s AND BTRIM(sp.station)='Trạm cuối chuyền'
+                    WHERE sp.plan_id=%s AND sp.date=%s AND BTRIM(sp.station)='QC kiểm thành phẩm'
                     GROUP BY d.error_log_sp_id,d.sp_index
                 ) SELECT CASE
                     WHEN timezone('Asia/Ho_Chi_Minh',created_at)::time < '09:30' THEN 1
@@ -122,7 +122,7 @@ def register(app, connect, api_key):
                     WHEN timezone('Asia/Ho_Chi_Minh',created_at)::time < '16:30' THEN 4 ELSE 5 END AS slot,
                     COUNT(*) AS defects FROM garments GROUP BY slot""", (plan['id'], day))
                 slots = [dict(r) for r in cur.fetchall()]
-                cur.execute("SELECT time,bo_phan,chi_tiet,ma_loi FROM public.qc_defect_multi WHERE plan_id=%s AND date=%s AND BTRIM(station)='Trạm cuối chuyền' ORDER BY time", (plan['id'], day))
+                cur.execute("SELECT time,bo_phan,chi_tiet,ma_loi FROM public.qc_defect_multi WHERE plan_id=%s AND date=%s AND BTRIM(station)='QC kiểm thành phẩm' ORDER BY time", (plan['id'], day))
                 alerts = [dict(time=str(r['time'])[:5], text=' · '.join(str(r[k]) for k in ('bo_phan','chi_tiet','ma_loi') if r[k])) for r in cur.fetchall()]
                 return dict(status="ok" if summary['records'] else "empty", **summary,
                     plan_id=plan['id'], details=details, slots=slots, alerts=alerts)

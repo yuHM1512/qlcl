@@ -438,7 +438,7 @@
             const selected = {
                 don_vi: buildSelect(document.getElementById('fDonVi'), data.don_vi || [], 'Tất cả', keep.don_vi),
                 bo_phan: buildSelect(document.getElementById('fBoPhan'), data.bo_phan || [], 'Tất cả', keep.bo_phan),
-                station: buildSelect(document.getElementById('fStation'), data.station || [], isQcViewerRole ? 'Chọn trạm' : 'Trạm sau seam (mặc định)', keep.station),
+                station: buildSelect(document.getElementById('fStation'), data.station || [], isQcViewerRole ? 'Chọn trạm' : 'QC sau seam (mặc định)', keep.station),
                 ma_hang: buildSelect(document.getElementById('fMaHang'), data.ma_hang || [], 'Tất cả', keep.ma_hang),
                 type_name: buildSelect(document.getElementById('fType'), data.type || [], 'Tất cả', keep.type_name),
             };

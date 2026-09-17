@@ -48,7 +48,7 @@ class FlatQCAPIEndpointTests(unittest.TestCase):
         queries = cur.execute.call_args_list[2:]
         self.assertEqual(len(queries), 4)
         for call in queries:
-            self.assertIn("='Trạm cuối chuyền'", call.args[0])
+            self.assertIn("='QC kiểm thành phẩm'", call.args[0])
             self.assertEqual(call.args[1], (22, date(2026, 9, 15)))
         self.assertIn('GROUP BY d.error_log_sp_id,d.sp_index', queries[2].args[0])
         self.assertIn('Asia/Ho_Chi_Minh', queries[2].args[0])
