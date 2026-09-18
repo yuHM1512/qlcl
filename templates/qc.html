@@ -80,11 +80,12 @@
                                 <th>Khách hàng / Mã hàng</th>
                                 <th>Ngày RC</th>
                                 <th class="text-right">Sản lượng</th>
+                                <th class="text-center">Kết thúc</th>
                                 <th class="text-center">Thao tác</th>
                             </tr>
                         </thead>
                         <tbody id="planBody">
-                            <tr><td colspan="8" class="text-center text-on-surface-variant py-16">Đang tải dữ liệu...</td></tr>
+                            <tr><td colspan="9" class="text-center text-on-surface-variant py-16">Đang tải dữ liệu...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -244,7 +245,7 @@
 
             const body = document.getElementById('planBody');
             const empty = document.getElementById('emptyState');
-            body.innerHTML = '<tr><td colspan="8" class="text-center text-on-surface-variant py-16">Đang tải dữ liệu...</td></tr>';
+            body.innerHTML = '<tr><td colspan="9" class="text-center text-on-surface-variant py-16">Đang tải dữ liệu...</td></tr>';
             empty.classList.add('hidden');
 
             try {
@@ -273,6 +274,13 @@
                         </td>
                         <td class="text-sm">${fmtDate(r.ngay_rc)}</td>
                         <td class="text-right text-primary font-semibold text-sm tabular-nums">${r.san_luong != null ? Number(r.san_luong).toLocaleString('vi-VN') : '-'}</td>
+                        <td class="text-center">
+                            <input type="checkbox" ${r.is_finished ? 'checked' : ''}
+                                onchange="setPlanFinished(${r.id}, this)"
+                                aria-label="Kết thúc kế hoạch ${r.id}"
+                                title="Tích để ẩn khỏi danh sách chọn của nhân viên; bỏ tích để mở lại"
+                                class="h-5 w-5 accent-primary cursor-pointer disabled:opacity-50">
+                        </td>
                         <td class="text-center rounded-r-xl">
                             <div class="flex items-center justify-center gap-2">
                                 <button onclick='openEditModal(${JSON.stringify(r)})' class="w-9 h-9 rounded-full bg-surface hover:bg-surface-high text-primary flex items-center justify-center transition" title="Sửa">
@@ -286,7 +294,27 @@
                     </tr>
                 `).join('');
             } catch (e) {
-                body.innerHTML = '<tr><td colspan="8" class="text-center text-error-container font-medium py-16">Lỗi tải dữ liệu</td></tr>';
+                body.innerHTML = '<tr><td colspan="9" class="text-center text-error-container font-medium py-16">Lỗi tải dữ liệu</td></tr>';
+            }
+        }
+
+        async function setPlanFinished(id, checkbox) {
+            const isFinished = checkbox.checked;
+            checkbox.disabled = true;
+            try {
+                const res = await fetch(`/api/prod-plan/${id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ is_finished: isFinished }),
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.detail || 'Không thể cập nhật kế hoạch');
+                showToast(isFinished ? 'Đã kết thúc và ẩn kế hoạch khỏi danh sách chọn của nhân viên' : 'Đã bỏ trạng thái kết thúc kế hoạch', 'success');
+            } catch (e) {
+                checkbox.checked = !isFinished;
+                showToast(e.message || 'Không thể cập nhật kế hoạch', 'error');
+            } finally {
+                checkbox.disabled = false;
             }
         }
 

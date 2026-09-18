@@ -177,6 +177,7 @@ SCHEMA_BOOTSTRAP_FILES = [
     "create_qc_hdkp_endline.sql",
     "alter_prod_plan_add_po_info.sql",
     "alter_prod_plan_add_sync_fields.sql",
+    "alter_prod_plan_add_is_finished.sql",
     "alter_prod_plan_add_mono.sql",
     "create_qc_hanging_output.sql",
 ]
@@ -5002,7 +5003,7 @@ def ensure_prod_plan_is_active(plan_id: Any) -> None:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute(
                 """
-                SELECT id, COALESCE(is_active, TRUE) AS is_active
+                SELECT id, COALESCE(is_active, TRUE) AS is_active, is_finished
                 FROM public.prod_plan
                 WHERE id = %s
                 """,
@@ -5011,6 +5012,8 @@ def ensure_prod_plan_is_active(plan_id: Any) -> None:
             row = cur.fetchone()
             if not row:
                 raise HTTPException(status_code=404, detail="Không tìm thấy kế hoạch")
+            if row.get("is_finished"):
+                raise HTTPException(status_code=409, detail="Kế hoạch đã kết thúc. Vui lòng chọn lại kế hoạch khác.")
             if not row.get("is_active"):
                 raise HTTPException(status_code=409, detail="Kế hoạch đã ngừng hiệu lực. Vui lòng chọn lại kế hoạch khác.")
 
@@ -5641,7 +5644,7 @@ def api_prod_plan_list(
     only_active: bool = Query(False),
 ):
     """List production plans within the account scope."""
-    don_vi, _ = resolve_qc_don_vi_scope(request, don_vi)
+    don_vi, user = resolve_qc_don_vi_scope(request, don_vi)
 
     with get_db_connection() as conn:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
@@ -5658,8 +5661,9 @@ def api_prod_plan_list(
 
             clauses = []
             params = []
-            if only_active:
+            if only_active or get_qc_role(user) == "QC":
                 clauses.append("COALESCE(is_active, TRUE) = TRUE")
+                clauses.append("is_finished = FALSE")
             if don_vi:
                 clauses.append("don_vi = %s")
                 params.append(don_vi)
@@ -5693,7 +5697,7 @@ def api_prod_plan_list(
                        } AS bo_phan,
                        khach_hang, ma_hang,
                        loai_hang, ngay_rc, san_luong, mau, size, po_info, mono,
-                       source_system, source_record_id, source_status, COALESCE(is_active, TRUE) AS is_active, last_synced_at,
+                       source_system, source_record_id, source_status, COALESCE(is_active, TRUE) AS is_active, is_finished, last_synced_at,
                        created_at, updated_at
                 FROM public.prod_plan
                 {where}
@@ -5782,6 +5786,12 @@ async def api_prod_plan_update(plan_id: int, request: Request):
                       "loai_hang", "ngay_rc", "san_luong", "mau", "size"]
     sets = ["updated_at = NOW()"]
     params = []
+
+    if "is_finished" in body:
+        if type(body["is_finished"]) is not bool:
+            raise HTTPException(status_code=400, detail="Kết thúc phải là true hoặc false")
+        sets.append("is_finished = %s")
+        params.append(body["is_finished"])
 
     for field in allowed_fields:
         if field in body:

@@ -47,7 +47,21 @@ header `X-API-Key`. Không cấu hình key thì API push từ chối request.
 `/api/tv3/qc-data` chấp nhận key này từ backend chuyền treo, hoặc tài khoản
 đăng nhập với dữ liệu được giới hạn theo Xí nghiệp.
 
+## Kết thúc kế hoạch
+
+Cột **Kết thúc** trên danh sách kế hoạch lưu ngay khi tích/bỏ tích bằng
+`PATCH /api/prod-plan/{plan_id}` với JSON `{"is_finished": true}` (bỏ tích: `false`).
+Chỉ QA_ADMIN hoặc FACTORY_ADMIN trong xí nghiệp được gán có quyền cập nhật.
+Kế hoạch kết thúc vẫn hiện trong danh sách quản trị và giữ nguyên lịch sử,
+nhưng bị ẩn khỏi danh sách chọn của QC và truy vấn `only_active=true`.
+API ghi nhận QC trả 409 nếu kế hoạch đang mở đã kết thúc. Bỏ tích cho phép chọn
+lại khi nguồn vẫn còn hiệu lực (`is_active=true`). Trạng thái kết thúc độc lập
+với đồng bộ nguồn. Migration `db/alter_prod_plan_add_is_finished.sql` được
+đăng ký trong bootstrap và tự áp dụng khi ứng dụng khởi động.
+
 ## Kiểm thử
+
+Chạy `node test_prod_plan_ui.cjs` để kiểm tra checkbox và hoàn tác khi lưu lỗi.
 
 Cài `httpx` trong môi trường phát triển, sau đó chạy:
 

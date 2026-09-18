@@ -43,6 +43,7 @@ class QCRolesTest(unittest.TestCase):
         self.client = TestClient(main.app)
         self.addCleanup(self.client.close)
         with self.connection.cursor() as cur:
+            cur.execute(Path('db/alter_prod_plan_add_is_finished.sql').read_text(encoding='utf-8'))
             cur.execute("SELECT ma_nv FROM quality_employees WHERE qc_role = 'QA_ADMIN' ORDER BY ma_nv LIMIT 1")
             self.qa = cur.fetchone()[0]
             cur.execute("SELECT ma_nv FROM quality_employees WHERE qc_role = 'QC' AND don_vi = 'XN2' LIMIT 1")
@@ -55,6 +56,43 @@ class QCRolesTest(unittest.TestCase):
 
     def login(self, employee):
         self.client.cookies.set('ma_nv', main.encode_ma_nv_cookie(employee))
+
+    def test_plan_completion_visibility_and_reopen(self):
+        self.login('H1289')
+        response = self.client.patch('/api/prod-plan/-916001', json={'is_finished': True})
+        self.assertEqual(response.status_code, 200, response.text)
+        rows = self.client.get('/api/prod-plan').json()['rows']
+        self.assertTrue(next(r for r in rows if r['id'] == -916001)['is_finished'])
+        # A sync may reactivate the source, but must not reopen manual completion.
+        with self.connection.cursor() as cur:
+            cur.execute('UPDATE prod_plan SET is_active=TRUE WHERE id=-916001')
+        rows = self.client.get('/api/prod-plan?only_active=true').json()['rows']
+        self.assertNotIn(-916001, [r['id'] for r in rows])
+        self.login(self.qc)
+        rows = self.client.get('/api/prod-plan?only_active=false').json()['rows']
+        self.assertNotIn(-916001, [r['id'] for r in rows])
+        with self.assertRaises(main.HTTPException) as error:
+            main.ensure_prod_plan_is_active(-916001)
+        self.assertEqual(error.exception.status_code, 409)
+        self.login('H1289')
+        response = self.client.patch('/api/prod-plan/-916001', json={'is_finished': False})
+        self.assertEqual(response.status_code, 200, response.text)
+        self.login(self.qc)
+        rows = self.client.get('/api/prod-plan?only_active=true').json()['rows']
+        self.assertIn(-916001, [r['id'] for r in rows])
+        main.ensure_prod_plan_is_active(-916001)
+
+    def test_plan_completion_permissions_and_validation(self):
+        self.login(self.qc)
+        self.assertEqual(self.client.patch('/api/prod-plan/-916001', json={'is_finished': True}).status_code, 403)
+        self.login('H1289')
+        self.assertEqual(self.client.patch('/api/prod-plan/-916002', json={'is_finished': True}).status_code, 403)
+        for invalid in ['false', 0, None, [], {}]:
+            with self.subTest(value=invalid):
+                self.assertEqual(self.client.patch('/api/prod-plan/-916001', json={'is_finished': invalid}).status_code, 400)
+        self.login(self.qa)
+        self.assertEqual(self.client.patch('/api/prod-plan/-916002', json={'is_finished': True}).status_code, 200)
+        self.assertEqual(self.client.patch('/api/prod-plan/-999999999', json={'is_finished': True}).status_code, 404)
 
     def test_seed_accounts_and_positions(self):
         with self.connection.cursor() as cur:
