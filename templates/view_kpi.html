@@ -8,13 +8,15 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         /* Headers: center horizontally and vertically */
-        #summaryTable th, #errorsTable th { text-align: center; vertical-align: middle; }
+        #summaryTable th, #summaryMonthTable th, #summaryQuarterTable th, #errorsTable th { text-align: center; vertical-align: middle; }
         /* Values: left align, vertically centered */
-        #summaryTable td, #errorsTable td { text-align: left; vertical-align: middle; }
+        #summaryTable td, #summaryMonthTable td, #summaryQuarterTable td, #errorsTable td { text-align: left; vertical-align: middle; }
         /* Keep explicit left alignment utility if used */
-        #summaryTable td.text-start { text-align: left; }
+        #summaryTable td.text-start, #summaryMonthTable td.text-start, #summaryQuarterTable td.text-start { text-align: left; }
         /* Compact tables: smaller font, tighter padding, wrap long text */
         #summaryTable th, #summaryTable td,
+        #summaryMonthTable th, #summaryMonthTable td,
+        #summaryQuarterTable th, #summaryQuarterTable td,
         #errorsTable th, #errorsTable td {
             font-size: 12px; /* smaller text to fit more info */
             padding: 6px 8px;
@@ -22,7 +24,7 @@
             word-break: break-word;
         }
         /* Slightly smaller header */
-        #summaryTable th, #errorsTable th { font-weight: 600; font-size: 11.5px; }
+        #summaryTable th, #summaryMonthTable th, #summaryQuarterTable th, #errorsTable th { font-weight: 600; font-size: 11.5px; }
         /* Colorize errors table header groups */
         /* First 8 columns: STT, Ngày ghi nhận, Bộ phận, Mã NV, Công việc sai sót, Phân loại lỗi, Mô tả, Mức độ ảnh hưởng */
         #errorsTable thead th:nth-child(-n+8) { background: #0d6efd; color: #fff; }
@@ -68,6 +70,11 @@
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" id="tab-summary-month" data-bs-toggle="tab" data-bs-target="#pane-summary-month" type="button" role="tab">
                             <i class="fas fa-calendar-alt me-1"></i> Theo dõi theo tháng
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="tab-summary-quarter" data-bs-toggle="tab" data-bs-target="#pane-summary-quarter" type="button" role="tab">
+                            <i class="fas fa-chart-column me-1"></i> Theo dõi theo quý
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
@@ -147,6 +154,48 @@
                             </div>
                         </div>
                     </div>
+                    <div class="tab-pane fade" id="pane-summary-quarter" role="tabpanel">
+                        <div class="card shadow border-top-0">
+                            <div class="card-header bg-secondary text-white">
+                                <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-lg-between gap-2">
+                                    <div class="mb-0"><i class="fas fa-chart-column me-2"></i>Theo dõi theo quý</div>
+                                    <div class="d-flex flex-wrap align-items-center gap-2">
+                                        <div class="d-flex align-items-center gap-1">
+                                            <label class="text-white-50">Chức vụ</label>
+                                            <select id="sum_quarter_role" class="form-select form-select-sm" style="width:auto;">
+                                                <option value="QAPL">QAPL</option>
+                                                <option value="QANL">QANL</option>
+                                                <option value="QAQT" selected>QAQT</option>
+                                            </select>
+                                        </div>
+                                        <div class="d-flex align-items-center gap-1">
+                                            <label class="text-white-50">Quý</label>
+                                            <select id="sum_quarter" class="form-select form-select-sm" style="width:auto;">
+                                                <option value="1">Quý 1</option>
+                                                <option value="2">Quý 2</option>
+                                                <option value="3">Quý 3</option>
+                                                <option value="4">Quý 4</option>
+                                            </select>
+                                        </div>
+                                        <div class="d-flex align-items-center gap-1">
+                                            <label class="text-white-50">Năm</label>
+                                            <input type="number" min="2000" max="2100" id="sum_quarter_year" class="form-control form-control-sm" style="width:6rem;" />
+                                        </div>
+                                        <button class="btn btn-light btn-sm" onclick="loadSummaryQuarter()"><i class="fa fa-rotate me-1"></i>Tải</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-striped table-bordered" id="summaryQuarterTable">
+                                        <thead id="summaryQuarterHead"></thead>
+                                        <tbody id="summaryQuarterBody"></tbody>
+                                    </table>
+                                </div>
+                                <div id="summaryQuarterEmpty" class="text-muted">Chọn quý và nhấn Tải để xem dữ liệu.</div>
+                            </div>
+                        </div>
+                    </div>
                     <div class="tab-pane fade" id="pane-errors" role="tabpanel">
                         <div class="card shadow border-top-0">
                             <div class="card-header bg-secondary text-white d-flex align-items-center justify-content-between">
@@ -209,6 +258,14 @@
                 }
             });
         }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const today = new Date();
+            const quarterInput = document.getElementById('sum_quarter');
+            const yearInput = document.getElementById('sum_quarter_year');
+            if (quarterInput) quarterInput.value = String(Math.floor(today.getMonth() / 3) + 1);
+            if (yearInput) yearInput.value = String(today.getFullYear());
+        });
         
         function fmtDMY2(value) {
             if (!value) return '';
@@ -368,6 +425,71 @@
                     empty.textContent = 'Không có dữ liệu.';
                     return;
                 }
+
+                let totalRow = '<tr class="table-secondary fw-semibold"><td>Tổng</td><td></td><td></td>';
+                totals.forEach(total => {
+                    totalRow += `<td class="text-center">${total.th.toLocaleString('vi-VN')}</td><td class="text-center">${total.ss.toLocaleString('vi-VN')}</td>`;
+                });
+                totalRow += '</tr>';
+                body.insertAdjacentHTML('beforeend', totalRow);
+            } catch (e) {
+                empty.style.display = 'block';
+                empty.textContent = 'Lỗi tải dữ liệu.';
+            }
+        }
+
+        async function loadSummaryQuarter() {
+            const role = document.getElementById('sum_quarter_role').value;
+            const quarter = document.getElementById('sum_quarter').value;
+            const year = document.getElementById('sum_quarter_year').value;
+            const head = document.getElementById('summaryQuarterHead');
+            const body = document.getElementById('summaryQuarterBody');
+            const empty = document.getElementById('summaryQuarterEmpty');
+            head.innerHTML = '';
+            body.innerHTML = '';
+            empty.style.display = 'none';
+
+            try {
+                const params = new URLSearchParams({ chuc_vu: role });
+                if (quarter) params.append('quarter', quarter);
+                if (year) params.append('year', year);
+                const res = await fetch(`/api/summary/quarterly?${params.toString()}`);
+                if (!res.ok) throw new Error('API error');
+                const data = await res.json();
+                const tasks = data.tasks || [];
+                const rows = data.rows || [];
+                if (tasks.length === 0 || rows.length === 0) {
+                    empty.style.display = 'block';
+                    empty.textContent = 'Không có dữ liệu.';
+                    return;
+                }
+
+                let h1 = '<tr><th>Quý-Năm</th><th>Mã nhân viên</th><th>Tên nhân viên</th>';
+                tasks.forEach(task => {
+                    h1 += `<th colspan="2" class="text-center" style="font-size: 10px;">${task}</th>`;
+                });
+                h1 += '</tr>';
+                let h2 = '<tr><th></th><th></th><th></th>';
+                tasks.forEach(() => { h2 += '<th>TH</th><th>SS</th>'; });
+                h2 += '</tr>';
+                head.innerHTML = h1 + h2;
+
+                const totals = tasks.map(() => ({ th: 0, ss: 0 }));
+                rows.forEach(row => {
+                    let tr = `<tr><td>${row.quarter_year || ''}</td><td>${row.ma_nv}</td><td class="text-start">${row.ho_ten || ''}</td>`;
+                    tasks.forEach((task, index) => {
+                        const metric = row.metrics && row.metrics[task]
+                            ? row.metrics[task]
+                            : { thuc_hien: 0, sai_sot: 0 };
+                        const thucHien = Number(metric.thuc_hien) || 0;
+                        const saiSot = Number(metric.sai_sot) || 0;
+                        totals[index].th += thucHien;
+                        totals[index].ss += saiSot;
+                        tr += `<td class="text-center">${thucHien}</td><td class="text-center">${saiSot}</td>`;
+                    });
+                    tr += '</tr>';
+                    body.insertAdjacentHTML('beforeend', tr);
+                });
 
                 let totalRow = '<tr class="table-secondary fw-semibold"><td>Tổng</td><td></td><td></td>';
                 totals.forEach(total => {

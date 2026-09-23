@@ -2100,6 +2100,125 @@ def api_summary_monthly(
     return {"tasks": tasks, "rows": rows}
 
 
+@app.get("/api/summary/quarterly")
+def api_summary_quarterly(
+    chuc_vu: str = Query(..., pattern="^(QAPL|QANL|QAQT)$"),
+    quarter: Optional[int] = Query(None, ge=1, le=4),
+    year: Optional[int] = Query(None, ge=2000, le=2100)
+):
+    """Aggregate completed work and errors by calendar quarter and QA employee."""
+    with get_db_connection() as conn:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute("SELECT task_name FROM public.tasks_qa WHERE chuc_vu=%s ORDER BY task_name", (chuc_vu,))
+            tasks = [r["task_name"] for r in cur.fetchall()]
+
+            qa_params: List[Any] = [chuc_vu]
+            qa_period_clause = ""
+            if quarter is not None:
+                qa_period_clause += " AND EXTRACT(QUARTER FROM from_date) = %s"
+                qa_params.append(quarter)
+            if year is not None:
+                qa_period_clause += " AND EXTRACT(YEAR FROM from_date) = %s"
+                qa_params.append(year)
+
+            cur.execute(
+                f"""
+                WITH qa AS (
+                  SELECT
+                    EXTRACT(YEAR FROM from_date)::int AS year_key,
+                    EXTRACT(QUARTER FROM from_date)::int AS quarter_key,
+                    ma_nv,
+                    task_name,
+                    SUM(thuc_hien) AS thuc_hien
+                  FROM public.input_qa
+                  WHERE chuc_vu = %s
+                    AND from_date IS NOT NULL
+                  {qa_period_clause}
+                  GROUP BY 1,2,3,4
+                )
+                SELECT qa.year_key, qa.quarter_key, d.ma_nv, d.ho_ten,
+                       qa.task_name, qa.thuc_hien
+                FROM qa
+                JOIN public.quality_employees d ON d.ma_nv = qa.ma_nv
+                WHERE d.chuc_vu = %s
+                ORDER BY qa.year_key, qa.quarter_key, d.ma_nv, qa.task_name
+                """,
+                (*qa_params, chuc_vu),
+            )
+            qa_rows = cur.fetchall()
+
+            err_params: List[Any] = [chuc_vu]
+            err_period_clause = ""
+            if quarter is not None:
+                err_period_clause += " AND EXTRACT(QUARTER FROM ngay_ghi_nhan) = %s"
+                err_params.append(quarter)
+            if year is not None:
+                err_period_clause += " AND EXTRACT(YEAR FROM ngay_ghi_nhan) = %s"
+                err_params.append(year)
+
+            cur.execute(
+                f"""
+                SELECT
+                  EXTRACT(YEAR FROM ngay_ghi_nhan)::int AS year_key,
+                  EXTRACT(QUARTER FROM ngay_ghi_nhan)::int AS quarter_key,
+                  e.ma_nv,
+                  d.ho_ten,
+                  e.task_name,
+                  COUNT(*) AS sai_sot
+                FROM public.input_error e
+                JOIN public.quality_employees d ON d.ma_nv = e.ma_nv
+                WHERE d.chuc_vu = %s
+                  AND e.ngay_ghi_nhan IS NOT NULL
+                  {err_period_clause}
+                GROUP BY 1,2,3,4,5
+                ORDER BY 1,2,3,5
+                """,
+                tuple(err_params),
+            )
+            err_rows = cur.fetchall()
+
+    rows_map: Dict[Tuple[int, int, str], Dict] = {}
+
+    def get_quarter_entry(row: Dict) -> Optional[Dict]:
+        if not row.get("ma_nv") or row.get("year_key") is None or row.get("quarter_key") is None:
+            return None
+        row_year = int(row["year_key"])
+        row_quarter = int(row["quarter_key"])
+        key = (row_year, row_quarter, row["ma_nv"])
+        return rows_map.setdefault(
+            key,
+            {
+                "quarter_year": f"Q{row_quarter}-{row_year}",
+                "quarter": row_quarter,
+                "year": row_year,
+                "ma_nv": row["ma_nv"],
+                "ho_ten": row.get("ho_ten"),
+                "metrics": {},
+            },
+        )
+
+    for row in qa_rows:
+        entry = get_quarter_entry(row)
+        if entry is None:
+            continue
+        entry["metrics"].setdefault(row["task_name"], {"thuc_hien": 0, "sai_sot": 0})
+        entry["metrics"][row["task_name"]]["thuc_hien"] += int(row["thuc_hien"] or 0)
+
+    for row in err_rows:
+        entry = get_quarter_entry(row)
+        if entry is None:
+            continue
+        entry["ho_ten"] = entry.get("ho_ten") or row.get("ho_ten")
+        entry["metrics"].setdefault(row["task_name"], {"thuc_hien": 0, "sai_sot": 0})
+        entry["metrics"][row["task_name"]]["sai_sot"] += int(row["sai_sot"] or 0)
+
+    rows = sorted(
+        rows_map.values(),
+        key=lambda item: (item.get("year") or 0, item.get("quarter") or 0, item.get("ma_nv") or ""),
+    )
+    return {"tasks": tasks, "rows": rows}
+
+
 @app.get("/api/errors")
 def api_errors(chuc_vu: Optional[str] = Query(None, pattern="^(QAPL|QANL|QAQT)$")):
     with get_db_connection() as conn:
