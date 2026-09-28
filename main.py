@@ -157,6 +157,7 @@ SCHEMA_BOOTSTRAP_FILES = [
     "migrate_qc_output_sp_log_status.sql",
     "migrate_tasks_qa_20260904.sql",
     "migrate_error_classification_20260909.sql",
+    "migrate_kpi_impact_level_20260928.sql",
     "create_qc_error_hierarchy.sql",
     "create_qc_cum.sql",
     "migrate_dm_loai_hang_type.sql",
@@ -322,6 +323,30 @@ def generate_ma_nv_variants(ma_nv: str) -> List[str]:
     if simplified and simplified not in variants:
         variants.append(simplified)
     return variants if variants else [base]
+
+
+KPI_IMPACT_LEVEL_OPTIONS = {
+    "Ảnh hưởng đến MTCL công ty",
+    "Chưa ảnh hưởng đến MTCL công ty",
+    "Ảnh hưởng đến MTCL phòng",
+    "Chưa ảnh hưởng đến MTCL phòng",
+}
+
+LEGACY_KPI_IMPACT_LEVEL_MAP = {
+    "Ảnh hưởng đến MTCL công ty/phòng": "Ảnh hưởng đến MTCL phòng",
+    "Chưa ảnh hưởng đến MTCL công ty/phòng": "Chưa ảnh hưởng đến MTCL phòng",
+}
+
+
+def normalize_kpi_impact_level(value: Any) -> Optional[str]:
+    """Normalize legacy KPI impact labels and reject unsupported values."""
+    if value is None or str(value).strip() == "":
+        return None
+    normalized = str(value).strip()
+    normalized = LEGACY_KPI_IMPACT_LEVEL_MAP.get(normalized, normalized)
+    if normalized not in KPI_IMPACT_LEVEL_OPTIONS:
+        raise HTTPException(status_code=400, detail="Mức độ ảnh hưởng không hợp lệ")
+    return normalized
 
 
 def encode_ma_nv_cookie(ma_nv: str) -> str:
@@ -1623,7 +1648,7 @@ async def api_input_error(request: Request):
     task_name = payload.get("task_name")
     phan_loai_loi = payload.get("phan_loai_loi")
     mo_ta = payload.get("mo_ta")
-    muc_do_anh_huong = payload.get("muc_do_anh_huong")
+    muc_do_anh_huong = normalize_kpi_impact_level(payload.get("muc_do_anh_huong"))
     huong_giai_quyet = payload.get("huong_giai_quyet")
 
     with get_db_connection() as conn:
@@ -2257,6 +2282,8 @@ async def api_error_update(error_id: int = Path(...), request: Request = None):
                     v = date.fromisoformat(v)
                 except Exception:
                     raise HTTPException(status_code=400, detail=f"Ngày không hợp lệ cho {k}")
+            if k == "muc_do_anh_huong":
+                v = normalize_kpi_impact_level(v)
             sets.append(f"{k} = %s")
             values.append(v)
     # Auto set tien_do based on ngay_hoan_thanh when provided (rule)
