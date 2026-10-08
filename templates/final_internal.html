@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Final nội bộ - QLCL</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    {% include '_base_styles.html' %}
+    <style>
+        .status-pass { background: #dcfce7; color: #166534; }
+        .status-pass2 { background: #fef3c7; color: #92400e; }
+        .status-fail { background: #ffdad6; color: #900b09; }
+        .status-na { background: #e7e8e9; color: #424654; }
+        .metric-card { min-height: 118px; }
+        .drawer-panel { transform: translateX(105%); transition: transform .25s ease; }
+        .drawer-panel.open { transform: translateX(0); }
+        .drawer-backdrop { opacity: 0; pointer-events: none; transition: opacity .2s ease; }
+        .drawer-backdrop.open { opacity: 1; pointer-events: auto; }
+        .skeleton { background: linear-gradient(90deg, #f3f4f6 25%, #e7e8e9 50%, #f3f4f6 75%); background-size: 200% 100%; animation: shimmer 1.4s infinite; }
+        @keyframes shimmer { to { background-position: -200% 0; } }
+    </style>
+</head>
+<body class="bg-surface text-on-surface min-h-screen font-sans">
+    <header class="glass-header sticky top-0 z-30">
+        <div class="max-w-[1600px] mx-auto px-5 lg:px-8 py-4 flex items-center justify-between gap-4">
+            <div class="flex items-center gap-4 min-w-0">
+                <a href="/" class="h-11 w-11 shrink-0 rounded-xl bg-surface-low flex items-center justify-center text-primary hover:bg-surface-high transition" aria-label="Về trang chủ">
+                    <span class="material-symbols-outlined">arrow_back</span>
+                </a>
+                <div class="min-w-0">
+                    <div class="flex items-center gap-2 text-xs font-semibold text-on-surface-variant mb-1">
+                        <span>Trang chủ</span><span>/</span><span class="text-primary">Final nội bộ</span>
+                    </div>
+                    <h1 class="font-display text-2xl lg:text-3xl font-bold tracking-tight truncate">Final nội bộ</h1>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <div class="hidden md:block text-right">
+                    <div class="text-sm font-semibold">{{ user.name }}</div>
+                    <div class="text-xs text-on-surface-variant">{{ user.department }}</div>
+                </div>
+                {% if can_sync %}
+                <button id="syncBtn" class="btn-primary px-4 py-2.5 flex items-center gap-2 disabled:opacity-50" {% if not api_configured %}disabled title="Chưa cấu hình tài khoản API Final"{% endif %}>
+                    <span id="syncIcon" class="material-symbols-outlined text-[20px]">sync</span>
+                    <span class="hidden sm:inline">Đồng bộ dữ liệu</span>
+                </button>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-[1600px] mx-auto px-5 lg:px-8 py-8 space-y-7">
+        <section class="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
+            <div>
+                <p class="text-on-surface-variant max-w-3xl leading-relaxed">Theo dõi từng đợt kiểm Final được đồng bộ từ hệ thống PO. Kết quả PASS 2 và FAIL cần hoàn thành HĐKP theo biểu mẫu Hachiba-QT-10.1/BM1.</p>
+            </div>
+            <div class="text-xs text-on-surface-variant flex items-center gap-2">
+                <span class="material-symbols-outlined text-[18px]">schedule</span>
+                <span id="lastSyncText">Chưa có dữ liệu đồng bộ</span>
+            </div>
+        </section>
+
+        <section class="grid grid-cols-2 lg:grid-cols-5 gap-4" aria-label="Tổng quan">
+            <article class="metric-card bg-surface-lowest rounded-2xl p-5 shadow-cloud">
+                <div class="flex items-center justify-between"><span class="text-xs uppercase tracking-widest font-bold text-on-surface-variant">Tổng đợt kiểm</span><span class="material-symbols-outlined text-primary">fact_check</span></div>
+                <div id="metricTotal" class="font-display text-3xl font-bold mt-5">—</div>
+            </article>
+            <article class="metric-card bg-surface-lowest rounded-2xl p-5 shadow-cloud">
+                <div class="flex items-center justify-between"><span class="text-xs uppercase tracking-widest font-bold text-on-surface-variant">PASS</span><span class="h-3 w-3 rounded-full bg-green-500"></span></div>
+                <div id="metricPass" class="font-display text-3xl font-bold mt-5 text-green-700">—</div>
+            </article>
+            <article class="metric-card bg-surface-lowest rounded-2xl p-5 shadow-cloud">
+                <div class="flex items-center justify-between"><span class="text-xs uppercase tracking-widest font-bold text-on-surface-variant">PASS 2</span><span class="h-3 w-3 rounded-full bg-amber-400"></span></div>
+                <div id="metricPass2" class="font-display text-3xl font-bold mt-5 text-amber-700">—</div>
+            </article>
+            <article class="metric-card bg-surface-lowest rounded-2xl p-5 shadow-cloud">
+                <div class="flex items-center justify-between"><span class="text-xs uppercase tracking-widest font-bold text-on-surface-variant">FAIL</span><span class="h-3 w-3 rounded-full bg-red-500"></span></div>
+                <div id="metricFail" class="font-display text-3xl font-bold mt-5 text-[#900B09]">—</div>
+            </article>
+            <article class="metric-card col-span-2 lg:col-span-1 bg-[#fff7ed] rounded-2xl p-5 shadow-cloud">
+                <div class="flex items-center justify-between"><span class="text-xs uppercase tracking-widest font-bold text-[#9a3412]">HĐKP đang chờ</span><span class="material-symbols-outlined text-[#c2410c]">pending_actions</span></div>
+                <div id="metricPending" class="font-display text-3xl font-bold mt-5 text-[#9a3412]">—</div>
+            </article>
+        </section>
+
+        <section class="bg-surface-lowest rounded-2xl p-5 shadow-cloud space-y-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-3">
+                <label class="space-y-1.5">
+                    <span class="text-[11px] uppercase tracking-widest font-bold text-on-surface-variant">Từ ngày</span>
+                    <input id="dateFrom" type="date" class="input-field w-full" />
+                </label>
+                <label class="space-y-1.5">
+                    <span class="text-[11px] uppercase tracking-widest font-bold text-on-surface-variant">Đến ngày</span>
+                    <input id="dateTo" type="date" class="input-field w-full" />
+                </label>
+                <label class="space-y-1.5">
+                    <span class="text-[11px] uppercase tracking-widest font-bold text-on-surface-variant">Xí nghiệp</span>
+                    <select id="factoryFilter" class="input-field w-full"><option value="">Tất cả</option></select>
+                </label>
+                <label class="space-y-1.5">
+                    <span class="text-[11px] uppercase tracking-widest font-bold text-on-surface-variant">Kết quả</span>
+                    <select id="resultFilter" class="input-field w-full">
+                        <option value="">Tất cả</option><option value="1">PASS</option><option value="2">PASS 2</option><option value="0">FAIL</option><option value="3">N/A</option>
+                    </select>
+                </label>
+                <label class="space-y-1.5">
+                    <span class="text-[11px] uppercase tracking-widest font-bold text-on-surface-variant">HĐKP</span>
+                    <select id="capFilter" class="input-field w-full">
+                        <option value="">Tất cả</option><option value="missing">Chưa lập</option><option value="draft">Bản nháp</option><option value="completed">Hoàn thành</option><option value="not_required">Không yêu cầu</option>
+                    </select>
+                </label>
+                <label class="space-y-1.5 lg:col-span-2">
+                    <span class="text-[11px] uppercase tracking-widest font-bold text-on-surface-variant">Tìm kiếm</span>
+                    <span class="relative block"><span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant/50">search</span><input id="searchInput" class="input-field w-full pl-10" placeholder="PO, Iman hoặc người kiểm" /></span>
+                </label>
+            </div>
+            <div class="flex justify-end"><button id="clearFilters" class="btn-tertiary px-4 py-2 flex items-center gap-2"><span class="material-symbols-outlined text-[18px]">filter_alt_off</span>Xóa bộ lọc</button></div>
+        </section>
+
+        <section class="bg-surface-lowest rounded-2xl shadow-cloud overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="data-table min-w-[1180px]">
+                    <thead><tr>
+                        <th>Ngày kiểm</th><th>Xí nghiệp</th><th>PO / Iman</th><th>Loại đơn hàng</th><th>Người kiểm</th><th class="text-right">SL chiếc</th><th class="text-right">Mẫu kiểm</th><th>Kết quả</th><th>Lỗi phát hiện</th><th>HĐKP</th><th class="text-right">Thao tác</th>
+                    </tr></thead>
+                    <tbody id="dataBody"></tbody>
+                </table>
+            </div>
+            <div id="emptyState" class="hidden py-16 text-center">
+                <div class="h-14 w-14 rounded-2xl bg-surface-low mx-auto flex items-center justify-center text-on-surface-variant"><span class="material-symbols-outlined text-3xl">inbox</span></div>
+                <h3 class="font-display font-bold mt-4">Chưa có dữ liệu phù hợp</h3>
+                <p class="text-sm text-on-surface-variant mt-1">Thử thay đổi bộ lọc hoặc đồng bộ dữ liệu mới.</p>
+            </div>
+            <div class="px-5 py-4 bg-surface-low flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div id="pagingInfo" class="text-sm text-on-surface-variant"></div>
+                <div class="flex items-center gap-2">
+                    <select id="pageSize" class="input-field py-2"><option>20</option><option>50</option><option>100</option></select>
+                    <button id="prevPage" class="btn-tertiary h-10 w-10 flex items-center justify-center"><span class="material-symbols-outlined">chevron_left</span></button>
+                    <span id="pageLabel" class="text-sm font-semibold min-w-20 text-center"></span>
+                    <button id="nextPage" class="btn-tertiary h-10 w-10 flex items-center justify-center"><span class="material-symbols-outlined">chevron_right</span></button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div id="drawerBackdrop" class="drawer-backdrop fixed inset-0 bg-on-surface/20 backdrop-blur-sm z-40"></div>
+    <aside id="detailDrawer" class="drawer-panel fixed right-0 top-0 bottom-0 z-50 w-full max-w-xl bg-surface-lowest shadow-2xl overflow-y-auto" aria-hidden="true">
+        <div class="sticky top-0 bg-white/90 backdrop-blur-xl z-10 px-6 py-5 flex items-center justify-between">
+            <div><div class="text-xs uppercase tracking-widest text-on-surface-variant font-bold">Chi tiết lần kiểm</div><h2 id="drawerTitle" class="font-display text-2xl font-bold mt-1"></h2></div>
+            <button id="closeDrawer" class="h-10 w-10 rounded-full bg-surface-low flex items-center justify-center"><span class="material-symbols-outlined">close</span></button>
+        </div>
+        <div id="drawerContent" class="p-6 space-y-6"></div>
+        <div id="drawerFooter" class="sticky bottom-0 bg-white/90 backdrop-blur-xl p-5 flex justify-end"></div>
+    </aside>
+
+    <div id="toast" class="toast"><span id="toastIcon" class="material-symbols-outlined"></span><span id="toastMessage"></span></div>
+    {% include '_base_scripts.html' %}
+    <script>
+        const state = { page: 1, pageSize: 20, totalPages: 1, rows: [] };
+        const el = id => document.getElementById(id);
+        const escapeHtml = value => String(value ?? '').replace(/[&<>'"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));
+        const numberFmt = value => value == null ? '—' : new Intl.NumberFormat('vi-VN').format(value);
+        const dateOnly = value => value ? new Date(`${value}T00:00:00`).toLocaleDateString('vi-VN') : '—';
+        const timeOnly = value => value ? new Date(value).toLocaleTimeString('vi-VN', {hour:'2-digit', minute:'2-digit'}) : '';
+        const resultMeta = code => ({'1':['PASS','status-pass'],'2':['PASS 2','status-pass2'],'0':['FAIL','status-fail'],'3':['N/A','status-na']}[String(code)] || ['Chưa có','status-na']);
+        const capMeta = status => ({not_required:['Không yêu cầu','status-na'],missing:['Chưa lập','status-fail'],draft:['Bản nháp','status-pass2'],completed:['Hoàn thành','status-pass']}[status] || ['Chưa lập','status-fail']);
+
+        function queryParams() {
+            const p = new URLSearchParams({page: state.page, page_size: state.pageSize});
+            [['date_from','dateFrom'],['date_to','dateTo'],['factory','factoryFilter'],['result','resultFilter'],['cap_status','capFilter'],['search','searchInput']].forEach(([key,id]) => { const value = el(id).value.trim(); if (value) p.set(key,value); });
+            return p;
+        }
+
+        function loadingRows() {
+            el('emptyState').classList.add('hidden');
+            el('dataBody').innerHTML = Array.from({length:6}, () => `<tr><td colspan="11"><div class="skeleton h-12 rounded-xl"></div></td></tr>`).join('');
+        }
+
+        async function loadFilters() {
+            const res = await fetch('/api/final-internal/filters');
+            if (!res.ok) return;
+            const data = await res.json();
+            (data.factories || []).forEach(v => el('factoryFilter').insertAdjacentHTML('beforeend', `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`));
+        }
+
+        async function loadData() {
+            loadingRows();
+            try {
+                const res = await fetch(`/api/final-internal?${queryParams()}`);
+                if (!res.ok) throw new Error((await res.json()).detail || 'Không tải được dữ liệu');
+                const data = await res.json();
+                state.rows = data.rows || [];
+                state.totalPages = data.paging.total_pages || 1;
+                renderSummary(data.summary || {});
+                renderRows();
+                renderPaging(data.paging);
+                renderLastSync(data.last_sync, data.sync_state);
+            } catch (error) {
+                el('dataBody').innerHTML = '';
+                el('emptyState').classList.remove('hidden');
+                showToast(error.message, 'error');
+            }
+        }
+
+        function renderSummary(s) {
+            el('metricTotal').textContent = numberFmt(s.total || 0);
+            el('metricPass').textContent = numberFmt(s.pass_count || 0);
+            el('metricPass2').textContent = numberFmt(s.pass2_count || 0);
+            el('metricFail').textContent = numberFmt(s.fail_count || 0);
+            el('metricPending').textContent = numberFmt(s.cap_pending_count || 0);
+        }
+
+        function defectTags(defects) {
+            if (!defects?.length) return '<span class="text-on-surface-variant">Không có</span>';
+            const shown = defects.slice(0, 2).map(d => `<span class="inline-flex px-2 py-1 rounded-lg bg-surface-high/70 text-xs font-semibold">${escapeHtml(d.error_code || 'Lỗi')} × ${numberFmt(d.amount)}</span>`).join(' ');
+            return `${shown}${defects.length > 2 ? ` <span class="text-xs text-primary font-semibold">+${defects.length - 2}</span>` : ''}`;
+        }
+
+        function capAction(row) {
+            if (!row.cap_required) return '<span class="text-xs text-on-surface-variant">Không yêu cầu</span>';
+            if (row.cap_status === 'completed' && row.cap_form) return `<a href="${escapeHtml(row.cap_form)}" target="_blank" onclick="event.stopPropagation()" class="btn-tertiary px-3 py-2 text-xs inline-flex items-center gap-1"><span class="material-symbols-outlined text-[17px]">picture_as_pdf</span>Xem HĐKP</a>`;
+            const label = row.cap_status === 'draft' ? 'Tiếp tục HĐKP' : 'Điền HĐKP 10.1';
+            return `<button onclick="event.stopPropagation(); openCap(${row.id})" class="btn-primary px-3 py-2 text-xs whitespace-nowrap">${label}</button>`;
+        }
+
+        function renderRows() {
+            const body = el('dataBody');
+            body.innerHTML = '';
+            el('emptyState').classList.toggle('hidden', state.rows.length > 0);
+            state.rows.forEach(row => {
+                const [resultLabel,resultClass] = resultMeta(row.final_status_code);
+                const [capLabel,capClass] = capMeta(row.cap_status);
+                body.insertAdjacentHTML('beforeend', `<tr class="table-row cursor-pointer" onclick="openDetail(${row.id})">
+                    <td><div class="font-semibold">${dateOnly(row.qa_check_date)}</div><div class="text-xs text-on-surface-variant mt-1">${timeOnly(row.source_created_at)}</div></td>
+                    <td><span class="font-semibold">${escapeHtml(row.factory || '—')}</span></td>
+                    <td><div class="font-semibold">${escapeHtml(row.po_code)}</div><div class="text-xs text-on-surface-variant mt-1">${escapeHtml(row.product_id || '—')}</div></td>
+                    <td class="max-w-[170px]"><span class="text-sm">${escapeHtml(row.order_type_display || '—')}</span></td>
+                    <td>${escapeHtml(row.inspector_name || '—')}</td>
+                    <td class="text-right font-semibold">${numberFmt(row.quantity_pcs)}</td>
+                    <td class="text-right font-semibold">${numberFmt(row.sample_count)}</td>
+                    <td><span class="badge ${resultClass}">${resultLabel}</span></td>
+                    <td class="max-w-[210px]"><div class="flex flex-wrap gap-1">${defectTags(row.defects)}</div></td>
+                    <td><span class="badge ${capClass}">${capLabel}</span></td>
+                    <td class="text-right">${capAction(row)}</td>
+                </tr>`);
+            });
+        }
+
+        function renderPaging(p) {
+            const start = p.total ? (p.page - 1) * p.page_size + 1 : 0;
+            const end = Math.min(p.total, p.page * p.page_size);
+            el('pagingInfo').textContent = `Hiển thị ${start}–${end} trong ${numberFmt(p.total)} bản ghi`;
+            el('pageLabel').textContent = `${p.page} / ${p.total_pages}`;
+            el('prevPage').disabled = p.page <= 1;
+            el('nextPage').disabled = p.page >= p.total_pages;
+        }
+
+        function renderLastSync(sync, live) {
+            const running = live?.running;
+            if (running) { el('lastSyncText').textContent = 'Đang đồng bộ dữ liệu…'; el('syncIcon')?.classList.add('animate-spin'); return; }
+            el('syncIcon')?.classList.remove('animate-spin');
+            if (!sync?.finished_at) return;
+            el('lastSyncText').textContent = `Cập nhật lần cuối: ${new Date(sync.finished_at).toLocaleString('vi-VN')}`;
+        }
+
+        function openDetail(id) {
+            const row = state.rows.find(item => item.id === id); if (!row) return;
+            const [resultLabel,resultClass] = resultMeta(row.final_status_code);
+            el('drawerTitle').textContent = `PO ${row.po_code}`;
+            const detail = (label,value) => `<div class="bg-surface-low rounded-xl p-4"><div class="text-[10px] uppercase tracking-widest font-bold text-on-surface-variant">${label}</div><div class="font-semibold mt-1.5">${escapeHtml(value || '—')}</div></div>`;
+            const defects = row.defects?.length ? row.defects.map(d => `<div class="bg-surface-low rounded-xl p-4"><div class="flex justify-between gap-4"><div><span class="font-bold text-primary">${escapeHtml(d.error_code || '')}</span><span class="font-semibold"> · ${escapeHtml(d.error_name || '')}</span></div><span class="font-bold">× ${numberFmt(d.amount)}</span></div>${d.description ? `<p class="text-sm text-on-surface-variant mt-2">${escapeHtml(d.description)}</p>` : ''}</div>`).join('') : '<p class="text-sm text-on-surface-variant">Không ghi nhận chi tiết lỗi.</p>';
+            const images = (row.image_urls || []).map(url => { const full = String(url).startsWith('http') ? url : `{{ source_base_url }}${url}`; return `<a href="${escapeHtml(full)}" target="_blank"><img src="${escapeHtml(full)}" class="h-24 w-24 object-cover rounded-xl bg-surface-low" loading="lazy" /></a>`; }).join('');
+            el('drawerContent').innerHTML = `<div class="flex items-center justify-between"><div><div class="text-sm text-on-surface-variant">${escapeHtml(row.product_id || '—')} · ${escapeHtml(row.factory || '—')}</div><div class="text-sm mt-1">${dateOnly(row.qa_check_date)} ${timeOnly(row.source_created_at)}</div></div><span class="badge ${resultClass}">${resultLabel}</span></div>
+                <div class="grid grid-cols-2 gap-3">${detail('Loại đơn hàng',row.order_type_display)}${detail('Người kiểm',row.inspector_name)}${detail('Số lượng chiếc',numberFmt(row.quantity_pcs))}${detail('Số mẫu bóc kiểm',numberFmt(row.sample_count))}${detail('Dò kim',row.metal_detection)}${detail('Đo thông số',row.measurement_result)}${detail('Đo phá hủy',row.destructive_measurement_result)}${detail('GTD – Ngoại quan',row.appearance_result)}</div>
+                <section><h3 class="font-display font-bold text-lg mb-3">Lỗi phát hiện</h3><div class="space-y-2">${defects}</div></section>
+                ${images ? `<section><h3 class="font-display font-bold text-lg mb-3">Hình ảnh kiểm tra</h3><div class="flex flex-wrap gap-3">${images}</div></section>` : ''}`;
+            el('drawerFooter').innerHTML = capAction(row);
+            el('drawerBackdrop').classList.add('open'); el('detailDrawer').classList.add('open'); el('detailDrawer').setAttribute('aria-hidden','false');
+        }
+
+        function closeDetail() { el('drawerBackdrop').classList.remove('open'); el('detailDrawer').classList.remove('open'); el('detailDrawer').setAttribute('aria-hidden','true'); }
+
+        async function openCap(id) {
+            try {
+                const res = await fetch(`/api/final-internal/${id}/cap`, {method:'POST'});
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.detail || 'Không thể tạo HĐKP');
+                window.location.href = data.url;
+            } catch (error) { showToast(error.message, 'error'); }
+        }
+
+        let searchTimer;
+        ['dateFrom','dateTo','factoryFilter','resultFilter','capFilter'].forEach(id => el(id).addEventListener('change', () => { state.page = 1; loadData(); }));
+        el('searchInput').addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(() => { state.page = 1; loadData(); }, 350); });
+        el('clearFilters').addEventListener('click', () => { ['dateFrom','dateTo','factoryFilter','resultFilter','capFilter','searchInput'].forEach(id => el(id).value = ''); state.page = 1; loadData(); });
+        el('pageSize').addEventListener('change', () => { state.pageSize = Number(el('pageSize').value); state.page = 1; loadData(); });
+        el('prevPage').addEventListener('click', () => { if (state.page > 1) { state.page--; loadData(); } });
+        el('nextPage').addEventListener('click', () => { if (state.page < state.totalPages) { state.page++; loadData(); } });
+        el('closeDrawer').addEventListener('click', closeDetail); el('drawerBackdrop').addEventListener('click', closeDetail);
+        el('syncBtn')?.addEventListener('click', async () => {
+            el('syncBtn').disabled = true; el('syncIcon').classList.add('animate-spin');
+            try { const res = await fetch('/api/final-internal/sync',{method:'POST'}); const data = await res.json(); if(!res.ok) throw new Error(data.detail); showToast(data.message); pollSync(); }
+            catch(error) { showToast(error.message || 'Không thể đồng bộ','error'); el('syncBtn').disabled = false; el('syncIcon').classList.remove('animate-spin'); }
+        });
+        async function pollSync() { const res = await fetch('/api/final-internal/sync-status'); const data = await res.json(); if(data.running) return setTimeout(pollSync,4000); el('syncBtn') && (el('syncBtn').disabled = false); el('syncIcon')?.classList.remove('animate-spin'); if(data.error) showToast(data.error,'error'); else { showToast('Đồng bộ Final hoàn tất'); loadFilters(); loadData(); } }
+
+        Promise.all([loadFilters(), loadData()]);
+    </script>
+</body>
+</html>

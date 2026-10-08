@@ -170,6 +170,27 @@
                 </div>
             </a>
 
+            <!-- Internal Final Module -->
+            <a href="/final-noi-bo" class="glass-card p-10 rounded-[3rem] group relative overflow-hidden">
+                {% if final_cap_pending %}
+                <span class="absolute top-7 right-7 px-3 py-1.5 rounded-full bg-orange-50 text-orange-700 text-[10px] uppercase tracking-wider font-black">
+                    {{ final_cap_pending }} HĐKP chờ xử lý
+                </span>
+                {% endif %}
+                <div
+                    class="w-16 h-16 bg-emerald-600 text-white rounded-2xl flex items-center justify-center mb-8 shadow-xl shadow-emerald-200 module-icon">
+                    <span class="material-symbols-outlined !text-4xl">assignment_turned_in</span>
+                </div>
+                <h3 class="text-2xl font-bold text-slate-800 mb-3 group-hover:text-emerald-700 transition-colors">Final nội bộ</h3>
+                <p class="text-slate-500 text-sm leading-relaxed mb-6">
+                    Theo dõi kết quả kiểm Final, lỗi phát hiện và HĐKP theo biểu mẫu 10.1.
+                </p>
+                <div class="flex items-center gap-2 text-emerald-700 font-bold text-sm">
+                    Truy cập Module
+                    <span class="material-symbols-outlined text-lg transition-transform group-hover:translate-x-1">arrow_forward</span>
+                </div>
+            </a>
+
             <!-- Coming Soon Block -->
             <div
                 class="glass-card p-10 rounded-[3rem] opacity-50 grayscale cursor-not-allowed flex flex-col items-center justify-center min-h-[300px] text-center">

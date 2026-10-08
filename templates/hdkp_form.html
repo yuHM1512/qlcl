@@ -74,7 +74,7 @@
                     <small>Error ID: {{error_id}}</small>
                 </div>
                 <div class="col-auto">
-                    <a href="/kpi-input" class="btn btn-light btn-sm">
+                    <a href="{{ return_url }}" class="btn btn-light btn-sm">
                         <i class="fas fa-arrow-left"></i> Quay lại
                     </a>
                 </div>
@@ -181,7 +181,7 @@
 
             <!-- Submit -->
             <div class="d-flex justify-content-between mb-4">
-                <button type="button" class="btn btn-secondary" onclick="window.location.href='/kpi-input'">
+                <button type="button" class="btn btn-secondary" onclick="window.location.href={{ return_url | tojson }}">
                     <i class="fas fa-times"></i> Hủy
                 </button>
                 <button type="submit" class="btn btn-primary">
@@ -520,7 +520,7 @@
                     
                     // Tự động redirect về trang "Thống kê sai sót" sau 2 giây
                     setTimeout(() => {
-                        window.location.href = '/view-kpi#pane-errors';
+                        window.location.href = {{ return_url | tojson }};
                     }, 2000);
                 } else {
                     showAlert(`Lỗi: ${result.detail || 'Không thể lưu dữ liệu'}`, 'error');

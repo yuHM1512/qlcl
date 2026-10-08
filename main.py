@@ -16,6 +16,7 @@ from urllib.parse import quote, unquote
 
 from flat_line_sync import fetch_sheet_values as fetch_flat_line_sheet_values
 from flat_line_sync import parse_flat_line_plans
+from final_internal_sync import FinalApiClient, sync_final_internal
 
 # Load environment variables from .env file
 from dotenv import load_dotenv
@@ -131,6 +132,26 @@ FLAT_LINE_SOURCES = {
     },
 }
 
+# --- Internal Final QA sync from po.hachiba.app ---
+FINAL_QA_API_BASE_URL = os.getenv("FINAL_QA_API_BASE_URL", "https://po.hachiba.app").rstrip("/")
+FINAL_QA_API_USERNAME = os.getenv("FINAL_QA_API_USERNAME", "").strip()
+FINAL_QA_API_PASSWORD = os.getenv("FINAL_QA_API_PASSWORD", "").strip()
+try:
+    FINAL_QA_SYNC_PAGE_SIZE = max(1, min(200, int(os.getenv("FINAL_QA_SYNC_PAGE_SIZE", "100"))))
+except ValueError:
+    FINAL_QA_SYNC_PAGE_SIZE = 100
+try:
+    FINAL_QA_SYNC_MAX_PAGES = max(0, int(os.getenv("FINAL_QA_SYNC_MAX_PAGES", "0")))
+except ValueError:
+    FINAL_QA_SYNC_MAX_PAGES = 0
+FINAL_QA_AUTO_SYNC_ENABLED = env_flag("FINAL_QA_AUTO_SYNC_ENABLED", default=False)
+try:
+    FINAL_QA_AUTO_SYNC_INTERVAL_MINUTES = max(
+        15, int(os.getenv("FINAL_QA_AUTO_SYNC_INTERVAL_MINUTES", "120"))
+    )
+except ValueError:
+    FINAL_QA_AUTO_SYNC_INTERVAL_MINUTES = 120
+
 DB_SCRIPTS_DIR = PathLib(__file__).resolve().parent / "db"
 GEMBA_CP_BASE_DIR = PathLib(__file__).resolve().parent / "gemba_cp"
 GEMBA_CP_STATIC_DIR = GEMBA_CP_BASE_DIR / "static"
@@ -151,6 +172,7 @@ SCHEMA_BOOTSTRAP_FILES = [
     "create_error_classification.sql",
     "create_error_catalog_versioning.sql",
     "create_hdkp_tables.sql",
+    "create_qa_final_internal.sql",
     "create_prod_plan.sql",
     "migrate_prod_plan_bo_phan_json.sql",
     "create_qc_output_sp_log.sql",
@@ -1389,12 +1411,87 @@ app.include_router(gemba_dashboard_router.router, dependencies=[Depends(require_
 app.include_router(gemba_admin_router.router, dependencies=[Depends(require_authenticated_api_user)])
 
 
+_final_sync_lock = threading.Lock()
+_final_sync_state: Dict[str, Any] = {
+    "running": False,
+    "started_at": None,
+    "finished_at": None,
+    "result": None,
+    "error": None,
+}
+
+
+def final_qa_sync_is_configured() -> bool:
+    return bool(FINAL_QA_API_BASE_URL and FINAL_QA_API_USERNAME and FINAL_QA_API_PASSWORD)
+
+
+def run_final_qa_sync(triggered_by: str = "system", max_pages: Optional[int] = None) -> Dict[str, Any]:
+    if not final_qa_sync_is_configured():
+        raise RuntimeError("Chưa cấu hình FINAL_QA_API_USERNAME và FINAL_QA_API_PASSWORD")
+    if not _final_sync_lock.acquire(blocking=False):
+        raise RuntimeError("Đồng bộ Final đang chạy")
+    _final_sync_state.update(
+        running=True,
+        started_at=datetime.now().isoformat(),
+        finished_at=None,
+        result=None,
+        error=None,
+    )
+    try:
+        effective_max_pages = max_pages
+        if effective_max_pages is None:
+            effective_max_pages = FINAL_QA_SYNC_MAX_PAGES or None
+        with FinalApiClient(
+            FINAL_QA_API_BASE_URL,
+            FINAL_QA_API_USERNAME,
+            FINAL_QA_API_PASSWORD,
+        ) as client:
+            result = sync_final_internal(
+                get_db_connection,
+                client,
+                page_size=FINAL_QA_SYNC_PAGE_SIZE,
+                max_pages=effective_max_pages,
+                triggered_by=triggered_by,
+            )
+        _final_sync_state["result"] = result
+        return result
+    except Exception as exc:
+        _final_sync_state["error"] = str(exc)
+        logger.exception("Internal Final sync failed")
+        raise
+    finally:
+        _final_sync_state["running"] = False
+        _final_sync_state["finished_at"] = datetime.now().isoformat()
+        _final_sync_lock.release()
+
+
+def _final_qa_auto_sync_loop() -> None:
+    while True:
+        try:
+            run_final_qa_sync(triggered_by="auto")
+        except RuntimeError as exc:
+            logger.warning("Internal Final auto-sync skipped: %s", exc)
+        except Exception:
+            pass
+        time.sleep(FINAL_QA_AUTO_SYNC_INTERVAL_MINUTES * 60)
+
+
+def start_final_qa_auto_sync_if_enabled() -> None:
+    if not FINAL_QA_AUTO_SYNC_ENABLED:
+        return
+    if not final_qa_sync_is_configured():
+        logger.warning("FINAL_QA_AUTO_SYNC_ENABLED but API credentials are missing")
+        return
+    threading.Thread(target=_final_qa_auto_sync_loop, daemon=True, name="final-qa-sync").start()
+
+
 def startup_auto_sync():
     from xndt_sync import start_auto_sync
     start_auto_sync(get_db_connection, DATABASE_URL)
     start_qtcn_auto_sync_if_enabled()
     start_xnv2_auto_sync_if_enabled()
     start_flat_line_auto_sync_if_enabled()
+    start_final_qa_auto_sync_if_enabled()
 
 
 @app.get("/")
@@ -1405,7 +1502,327 @@ def home(request: Request):
         response.delete_cookie("ma_nv")
         return response
 
-    return templates.TemplateResponse("index.html", {"request": request, "user": user_data})
+    final_cap_pending = 0
+    with get_db_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT COUNT(*)
+                FROM public.qa_final_inspection fi
+                LEFT JOIN public.input_error ie ON ie.id = fi.cap_error_id
+                WHERE fi.cap_required = TRUE
+                  AND (fi.cap_error_id IS NULL OR ie.cap_form IS NULL)
+                """
+            )
+            final_cap_pending = int(cur.fetchone()[0] or 0)
+    return templates.TemplateResponse(
+        "index.html",
+        {"request": request, "user": user_data, "final_cap_pending": final_cap_pending},
+    )
+
+
+def can_manage_final_sync(user: Optional[Dict]) -> bool:
+    if not user:
+        return False
+    return get_qc_role(user) == "QA_ADMIN" or (user.get("department") or "").upper() == "QAQT"
+
+
+@app.get("/final-noi-bo")
+def final_internal_page(request: Request):
+    user = get_authenticated_user(request)
+    if not user:
+        return redirect_to_login_for_current_path(request)
+    return templates.TemplateResponse(
+        "final_internal.html",
+        {
+            "request": request,
+            "user": user,
+            "can_sync": can_manage_final_sync(user),
+            "api_configured": final_qa_sync_is_configured(),
+            "source_base_url": FINAL_QA_API_BASE_URL,
+        },
+    )
+
+
+def _final_internal_where(
+    date_from: Optional[str],
+    date_to: Optional[str],
+    factory: Optional[str],
+    result: Optional[str],
+    cap_status: Optional[str],
+    search: Optional[str],
+) -> Tuple[str, List[Any]]:
+    clauses = ["1=1"]
+    params: List[Any] = []
+    if date_from:
+        clauses.append("fi.qa_check_date >= %s::date")
+        params.append(date_from)
+    if date_to:
+        clauses.append("fi.qa_check_date <= %s::date")
+        params.append(date_to)
+    if factory:
+        clauses.append("fi.factory = %s")
+        params.append(factory)
+    if result:
+        clauses.append("fi.final_status_code = %s")
+        params.append(result)
+    if cap_status == "not_required":
+        clauses.append("fi.cap_required = FALSE")
+    elif cap_status == "missing":
+        clauses.append("fi.cap_required = TRUE AND fi.cap_error_id IS NULL")
+    elif cap_status == "draft":
+        clauses.append(
+            "fi.cap_required = TRUE AND fi.cap_error_id IS NOT NULL "
+            "AND ie.cap_form IS NULL"
+        )
+    elif cap_status == "completed":
+        clauses.append("fi.cap_required = TRUE AND ie.cap_form IS NOT NULL")
+    if search:
+        clauses.append(
+            "(fi.po_code ILIKE %s OR fi.product_id ILIKE %s OR fi.inspector_name ILIKE %s)"
+        )
+        term = f"%{search.strip()}%"
+        params.extend([term, term, term])
+    return " AND ".join(clauses), params
+
+
+@app.get("/api/final-internal")
+def api_final_internal_list(
+    request: Request,
+    date_from: Optional[str] = Query(None),
+    date_to: Optional[str] = Query(None),
+    factory: Optional[str] = Query(None),
+    result: Optional[str] = Query(None, pattern="^(0|1|2|3)?$"),
+    cap_status: Optional[str] = Query(None, pattern="^(not_required|missing|draft|completed)?$"),
+    search: Optional[str] = Query(None),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+):
+    require_authenticated_api_user(request)
+    where_sql, params = _final_internal_where(
+        date_from, date_to, factory, result, cap_status, search
+    )
+    offset = (page - 1) * page_size
+    with get_db_connection() as conn:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(
+                f"""
+                SELECT COUNT(*) AS total,
+                       COUNT(*) FILTER (WHERE fi.final_status_code = '1') AS pass_count,
+                       COUNT(*) FILTER (WHERE fi.final_status_code = '2') AS pass2_count,
+                       COUNT(*) FILTER (WHERE fi.final_status_code = '0') AS fail_count,
+                       COUNT(*) FILTER (
+                           WHERE fi.cap_required = TRUE
+                             AND (fi.cap_error_id IS NULL OR ie.cap_form IS NULL)
+                       ) AS cap_pending_count
+                FROM public.qa_final_inspection fi
+                LEFT JOIN public.input_error ie ON ie.id = fi.cap_error_id
+                WHERE {where_sql}
+                """,
+                tuple(params),
+            )
+            summary = dict(cur.fetchone() or {})
+            cur.execute(
+                f"""
+                SELECT fi.*,
+                       ie.cap_form,
+                       CASE
+                           WHEN fi.cap_required = FALSE THEN 'not_required'
+                           WHEN fi.cap_error_id IS NULL THEN 'missing'
+                           WHEN ie.cap_form IS NOT NULL THEN 'completed'
+                           WHEN EXISTS (
+                               SELECT 1 FROM public.cap_mota cm WHERE cm.error_id = fi.cap_error_id
+                           ) THEN 'draft'
+                           ELSE 'missing'
+                       END AS cap_status,
+                       COALESCE((
+                           SELECT jsonb_agg(
+                               jsonb_build_object(
+                                   'id', fd.id,
+                                   'error_code', fd.error_code,
+                                   'error_name', fd.error_name,
+                                   'amount', fd.amount,
+                                   'description', fd.description,
+                                   'level', fd.level
+                               ) ORDER BY fd.id
+                           )
+                           FROM public.qa_final_defect fd
+                           WHERE fd.inspection_id = fi.id
+                       ), '[]'::jsonb) AS defects
+                FROM public.qa_final_inspection fi
+                LEFT JOIN public.input_error ie ON ie.id = fi.cap_error_id
+                WHERE {where_sql}
+                ORDER BY fi.qa_check_date DESC NULLS LAST,
+                         fi.source_created_at DESC NULLS LAST,
+                         fi.id DESC
+                LIMIT %s OFFSET %s
+                """,
+                tuple(params + [page_size, offset]),
+            )
+            rows = [dict(row) for row in cur.fetchall()]
+            cur.execute(
+                """
+                SELECT id, started_at, finished_at, status, plans_scanned,
+                       delegates_scanned, inspections_upserted, error_message
+                FROM public.qa_final_sync_run
+                ORDER BY id DESC LIMIT 1
+                """
+            )
+            last_sync = cur.fetchone()
+    total = int(summary.get("total") or 0)
+    return {
+        "rows": rows,
+        "summary": summary,
+        "paging": {
+            "page": page,
+            "page_size": page_size,
+            "total": total,
+            "total_pages": max(1, (total + page_size - 1) // page_size),
+        },
+        "last_sync": dict(last_sync) if last_sync else None,
+        "sync_state": dict(_final_sync_state),
+    }
+
+
+@app.get("/api/final-internal/filters")
+def api_final_internal_filters(request: Request):
+    require_authenticated_api_user(request)
+    with get_db_connection() as conn:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(
+                """
+                SELECT ARRAY_REMOVE(ARRAY_AGG(DISTINCT factory ORDER BY factory), NULL) AS factories,
+                       ARRAY_REMOVE(ARRAY_AGG(DISTINCT inspector_name ORDER BY inspector_name), NULL) AS inspectors,
+                       MIN(qa_check_date) AS min_date,
+                       MAX(qa_check_date) AS max_date
+                FROM public.qa_final_inspection
+                """
+            )
+            row = cur.fetchone() or {}
+    return dict(row)
+
+
+@app.get("/api/final-internal/sync-status")
+def api_final_internal_sync_status(request: Request):
+    require_authenticated_api_user(request)
+    return {"configured": final_qa_sync_is_configured(), **dict(_final_sync_state)}
+
+
+@app.post("/api/final-internal/sync", status_code=202)
+def api_final_internal_sync(request: Request):
+    user = require_authenticated_api_user(request)
+    if not can_manage_final_sync(user):
+        raise HTTPException(status_code=403, detail="Bạn không có quyền đồng bộ dữ liệu Final")
+    if not final_qa_sync_is_configured():
+        raise HTTPException(status_code=503, detail="Chưa cấu hình tài khoản API Final")
+    if _final_sync_state.get("running"):
+        return {"status": "running", "message": "Đồng bộ Final đang chạy"}
+
+    def worker() -> None:
+        try:
+            run_final_qa_sync(triggered_by=user.get("ma_nv") or "manual")
+        except Exception:
+            pass
+
+    threading.Thread(target=worker, daemon=True, name="final-qa-manual-sync").start()
+    return {"status": "started", "message": "Đã bắt đầu đồng bộ dữ liệu Final"}
+
+
+@app.post("/api/final-internal/{inspection_id}/cap")
+def api_final_internal_create_cap(inspection_id: int, request: Request):
+    user = require_authenticated_api_user(request)
+    with get_db_connection() as conn:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(
+                "SELECT * FROM public.qa_final_inspection WHERE id = %s FOR UPDATE",
+                (inspection_id,),
+            )
+            inspection = cur.fetchone()
+            if not inspection:
+                raise HTTPException(status_code=404, detail="Không tìm thấy lần kiểm Final")
+            if str(inspection.get("final_status_code") or "") not in {"0", "2"}:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Chỉ kết quả FAIL hoặc PASS 2 mới cần HĐKP 10.1",
+                )
+            if inspection.get("cap_error_id"):
+                return {
+                    "status": "exists",
+                    "error_id": inspection["cap_error_id"],
+                    "url": f"/hdkp-form/{inspection['cap_error_id']}?next=/final-noi-bo",
+                }
+
+            cur.execute(
+                """
+                SELECT STRING_AGG(
+                    CONCAT_WS(' - ', NULLIF(error_code, ''), NULLIF(error_name, ''))
+                    || CASE WHEN amount > 0 THEN ' × ' || amount::text ELSE '' END,
+                    '; ' ORDER BY id
+                ) AS defect_text
+                FROM public.qa_final_defect
+                WHERE inspection_id = %s
+                """,
+                (inspection_id,),
+            )
+            defect_text = (cur.fetchone() or {}).get("defect_text") or "Không có chi tiết lỗi"
+            chuc_vu = (user.get("department") or "").upper()
+            if chuc_vu not in {"QAPL", "QANL", "QAQT"}:
+                chuc_vu = "QAQT"
+            description = (
+                f"Kết quả Final {inspection.get('final_status_display') or ''} - "
+                f"PO {inspection.get('po_code') or ''}, Iman {inspection.get('product_id') or ''}. "
+                f"Lỗi ghi nhận: {defect_text}"
+            )
+            cur.execute(
+                """
+                INSERT INTO public.input_error (
+                    ma_nv, chuc_vu, ngay_ghi_nhan, task_name, phan_loai_loi,
+                    mo_ta, huong_giai_quyet, tien_do, ghi_chu
+                ) VALUES (%s, %s, %s, 'Kiểm pre-final/ Final', %s, %s,
+                          'Làm HĐKP 10.1', 'Chưa hoàn thành', %s)
+                RETURNING id
+                """,
+                (
+                    user["ma_nv"],
+                    chuc_vu,
+                    inspection.get("qa_check_date") or date.today(),
+                    inspection.get("final_status_display"),
+                    description,
+                    f"Nguồn Final API · history_id={inspection.get('source_history_id')}",
+                ),
+            )
+            error_id = int(cur.fetchone()["id"])
+            when_text = ""
+            if inspection.get("qa_check_date"):
+                when_text = inspection["qa_check_date"].strftime("%d/%m/%Y")
+            cur.execute(
+                """
+                INSERT INTO public.cap_mota (
+                    error_id, vd_what, vd_when, vd_who, vd_where,
+                    vd_how, vd_before, vd_importance
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                """,
+                (
+                    error_id,
+                    description,
+                    when_text,
+                    inspection.get("inspector_name"),
+                    inspection.get("factory"),
+                    defect_text,
+                    "",
+                    f"Kết quả Final {inspection.get('final_status_display') or ''} yêu cầu hành động khắc phục phòng ngừa.",
+                ),
+            )
+            cur.execute(
+                "UPDATE public.qa_final_inspection SET cap_error_id = %s WHERE id = %s",
+                (error_id, inspection_id),
+            )
+            conn.commit()
+    return {
+        "status": "created",
+        "error_id": error_id,
+        "url": f"/hdkp-form/{error_id}?next=/final-noi-bo",
+    }
 
 
 @app.get("/kpi")
@@ -2361,7 +2778,11 @@ def api_get_hdkp(error_id: int = Path(...)):
 
 
 @app.get("/hdkp-form/{error_id}")
-def hdkp_form_page(error_id: int = Path(...), request: Request = None):
+def hdkp_form_page(
+    error_id: int = Path(...),
+    request: Request = None,
+    next_url: Optional[str] = Query(None, alias="next"),
+):
     """Trang form nhập HĐKP cho một error"""
     ma_nv = request.cookies.get("ma_nv") if request else None
     if not ma_nv:
@@ -2382,10 +2803,12 @@ def hdkp_form_page(error_id: int = Path(...), request: Request = None):
             if not needs_hdkp:
                 raise HTTPException(status_code=400, detail="Lỗi này không yêu cầu HĐKP")
     
+    return_url = next_url if next_url and next_url.startswith("/") else "/view-kpi#pane-errors"
     return templates.TemplateResponse("hdkp_form.html", {
         "request": request,
         "error": dict(error_row),
-        "error_id": error_id
+        "error_id": error_id,
+        "return_url": return_url,
     })
 
 
