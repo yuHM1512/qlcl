@@ -202,7 +202,7 @@ def _upsert_inspection(
             str(history.get("status_quality_internal") or "").strip(),
             status_code,
             history.get("status_final_internal_display"),
-            status_code in {"0", "2"},
+            status_code == "0",
             json.dumps(history.get("anh_qa") or [], ensure_ascii=False),
             json.dumps(history, ensure_ascii=False),
             _parse_datetime(final_delegate.get("updated_at")),

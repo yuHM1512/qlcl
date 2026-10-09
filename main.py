@@ -173,6 +173,7 @@ SCHEMA_BOOTSTRAP_FILES = [
     "create_error_catalog_versioning.sql",
     "create_hdkp_tables.sql",
     "create_qa_final_internal.sql",
+    "migrate_qa_final_cap_fail_only.sql",
     "create_prod_plan.sql",
     "migrate_prod_plan_bo_phan_json.sql",
     "create_qc_output_sp_log.sql",
@@ -1740,10 +1741,10 @@ def api_final_internal_create_cap(inspection_id: int, request: Request):
             inspection = cur.fetchone()
             if not inspection:
                 raise HTTPException(status_code=404, detail="Không tìm thấy lần kiểm Final")
-            if str(inspection.get("final_status_code") or "") not in {"0", "2"}:
+            if str(inspection.get("final_status_code") or "") != "0":
                 raise HTTPException(
                     status_code=400,
-                    detail="Chỉ kết quả FAIL hoặc PASS 2 mới cần HĐKP 10.1",
+                    detail="Chỉ kết quả FAIL mới cần HĐKP 10.1",
                 )
             if inspection.get("cap_error_id"):
                 return {

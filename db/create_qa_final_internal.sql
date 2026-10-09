@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS public.qa_final_inspection (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     CONSTRAINT qa_final_cap_status_check CHECK (
-        cap_required = (final_status_code IN ('0', '2'))
+        cap_required = (final_status_code = '0')
     )
 );
 
