@@ -34,6 +34,7 @@
         /* Role badge colors */
         .role-qa-admin { background: linear-gradient(135deg, #0040a1, #0056d2); color: #fff; }
         .role-factory-admin { background: #dbeafe; color: #1e40af; }
+        .role-final-cap { background: #ffedd5; color: #9a3412; }
         .role-qc { background: #d1fae5; color: #065f46; }
         .role-none { background: #f3f4f6; color: #9ca3af; }
 
@@ -76,7 +77,7 @@
                 <div>
                     <h2 class="text-3xl font-display font-bold text-on-surface tracking-tight mb-1">Tài khoản & phân quyền</h2>
                     <p class="text-sm text-on-surface-variant">
-                        {% if is_qa_admin %}Quản lý tài khoản và phân quyền QC, FACTORY_ADMIN, QA_ADMIN{% else %}Quản lý tài khoản QC thuộc {{ user.don_vi }}{% endif %}
+                        {% if is_qa_admin %}Quản lý tài khoản và phân quyền QC, FINAL_CAP, FACTORY_ADMIN, QA_ADMIN{% else %}Quản lý tài khoản QC thuộc {{ user.don_vi }}{% endif %}
                     </p>
                 </div>
                 <button onclick="openModal()" class="btn-primary px-5 py-3 font-semibold text-sm flex items-center gap-2 self-start">
@@ -116,6 +117,7 @@
                         <option value="">Tất cả quyền</option>
                         <option value="QA_ADMIN">QA_ADMIN</option>
                         <option value="FACTORY_ADMIN">FACTORY_ADMIN</option>
+                        <option value="FINAL_CAP">FINAL_CAP</option>
                         <option value="QC">QC</option>
                         <option value="__none__">Chưa cấp quyền</option>
                     </select>
@@ -191,6 +193,7 @@
                     <select id="fQCRole" class="input-field">
                         <option value="QC">QC — Nhập liệu & báo cáo Xí nghiệp</option>
                         {% if is_qa_admin %}
+                        <option value="FINAL_CAP">FINAL_CAP — Nhập HĐKP Final theo Xí nghiệp</option>
                         <option value="FACTORY_ADMIN">FACTORY_ADMIN — Kế hoạch Xí nghiệp</option>
                         <option value="QA_ADMIN">QA_ADMIN — Quản trị toàn bộ</option>
                         {% endif %}
@@ -418,6 +421,7 @@
         function getRoleBadge(role) {
             if (role === 'QA_ADMIN') return '<span class="badge role-qa-admin">QA_ADMIN</span>';
             if (role === 'FACTORY_ADMIN') return '<span class="badge role-factory-admin">FACTORY_ADMIN</span>';
+            if (role === 'FINAL_CAP') return '<span class="badge role-final-cap">FINAL_CAP</span>';
             if (role === 'QC') return '<span class="badge role-qc">QC</span>';
             return '<span class="badge role-none">Chưa cấp</span>';
         }
@@ -491,7 +495,7 @@
             const fields = [
                 { id: 'fQCMaNV', value: payload.ma_nv },
                 { id: 'fQCHoTen', value: payload.ho_ten },
-                { id: 'fQCDonVi', value: ['QC', 'FACTORY_ADMIN'].includes(payload.qc_role) ? payload.don_vi : true },
+                { id: 'fQCDonVi', value: ['QC', 'FINAL_CAP', 'FACTORY_ADMIN'].includes(payload.qc_role) ? payload.don_vi : true },
                 { id: 'fQCChucVu', value: payload.chuc_vu },
             ];
             let valid = true;

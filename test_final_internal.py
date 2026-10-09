@@ -27,6 +27,17 @@ class FinalInternalTests(unittest.TestCase):
         self.assertIn('detail="Chỉ kết quả FAIL mới cần HĐKP 10.1"', app_source)
         self.assertIn('status_code == "0"', sync_source)
 
+    def test_final_cap_editors_are_factory_scoped(self):
+        app_source = Path("main.py").read_text(encoding="utf-8")
+        migration = Path("db/migrate_final_cap_editors.sql").read_text(encoding="utf-8")
+        self.assertIn('FINAL_CAP_ROLE = "FINAL_CAP"', app_source)
+        self.assertIn('"XN1-V1": "XN01"', app_source)
+        self.assertIn('"XN2": "XN02"', app_source)
+        self.assertIn('"XN3": "XN03"', app_source)
+        self.assertIn('"XNDT": "DT01"', app_source)
+        for employee_code in ("H3853", "X0066", "Đ0051", "D9022", "L9003"):
+            self.assertIn(employee_code, migration)
+
     def test_final_ui_contains_cap_and_sync_flows(self):
         html = Path("templates/final_internal.html").read_text(encoding="utf-8")
         self.assertIn("Final nội bộ", html)

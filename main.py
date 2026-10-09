@@ -152,6 +152,14 @@ try:
 except ValueError:
     FINAL_QA_AUTO_SYNC_INTERVAL_MINUTES = 120
 
+FINAL_CAP_ROLE = "FINAL_CAP"
+FINAL_FACTORY_BY_DON_VI = {
+    "XN1-V1": "XN01",
+    "XN2": "XN02",
+    "XN3": "XN03",
+    "XNDT": "DT01",
+}
+
 DB_SCRIPTS_DIR = PathLib(__file__).resolve().parent / "db"
 GEMBA_CP_BASE_DIR = PathLib(__file__).resolve().parent / "gemba_cp"
 GEMBA_CP_STATIC_DIR = GEMBA_CP_BASE_DIR / "static"
@@ -174,6 +182,7 @@ SCHEMA_BOOTSTRAP_FILES = [
     "create_hdkp_tables.sql",
     "create_qa_final_internal.sql",
     "migrate_qa_final_cap_fail_only.sql",
+    "migrate_final_cap_editors.sql",
     "create_prod_plan.sql",
     "migrate_prod_plan_bo_phan_json.sql",
     "create_qc_output_sp_log.sql",
@@ -460,6 +469,43 @@ QC_PLAN_ROLES = {"QA_ADMIN", "FACTORY_ADMIN"}
 
 def get_qc_role(user: Optional[Dict]) -> str:
     return ((user or {}).get("qc_role") or "").upper()
+
+
+def get_final_factory_scope(user: Optional[Dict]) -> Optional[str]:
+    """Return the source-API factory code assigned to a Final CAP editor."""
+    if get_qc_role(user) != FINAL_CAP_ROLE:
+        return None
+    don_vi = ((user or {}).get("don_vi") or "").strip()
+    factory = FINAL_FACTORY_BY_DON_VI.get(don_vi)
+    if not factory:
+        raise HTTPException(status_code=403, detail="Tài khoản chưa được gán Xí nghiệp Final hợp lệ")
+    return factory
+
+
+def require_final_cap_access(user: Dict, *, factory: Optional[str] = None) -> Optional[str]:
+    """Allow QA admins globally and Final CAP editors only inside their factory."""
+    role = get_qc_role(user)
+    if role == FINAL_CAP_ROLE:
+        scoped_factory = get_final_factory_scope(user)
+        if factory is not None and factory != scoped_factory:
+            raise HTTPException(status_code=403, detail="Không có quyền thao tác dữ liệu Final của Xí nghiệp khác")
+        return scoped_factory
+    if can_manage_final_sync(user):
+        return None
+    raise HTTPException(status_code=403, detail="Tài khoản không có quyền nhập HĐKP Final")
+
+
+def check_final_hdkp_error_access(user: Dict, error_id: int) -> None:
+    """Scope Final-linked HĐKP while leaving legacy non-Final HĐKP unchanged."""
+    with get_db_connection() as conn:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(
+                "SELECT factory FROM public.qa_final_inspection WHERE cap_error_id = %s",
+                (error_id,),
+            )
+            inspection = cur.fetchone()
+    if inspection:
+        require_final_cap_access(user, factory=inspection.get("factory"))
 
 
 def is_qc_don_vi_scoped_role(user: Optional[Dict]) -> bool:
@@ -1412,6 +1458,38 @@ app.include_router(gemba_dashboard_router.router, dependencies=[Depends(require_
 app.include_router(gemba_admin_router.router, dependencies=[Depends(require_authenticated_api_user)])
 
 
+FINAL_CAP_PUBLIC_PATHS = {"/", "/login", "/logout", "/healthz", "/favicon.ico"}
+FINAL_CAP_ALLOWED_PREFIXES = (
+    "/final-noi-bo",
+    "/api/final-internal",
+    "/hdkp-form/",
+    "/api/hdkp/",
+    "/api/upload-image",
+    "/api/pdf/",
+    "/api/images/",
+    "/templates/",
+    "/static/",
+)
+
+
+@app.middleware("http")
+async def restrict_final_cap_editor_routes(request: Request, call_next):
+    """Keep FINAL_CAP accounts inside the Final internal workflow."""
+    path = request.url.path
+    if path in FINAL_CAP_PUBLIC_PATHS or path.startswith(("/templates/", "/static/")):
+        return await call_next(request)
+    if not request.cookies.get("ma_nv"):
+        return await call_next(request)
+    user = get_authenticated_user(request)
+    if get_qc_role(user) != FINAL_CAP_ROLE:
+        return await call_next(request)
+    if path.startswith(FINAL_CAP_ALLOWED_PREFIXES):
+        return await call_next(request)
+    if path.startswith("/api/"):
+        return JSONResponse(status_code=403, content={"detail": "Tài khoản chỉ được truy cập module Final nội bộ"})
+    return RedirectResponse(url="/final-noi-bo", status_code=303)
+
+
 _final_sync_lock = threading.Lock()
 _final_sync_state: Dict[str, Any] = {
     "running": False,
@@ -1503,22 +1581,32 @@ def home(request: Request):
         response.delete_cookie("ma_nv")
         return response
 
+    final_only = get_qc_role(user_data) == FINAL_CAP_ROLE
+    final_factory_scope = get_final_factory_scope(user_data)
     final_cap_pending = 0
     with get_db_connection() as conn:
         with conn.cursor() as cur:
-            cur.execute(
-                """
+            pending_sql = """
                 SELECT COUNT(*)
                 FROM public.qa_final_inspection fi
                 LEFT JOIN public.input_error ie ON ie.id = fi.cap_error_id
                 WHERE fi.cap_required = TRUE
                   AND (fi.cap_error_id IS NULL OR ie.cap_form IS NULL)
-                """
-            )
+            """
+            pending_params: List[Any] = []
+            if final_factory_scope:
+                pending_sql += " AND fi.factory = %s"
+                pending_params.append(final_factory_scope)
+            cur.execute(pending_sql, tuple(pending_params))
             final_cap_pending = int(cur.fetchone()[0] or 0)
     return templates.TemplateResponse(
         "index.html",
-        {"request": request, "user": user_data, "final_cap_pending": final_cap_pending},
+        {
+            "request": request,
+            "user": user_data,
+            "final_cap_pending": final_cap_pending,
+            "final_only": final_only,
+        },
     )
 
 
@@ -1541,6 +1629,7 @@ def final_internal_page(request: Request):
             "can_sync": can_manage_final_sync(user),
             "api_configured": final_qa_sync_is_configured(),
             "source_base_url": FINAL_QA_API_BASE_URL,
+            "factory_scope": get_final_factory_scope(user),
         },
     )
 
@@ -1552,6 +1641,7 @@ def _final_internal_where(
     result: Optional[str],
     cap_status: Optional[str],
     search: Optional[str],
+    factory_scope: Optional[str] = None,
 ) -> Tuple[str, List[Any]]:
     clauses = ["1=1"]
     params: List[Any] = []
@@ -1561,7 +1651,10 @@ def _final_internal_where(
     if date_to:
         clauses.append("fi.qa_check_date <= %s::date")
         params.append(date_to)
-    if factory:
+    if factory_scope:
+        clauses.append("fi.factory = %s")
+        params.append(factory_scope)
+    elif factory:
         clauses.append("fi.factory = %s")
         params.append(factory)
     if result:
@@ -1599,9 +1692,10 @@ def api_final_internal_list(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
 ):
-    require_authenticated_api_user(request)
+    user = require_authenticated_api_user(request)
+    factory_scope = get_final_factory_scope(user)
     where_sql, params = _final_internal_where(
-        date_from, date_to, factory, result, cap_status, search
+        date_from, date_to, factory, result, cap_status, search, factory_scope
     )
     offset = (page - 1) * page_size
     with get_db_connection() as conn:
@@ -1687,7 +1781,8 @@ def api_final_internal_list(
 
 @app.get("/api/final-internal/filters")
 def api_final_internal_filters(request: Request):
-    require_authenticated_api_user(request)
+    user = require_authenticated_api_user(request)
+    factory_scope = get_final_factory_scope(user)
     with get_db_connection() as conn:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute(
@@ -1697,7 +1792,9 @@ def api_final_internal_filters(request: Request):
                        MIN(qa_check_date) AS min_date,
                        MAX(qa_check_date) AS max_date
                 FROM public.qa_final_inspection
-                """
+                WHERE (%s IS NULL OR factory = %s)
+                """,
+                (factory_scope, factory_scope),
             )
             row = cur.fetchone() or {}
     return dict(row)
@@ -1741,6 +1838,7 @@ def api_final_internal_create_cap(inspection_id: int, request: Request):
             inspection = cur.fetchone()
             if not inspection:
                 raise HTTPException(status_code=404, detail="Không tìm thấy lần kiểm Final")
+            require_final_cap_access(user, factory=inspection.get("factory"))
             if str(inspection.get("final_status_code") or "") != "0":
                 raise HTTPException(
                     status_code=400,
@@ -2749,8 +2847,10 @@ def api_get_error(error_id: int = Path(...)):
 
 
 @app.get("/api/hdkp/{error_id}")
-def api_get_hdkp(error_id: int = Path(...)):
+def api_get_hdkp(error_id: int = Path(...), request: Request = None):
     """Lấy dữ liệu HĐKP đã lưu cho một error"""
+    user = require_authenticated_api_user(request)
+    check_final_hdkp_error_access(user, error_id)
     with get_db_connection() as conn:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             # Lấy Section I: Mô tả vấn đề
@@ -2785,9 +2885,10 @@ def hdkp_form_page(
     next_url: Optional[str] = Query(None, alias="next"),
 ):
     """Trang form nhập HĐKP cho một error"""
-    ma_nv = request.cookies.get("ma_nv") if request else None
-    if not ma_nv:
+    user = get_authenticated_user(request) if request else None
+    if not user:
         return RedirectResponse(url="/login", status_code=303)
+    check_final_hdkp_error_access(user, error_id)
     
     with get_db_connection() as conn:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
@@ -2804,7 +2905,10 @@ def hdkp_form_page(
             if not needs_hdkp:
                 raise HTTPException(status_code=400, detail="Lỗi này không yêu cầu HĐKP")
     
-    return_url = next_url if next_url and next_url.startswith("/") else "/view-kpi#pane-errors"
+    if get_qc_role(user) == FINAL_CAP_ROLE:
+        return_url = "/final-noi-bo"
+    else:
+        return_url = next_url if next_url and next_url.startswith("/") else "/view-kpi#pane-errors"
     return templates.TemplateResponse("hdkp_form.html", {
         "request": request,
         "error": dict(error_row),
@@ -2818,9 +2922,8 @@ async def api_save_hdkp(error_id: int = Path(...), request: Request = None):
     """
     Lưu thông tin HĐKP cho một error vào 3 tables: cap_mota, cap_kehoach, cap_chitiet
     """
-    ma_nv = request.cookies.get("ma_nv")
-    if not ma_nv:
-        raise HTTPException(status_code=401, detail="Chưa đăng nhập")
+    user = require_authenticated_api_user(request)
+    check_final_hdkp_error_access(user, error_id)
     
     payload = await request.json()
     
@@ -2958,9 +3061,8 @@ async def api_regenerate_hdkp_pdf(error_id: int = Path(...), request: Request = 
     """
     Tạo lại PDF HĐKP từ dữ liệu đã có (để kiểm tra lề và format).
     """
-    ma_nv = request.cookies.get("ma_nv")
-    if not ma_nv:
-        raise HTTPException(status_code=401, detail="Chưa đăng nhập")
+    user = require_authenticated_api_user(request)
+    check_final_hdkp_error_access(user, error_id)
     
     with get_db_connection() as conn:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
@@ -3391,6 +3493,7 @@ async def upload_image(request: Request, file: UploadFile = File(...)):
     Upload hình ảnh cho HĐKP.
     Returns: URL của file đã upload
     """
+    require_authenticated_api_user(request)
     # Kiá»ƒm tra file type
     allowed_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'}
     file_ext = PathLib(file.filename).suffix.lower()
@@ -4349,10 +4452,10 @@ def get_qc_employees(request: Request):
 def upsert_qc_employee(payload: QCEmployee, request: Request):
     actor = require_employee_mgmt_user(request)
     actor_role = get_qc_role(actor)
-    if payload.qc_role not in QC_KNOWN_ROLES | {None}:
+    if payload.qc_role not in QC_KNOWN_ROLES | {FINAL_CAP_ROLE, None}:
         raise HTTPException(status_code=422, detail="Role không hợp lệ")
-    if payload.qc_role in QC_DON_VI_SCOPED_ROLES and payload.don_vi not in DON_VI_OPTIONS:
-        raise HTTPException(status_code=422, detail="QC và FACTORY_ADMIN phải được gán Xí nghiệp hợp lệ")
+    if payload.qc_role in QC_DON_VI_SCOPED_ROLES | {FINAL_CAP_ROLE} and payload.don_vi not in DON_VI_OPTIONS:
+        raise HTTPException(status_code=422, detail="Quyền theo Xí nghiệp phải được gán đơn vị hợp lệ")
     if not payload.ma_nv.strip() or not payload.ho_ten.strip() or not payload.chuc_vu.strip():
         raise HTTPException(status_code=422, detail="Thiếu mã nhân viên, họ tên hoặc chức vụ")
     if actor_role == "QA_ADMIN" and payload.ma_nv == actor['ma_nv'] and payload.qc_role != 'QA_ADMIN':

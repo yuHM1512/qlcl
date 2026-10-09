@@ -53,6 +53,12 @@
         <section class="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
             <div>
                 <p class="text-on-surface-variant max-w-3xl leading-relaxed">Theo dõi từng đợt kiểm Final được đồng bộ từ hệ thống PO. Chỉ kết quả FAIL cần hoàn thành HĐKP theo biểu mẫu Hachiba-QT-10.1/BM1.</p>
+                {% if factory_scope %}
+                <div class="mt-3 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1.5 text-xs font-bold text-primary">
+                    <span class="material-symbols-outlined text-[16px]">factory</span>
+                    Phạm vi: {{ user.don_vi }}
+                </div>
+                {% endif %}
             </div>
             <div class="text-xs text-on-surface-variant flex items-center gap-2">
                 <span class="material-symbols-outlined text-[18px]">schedule</span>
