@@ -1,0 +1,1203 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bản tin tuần - QLCL KPI</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0040a1;
+            --primary-container: #0056d2;
+            --surface: #f5f6fa;
+            --navy-950: #111936;
+            --navy-900: #182348;
+            --navy-850: #202d55;
+            --navy-800: #29365f;
+            --navy-700: #3a4870;
+            --text-soft: #cbd5e1;
+            --success: #27df91;
+            --warning: #ffd166;
+            --danger: #ff6b6b;
+            --info: #55c2ff;
+        }
+
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            background: var(--surface);
+            color: #191c1d;
+            font-family: "Segoe UI Variable", "Segoe UI", "Noto Sans", Arial, sans-serif;
+            font-size: 16px;
+            line-height: 1.45;
+            text-rendering: optimizeLegibility;
+            -webkit-font-smoothing: antialiased;
+            font-synthesis: none;
+        }
+
+        .navbar-brand img { height: 32px; }
+        .page-header {
+            background: linear-gradient(135deg, #2c3e50 0%, #3498db 50%, #9b59b6 100%);
+            color: #fff;
+            padding: 26px 0;
+        }
+        .page-header h1 { font-size: 1.85rem; font-weight: 750; line-height: 1.25; margin: 0 0 6px; }
+        .page-header p { margin: 0; opacity: .95; font-size: 1.02rem; }
+        .header-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 13px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, .15);
+            backdrop-filter: blur(12px);
+            font-size: .86rem;
+            font-weight: 700;
+        }
+
+        .bulletin-shell { padding: 24px; }
+        .bulletin-frame {
+            max-width: 1600px;
+            margin: 0 auto;
+            border-radius: 20px;
+            box-shadow: 0 18px 45px rgba(17, 25, 54, .18);
+            overflow: hidden;
+            background: var(--navy-950);
+        }
+        .bulletin-canvas {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            min-height: 720px;
+            padding: 18px;
+            overflow: hidden;
+            color: #f8fafc;
+            background:
+                radial-gradient(circle at 95% 4%, rgba(85, 194, 255, .13), transparent 26%),
+                radial-gradient(circle at 4% 95%, rgba(156, 180, 254, .10), transparent 28%),
+                linear-gradient(145deg, #111936 0%, #182348 50%, #101832 100%);
+        }
+        .bulletin-grid {
+            position: relative;
+            z-index: 1;
+            display: grid;
+            height: 100%;
+            grid-template-columns: 210px minmax(0, 1fr) 350px;
+            grid-template-rows: 236px minmax(0, 1fr);
+            gap: 12px;
+        }
+
+        .report-panel {
+            min-width: 0;
+            min-height: 0;
+            border-radius: 15px;
+            background: rgba(36, 49, 91, .82);
+            box-shadow: inset 0 0 0 1px rgba(203, 213, 225, .10);
+            overflow: hidden;
+        }
+        .panel-heading {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            min-height: 42px;
+            padding: 10px 14px;
+            background: rgba(10, 18, 46, .42);
+        }
+        .panel-title {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            margin: 0;
+            font-size: .98rem;
+            font-weight: 750;
+            letter-spacing: .015em;
+        }
+        .panel-title i { color: var(--info); }
+        .panel-meta { color: #b8c5dc; font-size: .76rem; font-weight: 600; }
+
+        .identity-panel {
+            grid-column: 1;
+            grid-row: 1 / 3;
+            display: flex;
+            flex-direction: column;
+            padding: 20px 16px;
+            text-align: center;
+            background: linear-gradient(180deg, rgba(41, 54, 95, .98), rgba(24, 35, 72, .98));
+        }
+        .identity-logo {
+            width: 78px;
+            height: 78px;
+            margin: 0 auto 18px;
+            display: grid;
+            place-items: center;
+            border-radius: 24px;
+            background: linear-gradient(145deg, rgba(85, 194, 255, .24), rgba(0, 64, 161, .36));
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .12);
+            font-size: 2rem;
+            color: #fff;
+        }
+        .identity-eyebrow {
+            color: #9fb0ce;
+            font-size: .75rem;
+            font-weight: 800;
+            letter-spacing: .16em;
+            text-transform: uppercase;
+        }
+        .identity-title {
+            margin: 7px 0 2px;
+            font-family: "Segoe UI Variable", "Segoe UI", "Noto Sans", Arial, sans-serif;
+            font-size: 1.68rem;
+            font-weight: 750;
+            letter-spacing: -.03em;
+        }
+        .identity-subtitle { color: #c5d0e4; font-size: .85rem; }
+        .week-block {
+            margin: 28px -2px 0;
+            padding: 18px 10px;
+            border-radius: 15px;
+            background: rgba(8, 15, 39, .42);
+        }
+        .week-label { color: #b7c5dc; font-size: .75rem; text-transform: uppercase; letter-spacing: .12em; }
+        .week-value { margin: 5px 0; font-size: 1.48rem; font-weight: 750; }
+        .week-range { color: #d8e0ec; font-size: .8rem; }
+        .identity-summary {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin-top: 14px;
+        }
+        .summary-tile {
+            padding: 10px 6px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, .055);
+        }
+        .summary-tile strong { display: block; font-size: 1.2rem; font-weight: 750; }
+        .summary-tile span { color: #b7c5dc; font-size: .7rem; }
+        .identity-footer {
+            margin-top: auto;
+            padding-top: 16px;
+            color: #aab8d2;
+            font-size: .73rem;
+            line-height: 1.55;
+        }
+        .identity-footer strong { color: #fff; font-weight: 700; }
+
+        .kpi-panel { grid-column: 2 / 4; grid-row: 1; }
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: 1.1fr 1fr 1.05fr;
+            gap: 10px;
+            height: calc(100% - 42px);
+            padding: 10px;
+        }
+        .kpi-card {
+            position: relative;
+            min-width: 0;
+            padding: 13px;
+            border-radius: 13px;
+            background: rgba(9, 17, 44, .42);
+            overflow: hidden;
+        }
+        .kpi-card::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--accent, var(--info));
+        }
+        .kpi-card-label {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            color: #9fb0ce;
+            font-size: .72rem;
+            font-weight: 800;
+            letter-spacing: .09em;
+            text-transform: uppercase;
+        }
+        .kpi-source {
+            color: #9fb0ce;
+            text-decoration: none;
+            opacity: .9;
+        }
+        .kpi-source.disabled { opacity: .32; pointer-events: none; }
+        .metric-row {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 0;
+        }
+        .metric-row + .metric-row { border-top: 1px solid rgba(203, 213, 225, .09); }
+        .metric-name { font-size: .8rem; font-weight: 700; line-height: 1.35; }
+        .metric-note { margin-top: 3px; color: #b6c4dc; font-size: .69rem; line-height: 1.3; }
+        .metric-value { font-size: 1.38rem; font-weight: 750; white-space: nowrap; }
+        .metric-value.good { color: var(--success); }
+        .metric-value.warning { color: var(--warning); }
+        .metric-value.danger { color: var(--danger); }
+        .metric-value.neutral { color: var(--info); }
+        .cause-list {
+            max-height: 62px;
+            margin: 3px 0 0;
+            padding-left: 17px;
+            color: #d7dfed;
+            font-size: .71rem;
+            line-height: 1.4;
+            overflow: hidden;
+        }
+        .empty-note { color: #aebbd1; font-size: .72rem; font-style: italic; }
+
+        .issues-panel { grid-column: 2; grid-row: 2; display: flex; flex-direction: column; }
+        .issues-wrap { flex: 1; min-height: 0; overflow: auto; }
+        .issues-table { width: 100%; border-collapse: separate; border-spacing: 0; table-layout: fixed; }
+        .issues-table th {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            padding: 9px 8px;
+            background: #334265;
+            color: #bac6db;
+            font-size: .67rem;
+            font-weight: 800;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+        }
+        .issues-table td {
+            padding: 9px 8px;
+            color: #e5eaf3;
+            font-size: .72rem;
+            line-height: 1.38;
+            vertical-align: middle;
+            background: rgba(255, 255, 255, .018);
+            border-top: 1px solid rgba(203, 213, 225, .07);
+        }
+        .issues-table tbody tr:hover td { background: rgba(85, 194, 255, .06); }
+        .issues-table tr.is-overdue td { background: rgba(255, 107, 107, .055); }
+        .issue-id { color: var(--info); font-weight: 800; }
+        .clamp-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .topic-badge, .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            max-width: 100%;
+            padding: 4px 7px;
+            border-radius: 999px;
+            font-size: .65rem;
+            font-weight: 800;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .topic-final { color: #dfb5ff; background: rgba(183, 104, 255, .15); }
+        .topic-endline { color: #ff9d8d; background: rgba(255, 107, 107, .14); }
+        .topic-complaint { color: #ffd166; background: rgba(255, 209, 102, .14); }
+        .topic-survey { color: #8fe3ff; background: rgba(85, 194, 255, .14); }
+        .topic-audit { color: #b9c7ff; background: rgba(156, 180, 254, .14); }
+        .topic-production { color: #7ee3ba; background: rgba(39, 223, 145, .14); }
+        .topic-default { color: #d9e0ec; background: rgba(203, 213, 225, .12); }
+        .status-new { color: #ff8e8e; background: rgba(255, 107, 107, .14); }
+        .status-doing { color: #ffe095; background: rgba(255, 209, 102, .14); }
+        .status-done { color: #70edb5; background: rgba(39, 223, 145, .14); }
+        .status-overdue { color: #fff; background: rgba(255, 107, 107, .68); }
+
+        .right-stack {
+            grid-column: 3;
+            grid-row: 2;
+            display: grid;
+            grid-template-rows: minmax(132px, .78fr) minmax(150px, 1fr) auto;
+            gap: 12px;
+            min-height: 0;
+        }
+        .compact-body { padding: 10px 12px; }
+        .reminder-table { width: 100%; border-collapse: collapse; }
+        .reminder-table th {
+            padding: 5px 6px 7px;
+            color: #9fb0ce;
+            font-size: .65rem;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+        .reminder-table td {
+            padding: 7px 6px;
+            font-size: .7rem;
+            line-height: 1.35;
+            border-top: 1px solid rgba(203, 213, 225, .08);
+        }
+        .reminder-owner {
+            display: inline-grid;
+            place-items: center;
+            min-width: 28px;
+            height: 24px;
+            padding: 0 6px;
+            border-radius: 8px;
+            background: rgba(85, 194, 255, .13);
+            color: var(--info);
+            font-weight: 900;
+        }
+        .alert-list {
+            display: grid;
+            gap: 8px;
+            max-height: calc(100% - 42px);
+            padding: 10px 12px;
+            overflow: auto;
+        }
+        .quality-alert {
+            display: grid;
+            grid-template-columns: 28px 1fr;
+            gap: 8px;
+            padding: 9px;
+            border-radius: 11px;
+            background: rgba(255, 209, 102, .09);
+        }
+        .quality-alert.level-critical { background: rgba(255, 107, 107, .10); }
+        .quality-alert.level-info { background: rgba(85, 194, 255, .09); }
+        .alert-icon {
+            width: 28px;
+            height: 28px;
+            display: grid;
+            place-items: center;
+            border-radius: 9px;
+            color: var(--warning);
+            background: rgba(255, 209, 102, .13);
+        }
+        .level-critical .alert-icon { color: var(--danger); background: rgba(255, 107, 107, .14); }
+        .level-info .alert-icon { color: var(--info); background: rgba(85, 194, 255, .14); }
+        .alert-title { margin-bottom: 3px; font-size: .74rem; font-weight: 750; }
+        .alert-content {
+            color: #d5ddec;
+            font-size: .69rem;
+            line-height: 1.42;
+            display: -webkit-box;
+            -webkit-line-clamp: 4;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .update-strip {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            min-height: 50px;
+            padding: 9px 12px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, rgba(0, 64, 161, .52), rgba(0, 86, 210, .38));
+            box-shadow: inset 0 0 0 1px rgba(85, 194, 255, .14);
+        }
+        .update-label { color: #bdcae0; font-size: .65rem; text-transform: uppercase; letter-spacing: .08em; }
+        .update-value { margin-top: 2px; font-size: .73rem; font-weight: 700; }
+        .version-chip {
+            padding: 5px 8px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, .11);
+            color: #dce6f7;
+            font-size: .65rem;
+            font-weight: 800;
+        }
+
+        .report-toolbar {
+            max-width: 1600px;
+            margin: 14px auto 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            color: #6c757d;
+            font-size: .78rem;
+        }
+        .btn-report {
+            border: 0;
+            border-radius: 12px;
+            padding: 9px 13px;
+            color: #fff;
+            background: linear-gradient(135deg, var(--primary), var(--primary-container));
+            font-size: .78rem;
+            font-weight: 700;
+            transition: transform .18s ease, box-shadow .18s ease;
+        }
+        .btn-report:hover { transform: translateY(-1px); box-shadow: 0 8px 18px rgba(0, 64, 161, .22); }
+        .btn-report.secondary { color: var(--primary); background: #fff; }
+        .btn-report.success { background: linear-gradient(135deg, #14804a, #20a765); }
+        .btn-report:disabled { opacity: .55; transform: none; box-shadow: none; cursor: not-allowed; }
+        .issue-edit {
+            border: 0; background: transparent; color: var(--info); padding: 2px 4px;
+        }
+        .draft-state { color: #8a5a00; font-weight: 800; }
+        .verified-state { color: #14804a; font-weight: 800; }
+        .metric-detail {
+            max-width: 1600px; margin: 12px auto 0; border-radius: 14px;
+            background: #fff; box-shadow: 0 8px 24px rgba(17, 25, 54, .08); overflow: hidden;
+        }
+        .metric-detail summary { padding: 12px 16px; cursor: pointer; color: var(--primary); font-weight: 800; }
+        .metric-detail table { margin: 0; font-size: .78rem; }
+        .metric-pass { color: #14804a; font-weight: 800; }
+        .metric-fail { color: #c62828; font-weight: 800; }
+        .bulletin-tabs {
+            display: flex;
+            max-width: 1600px;
+            margin: 18px auto 0;
+            gap: 8px;
+            padding: 6px;
+            border-radius: 14px;
+            background: rgba(17, 25, 54, .12);
+        }
+        .bulletin-tab {
+            border: 0;
+            border-radius: 10px;
+            padding: 10px 16px;
+            color: #40516e;
+            background: transparent;
+            font-size: .9rem;
+            font-weight: 750;
+        }
+        .bulletin-tab.active { color: #fff; background: var(--primary); box-shadow: 0 6px 15px rgba(0, 64, 161, .2); }
+        .week-picker { min-width: 220px; font-size: .82rem; }
+        .verified-list {
+            max-width: 1600px;
+            margin: 24px auto;
+            padding: 24px;
+            border-radius: 18px;
+            background: #fff;
+            box-shadow: 0 12px 30px rgba(17, 25, 54, .1);
+        }
+        .verified-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 18px;
+            padding: 16px;
+            margin-top: 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 13px;
+            background: #fbfcff;
+        }
+        .verified-card-title { color: #182348; font-size: 1rem; font-weight: 750; }
+        .verified-card-meta { margin-top: 3px; color: #64748b; font-size: .82rem; }
+
+        .loading-state, .error-state {
+            position: absolute;
+            inset: 0;
+            z-index: 10;
+            display: grid;
+            place-items: center;
+            padding: 24px;
+            text-align: center;
+            background: rgba(17, 25, 54, .94);
+        }
+        .loading-state[hidden], .error-state[hidden] { display: none; }
+        .loading-state i { color: var(--info); font-size: 1.6rem; }
+
+        @media (max-width: 1180px) {
+            .bulletin-canvas { aspect-ratio: auto; min-height: 1060px; overflow: auto; }
+            .bulletin-grid {
+                grid-template-columns: 190px minmax(0, 1fr);
+                grid-template-rows: 260px minmax(430px, 1fr) minmax(410px, auto);
+            }
+            .identity-panel { grid-column: 1; grid-row: 1 / 3; }
+            .kpi-panel { grid-column: 2; grid-row: 1; }
+            .kpi-grid { grid-template-columns: repeat(3, minmax(210px, 1fr)); overflow-x: auto; }
+            .issues-panel { grid-column: 2; grid-row: 2; }
+            .right-stack { grid-column: 1 / 3; grid-row: 3; grid-template-columns: 1fr 1.25fr; grid-template-rows: 1fr auto; }
+            .update-strip { grid-column: 1 / 3; }
+        }
+        @media (max-width: 760px) {
+            .bulletin-shell { padding: 12px; }
+            .bulletin-frame { border-radius: 14px; }
+            .bulletin-canvas { min-height: auto; padding: 10px; overflow: visible; }
+            .bulletin-grid { display: flex; flex-direction: column; }
+            .identity-panel { min-height: 380px; }
+            .kpi-panel { min-height: 610px; }
+            .kpi-grid { grid-template-columns: 1fr; height: auto; overflow: visible; }
+            .issues-panel { min-height: 460px; }
+            .right-stack { display: flex; flex-direction: column; }
+            .report-panel { min-height: 180px; }
+            .update-strip { min-height: 58px; }
+            .page-header .header-actions { margin-top: 14px; }
+            .report-toolbar { flex-direction: column; align-items: stretch; }
+        }
+
+        @page { size: A4 landscape; margin: 7mm; }
+        @media print {
+            body { background: #fff; }
+            .navbar, .page-header, .report-toolbar { display: none !important; }
+            .bulletin-shell { padding: 0; }
+            .bulletin-frame { max-width: none; border-radius: 0; box-shadow: none; }
+            .bulletin-canvas {
+                width: 100%;
+                min-height: 0;
+                aspect-ratio: 16 / 9;
+                padding: 10px;
+                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact;
+            }
+            .bulletin-grid { grid-template-columns: 190px minmax(0, 1fr) 315px; grid-template-rows: 212px minmax(0, 1fr); gap: 8px; }
+            .panel-heading { min-height: 36px; padding: 7px 10px; }
+            .kpi-grid { height: calc(100% - 36px); padding: 7px; gap: 7px; }
+            .issues-table th, .issues-table td { padding: 6px; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-dark bg-dark">
+        <div class="container-fluid px-4">
+            <a class="navbar-brand d-flex align-items-center" href="/kpi">
+                <img src="/templates/Logo.png" alt="Logo" class="me-2" />
+                KPI QLCL
+            </a>
+            <div class="d-flex gap-2">
+                <a class="btn btn-outline-light btn-sm" href="/view-kpi"><i class="fa fa-chart-line me-1"></i>Dashboard KPI</a>
+                <a class="btn btn-outline-light btn-sm" href="/dashboard-summary"><i class="fa fa-layer-group me-1"></i>Tổng hợp Dashboard</a>
+            </div>
+        </div>
+    </nav>
+
+    <section class="page-header">
+        <div class="container-fluid px-4">
+            <div class="row align-items-center">
+                <div class="col-lg-8">
+                    <div class="header-chip mb-2"><i class="fas fa-calendar-week"></i> Bản tin thứ Hai hằng tuần</div>
+                    <h1><i class="fas fa-newspaper me-2"></i>Bản tin tổng hợp Phòng QLCL</h1>
+                    <p>Dữ liệu đồng bộ từ các nguồn QLCL; nháp tuần được tạo tự động để kiểm tra và xác nhận.</p>
+                </div>
+                <div class="col-lg-4 text-lg-end header-actions">
+                    <button class="btn btn-light btn-sm me-2" type="button" onclick="printBulletin()"><i class="fas fa-print me-1"></i>In / PDF</button>
+                    <button class="btn btn-outline-light btn-sm" type="button" onclick="toggleFullscreen()"><i class="fas fa-expand me-1"></i>Toàn màn hình</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="container-fluid px-4">
+        <div class="bulletin-tabs" role="tablist" aria-label="Khu vực bản tin tuần">
+            <button type="button" class="bulletin-tab active" id="renderTabButton" onclick="switchBulletinTab('render')"><i class="fas fa-eye me-2"></i>Xem bản tin theo tuần</button>
+            <button type="button" class="bulletin-tab" id="verifiedTabButton" onclick="switchBulletinTab('verified')"><i class="fas fa-circle-check me-2"></i>Bản tin đã verify</button>
+        </div>
+    </div>
+
+    <main class="bulletin-shell" id="rendererTab">
+        <div class="bulletin-frame">
+            <section class="bulletin-canvas" id="bulletinCanvas" aria-label="Bản tin tổng hợp chất lượng">
+                <div class="loading-state" id="loadingState">
+                    <div><i class="fas fa-circle-notch fa-spin mb-3"></i><div>Đang chuẩn bị bản tin...</div></div>
+                </div>
+                <div class="error-state" id="errorState" hidden>
+                    <div><i class="fas fa-triangle-exclamation text-warning fs-3 mb-3"></i><div id="errorMessage">Không thể tải dữ liệu.</div></div>
+                </div>
+
+                <div class="bulletin-grid">
+                    <aside class="report-panel identity-panel">
+                        <div class="identity-logo"><i class="fas fa-chart-pie"></i></div>
+                        <div class="identity-eyebrow">Weekly quality brief</div>
+                        <h2 class="identity-title">BẢN TIN<br>P.QLCL</h2>
+                        <div class="identity-subtitle">Quality Management</div>
+
+                        <div class="week-block">
+                            <div class="week-label">Kỳ báo cáo</div>
+                            <div class="week-value" id="reportWeek">Tuần --/----</div>
+                            <div class="week-range" id="reportRange">--/--/---- - --/--/----</div>
+                        </div>
+
+                        <div class="identity-summary">
+                            <div class="summary-tile"><strong id="summaryIssueCount">0</strong><span>Vấn đề</span></div>
+                            <div class="summary-tile"><strong id="summaryOverdueCount">0</strong><span>Quá hạn</span></div>
+                        </div>
+
+                        <div class="identity-footer">
+                            Tần suất phát hành<br><strong>Thứ Hai hằng tuần</strong>
+                        </div>
+                    </aside>
+
+                    <section class="report-panel kpi-panel">
+                        <div class="panel-heading">
+                            <h3 class="panel-title"><i class="fas fa-chart-line"></i>Review KPIs phòng</h3>
+                            <span class="panel-meta">Tổng hợp theo kỳ báo cáo</span>
+                        </div>
+                        <div class="kpi-grid" id="kpiGrid"></div>
+                    </section>
+
+                    <section class="report-panel issues-panel">
+                        <div class="panel-heading">
+                            <h3 class="panel-title"><i class="fas fa-list-check"></i>Tổng hợp vấn đề</h3>
+                            <span class="panel-meta" id="issueMeta">0 bản ghi</span>
+                        </div>
+                        <div class="issues-wrap">
+                            <table class="issues-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 10%">Vấn đề</th>
+                                        <th style="width: 15%">Chủ đề</th>
+                                        <th style="width: 11%">Đơn vị</th>
+                                        <th style="width: 25%">Mô tả</th>
+                                        <th style="width: 16%">Trạng thái</th>
+                                        <th style="width: 13%">Thời hạn</th>
+                                        <th style="width: 10%">Theo dõi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="issuesBody"></tbody>
+                            </table>
+                        </div>
+                    </section>
+
+                    <aside class="right-stack">
+                        <section class="report-panel reminder-panel">
+                            <div class="panel-heading">
+                                <h3 class="panel-title"><i class="fas fa-bell"></i>Nhắc nhở công việc</h3>
+                                <span class="panel-meta" id="reminderMeta">0 việc</span>
+                            </div>
+                            <div class="compact-body">
+                                <table class="reminder-table">
+                                    <thead><tr><th>Công việc</th><th>Ngày</th><th>Thực hiện</th></tr></thead>
+                                    <tbody id="remindersBody"></tbody>
+                                </table>
+                            </div>
+                        </section>
+
+                        <section class="report-panel alert-panel">
+                            <div class="panel-heading">
+                                <h3 class="panel-title"><i class="fas fa-triangle-exclamation"></i>Cảnh báo chất lượng</h3>
+                                <span class="panel-meta" id="alertMeta">0 cảnh báo</span>
+                            </div>
+                            <div class="alert-list" id="alertsList"></div>
+                        </section>
+
+                        <footer class="update-strip">
+                            <div>
+                                <div class="update-label">Cập nhật gần nhất</div>
+                                <div class="update-value" id="updatedInfo">--/--/---- · Người cập nhật</div>
+                            </div>
+                            <span class="version-chip" id="versionChip">v1.0</span>
+                        </footer>
+                    </aside>
+                </div>
+            </section>
+        </div>
+
+        <div class="report-toolbar">
+            <span id="workflowStatus"><i class="fas fa-circle-info me-1"></i>Đang tải trạng thái bản tin...</span>
+            <div class="d-flex gap-2 flex-wrap justify-content-end">
+                <select id="weekSelector" class="form-select form-select-sm week-picker" onchange="loadSelectedBulletin()" aria-label="Chọn tuần bản tin">
+                    <option>Đang tải danh sách tuần...</option>
+                </select>
+                <button class="btn-report secondary" id="addReminderBtn" type="button" onclick="createEntry('reminder')"><i class="fas fa-bell me-1"></i>Thêm nhắc nhở</button>
+                <button class="btn-report secondary" id="addAlertBtn" type="button" onclick="createEntry('quality_alert')"><i class="fas fa-triangle-exclamation me-1"></i>Thêm cảnh báo</button>
+                <button class="btn-report secondary" id="syncBtn" type="button" onclick="syncBulletin()"><i class="fas fa-cloud-arrow-down me-1"></i>Đồng bộ nguồn</button>
+                <button class="btn-report secondary" type="button" onclick="reloadBulletin()"><i class="fas fa-rotate me-1"></i>Làm mới</button>
+                <button class="btn-report success" id="verifyBtn" type="button" onclick="verifyBulletin()"><i class="fas fa-circle-check me-1"></i>Verify bản tin</button>
+                <button class="btn-report" type="button" onclick="printBulletin()"><i class="fas fa-file-pdf me-1"></i>Xuất PDF</button>
+            </div>
+        </div>
+        <details class="metric-detail">
+            <summary><i class="fas fa-table-list me-2"></i>Chi tiết tỷ lệ Final / Endline theo tuần và tháng</summary>
+            <div class="table-responsive">
+                <table class="table table-sm table-striped align-middle">
+                    <thead><tr><th>Kỳ</th><th>Nguồn</th><th>Xí nghiệp</th><th>Loại hàng</th><th>Lỗi / kiểm</th><th>Tỷ lệ</th><th>Mục tiêu</th><th>Kết quả</th></tr></thead>
+                    <tbody id="metricDetailsBody"></tbody>
+                </table>
+            </div>
+        </details>
+    </main>
+
+    <section id="verifiedTab" hidden>
+        <div class="verified-list">
+            <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap">
+                <div>
+                    <h2 class="h5 mb-1 text-primary fw-bold"><i class="fas fa-box-archive me-2"></i>Kho bản tin đã verify</h2>
+                    <p class="mb-0 text-secondary">Các phiên bản đã xác nhận được khóa để xem lại theo tuần.</p>
+                </div>
+                <button class="btn btn-outline-primary btn-sm" type="button" onclick="refreshHistory()"><i class="fas fa-rotate me-1"></i>Làm mới</button>
+            </div>
+            <div id="verifiedList" class="mt-3"></div>
+        </div>
+    </section>
+
+    <script>
+        const bulletinData = {
+            report: {
+                week: 41,
+                year: 2026,
+                from_date: "05/10/2026",
+                to_date: "11/10/2026",
+                updated_at: "08/10/2026 08:30",
+                updated_by: {{ (user.name if user else 'Người cập nhật') | tojson }},
+                version: "1.0"
+            },
+            kpi: {
+                blocking_rate: {
+                    label: "Blocking rate",
+                    category: "Hàng thường",
+                    target: 3,
+                    target_operator: "<=",
+                    value: 2.2,
+                    unit: "%",
+                    source_url: null
+                },
+                veston_quality: {
+                    label: "Cam kết chất lượng trước khi xuất hàng",
+                    category: "Hàng Veston",
+                    value: 0,
+                    unit: "",
+                    source_url: null
+                },
+                complaints: {
+                    label: "Khiếu nại khách hàng",
+                    value: 0,
+                    causes: [],
+                    source_url: null
+                },
+                qa_impacts: [
+                    { key: "gemba", label: "KPI Gemba Control Plan", value: 0, source_url: null },
+                    { key: "revenue", label: "KPI doanh thu", value: 0, source_url: null },
+                    { key: "audit_e", label: "Lỗi E trong các cuộc đánh giá", value: 0, source_url: null }
+                ]
+            },
+            issues: [
+                { id: "963, 964, 970", topic: "Final", unit: "XNV2", description: "Khách hàng Final không đạt", status: "Chưa tiếp nhận", due_date: null, owner: "QAQT", source_url: null },
+                { id: "79", topic: "Endline", unit: "XNV2", description: "Tỷ lệ Endline tháng 8 không đạt", status: "Đang thực hiện", due_date: "03/10/2026", owner: "QAQT", source_url: null },
+                { id: "80", topic: "Endline", unit: "XN3", description: "Tỷ lệ Endline tháng 8 không đạt", status: "Chưa tiếp nhận", due_date: null, owner: "QAQT", source_url: null },
+                { id: "81", topic: "Đánh giá", unit: "XNV2", description: "Điểm đánh giá nội bộ cần theo dõi hành động", status: "Đang thực hiện", due_date: "10/10/2026", owner: "QAPL", source_url: null },
+                { id: "82", topic: "Khiếu nại", unit: "XNV1", description: "Phản hồi khách hàng về ngoại quan sản phẩm", status: "Đang thực hiện", due_date: "12/10/2026", owner: "QANL", source_url: null },
+                { id: "439", topic: "PS trong SX", unit: "XNV2", description: "Nút lưng lệch", status: "Đang thực hiện", due_date: "06/10/2026", owner: "QAQT", source_url: null }
+            ],
+            reminders: [
+                { task: "Hướng dẫn Grid Quality", due_date: "09/10/2026", assignee: "TP", status: "Đang thực hiện" },
+                { task: "Rà soát CAP quá hạn", due_date: "10/10/2026", assignee: "QAQT", status: "Chưa hoàn thành" }
+            ],
+            quality_alerts: [
+                {
+                    level: "warning",
+                    title: "Tuân thủ tài liệu kỹ thuật",
+                    content: "Khách hàng phản hồi lỗi đường may zigzag đệm dây không tuân thủ tài liệu. QA cần kiểm tra mẫu sản phẩm và đối chiếu đầy đủ tài liệu."
+                }
+            ]
+        };
+
+        function escapeHtml(value) {
+            return String(value ?? "")
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;")
+                .replaceAll("'", "&#039;");
+        }
+
+        function safeUrl(value) {
+            if (!value) return null;
+            try {
+                const url = new URL(value, window.location.origin);
+                return ["http:", "https:"].includes(url.protocol) ? url.href : null;
+            } catch (_) {
+                return null;
+            }
+        }
+
+        function parseVietnameseDate(value) {
+            if (!value) return null;
+            const parts = String(value).split("/").map(Number);
+            if (parts.length !== 3 || parts.some(Number.isNaN)) return null;
+            return new Date(parts[2], parts[1] - 1, parts[0]);
+        }
+
+        function getKpiStatus(value, target, operator) {
+            const current = Number(value);
+            const threshold = Number(target);
+            if (!Number.isFinite(current)) return "neutral";
+            if (!Number.isFinite(threshold)) return current === 0 ? "good" : "danger";
+            const passed = operator === ">=" ? current >= threshold : current <= threshold;
+            if (passed) return "good";
+            const distance = Math.abs(current - threshold) / Math.max(Math.abs(threshold), 1);
+            return distance <= .2 ? "warning" : "danger";
+        }
+
+        function getDeadlineStatus(dueDate, reportDate) {
+            const due = parseVietnameseDate(dueDate);
+            const report = parseVietnameseDate(reportDate);
+            if (!due || !report) return "normal";
+            if (due < report) return "overdue";
+            const days = Math.ceil((due - report) / 86400000);
+            return days <= 2 ? "soon" : "normal";
+        }
+
+        function topicClass(topic) {
+            const value = String(topic || "").toLowerCase();
+            if (value.includes("final")) return "topic-final";
+            if (value.includes("endline")) return "topic-endline";
+            if (value.includes("khiếu nại")) return "topic-complaint";
+            if (value.includes("khảo sát")) return "topic-survey";
+            if (value.includes("đánh giá")) return "topic-audit";
+            if (value.includes("sản xuất") || value.includes("ps ")) return "topic-production";
+            return "topic-default";
+        }
+
+        function statusClass(status, deadlineStatus) {
+            if (deadlineStatus === "overdue" && status !== "Hoàn thành") return "status-overdue";
+            const value = String(status || "").toLowerCase();
+            if (value.includes("hoàn thành")) return "status-done";
+            if (value.includes("đang")) return "status-doing";
+            return "status-new";
+        }
+
+        function sourceLink(url, title = "Mở nguồn") {
+            const sanitized = safeUrl(url);
+            if (!sanitized) return '<span class="kpi-source disabled" title="Chưa cấu hình nguồn"><i class="fas fa-link"></i></span>';
+            return `<a class="kpi-source" href="${escapeHtml(sanitized)}" target="_blank" rel="noopener noreferrer" title="${escapeHtml(title)}"><i class="fas fa-arrow-up-right-from-square"></i></a>`;
+        }
+
+        function renderKpis(kpi = {}) {
+            const blocking = kpi.blocking_rate || {};
+            const veston = kpi.veston_quality || {};
+            const complaints = kpi.complaints || {};
+            const impacts = Array.isArray(kpi.qa_impacts) ? kpi.qa_impacts : [];
+            const blockingStatus = getKpiStatus(blocking.value, blocking.target, blocking.target_operator);
+            const complaintStatus = Number(complaints.value || 0) === 0 ? "good" : "danger";
+            const causes = Array.isArray(complaints.causes) ? complaints.causes : [];
+
+            const impactRows = impacts.length
+                ? impacts.map(item => `
+                    <div class="metric-row">
+                        <div><div class="metric-name">${escapeHtml(item.label || "Chỉ số")}</div></div>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="metric-value ${Number(item.value || 0) === 0 ? "good" : "danger"}">${escapeHtml(item.value ?? "--")}</span>
+                            ${sourceLink(item.source_url)}
+                        </div>
+                    </div>`).join("")
+                : '<div class="empty-note mt-3">Chưa có chỉ số ảnh hưởng.</div>';
+
+            document.getElementById("kpiGrid").innerHTML = `
+                <article class="kpi-card" style="--accent: var(--info)">
+                    <div class="kpi-card-label"><span>KPI 1 · Chất lượng đầu ra</span>${sourceLink(blocking.source_url)}</div>
+                    <div class="metric-row">
+                        <div>
+                            <div class="metric-name">${escapeHtml(blocking.category || "Hàng thường")} · ${escapeHtml(blocking.label || "Blocking rate")}</div>
+                            <div class="metric-note">Mục tiêu ${escapeHtml(blocking.target_operator || "<=")} ${escapeHtml(blocking.target ?? "--")}${escapeHtml(blocking.unit || "")}</div>
+                        </div>
+                        <span class="metric-value ${blockingStatus}">${escapeHtml(blocking.value ?? "--")}${escapeHtml(blocking.unit || "")}</span>
+                    </div>
+                    <div class="metric-row">
+                        <div>
+                            <div class="metric-name">${escapeHtml(veston.category || "Hàng Veston")}</div>
+                            <div class="metric-note">${escapeHtml(veston.label || "Cam kết chất lượng")}</div>
+                        </div>
+                        <div class="d-flex align-items-center gap-2"><span class="metric-value ${Number(veston.value || 0) === 0 ? "good" : "danger"}">${escapeHtml(veston.value ?? "--")}${escapeHtml(veston.unit || "")}</span>${sourceLink(veston.source_url)}</div>
+                    </div>
+                </article>
+                <article class="kpi-card" style="--accent: var(--warning)">
+                    <div class="kpi-card-label"><span>KPI 2 · Khách hàng</span>${sourceLink(complaints.source_url)}</div>
+                    <div class="metric-row">
+                        <div><div class="metric-name">${escapeHtml(complaints.label || "Khiếu nại khách hàng")}</div><div class="metric-note">Số trường hợp trong kỳ</div></div>
+                        <span class="metric-value ${complaintStatus}">${escapeHtml(complaints.value ?? "--")}</span>
+                    </div>
+                    ${causes.length ? `<ul class="cause-list">${causes.map(cause => `<li>${escapeHtml(cause)}</li>`).join("")}</ul>` : '<div class="empty-note">Không ghi nhận nguyên nhân khiếu nại trong kỳ.</div>'}
+                </article>
+                <article class="kpi-card" style="--accent: var(--success)">
+                    <div class="kpi-card-label"><span>KPI 3 · Ảnh hưởng mục tiêu</span><span>${impacts.length} chỉ số</span></div>
+                    ${impactRows}
+                </article>`;
+        }
+
+        let currentBulletinData = null;
+
+        function renderIssues(issues = [], report = {}) {
+            const rows = Array.isArray(issues) ? issues : [];
+            const referenceDate = String(report.updated_at || "").split(" ")[0] || report.to_date;
+            let overdueCount = 0;
+            document.getElementById("issuesBody").innerHTML = rows.length ? rows.map(issue => {
+                const deadline = getDeadlineStatus(issue.due_date, referenceDate);
+                const isDone = String(issue.status || "").toLowerCase().includes("hoàn thành");
+                if (deadline === "overdue" && !isDone) overdueCount += 1;
+                const url = safeUrl(issue.source_url);
+                const idMarkup = url
+                    ? `<a class="issue-id" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(issue.id || "--")}</a>`
+                    : `<span class="issue-id">${escapeHtml(issue.id || "--")}</span>`;
+                const displayStatus = deadline === "overdue" && !isDone ? "Quá hạn" : (issue.status || "Chưa cập nhật");
+                return `<tr class="${deadline === "overdue" && !isDone ? "is-overdue" : ""}">
+                    <td>${idMarkup}</td>
+                    <td><span class="topic-badge ${topicClass(issue.topic)}">${escapeHtml(issue.topic || "Khác")}</span></td>
+                    <td>${escapeHtml(issue.unit || "--")}</td>
+                    <td><span class="clamp-2" title="${escapeHtml(issue.description || "")}">${escapeHtml(issue.description || "--")}</span></td>
+                    <td><span class="status-badge ${statusClass(issue.status, deadline)}">${escapeHtml(displayStatus)}</span></td>
+                    <td>${escapeHtml(issue.due_date || "--")}</td>
+                    <td>${escapeHtml(issue.owner || "--")} ${report.status === "draft" ? `<button class="issue-edit" type="button" onclick="editIssue(${Number(issue.row_id)})" title="Cập nhật trạng thái và thời hạn"><i class="fas fa-pen"></i></button>` : ""}</td>
+                </tr>`;
+            }).join("") : '<tr><td colspan="7" class="text-center py-4 empty-note">Không có vấn đề cần theo dõi trong kỳ.</td></tr>';
+
+            document.getElementById("issueMeta").textContent = `${rows.length} bản ghi`;
+            document.getElementById("summaryIssueCount").textContent = rows.length;
+            document.getElementById("summaryOverdueCount").textContent = overdueCount;
+        }
+
+        function renderReminders(reminders = [], report = {}) {
+            const rows = Array.isArray(reminders) ? reminders : [];
+            const referenceDate = String(report.updated_at || "").split(" ")[0] || report.to_date;
+            document.getElementById("remindersBody").innerHTML = rows.length ? rows.map(item => {
+                const deadline = getDeadlineStatus(item.due_date, referenceDate);
+                return `<tr>
+                    <td><span class="clamp-2" title="${escapeHtml(item.task || "")}">${escapeHtml(item.task || "--")}</span></td>
+                    <td class="${deadline === "overdue" ? "text-danger fw-bold" : deadline === "soon" ? "text-warning" : ""}">${escapeHtml(item.due_date || "--")}</td>
+                    <td><span class="reminder-owner">${escapeHtml(item.assignee || "--")}</span></td>
+                </tr>`;
+            }).join("") : '<tr><td colspan="3" class="text-center py-3 empty-note">Không có công việc cần nhắc.</td></tr>';
+            document.getElementById("reminderMeta").textContent = `${rows.length} việc`;
+        }
+
+        function renderAlerts(alerts = []) {
+            const rows = Array.isArray(alerts) ? alerts : [];
+            const iconByLevel = { critical: "fa-circle-exclamation", info: "fa-circle-info", warning: "fa-triangle-exclamation" };
+            document.getElementById("alertsList").innerHTML = rows.length ? rows.map(item => {
+                const level = ["critical", "info", "warning"].includes(item.level) ? item.level : "warning";
+                return `<article class="quality-alert level-${level}">
+                    <div class="alert-icon"><i class="fas ${iconByLevel[level]}"></i></div>
+                    <div><div class="alert-title">${escapeHtml(item.title || "Cảnh báo chất lượng")}</div><div class="alert-content" title="${escapeHtml(item.content || "")}">${escapeHtml(item.content || "--")}</div></div>
+                </article>`;
+            }).join("") : '<div class="empty-note text-center py-3">Không có cảnh báo chất lượng trong kỳ.</div>';
+            document.getElementById("alertMeta").textContent = `${rows.length} cảnh báo`;
+        }
+
+        function renderMetricDetails(metrics = []) {
+            const rows = Array.isArray(metrics) ? metrics : [];
+            document.getElementById('metricDetailsBody').innerHTML = rows.length ? rows.map(item => {
+                const period = item.period_type === 'monthly' ? 'Tháng' : 'Tuần';
+                const status = item.passed === true ? 'Đạt' : item.passed === false ? 'Không đạt' : 'Chưa xác định';
+                const statusClassName = item.passed === true ? 'metric-pass' : item.passed === false ? 'metric-fail' : '';
+                const rate = Number.isFinite(Number(item.rate)) ? `${Number(item.rate).toFixed(2)}%` : '--';
+                const target = Number.isFinite(Number(item.target)) ? `${Number(item.target).toFixed(2)}%` : '--';
+                return `<tr>
+                    <td>${period}<br><small>${escapeHtml(item.period_start || '')} – ${escapeHtml(item.period_end || '')}</small></td>
+                    <td>${escapeHtml(String(item.source_type || '').toUpperCase())}</td>
+                    <td>${escapeHtml(item.unit_name || '--')}</td><td>${escapeHtml(item.product_type || '--')}</td>
+                    <td>${escapeHtml(item.failed_count ?? '--')} / ${escapeHtml(item.inspected_count ?? '--')}</td>
+                    <td>${rate}</td><td>${target}</td><td class="${statusClassName}">${status}</td>
+                </tr>`;
+            }).join('') : '<tr><td colspan="8" class="text-center text-muted py-3">Chưa có dữ liệu tỷ lệ trong kỳ.</td></tr>';
+        }
+
+        function renderBulletin(data) {
+            currentBulletinData = data;
+            const report = data?.report || {};
+            document.getElementById("reportWeek").textContent = `Tuần ${report.week ?? "--"}/${report.year ?? "----"}`;
+            document.getElementById("reportRange").textContent = `${report.from_date || "--/--/----"} - ${report.to_date || "--/--/----"}`;
+            document.getElementById("updatedInfo").textContent = `${report.updated_at || "--/--/----"} · ${report.updated_by || "Người cập nhật"}`;
+            document.getElementById("versionChip").textContent = `v${report.version || "1.0"}`;
+            renderKpis(data?.kpi || {});
+            renderIssues(data?.issues || [], report);
+            renderReminders(data?.reminders || [], report);
+            renderAlerts(data?.quality_alerts || []);
+            renderMetricDetails(data?.metrics || []);
+            const isDraft = report.status === "draft";
+            const status = document.getElementById("workflowStatus");
+            status.className = isDraft ? "draft-state" : "verified-state";
+            status.innerHTML = isDraft
+                ? '<i class="fas fa-pen-to-square me-1"></i>Bản nháp — kiểm tra dữ liệu trước khi verify.'
+                : '<i class="fas fa-lock me-1"></i>Đã verify — phiên bản tuần này đã được khóa.';
+            ["addReminderBtn", "addAlertBtn", "verifyBtn"].forEach(id => {
+                document.getElementById(id).disabled = !isDraft;
+            });
+        }
+
+        async function loadBulletinData() {
+            const response = await fetch('/api/bulletin/current', { headers: { Accept: 'application/json' } });
+            if (!response.ok) {
+                const body = await response.json().catch(() => ({}));
+                throw new Error(body.detail || `Không thể tải bản tin (${response.status})`);
+            }
+            return response.json();
+        }
+
+        async function loadBulletinById(bulletinId) {
+            const response = await fetch(`/api/bulletin/by-id/${Number(bulletinId)}`, { headers: { Accept: 'application/json' } });
+            if (!response.ok) {
+                const body = await response.json().catch(() => ({}));
+                throw new Error(body.detail || `Không thể tải bản tin (${response.status})`);
+            }
+            return response.json();
+        }
+
+        function historyLabel(item) {
+            return `Tuần ${item.iso_week}/${item.iso_year} · ${String(item.week_start || '').split('-').reverse().join('/')} – ${String(item.week_end || '').split('-').reverse().join('/')}`;
+        }
+
+        function renderVerifiedList() {
+            const verified = bulletinHistory.filter(item => item.status === 'verified');
+            document.getElementById('verifiedList').innerHTML = verified.length ? verified.map(item => `
+                <article class="verified-card">
+                    <div>
+                        <div class="verified-card-title"><i class="fas fa-circle-check text-success me-2"></i>${escapeHtml(historyLabel(item))}</div>
+                        <div class="verified-card-meta">Verify bởi ${escapeHtml(item.verified_by || '--')} · ${escapeHtml(String(item.verified_at || '').replace('T', ' ').slice(0, 16) || '--')}</div>
+                    </div>
+                    <button class="btn btn-primary btn-sm" type="button" onclick="openHistoryBulletin(${Number(item.id)})"><i class="fas fa-eye me-1"></i>Xem bản tin</button>
+                </article>`).join('') : '<div class="text-center text-secondary py-5"><i class="fas fa-inbox fs-3 d-block mb-2"></i>Chưa có bản tin nào được verify.</div>';
+        }
+
+        async function refreshHistory(selectedId = null) {
+            const response = await fetch('/api/bulletin/history?limit=52', { headers: { Accept: 'application/json' } });
+            if (!response.ok) throw new Error('Không thể tải lịch sử bản tin.');
+            bulletinHistory = await response.json();
+            const selector = document.getElementById('weekSelector');
+            const desiredId = String(selectedId || selector.value || currentBulletinData?.report?.id || '');
+            selector.innerHTML = bulletinHistory.length
+                ? bulletinHistory.map(item => `<option value="${Number(item.id)}">${escapeHtml(historyLabel(item))}${item.status === 'draft' ? ' · Nháp' : ' · Đã verify'}</option>`).join('')
+                : '<option value="">Chưa có bản tin</option>';
+            if ([...selector.options].some(option => option.value === desiredId)) selector.value = desiredId;
+            renderVerifiedList();
+        }
+
+        async function loadSelectedBulletin() {
+            const bulletinId = document.getElementById('weekSelector').value;
+            if (!bulletinId) return;
+            await reloadBulletin(Number(bulletinId));
+        }
+
+        async function openHistoryBulletin(bulletinId) {
+            switchBulletinTab('render');
+            await reloadBulletin(bulletinId);
+        }
+
+        function switchBulletinTab(tab) {
+            const showRenderer = tab === 'render';
+            document.getElementById('rendererTab').hidden = !showRenderer;
+            document.getElementById('verifiedTab').hidden = showRenderer;
+            document.getElementById('renderTabButton').classList.toggle('active', showRenderer);
+            document.getElementById('verifiedTabButton').classList.toggle('active', !showRenderer);
+            if (!showRenderer) refreshHistory().catch(error => window.alert(error.message));
+        }
+
+        async function apiRequest(url, options = {}) {
+            const response = await fetch(url, {
+                ...options,
+                headers: { 'Content-Type': 'application/json', Accept: 'application/json', ...(options.headers || {}) }
+            });
+            const body = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(body.detail || `Yêu cầu thất bại (${response.status})`);
+            return body;
+        }
+
+        function describeError(error) {
+            const message = error?.message ?? error;
+            if (Array.isArray(message)) {
+                return message.map(item => item?.msg || item?.message || String(item)).join('; ');
+            }
+            if (message && typeof message === 'object') {
+                return message.detail || message.msg || 'Không thể tải dữ liệu bản tin.';
+            }
+            return String(message || 'Không thể tải dữ liệu bản tin.');
+        }
+
+        async function editIssue(rowId) {
+            const issue = currentBulletinData?.issues?.find(item => Number(item.row_id) === Number(rowId));
+            if (!issue) return;
+            let status = null;
+            if (!issue.source_authoritative) {
+                status = window.prompt(
+                    'Trạng thái: Chưa tiếp nhận / Đang thực hiện / Chờ xác nhận / Hoàn thành',
+                    issue.status || 'Chưa tiếp nhận'
+                );
+                if (status === null) return;
+            } else {
+                window.alert('Tiến độ CAP Final/Endline được lấy từ sheet nguồn. Bạn chỉ cập nhật thời hạn/người theo dõi tại đây.');
+            }
+            const currentDeadline = issue.due_date ? issue.due_date.split('/').reverse().join('-') : '';
+            const deadline = window.prompt('Thời hạn (YYYY-MM-DD, bỏ trống nếu chưa có)', currentDeadline);
+            if (deadline === null) return;
+            try {
+                await apiRequest(`/api/bulletin/items/${rowId}`, {
+                    method: 'PATCH',
+                    body: JSON.stringify({ status, deadline: deadline || null })
+                });
+                await reloadBulletin();
+            } catch (error) { window.alert(error.message); }
+        }
+
+        async function createEntry(entryType) {
+            const report = currentBulletinData?.report;
+            if (!report?.id || report.status !== 'draft') return;
+            const isReminder = entryType === 'reminder';
+            const title = window.prompt(isReminder ? 'Nội dung nhắc nhở' : 'Tiêu đề cảnh báo chất lượng');
+            if (!title) return;
+            const payload = { bulletin_id: report.id, entry_type: entryType, title };
+            if (isReminder) {
+                payload.due_date = window.prompt('Thời hạn (YYYY-MM-DD, có thể bỏ trống)', '') || null;
+                payload.assignee = window.prompt('Người/đơn vị thực hiện', '') || null;
+                payload.status = 'Chưa hoàn thành';
+            } else {
+                payload.content = window.prompt('Nội dung cảnh báo', '') || '';
+                payload.level = window.prompt('Mức độ: info / warning / critical', 'warning') || 'warning';
+            }
+            try {
+                await apiRequest('/api/bulletin/entries', { method: 'POST', body: JSON.stringify(payload) });
+                await reloadBulletin();
+            } catch (error) { window.alert(error.message); }
+        }
+
+        async function syncBulletin() {
+            const button = document.getElementById('syncBtn');
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-circle-notch fa-spin me-1"></i>Đang đồng bộ';
+            try {
+                await apiRequest('/api/bulletin/sync', { method: 'POST', body: '{}' });
+                await reloadBulletin();
+            } catch (error) { window.alert(error.message); }
+            finally {
+                button.disabled = false;
+                button.innerHTML = '<i class="fas fa-cloud-arrow-down me-1"></i>Đồng bộ nguồn';
+            }
+        }
+
+        async function verifyBulletin() {
+            const report = currentBulletinData?.report;
+            if (!report?.id || report.status !== 'draft') return;
+            if (!window.confirm(`Verify và khóa bản tin tuần ${report.week}/${report.year}?`)) return;
+            try {
+                await apiRequest(`/api/bulletin/${report.id}/verify`, { method: 'POST', body: '{}' });
+                await reloadBulletin();
+            } catch (error) { window.alert(error.message); }
+        }
+
+        async function reloadBulletin(bulletinId = null) {
+            const loading = document.getElementById("loadingState");
+            const error = document.getElementById("errorState");
+            loading.hidden = false;
+            error.hidden = true;
+            try {
+                const explicitId = Number(bulletinId);
+                const selectorId = Number(document.getElementById('weekSelector')?.value || 0);
+                const selectedId = Number.isInteger(explicitId) && explicitId > 0
+                    ? explicitId
+                    : (Number.isInteger(selectorId) && selectorId > 0 ? selectorId : null);
+                const data = selectedId ? await loadBulletinById(selectedId) : await loadBulletinData();
+                renderBulletin(data);
+                try {
+                    await refreshHistory(data.report?.id);
+                } catch (historyError) {
+                    // Lịch sử chỉ là chức năng phụ: không che bản tin đang render nếu tải lịch sử thất bại.
+                    console.warn('Không thể tải lịch sử bản tin:', describeError(historyError));
+                    const selector = document.getElementById('weekSelector');
+                    if (selector && data.report?.id) {
+                        selector.innerHTML = `<option value="${Number(data.report.id)}">Tuần ${escapeHtml(data.report.week)}/${escapeHtml(data.report.year)} · Bản tin đang xem</option>`;
+                    }
+                }
+            } catch (err) {
+                document.getElementById("errorMessage").textContent = describeError(err);
+                error.hidden = false;
+            } finally {
+                loading.hidden = true;
+            }
+        }
+
+        function printBulletin() { window.print(); }
+        async function toggleFullscreen() {
+            const canvas = document.getElementById("bulletinCanvas");
+            if (!document.fullscreenElement) await canvas.requestFullscreen?.();
+            else await document.exitFullscreen?.();
+        }
+
+        document.addEventListener("DOMContentLoaded", () => reloadBulletin());
+    </script>
+</body>
+</html>

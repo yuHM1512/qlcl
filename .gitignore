@@ -26,6 +26,7 @@ _patch_*.py
 _verify_patches.py
 tmp_migrate.py
 db/_apply_sql_tmp.py
+tmp/
 
 # Local visual-picker previews, repair manifests, backups and audit output.
 scripts/out/guided_pdf/

@@ -17,6 +17,12 @@ from urllib.parse import quote, unquote
 from flat_line_sync import fetch_sheet_values as fetch_flat_line_sheet_values
 from flat_line_sync import parse_flat_line_plans
 from final_internal_sync import FinalApiClient, sync_final_internal
+from bulletin_sync import (
+    ensure_weekly_draft,
+    get_bulletin_payload,
+    parse_date as parse_bulletin_date,
+    sync_bulletin_sources,
+)
 
 # Load environment variables from .env file
 from dotenv import load_dotenv
@@ -152,6 +158,14 @@ try:
 except ValueError:
     FINAL_QA_AUTO_SYNC_INTERVAL_MINUTES = 120
 
+BULLETIN_AUTO_SYNC_ENABLED = env_flag("BULLETIN_AUTO_SYNC_ENABLED", default=True)
+try:
+    BULLETIN_AUTO_SYNC_INTERVAL_MINUTES = max(
+        15, int(os.getenv("BULLETIN_AUTO_SYNC_INTERVAL_MINUTES", "60"))
+    )
+except ValueError:
+    BULLETIN_AUTO_SYNC_INTERVAL_MINUTES = 60
+
 FINAL_CAP_ROLE = "FINAL_CAP"
 FINAL_FACTORY_BY_DON_VI = {
     "XN1-V1": "XN01",
@@ -181,6 +195,8 @@ SCHEMA_BOOTSTRAP_FILES = [
     "create_error_catalog_versioning.sql",
     "create_hdkp_tables.sql",
     "create_qa_final_internal.sql",
+    "create_quality_bulletin.sql",
+    "alter_quality_bulletin_updated_by.sql",
     "migrate_qa_final_cap_fail_only.sql",
     "migrate_final_cap_editors.sql",
     "create_prod_plan.sql",
@@ -1564,6 +1580,80 @@ def start_final_qa_auto_sync_if_enabled() -> None:
     threading.Thread(target=_final_qa_auto_sync_loop, daemon=True, name="final-qa-sync").start()
 
 
+_bulletin_sync_lock = threading.Lock()
+_bulletin_sync_state: Dict[str, Any] = {
+    "running": False,
+    "started_at": None,
+    "finished_at": None,
+    "result": None,
+    "error": None,
+}
+
+
+def bulletin_sync_is_configured() -> bool:
+    credentials_path = (
+        os.getenv("BULLETIN_GOOGLE_SERVICE_ACCOUNT_FILE", "").strip()
+        or os.getenv("GEMBA_CP_GOOGLE_SERVICE_ACCOUNT_FILE", "").strip()
+        or str(GEMBA_CP_TEMPLATES_DIR / "credentials_m29.json")
+    )
+    return PathLib(credentials_path).exists()
+
+
+def run_bulletin_sync(triggered_by: str = "system", trigger_type: str = "manual") -> Dict[str, Any]:
+    if not bulletin_sync_is_configured():
+        raise RuntimeError("Chưa cấu hình BULLETIN_GOOGLE_SERVICE_ACCOUNT_FILE")
+    if not _bulletin_sync_lock.acquire(blocking=False):
+        raise RuntimeError("Đồng bộ bản tin đang chạy")
+    _bulletin_sync_state.update(
+        running=True,
+        started_at=datetime.now().isoformat(),
+        finished_at=None,
+        result=None,
+        error=None,
+    )
+    try:
+        counts = sync_bulletin_sources(
+            get_db_connection,
+            triggered_by=triggered_by,
+            trigger_type=trigger_type,
+        )
+        bulletin = ensure_weekly_draft(
+            get_db_connection,
+            created_by=triggered_by,
+        )
+        result = {"source_counts": counts, "bulletin_id": bulletin["id"]}
+        _bulletin_sync_state["result"] = result
+        return result
+    except Exception as exc:
+        _bulletin_sync_state["error"] = str(exc)
+        logger.exception("Quality bulletin sync failed")
+        raise
+    finally:
+        _bulletin_sync_state["running"] = False
+        _bulletin_sync_state["finished_at"] = datetime.now().isoformat()
+        _bulletin_sync_lock.release()
+
+
+def _bulletin_auto_sync_loop() -> None:
+    while True:
+        try:
+            run_bulletin_sync(triggered_by="system", trigger_type="auto")
+        except RuntimeError as exc:
+            logger.warning("Bulletin auto-sync skipped: %s", exc)
+        except Exception:
+            pass
+        time.sleep(BULLETIN_AUTO_SYNC_INTERVAL_MINUTES * 60)
+
+
+def start_bulletin_auto_sync_if_enabled() -> None:
+    if not BULLETIN_AUTO_SYNC_ENABLED:
+        return
+    if not bulletin_sync_is_configured():
+        logger.warning("BULLETIN_AUTO_SYNC_ENABLED but Google service-account file is missing")
+        return
+    threading.Thread(target=_bulletin_auto_sync_loop, daemon=True, name="quality-bulletin-sync").start()
+
+
 def startup_auto_sync():
     from xndt_sync import start_auto_sync
     start_auto_sync(get_db_connection, DATABASE_URL)
@@ -1571,6 +1661,7 @@ def startup_auto_sync():
     start_xnv2_auto_sync_if_enabled()
     start_flat_line_auto_sync_if_enabled()
     start_final_qa_auto_sync_if_enabled()
+    start_bulletin_auto_sync_if_enabled()
 
 
 @app.get("/")
@@ -1943,6 +2034,271 @@ def dashboard_summary(request: Request):
     if not get_authenticated_user(request):
         return RedirectResponse(url="/login", status_code=303)
     return templates.TemplateResponse("dashboard_summary.html", {"request": request})
+
+
+@app.get("/quality-bulletin")
+def quality_bulletin(request: Request):
+    user_data = get_authenticated_user(request)
+    if not user_data:
+        return RedirectResponse(url="/login?next=/quality-bulletin", status_code=303)
+    return templates.TemplateResponse(
+        "quality_bulletin.html",
+        {"request": request, "user": user_data},
+    )
+
+
+def _bulletin_user_label(user: Dict[str, Any]) -> str:
+    return (user.get("name") or user.get("ma_nv") or "Người dùng").strip()
+
+
+def _require_draft_bulletin(cur: Any, bulletin_id: int) -> Dict[str, Any]:
+    cur.execute("SELECT * FROM public.quality_bulletins WHERE id=%s FOR UPDATE", (bulletin_id,))
+    row = cur.fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="Không tìm thấy bản tin")
+    bulletin = dict(row) if isinstance(row, dict) else {"id": row[0], "status": row[5]}
+    if bulletin.get("status") != "draft":
+        raise HTTPException(status_code=409, detail="Bản tin đã verify và được khóa")
+    return bulletin
+
+
+@app.get("/api/bulletin/current")
+def bulletin_current(request: Request, as_of: Optional[str] = Query(default=None)):
+    user = require_authenticated_api_user(request)
+    as_of_date = parse_bulletin_date(as_of) if as_of else date.today()
+    if as_of and not as_of_date:
+        raise HTTPException(status_code=422, detail="as_of phải có dạng YYYY-MM-DD")
+    bulletin = ensure_weekly_draft(
+        get_db_connection,
+        as_of=as_of_date,
+        created_by=user.get("ma_nv") or "system",
+    )
+    return get_bulletin_payload(get_db_connection, bulletin["id"])
+
+
+@app.get("/api/bulletin/by-id/{bulletin_id}")
+def bulletin_by_id(bulletin_id: int, request: Request):
+    require_authenticated_api_user(request)
+    try:
+        return get_bulletin_payload(get_db_connection, bulletin_id)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail="Không tìm thấy bản tin") from exc
+
+
+@app.get("/api/bulletin/history")
+def bulletin_history(request: Request, limit: int = Query(default=12, ge=1, le=52)):
+    require_authenticated_api_user(request)
+    with get_db_connection() as conn:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(
+                """
+                SELECT id, week_start, week_end, iso_year, iso_week, status, version,
+                       created_by, verified_by, verified_at, updated_at
+                FROM public.quality_bulletins
+                ORDER BY week_start DESC LIMIT %s
+                """,
+                (limit,),
+            )
+            rows = cur.fetchall()
+    return [
+        {
+            **dict(row),
+            "week_start": row["week_start"].isoformat(),
+            "week_end": row["week_end"].isoformat(),
+            "verified_at": row["verified_at"].isoformat() if row["verified_at"] else None,
+            "updated_at": row["updated_at"].isoformat(),
+        }
+        for row in rows
+    ]
+
+
+@app.post("/api/bulletin/sync")
+def bulletin_sync_now(request: Request):
+    user = require_authenticated_api_user(request)
+    try:
+        result = run_bulletin_sync(
+            triggered_by=user.get("ma_nv") or "manual",
+            trigger_type="manual",
+        )
+        return {"status": "success", **result}
+    except RuntimeError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Đồng bộ bản tin thất bại: {exc}") from exc
+
+
+@app.get("/api/bulletin/sync/status")
+def bulletin_sync_status(request: Request):
+    require_authenticated_api_user(request)
+    return dict(_bulletin_sync_state)
+
+
+@app.patch("/api/bulletin/items/{item_id}")
+async def bulletin_update_item(item_id: int, request: Request):
+    user = require_authenticated_api_user(request)
+    payload = await request.json()
+    allowed_statuses = {"Chưa tiếp nhận", "Đang thực hiện", "Chờ xác nhận", "Hoàn thành"}
+    requested_status = str(payload.get("status") or "").strip() or None
+    if requested_status and requested_status not in allowed_statuses:
+        raise HTTPException(status_code=422, detail="Trạng thái không hợp lệ")
+    deadline_provided = "deadline" in payload
+    deadline = None
+    if payload.get("deadline"):
+        deadline = parse_bulletin_date(payload["deadline"])
+        if not deadline:
+            raise HTTPException(status_code=422, detail="Thời hạn không hợp lệ")
+    with get_db_connection() as conn:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute("SELECT * FROM public.quality_bulletin_items WHERE id=%s FOR UPDATE", (item_id,))
+            item = cur.fetchone()
+            if not item:
+                raise HTTPException(status_code=404, detail="Không tìm thấy vấn đề")
+            _require_draft_bulletin(cur, item["bulletin_id"])
+            if item["status_origin"] == "source" and requested_status:
+                raise HTTPException(
+                    status_code=409,
+                    detail="Tiến độ CAP Final/Endline được đồng bộ từ Google Sheets",
+                )
+            cur.execute(
+                """
+                UPDATE public.quality_bulletin_items
+                SET status=COALESCE(%s,status),
+                    deadline=CASE WHEN %s THEN %s ELSE deadline END,
+                    owner_ma_nv=%s, owner_name=%s, updated_at=NOW()
+                WHERE id=%s
+                RETURNING id
+                """,
+                (
+                    requested_status,
+                    deadline_provided,
+                    deadline,
+                    user.get("ma_nv"),
+                    _bulletin_user_label(user),
+                    item_id,
+                ),
+            )
+            cur.execute(
+                "UPDATE public.quality_bulletins SET updated_at=NOW(), updated_by=%s WHERE id=%s",
+                (_bulletin_user_label(user), item["bulletin_id"]),
+            )
+        conn.commit()
+    return {"status": "updated", "item_id": item_id}
+
+
+@app.post("/api/bulletin/entries")
+async def bulletin_create_entry(request: Request):
+    user = require_authenticated_api_user(request)
+    payload = await request.json()
+    bulletin_id = int(payload.get("bulletin_id") or 0)
+    entry_type = str(payload.get("entry_type") or "").strip()
+    title = str(payload.get("title") or "").strip()
+    if entry_type not in {"reminder", "quality_alert"} or not title:
+        raise HTTPException(status_code=422, detail="Thiếu loại hoặc tiêu đề nội dung")
+    due_date = parse_bulletin_date(payload.get("due_date")) if payload.get("due_date") else None
+    level = str(payload.get("level") or "warning")
+    if level not in {"info", "warning", "critical"}:
+        raise HTTPException(status_code=422, detail="Mức cảnh báo không hợp lệ")
+    with get_db_connection() as conn:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            _require_draft_bulletin(cur, bulletin_id)
+            cur.execute(
+                """
+                INSERT INTO public.quality_bulletin_entries
+                    (bulletin_id, entry_type, title, content, due_date, assignee, level, status, created_by)
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id
+                """,
+                (
+                    bulletin_id, entry_type, title, str(payload.get("content") or "").strip() or None,
+                    due_date, str(payload.get("assignee") or "").strip() or None, level,
+                    str(payload.get("status") or "").strip() or None, user.get("ma_nv"),
+                ),
+            )
+            entry_id = cur.fetchone()["id"]
+            cur.execute(
+                "UPDATE public.quality_bulletins SET updated_at=NOW(), updated_by=%s WHERE id=%s",
+                (_bulletin_user_label(user), bulletin_id),
+            )
+        conn.commit()
+    return {"status": "created", "entry_id": entry_id}
+
+
+@app.patch("/api/bulletin/entries/{entry_id}")
+async def bulletin_update_entry(entry_id: int, request: Request):
+    user = require_authenticated_api_user(request)
+    payload = await request.json()
+    with get_db_connection() as conn:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute("SELECT * FROM public.quality_bulletin_entries WHERE id=%s FOR UPDATE", (entry_id,))
+            entry = cur.fetchone()
+            if not entry:
+                raise HTTPException(status_code=404, detail="Không tìm thấy nội dung")
+            _require_draft_bulletin(cur, entry["bulletin_id"])
+            due_date = entry["due_date"]
+            if "due_date" in payload:
+                due_date = parse_bulletin_date(payload.get("due_date")) if payload.get("due_date") else None
+            level = str(payload.get("level", entry["level"]))
+            if level not in {"info", "warning", "critical"}:
+                raise HTTPException(status_code=422, detail="Mức cảnh báo không hợp lệ")
+            cur.execute(
+                """
+                UPDATE public.quality_bulletin_entries SET
+                    title=%s, content=%s, due_date=%s, assignee=%s,
+                    level=%s, status=%s, updated_at=NOW()
+                WHERE id=%s
+                """,
+                (
+                    str(payload.get("title", entry["title"]) or "").strip(),
+                    str(payload.get("content", entry["content"] or "") or "").strip() or None,
+                    due_date,
+                    str(payload.get("assignee", entry["assignee"] or "") or "").strip() or None,
+                    level,
+                    str(payload.get("status", entry["status"] or "") or "").strip() or None,
+                    entry_id,
+                ),
+            )
+            cur.execute(
+                "UPDATE public.quality_bulletins SET updated_at=NOW(), updated_by=%s WHERE id=%s",
+                (_bulletin_user_label(user), entry["bulletin_id"]),
+            )
+        conn.commit()
+    return {"status": "updated", "entry_id": entry_id}
+
+
+@app.delete("/api/bulletin/entries/{entry_id}")
+def bulletin_delete_entry(entry_id: int, request: Request):
+    user = require_authenticated_api_user(request)
+    with get_db_connection() as conn:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute("SELECT bulletin_id FROM public.quality_bulletin_entries WHERE id=%s FOR UPDATE", (entry_id,))
+            entry = cur.fetchone()
+            if not entry:
+                raise HTTPException(status_code=404, detail="Không tìm thấy nội dung")
+            _require_draft_bulletin(cur, entry["bulletin_id"])
+            cur.execute("DELETE FROM public.quality_bulletin_entries WHERE id=%s", (entry_id,))
+            cur.execute(
+                "UPDATE public.quality_bulletins SET updated_at=NOW(), updated_by=%s WHERE id=%s",
+                (_bulletin_user_label(user), entry["bulletin_id"]),
+            )
+        conn.commit()
+    return {"status": "deleted"}
+
+
+@app.post("/api/bulletin/{bulletin_id}/verify")
+def bulletin_verify(bulletin_id: int, request: Request):
+    user = require_authenticated_api_user(request)
+    with get_db_connection() as conn:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            _require_draft_bulletin(cur, bulletin_id)
+            cur.execute(
+                """
+                UPDATE public.quality_bulletins
+                SET status='verified', verified_by=%s, verified_at=NOW(), updated_at=NOW(), updated_by=%s
+                WHERE id=%s
+                """,
+                (_bulletin_user_label(user), _bulletin_user_label(user), bulletin_id),
+            )
+        conn.commit()
+    return {"status": "verified", "bulletin_id": bulletin_id}
 
 
 @app.get("/gemba-control-plan")

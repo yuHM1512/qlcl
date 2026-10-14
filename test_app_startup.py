@@ -16,11 +16,13 @@ class StartupTests(unittest.TestCase):
         register(app, connect, 'test-key')
         with patch.object(main, 'start_qtcn_auto_sync_if_enabled') as qtcn, \
              patch.object(main, 'start_xnv2_auto_sync_if_enabled') as xnv2, \
-             patch.object(main, 'start_flat_line_auto_sync_if_enabled') as flat:
+             patch.object(main, 'start_flat_line_auto_sync_if_enabled') as flat, \
+             patch.object(main, 'start_bulletin_auto_sync_if_enabled') as bulletin:
             with TestClient(app):
                 qtcn.assert_called_once_with()
                 xnv2.assert_called_once_with()
                 flat.assert_called_once_with()
+                bulletin.assert_called_once_with()
                 connection = connect.return_value.__enter__.return_value
                 connection.cursor.return_value.__enter__.return_value.execute.assert_called_once_with(DDL)
                 connection.commit.assert_called_once_with()
