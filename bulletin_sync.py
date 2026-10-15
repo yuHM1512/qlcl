@@ -136,6 +136,19 @@ def previous_report_period(as_of: Optional[date] = None) -> Tuple[date, date]:
     return start, start + timedelta(days=5)
 
 
+def kpi_report_period(report_week_start: date, report_week_end: date) -> Tuple[date, date]:
+    """Return the cumulative period used by KPI 1-2-3 for a bulletin.
+
+    A bulletin prepared in the first Monday week of a month uses the complete
+    previous month. Later bulletins accumulate from the first day of the
+    current month through the report Saturday.
+    """
+    if report_week_start.day <= 7:
+        previous_month_end = report_week_start.replace(day=1) - timedelta(days=1)
+        return previous_month_end.replace(day=1), previous_month_end
+    return report_week_start.replace(day=1), report_week_end
+
+
 def spreadsheet_url(spreadsheet_id: str, gid: Optional[int] = None) -> str:
     suffix = f"/edit?gid={gid}#gid={gid}" if gid is not None else "/edit"
     return f"https://docs.google.com/spreadsheets/d/{spreadsheet_id}{suffix}"
@@ -545,11 +558,10 @@ def ensure_weekly_draft(connection_factory: Callable[[], Any], *, as_of: Optiona
 
 def _refresh_metrics(cur: Any, bulletin_id: int, week_start: date, week_end: date) -> None:
     cur.execute("DELETE FROM public.quality_bulletin_metrics WHERE bulletin_id=%s", (bulletin_id,))
-    periods: List[Tuple[str, date, date]] = [("weekly", week_start, week_end)]
-    if week_start.day <= 7:
-        previous_month_end = week_start.replace(day=1) - timedelta(days=1)
-        previous_month_start = previous_month_end.replace(day=1)
-        periods.append(("monthly", previous_month_start, previous_month_end))
+    periods: List[Tuple[str, date, date]] = [
+        ("weekly", week_start, week_end),
+        ("monthly", *kpi_report_period(week_start, week_end)),
+    ]
     for period_type, start, end in periods:
         for source_type in ("final", "endline"):
             cur.execute(
@@ -591,9 +603,78 @@ def _refresh_metrics(cur: Any, bulletin_id: int, week_start: date, week_end: dat
 
 def _refresh_kpis(cur: Any, bulletin_id: int, week_start: date, week_end: date) -> None:
     cur.execute("DELETE FROM public.quality_bulletin_kpis WHERE bulletin_id=%s", (bulletin_id,))
+    kpi_start, kpi_end = kpi_report_period(week_start, week_end)
+    cur.execute(
+        """
+        SELECT
+            SUM(inspected_count) AS inspected_count,
+            SUM(failed_count) AS failed_count,
+            CASE WHEN SUM(inspected_count) > 0
+                 THEN SUM(failed_count) * 100.0 / SUM(inspected_count)
+                 ELSE AVG(rate) END AS blocking_rate,
+            MAX(target) AS target
+        FROM public.bulletin_source_records
+        WHERE is_active
+          AND source_type='final'
+          AND source_date BETWEEN %s AND %s
+          AND LOWER(COALESCE(product_type, '')) LIKE '%%thường%%'
+        """,
+        (kpi_start, kpi_end),
+    )
+    blocking_row = cur.fetchone() or {}
+    if isinstance(blocking_row, dict):
+        blocking_rate = blocking_row.get("blocking_rate")
+        blocking_target = blocking_row.get("target")
+    else:
+        _, _, blocking_rate, blocking_target = blocking_row
+    blocking_status = (
+        "good" if blocking_rate is not None and blocking_target is not None and blocking_rate <= blocking_target
+        else "danger" if blocking_rate is not None and blocking_target is not None
+        else "neutral"
+    )
+    cur.execute(
+        """
+        INSERT INTO public.quality_bulletin_kpis
+            (bulletin_id, kpi_key, category, label, value_numeric, target_numeric, unit, status, source_url)
+        VALUES (%s, 'blocking_rate', 'Hàng thường', 'Blocking rate', %s, %s, '%%', %s, %s)
+        """,
+        (
+            bulletin_id,
+            blocking_rate,
+            blocking_target,
+            blocking_status,
+            spreadsheet_url(ENDLINE_FINAL_SHEET_ID, 280210348),
+        ),
+    )
+    cur.execute(
+        """
+        SELECT COUNT(*) AS commitment_count
+        FROM public.bulletin_source_records
+        WHERE is_active
+          AND source_type='final'
+          AND source_date BETWEEN %s AND %s
+          AND NULLIF(BTRIM(COALESCE(payload->>'ghi chu cam ket cl', '')), '') IS NOT NULL
+        """,
+        (kpi_start, kpi_end),
+    )
+    commitment_row = cur.fetchone() or {}
+    commitment_count = commitment_row.get("commitment_count", 0) if isinstance(commitment_row, dict) else commitment_row[0]
+    cur.execute(
+        """
+        INSERT INTO public.quality_bulletin_kpis
+            (bulletin_id, kpi_key, category, label, value_numeric, target_numeric, unit, status, source_url)
+        VALUES (%s, 'po_commitments', 'Hàng Veston', 'Cam kết về chất lượng trước khi xuất hàng', %s, NULL, 'lần', %s, %s)
+        """,
+        (
+            bulletin_id,
+            commitment_count,
+            "good" if commitment_count == 0 else "neutral",
+            spreadsheet_url(ENDLINE_FINAL_SHEET_ID, 280210348),
+        ),
+    )
     cur.execute(
         "SELECT COUNT(*) FROM public.bulletin_source_records WHERE source_type='complaint' AND source_date BETWEEN %s AND %s",
-        (week_start, week_end),
+        (kpi_start, kpi_end),
     )
     complaint_row = cur.fetchone()
     complaint_count = complaint_row["count"] if isinstance(complaint_row, dict) else complaint_row[0]
@@ -626,7 +707,7 @@ def _refresh_kpis(cur: Any, bulletin_id: int, week_start: date, week_end: date) 
               )
         ) scoped_errors
         """,
-        (week_start, week_end),
+        (kpi_start, kpi_end),
     )
     impact_row = cur.fetchone() or {}
     for key, label in (
@@ -678,21 +759,6 @@ def get_bulletin_payload(connection_factory: Callable[[], Any], bulletin_id: int
     for key in ("gemba", "revenue", "audit_e"):
         row = kpis.get(key, {})
         qa_impacts.append({"key": key, "label": row.get("label") or key, "value": float(row.get("value_numeric") or 0), "source_url": row.get("source_url")})
-    def worst_weekly(source_type: str):
-        rows = [row for row in metrics if row["period_type"] == "weekly" and row["source_type"] == source_type]
-        return max(
-            rows,
-            key=lambda row: float(row["rate"] or 0) - float(row["target"] or 0),
-            default=None,
-        )
-    weekly_final = worst_weekly("final")
-    weekly_endline = worst_weekly("endline")
-    def metric_card(row: Any, label: str, category: str) -> Dict[str, Any]:
-        row = row or {}
-        scope = " · ".join(value for value in (row.get("unit_name"), row.get("product_type")) if value)
-        return {"label": label, "category": f"{category} · {scope}" if scope else category, "target": float(row.get("target")) if row.get("target") is not None else None,
-                "target_operator": "<=", "value": float(row.get("rate")) if row.get("rate") is not None else None,
-                "unit": "%", "source_url": spreadsheet_url(ENDLINE_FINAL_SHEET_ID, 280210348 if category == "Final" else 1139302328)}
     payload_items = []
     for item in items:
         payload_items.append({
@@ -711,8 +777,34 @@ def get_bulletin_payload(connection_factory: Callable[[], Any], bulletin_id: int
     return {
         "report": report,
         "kpi": {
-            "blocking_rate": metric_card(weekly_endline, "Tỷ lệ Endline", "Endline"),
-            "veston_quality": metric_card(weekly_final, "Tỷ lệ Final", "Final"),
+            "blocking_rate": {
+                **dict(kpis.get("blocking_rate", {})),
+                "label": "Blocking rate",
+                "category": "Hàng thường",
+                "value": float(kpis["blocking_rate"]["value_numeric"]) if kpis.get("blocking_rate", {}).get("value_numeric") is not None else None,
+                "target": float(kpis["blocking_rate"]["target_numeric"]) if kpis.get("blocking_rate", {}).get("target_numeric") is not None else None,
+                "target_operator": "<=",
+                "unit": "%",
+                "source_url": kpis.get("blocking_rate", {}).get("source_url"),
+            },
+            "po_commitments": {
+                **dict(kpis.get("po_commitments", {})),
+                "label": "Cam kết về chất lượng trước khi xuất hàng",
+                "category": "Hàng Veston",
+                "value": float(kpis["po_commitments"]["value_numeric"]) if kpis.get("po_commitments", {}).get("value_numeric") is not None else 0,
+                "target": None,
+                "target_operator": "",
+                "unit": "lần",
+                "source_url": kpis.get("po_commitments", {}).get("source_url"),
+            },
+            # Kept for older clients that still read the previous key.
+            "veston_quality": {
+                "label": "Cam kết về chất lượng trước khi xuất hàng",
+                "category": "Hàng Veston",
+                "value": float(kpis["po_commitments"]["value_numeric"]) if kpis.get("po_commitments", {}).get("value_numeric") is not None else 0,
+                "unit": "lần",
+                "source_url": kpis.get("po_commitments", {}).get("source_url"),
+            },
             "complaints": {"label": "Khiếu nại khách hàng", "value": float(complaint.get("value_numeric") or 0), "causes": [], "source_url": complaint.get("source_url")},
             "qa_impacts": qa_impacts,
         },

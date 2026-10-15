@@ -8,6 +8,7 @@ from bulletin_sync import (
     parse_decimal,
     parse_source_rows,
     previous_report_period,
+    kpi_report_period,
 )
 
 
@@ -16,6 +17,16 @@ class BulletinSyncTests(unittest.TestCase):
         self.assertEqual(
             previous_report_period(date(2026, 10, 14)),
             (date(2026, 10, 5), date(2026, 10, 10)),
+        )
+
+    def test_kpi_period_uses_previous_month_in_first_week(self):
+        self.assertEqual(
+            kpi_report_period(date(2026, 10, 5), date(2026, 10, 10)),
+            (date(2026, 9, 1), date(2026, 9, 30)),
+        )
+        self.assertEqual(
+            kpi_report_period(date(2026, 10, 12), date(2026, 10, 17)),
+            (date(2026, 10, 1), date(2026, 10, 17)),
         )
         self.assertEqual(
             previous_report_period(date(2026, 10, 12)),

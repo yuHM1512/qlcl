@@ -739,11 +739,11 @@
                     unit: "%",
                     source_url: null
                 },
-                veston_quality: {
-                    label: "Cam kết chất lượng trước khi xuất hàng",
+                po_commitments: {
+                    label: "Cam kết về chất lượng trước khi xuất hàng",
                     category: "Hàng Veston",
                     value: 0,
-                    unit: "",
+                    unit: "lần",
                     source_url: null
                 },
                 complaints: {
@@ -852,7 +852,7 @@
 
         function renderKpis(kpi = {}) {
             const blocking = kpi.blocking_rate || {};
-            const veston = kpi.veston_quality || {};
+            const commitments = kpi.po_commitments || kpi.veston_quality || {};
             const complaints = kpi.complaints || {};
             const impacts = Array.isArray(kpi.qa_impacts) ? kpi.qa_impacts : [];
             const blockingStatus = getKpiStatus(blocking.value, blocking.target, blocking.target_operator);
@@ -882,10 +882,10 @@
                     </div>
                     <div class="metric-row">
                         <div>
-                            <div class="metric-name">${escapeHtml(veston.category || "Hàng Veston")}</div>
-                            <div class="metric-note">${escapeHtml(veston.label || "Cam kết chất lượng")}</div>
+                            <div class="metric-name">${escapeHtml(commitments.category || "Hàng Veston")}</div>
+                            <div class="metric-note">${escapeHtml(commitments.label || "Cam kết về chất lượng trước khi xuất hàng")}</div>
                         </div>
-                        <div class="d-flex align-items-center gap-2"><span class="metric-value ${Number(veston.value || 0) === 0 ? "good" : "danger"}">${escapeHtml(veston.value ?? "--")}${escapeHtml(veston.unit || "")}</span>${sourceLink(veston.source_url)}</div>
+                        <div class="d-flex align-items-center gap-2"><span class="metric-value ${Number(commitments.value || 0) === 0 ? "good" : "neutral"}">${escapeHtml(commitments.value ?? "--")}${escapeHtml(commitments.unit || "")}</span>${sourceLink(commitments.source_url)}</div>
                     </div>
                 </article>
                 <article class="kpi-card" style="--accent: var(--warning)">
