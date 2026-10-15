@@ -459,7 +459,8 @@
             font-weight: 750;
         }
         .bulletin-tab.active { color: #fff; background: var(--primary); box-shadow: 0 6px 15px rgba(0, 64, 161, .2); }
-        .week-picker { min-width: 126px; width: 126px; font-size: .82rem; }
+        .week-picker { min-width: 78px; width: 78px; font-size: .82rem; }
+        .week-picker.week-picker-week { min-width: 96px; width: 96px; }
         .verified-list {
             max-width: 1600px;
             margin: 24px auto;
@@ -683,7 +684,8 @@
         <div class="report-toolbar">
             <span id="workflowStatus"><i class="fas fa-circle-info me-1"></i>Đang tải trạng thái bản tin...</span>
             <div class="d-flex gap-2 flex-wrap justify-content-end">
-                <select id="periodSelector" class="form-select form-select-sm week-picker" aria-label="Chọn tuần và năm bản tin"></select>
+                <select id="yearSelector" class="form-select form-select-sm week-picker" aria-label="Chọn năm bản tin"></select>
+                <select id="weekSelector" class="form-select form-select-sm week-picker week-picker-week" aria-label="Chọn tuần bản tin"></select>
                 <button class="btn-report primary" type="button" onclick="loadSelectedBulletin()"><i class="fas fa-calendar-week me-1"></i>Xem kỳ</button>
                 <button class="btn-report secondary" id="addReminderBtn" type="button" onclick="createEntry('reminder')"><i class="fas fa-bell me-1"></i>Thêm nhắc nhở</button>
                 <button class="btn-report secondary" id="addAlertBtn" type="button" onclick="createEntry('quality_alert')"><i class="fas fa-triangle-exclamation me-1"></i>Thêm cảnh báo</button>
@@ -990,15 +992,11 @@
             renderReminders(data?.reminders || [], report);
             renderAlerts(data?.quality_alerts || []);
             renderMetricDetails(data?.metrics || []);
+            const status = document.getElementById("workflowStatus");
+            status.className = "draft-state";
+            status.innerHTML = '<i class="fas fa-calendar-week me-1"></i>Chọn kỳ bản tin';
             const isDraft = report.status === "draft";
             const isSaved = Boolean(report.saved_at);
-            const status = document.getElementById("workflowStatus");
-            status.className = isDraft ? "draft-state" : "verified-state";
-            status.innerHTML = isDraft
-                ? (isSaved
-                    ? '<i class="fas fa-floppy-disk me-1"></i>Đã lưu — có thể tiếp tục chỉnh sửa hoặc verify.'
-                    : '<i class="fas fa-pen-to-square me-1"></i>Bản nháp — lưu để đưa vào Danh sách bản tin.')
-                : '<i class="fas fa-lock me-1"></i>Đã verify — phiên bản tuần này đã được khóa.';
             ["addReminderBtn", "addAlertBtn", "verifyBtn"].forEach(id => {
                 document.getElementById(id).disabled = !isDraft;
             });
@@ -1055,21 +1053,20 @@
         }
 
         function populatePeriodSelectors(report = {}) {
-            const periodSelector = document.getElementById('periodSelector');
+            const yearSelector = document.getElementById('yearSelector');
+            const weekSelector = document.getElementById('weekSelector');
             const selectedYear = Number(report.year || new Date().getFullYear());
             const years = Array.from({ length: 5 }, (_, index) => selectedYear - 2 + index);
             const selectedWeek = Number(report.week || 1);
-            periodSelector.innerHTML = years.flatMap(year => Array.from({ length: 53 }, (_, index) => {
-                const week = index + 1;
-                return `<option value="${year}-${week}">T${week}/${year}</option>`;
-            })).join('');
-            periodSelector.value = `${selectedYear}-${selectedWeek}`;
+            yearSelector.innerHTML = years.map(year => `<option value="${year}">${year}</option>`).join('');
+            weekSelector.innerHTML = Array.from({ length: 53 }, (_, index) => `<option value="${index + 1}">Tuần ${index + 1}</option>`).join('');
+            yearSelector.value = String(selectedYear);
+            weekSelector.value = String(selectedWeek);
         }
 
         async function loadSelectedBulletin() {
-            const [yearText, weekText] = String(document.getElementById('periodSelector').value || '').split('-');
-            const year = Number(yearText);
-            const week = Number(weekText);
+            const year = Number(document.getElementById('yearSelector').value);
+            const week = Number(document.getElementById('weekSelector').value);
             if (!Number.isInteger(year) || !Number.isInteger(week)) return;
             await reloadBulletinByPeriod(year, week);
         }
