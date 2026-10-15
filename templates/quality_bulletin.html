@@ -525,7 +525,7 @@
             .report-toolbar { flex-direction: column; align-items: stretch; }
         }
 
-        @page { size: A4 portrait; margin: 8mm; }
+        @page { size: A4 landscape; margin: 8mm; }
         @media print {
             * { print-color-adjust: exact !important; -webkit-print-color-adjust: exact !important; }
             body { background: #fff; font-size: 9pt; }
@@ -534,7 +534,7 @@
             .bulletin-frame { width: 100%; max-width: none; border-radius: 0; box-shadow: none; }
             .bulletin-canvas {
                 width: 100%;
-                height: 280mm;
+                height: 185mm;
                 min-height: 0;
                 aspect-ratio: auto;
                 padding: 4mm;
@@ -543,17 +543,17 @@
             }
             .bulletin-grid {
                 height: 100%;
-                grid-template-columns: 38mm minmax(0, 1fr);
-                grid-template-rows: 64mm 112mm minmax(0, 1fr);
+                grid-template-columns: 38mm minmax(0, 1fr) 68mm;
+                grid-template-rows: 50mm minmax(0, 1fr);
                 gap: 3mm;
             }
-            .identity-panel { grid-column: 1; grid-row: 1 / 4; }
-            .kpi-panel { grid-column: 2; grid-row: 1; }
+            .identity-panel { grid-column: 1; grid-row: 1 / 3; }
+            .kpi-panel { grid-column: 2 / 4; grid-row: 1; }
             .issues-panel { grid-column: 2; grid-row: 2; }
             .right-stack {
-                grid-column: 2;
-                grid-row: 3;
-                grid-template-rows: minmax(35mm, 1fr) minmax(40mm, 1fr) auto;
+                grid-column: 3;
+                grid-row: 2;
+                grid-template-rows: minmax(28mm, .78fr) minmax(32mm, 1fr) auto;
                 gap: 3mm;
             }
             .panel-heading { min-height: 9mm; padding: 2mm 3mm; }
