@@ -744,6 +744,7 @@ def get_bulletin_payload(connection_factory: Callable[[], Any], bulletin_id: int
         "from_date": _date_text(bulletin["week_start"]), "to_date": _date_text(bulletin["week_end"]),
         "updated_at": bulletin["updated_at"].strftime("%d/%m/%Y %H:%M"),
         "updated_by": bulletin["verified_by"] or bulletin.get("updated_by") or bulletin["created_by"] or "Hệ thống",
+        "saved_at": bulletin["saved_at"].isoformat() if bulletin.get("saved_at") else None,
         "version": str(bulletin["version"]), "status": bulletin["status"],
     }
     complaint = kpis.get("complaints", {})

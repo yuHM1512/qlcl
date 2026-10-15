@@ -197,6 +197,7 @@ SCHEMA_BOOTSTRAP_FILES = [
     "create_qa_final_internal.sql",
     "create_quality_bulletin.sql",
     "alter_quality_bulletin_updated_by.sql",
+    "alter_quality_bulletin_saved_at.sql",
     "migrate_qa_final_cap_fail_only.sql",
     "migrate_final_cap_editors.sql",
     "create_prod_plan.sql",
@@ -2076,6 +2077,21 @@ def bulletin_current(request: Request, as_of: Optional[str] = Query(default=None
     return get_bulletin_payload(get_db_connection, bulletin["id"])
 
 
+@app.get("/api/bulletin/by-period")
+def bulletin_by_period(request: Request, year: int = Query(..., ge=2000, le=2200), week: int = Query(..., ge=1, le=53)):
+    user = require_authenticated_api_user(request)
+    try:
+        week_start = date.fromisocalendar(year, week, 1)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail="Năm/tuần ISO không hợp lệ") from exc
+    bulletin = ensure_weekly_draft(
+        get_db_connection,
+        as_of=week_start + timedelta(days=7),
+        created_by=user.get("ma_nv") or "system",
+    )
+    return get_bulletin_payload(get_db_connection, bulletin["id"])
+
+
 @app.get("/api/bulletin/by-id/{bulletin_id}")
 def bulletin_by_id(bulletin_id: int, request: Request):
     require_authenticated_api_user(request)
@@ -2093,8 +2109,9 @@ def bulletin_history(request: Request, limit: int = Query(default=12, ge=1, le=5
             cur.execute(
                 """
                 SELECT id, week_start, week_end, iso_year, iso_week, status, version,
-                       created_by, verified_by, verified_at, updated_at
+                       created_by, verified_by, verified_at, saved_at, updated_at
                 FROM public.quality_bulletins
+                WHERE saved_at IS NOT NULL OR status = 'verified'
                 ORDER BY week_start DESC LIMIT %s
                 """,
                 (limit,),
@@ -2106,6 +2123,7 @@ def bulletin_history(request: Request, limit: int = Query(default=12, ge=1, le=5
             "week_start": row["week_start"].isoformat(),
             "week_end": row["week_end"].isoformat(),
             "verified_at": row["verified_at"].isoformat() if row["verified_at"] else None,
+            "saved_at": row["saved_at"].isoformat() if row["saved_at"] else None,
             "updated_at": row["updated_at"].isoformat(),
         }
         for row in rows
@@ -2292,13 +2310,33 @@ def bulletin_verify(bulletin_id: int, request: Request):
             cur.execute(
                 """
                 UPDATE public.quality_bulletins
-                SET status='verified', verified_by=%s, verified_at=NOW(), updated_at=NOW(), updated_by=%s
+                SET status='verified', verified_by=%s, verified_at=NOW(), saved_at=COALESCE(saved_at, NOW()), updated_at=NOW(), updated_by=%s
                 WHERE id=%s
                 """,
                 (_bulletin_user_label(user), _bulletin_user_label(user), bulletin_id),
             )
         conn.commit()
     return {"status": "verified", "bulletin_id": bulletin_id}
+
+
+@app.post("/api/bulletin/{bulletin_id}/save")
+def bulletin_save(bulletin_id: int, request: Request):
+    user = require_authenticated_api_user(request)
+    with get_db_connection() as conn:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            _require_draft_bulletin(cur, bulletin_id)
+            cur.execute(
+                """
+                UPDATE public.quality_bulletins
+                SET saved_at=COALESCE(saved_at, NOW()), updated_at=NOW(), updated_by=%s
+                WHERE id=%s
+                RETURNING id, saved_at
+                """,
+                (_bulletin_user_label(user), bulletin_id),
+            )
+            saved = cur.fetchone()
+        conn.commit()
+    return {"status": "saved", "bulletin_id": bulletin_id, "saved_at": saved["saved_at"].isoformat() if saved else None}
 
 
 @app.get("/gemba-control-plan")

@@ -41,6 +41,7 @@ CREATE TABLE IF NOT EXISTS public.quality_bulletins (
     created_by TEXT,
     verified_by TEXT,
     verified_at TIMESTAMPTZ,
+    saved_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

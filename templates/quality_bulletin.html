@@ -578,7 +578,7 @@
     <div class="container-fluid px-4">
         <div class="bulletin-tabs" role="tablist" aria-label="Khu vực bản tin tuần">
             <button type="button" class="bulletin-tab active" id="renderTabButton" onclick="switchBulletinTab('render')"><i class="fas fa-eye me-2"></i>Xem bản tin theo tuần</button>
-            <button type="button" class="bulletin-tab" id="verifiedTabButton" onclick="switchBulletinTab('verified')"><i class="fas fa-circle-check me-2"></i>Bản tin đã verify</button>
+            <button type="button" class="bulletin-tab" id="verifiedTabButton" onclick="switchBulletinTab('verified')"><i class="fas fa-box-archive me-2"></i>Danh sách bản tin</button>
         </div>
     </div>
 
@@ -683,13 +683,14 @@
         <div class="report-toolbar">
             <span id="workflowStatus"><i class="fas fa-circle-info me-1"></i>Đang tải trạng thái bản tin...</span>
             <div class="d-flex gap-2 flex-wrap justify-content-end">
-                <select id="weekSelector" class="form-select form-select-sm week-picker" onchange="loadSelectedBulletin()" aria-label="Chọn tuần bản tin">
-                    <option>Đang tải danh sách tuần...</option>
-                </select>
+                <select id="yearSelector" class="form-select form-select-sm week-picker" aria-label="Chọn năm bản tin"></select>
+                <select id="weekSelector" class="form-select form-select-sm week-picker" aria-label="Chọn tuần bản tin"></select>
+                <button class="btn-report primary" type="button" onclick="loadSelectedBulletin()"><i class="fas fa-calendar-week me-1"></i>Xem kỳ</button>
                 <button class="btn-report secondary" id="addReminderBtn" type="button" onclick="createEntry('reminder')"><i class="fas fa-bell me-1"></i>Thêm nhắc nhở</button>
                 <button class="btn-report secondary" id="addAlertBtn" type="button" onclick="createEntry('quality_alert')"><i class="fas fa-triangle-exclamation me-1"></i>Thêm cảnh báo</button>
                 <button class="btn-report secondary" id="syncBtn" type="button" onclick="syncBulletin()"><i class="fas fa-cloud-arrow-down me-1"></i>Đồng bộ nguồn</button>
                 <button class="btn-report secondary" type="button" onclick="reloadBulletin()"><i class="fas fa-rotate me-1"></i>Làm mới</button>
+                <button class="btn-report primary" id="saveBtn" type="button" onclick="saveBulletin()"><i class="fas fa-floppy-disk me-1"></i>Lưu</button>
                 <button class="btn-report success" id="verifyBtn" type="button" onclick="verifyBulletin()"><i class="fas fa-circle-check me-1"></i>Verify bản tin</button>
                 <button class="btn-report" type="button" onclick="printBulletin()"><i class="fas fa-file-pdf me-1"></i>Xuất PDF</button>
             </div>
@@ -709,8 +710,8 @@
         <div class="verified-list">
             <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap">
                 <div>
-                    <h2 class="h5 mb-1 text-primary fw-bold"><i class="fas fa-box-archive me-2"></i>Kho bản tin đã verify</h2>
-                    <p class="mb-0 text-secondary">Các phiên bản đã xác nhận được khóa để xem lại theo tuần.</p>
+                    <h2 class="h5 mb-1 text-primary fw-bold"><i class="fas fa-box-archive me-2"></i>Danh sách bản tin</h2>
+                    <p class="mb-0 text-secondary">Các bản tin đã lưu hoặc đã verify, có thể mở lại theo tuần.</p>
                 </div>
                 <button class="btn btn-outline-primary btn-sm" type="button" onclick="refreshHistory()"><i class="fas fa-rotate me-1"></i>Làm mới</button>
             </div>
@@ -991,14 +992,18 @@
             renderAlerts(data?.quality_alerts || []);
             renderMetricDetails(data?.metrics || []);
             const isDraft = report.status === "draft";
+            const isSaved = Boolean(report.saved_at);
             const status = document.getElementById("workflowStatus");
             status.className = isDraft ? "draft-state" : "verified-state";
             status.innerHTML = isDraft
-                ? '<i class="fas fa-pen-to-square me-1"></i>Bản nháp — kiểm tra dữ liệu trước khi verify.'
+                ? (isSaved
+                    ? '<i class="fas fa-floppy-disk me-1"></i>Đã lưu — có thể tiếp tục chỉnh sửa hoặc verify.'
+                    : '<i class="fas fa-pen-to-square me-1"></i>Bản nháp — lưu để đưa vào Danh sách bản tin.')
                 : '<i class="fas fa-lock me-1"></i>Đã verify — phiên bản tuần này đã được khóa.';
             ["addReminderBtn", "addAlertBtn", "verifyBtn"].forEach(id => {
                 document.getElementById(id).disabled = !isDraft;
             });
+            document.getElementById("saveBtn").disabled = !isDraft || isSaved;
         }
 
         async function loadBulletinData() {
@@ -1019,39 +1024,53 @@
             return response.json();
         }
 
+        async function loadBulletinByPeriod(year, week) {
+            const response = await fetch(`/api/bulletin/by-period?year=${Number(year)}&week=${Number(week)}`, { headers: { Accept: 'application/json' } });
+            if (!response.ok) {
+                const body = await response.json().catch(() => ({}));
+                throw new Error(body.detail || `Không thể tải bản tin (${response.status})`);
+            }
+            return response.json();
+        }
+
         function historyLabel(item) {
             return `Tuần ${item.iso_week}/${item.iso_year} · ${String(item.week_start || '').split('-').reverse().join('/')} – ${String(item.week_end || '').split('-').reverse().join('/')}`;
         }
 
-        function renderVerifiedList() {
-            const verified = bulletinHistory.filter(item => item.status === 'verified');
-            document.getElementById('verifiedList').innerHTML = verified.length ? verified.map(item => `
+        function renderBulletinList() {
+            document.getElementById('verifiedList').innerHTML = bulletinHistory.length ? bulletinHistory.map(item => `
                 <article class="verified-card">
                     <div>
-                        <div class="verified-card-title"><i class="fas fa-circle-check text-success me-2"></i>${escapeHtml(historyLabel(item))}</div>
-                        <div class="verified-card-meta">Verify bởi ${escapeHtml(item.verified_by || '--')} · ${escapeHtml(String(item.verified_at || '').replace('T', ' ').slice(0, 16) || '--')}</div>
+                        <div class="verified-card-title"><i class="fas ${item.status === 'verified' ? 'fa-circle-check text-success' : 'fa-floppy-disk text-primary'} me-2"></i>${escapeHtml(historyLabel(item))}</div>
+                        <div class="verified-card-meta">${item.status === 'verified' ? 'Verify' : 'Lưu'} bởi ${escapeHtml(item.verified_by || item.created_by || '--')} · ${escapeHtml(String(item.verified_at || item.saved_at || '').replace('T', ' ').slice(0, 16) || '--')}</div>
                     </div>
-                    <button class="btn btn-primary btn-sm" type="button" onclick="openHistoryBulletin(${Number(item.id)})"><i class="fas fa-eye me-1"></i>Xem bản tin</button>
-                </article>`).join('') : '<div class="text-center text-secondary py-5"><i class="fas fa-inbox fs-3 d-block mb-2"></i>Chưa có bản tin nào được verify.</div>';
+                    <div class="d-flex align-items-center gap-2"><span class="badge ${item.status === 'verified' ? 'text-bg-success' : 'text-bg-primary'}">${item.status === 'verified' ? 'Đã verify' : 'Đã lưu'}</span><button class="btn btn-primary btn-sm" type="button" onclick="openHistoryBulletin(${Number(item.id)})"><i class="fas fa-eye me-1"></i>Xem bản tin</button></div>
+                </article>`).join('') : '<div class="text-center text-secondary py-5"><i class="fas fa-inbox fs-3 d-block mb-2"></i>Chưa có bản tin nào được lưu.</div>';
         }
 
         async function refreshHistory(selectedId = null) {
             const response = await fetch('/api/bulletin/history?limit=52', { headers: { Accept: 'application/json' } });
             if (!response.ok) throw new Error('Không thể tải lịch sử bản tin.');
             bulletinHistory = await response.json();
-            const selector = document.getElementById('weekSelector');
-            const desiredId = String(selectedId || selector.value || currentBulletinData?.report?.id || '');
-            selector.innerHTML = bulletinHistory.length
-                ? bulletinHistory.map(item => `<option value="${Number(item.id)}">${escapeHtml(historyLabel(item))}${item.status === 'draft' ? ' · Nháp' : ' · Đã verify'}</option>`).join('')
-                : '<option value="">Chưa có bản tin</option>';
-            if ([...selector.options].some(option => option.value === desiredId)) selector.value = desiredId;
-            renderVerifiedList();
+            renderBulletinList();
+        }
+
+        function populatePeriodSelectors(report = {}) {
+            const yearSelector = document.getElementById('yearSelector');
+            const weekSelector = document.getElementById('weekSelector');
+            const selectedYear = Number(report.year || new Date().getFullYear());
+            const years = Array.from({ length: 5 }, (_, index) => selectedYear - 2 + index);
+            yearSelector.innerHTML = years.map(year => `<option value="${year}">${year}</option>`).join('');
+            weekSelector.innerHTML = Array.from({ length: 53 }, (_, index) => `<option value="${index + 1}">Tuần ${index + 1}</option>`).join('');
+            yearSelector.value = String(selectedYear);
+            weekSelector.value = String(Number(report.week || 1));
         }
 
         async function loadSelectedBulletin() {
-            const bulletinId = document.getElementById('weekSelector').value;
-            if (!bulletinId) return;
-            await reloadBulletin(Number(bulletinId));
+            const year = Number(document.getElementById('yearSelector').value);
+            const week = Number(document.getElementById('weekSelector').value);
+            if (!Number.isInteger(year) || !Number.isInteger(week)) return;
+            await reloadBulletinByPeriod(year, week);
         }
 
         async function openHistoryBulletin(bulletinId) {
@@ -1149,6 +1168,21 @@
             }
         }
 
+        async function saveBulletin() {
+            const report = currentBulletinData?.report;
+            if (!report?.id || report.status !== 'draft' || report.saved_at) return;
+            const button = document.getElementById('saveBtn');
+            button.disabled = true;
+            try {
+                await apiRequest(`/api/bulletin/${report.id}/save`, { method: 'POST', body: '{}' });
+                await reloadBulletin(report.id);
+                window.alert('Đã lưu bản tin vào Danh sách bản tin.');
+            } catch (error) {
+                button.disabled = false;
+                window.alert(error.message);
+            }
+        }
+
         async function verifyBulletin() {
             const report = currentBulletinData?.report;
             if (!report?.id || report.status !== 'draft') return;
@@ -1166,22 +1200,36 @@
             error.hidden = true;
             try {
                 const explicitId = Number(bulletinId);
-                const selectorId = Number(document.getElementById('weekSelector')?.value || 0);
-                const selectedId = Number.isInteger(explicitId) && explicitId > 0
-                    ? explicitId
-                    : (Number.isInteger(selectorId) && selectorId > 0 ? selectorId : null);
-                const data = selectedId ? await loadBulletinById(selectedId) : await loadBulletinData();
+                const data = Number.isInteger(explicitId) && explicitId > 0
+                    ? await loadBulletinById(explicitId)
+                    : await loadBulletinData();
                 renderBulletin(data);
+                populatePeriodSelectors(data.report || {});
                 try {
-                    await refreshHistory(data.report?.id);
+                    await refreshHistory();
                 } catch (historyError) {
                     // Lịch sử chỉ là chức năng phụ: không che bản tin đang render nếu tải lịch sử thất bại.
                     console.warn('Không thể tải lịch sử bản tin:', describeError(historyError));
-                    const selector = document.getElementById('weekSelector');
-                    if (selector && data.report?.id) {
-                        selector.innerHTML = `<option value="${Number(data.report.id)}">Tuần ${escapeHtml(data.report.week)}/${escapeHtml(data.report.year)} · Bản tin đang xem</option>`;
-                    }
+                    populatePeriodSelectors(data.report || {});
                 }
+            } catch (err) {
+                document.getElementById("errorMessage").textContent = describeError(err);
+                error.hidden = false;
+            } finally {
+                loading.hidden = true;
+            }
+        }
+
+        async function reloadBulletinByPeriod(year, week) {
+            const loading = document.getElementById("loadingState");
+            const error = document.getElementById("errorState");
+            loading.hidden = false;
+            error.hidden = true;
+            try {
+                const data = await loadBulletinByPeriod(year, week);
+                renderBulletin(data);
+                populatePeriodSelectors(data.report || {});
+                await refreshHistory();
             } catch (err) {
                 document.getElementById("errorMessage").textContent = describeError(err);
                 error.hidden = false;
