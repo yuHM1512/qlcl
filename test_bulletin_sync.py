@@ -19,10 +19,10 @@ class BulletinSyncTests(unittest.TestCase):
             (date(2026, 10, 5), date(2026, 10, 10)),
         )
 
-    def test_kpi_period_uses_previous_month_in_first_week(self):
+    def test_kpi_period_always_uses_current_month(self):
         self.assertEqual(
             kpi_report_period(date(2026, 10, 5), date(2026, 10, 10)),
-            (date(2026, 9, 1), date(2026, 9, 30)),
+            (date(2026, 10, 1), date(2026, 10, 10)),
         )
         self.assertEqual(
             kpi_report_period(date(2026, 10, 12), date(2026, 10, 17)),

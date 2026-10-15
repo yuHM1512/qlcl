@@ -137,15 +137,7 @@ def previous_report_period(as_of: Optional[date] = None) -> Tuple[date, date]:
 
 
 def kpi_report_period(report_week_start: date, report_week_end: date) -> Tuple[date, date]:
-    """Return the cumulative period used by KPI 1-2-3 for a bulletin.
-
-    A bulletin prepared in the first Monday week of a month uses the complete
-    previous month. Later bulletins accumulate from the first day of the
-    current month through the report Saturday.
-    """
-    if report_week_start.day <= 7:
-        previous_month_end = report_week_start.replace(day=1) - timedelta(days=1)
-        return previous_month_end.replace(day=1), previous_month_end
+    """Return the current-month cumulative period used by KPI 1-2-3."""
     return report_week_start.replace(day=1), report_week_end
 
 
