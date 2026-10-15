@@ -691,8 +691,7 @@
                 <button class="btn-report secondary" id="addAlertBtn" type="button" onclick="createEntry('quality_alert')"><i class="fas fa-triangle-exclamation me-1"></i>Thêm cảnh báo</button>
                 <button class="btn-report secondary" id="syncBtn" type="button" onclick="syncBulletin()"><i class="fas fa-cloud-arrow-down me-1"></i>Đồng bộ nguồn</button>
                 <button class="btn-report secondary" type="button" onclick="reloadBulletin()"><i class="fas fa-rotate me-1"></i>Làm mới</button>
-                <button class="btn-report primary" id="saveBtn" type="button" onclick="saveBulletin()"><i class="fas fa-floppy-disk me-1"></i>Lưu</button>
-                <button class="btn-report success" id="verifyBtn" type="button" onclick="verifyBulletin()"><i class="fas fa-circle-check me-1"></i>Verify bản tin</button>
+                <button class="btn-report primary" id="saveBtn" type="button" onclick="saveBulletin()"><i class="fas fa-floppy-disk me-1"></i>Lưu bản tin</button>
                 <button class="btn-report" type="button" onclick="printBulletin()"><i class="fas fa-file-pdf me-1"></i>Xuất PDF</button>
             </div>
         </div>
@@ -712,7 +711,7 @@
             <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap">
                 <div>
                     <h2 class="h5 mb-1 text-primary fw-bold"><i class="fas fa-box-archive me-2"></i>Danh sách bản tin</h2>
-                    <p class="mb-0 text-secondary">Các bản tin đã lưu hoặc đã verify, có thể mở lại theo tuần.</p>
+                    <p class="mb-0 text-secondary">Các bản tin đã lưu, có thể mở lại và cập nhật theo tuần.</p>
                 </div>
                 <button class="btn btn-outline-primary btn-sm" type="button" onclick="refreshHistory()"><i class="fas fa-rotate me-1"></i>Làm mới</button>
             </div>
@@ -994,13 +993,16 @@
             renderMetricDetails(data?.metrics || []);
             const status = document.getElementById("workflowStatus");
             status.className = "draft-state";
-            status.innerHTML = '<i class="fas fa-calendar-week me-1"></i>Chọn kỳ bản tin';
             const isDraft = report.status === "draft";
-            const isSaved = Boolean(report.saved_at);
-            ["addReminderBtn", "addAlertBtn", "verifyBtn"].forEach(id => {
+            status.innerHTML = !isDraft
+                ? '<i class="fas fa-lock me-1"></i>Bản tin đã khóa.'
+                : (report.saved_at
+                    ? '<i class="fas fa-floppy-disk me-1"></i>Đã lưu — có thể tiếp tục chỉnh sửa.'
+                    : '<i class="fas fa-calendar-week me-1"></i>Chọn kỳ bản tin');
+            ["addReminderBtn", "addAlertBtn"].forEach(id => {
                 document.getElementById(id).disabled = !isDraft;
             });
-            document.getElementById("saveBtn").disabled = !isDraft || isSaved;
+            document.getElementById("saveBtn").disabled = !isDraft;
         }
 
         async function loadBulletinData() {
@@ -1038,10 +1040,10 @@
             document.getElementById('verifiedList').innerHTML = bulletinHistory.length ? bulletinHistory.map(item => `
                 <article class="verified-card">
                     <div>
-                        <div class="verified-card-title"><i class="fas ${item.status === 'verified' ? 'fa-circle-check text-success' : 'fa-floppy-disk text-primary'} me-2"></i>${escapeHtml(historyLabel(item))}</div>
-                        <div class="verified-card-meta">${item.status === 'verified' ? 'Verify' : 'Lưu'} bởi ${escapeHtml(item.verified_by || item.created_by || '--')} · ${escapeHtml(String(item.verified_at || item.saved_at || '').replace('T', ' ').slice(0, 16) || '--')}</div>
+                        <div class="verified-card-title"><i class="fas fa-floppy-disk text-primary me-2"></i>${escapeHtml(historyLabel(item))}</div>
+                        <div class="verified-card-meta">Lưu bởi ${escapeHtml(item.verified_by || item.created_by || '--')} · ${escapeHtml(String(item.verified_at || item.saved_at || '').replace('T', ' ').slice(0, 16) || '--')}</div>
                     </div>
-                    <div class="d-flex align-items-center gap-2"><span class="badge ${item.status === 'verified' ? 'text-bg-success' : 'text-bg-primary'}">${item.status === 'verified' ? 'Đã verify' : 'Đã lưu'}</span><button class="btn btn-primary btn-sm" type="button" onclick="openHistoryBulletin(${Number(item.id)})"><i class="fas fa-eye me-1"></i>Xem bản tin</button></div>
+                    <div class="d-flex align-items-center gap-2"><span class="badge text-bg-primary">Đã lưu</span><button class="btn btn-primary btn-sm" type="button" onclick="openHistoryBulletin(${Number(item.id)})"><i class="fas fa-eye me-1"></i>Xem bản tin</button></div>
                 </article>`).join('') : '<div class="text-center text-secondary py-5"><i class="fas fa-inbox fs-3 d-block mb-2"></i>Chưa có bản tin nào được lưu.</div>';
         }
 
@@ -1168,7 +1170,7 @@
 
         async function saveBulletin() {
             const report = currentBulletinData?.report;
-            if (!report?.id || report.status !== 'draft' || report.saved_at) return;
+            if (!report?.id || report.status !== 'draft') return;
             const button = document.getElementById('saveBtn');
             button.disabled = true;
             try {
@@ -1179,16 +1181,6 @@
                 button.disabled = false;
                 window.alert(error.message);
             }
-        }
-
-        async function verifyBulletin() {
-            const report = currentBulletinData?.report;
-            if (!report?.id || report.status !== 'draft') return;
-            if (!window.confirm(`Verify và khóa bản tin tuần ${report.week}/${report.year}?`)) return;
-            try {
-                await apiRequest(`/api/bulletin/${report.id}/verify`, { method: 'POST', body: '{}' });
-                await reloadBulletin();
-            } catch (error) { window.alert(error.message); }
         }
 
         async function reloadBulletin(bulletinId = null) {
