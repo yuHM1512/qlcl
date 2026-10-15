@@ -525,24 +525,83 @@
             .report-toolbar { flex-direction: column; align-items: stretch; }
         }
 
-        @page { size: A4 landscape; margin: 7mm; }
+        @page { size: A4 landscape; margin: 8mm; }
         @media print {
-            body { background: #fff; }
-            .navbar, .page-header, .report-toolbar { display: none !important; }
+            * { print-color-adjust: exact !important; -webkit-print-color-adjust: exact !important; }
+            body { background: #fff !important; color: #172033 !important; font-size: 9pt; }
+            .navbar, .page-header, .bulletin-tabs, .report-toolbar, .metric-detail, #verifiedTab { display: none !important; }
             .bulletin-shell { padding: 0; }
-            .bulletin-frame { max-width: none; border-radius: 0; box-shadow: none; }
+            .bulletin-frame { width: 100%; max-width: none; border-radius: 0; box-shadow: none; background: #fff; }
             .bulletin-canvas {
                 width: 100%;
+                height: 180mm;
                 min-height: 0;
-                aspect-ratio: 16 / 9;
-                padding: 10px;
-                print-color-adjust: exact;
-                -webkit-print-color-adjust: exact;
+                aspect-ratio: auto;
+                padding: 4mm;
+                overflow: hidden;
+                color: #172033 !important;
+                background: #fff !important;
+                border: .35mm solid #94a3b8;
             }
-            .bulletin-grid { grid-template-columns: 190px minmax(0, 1fr) 315px; grid-template-rows: 212px minmax(0, 1fr); gap: 8px; }
-            .panel-heading { min-height: 36px; padding: 7px 10px; }
-            .kpi-grid { height: calc(100% - 36px); padding: 7px; gap: 7px; }
-            .issues-table th, .issues-table td { padding: 6px; }
+            .bulletin-grid {
+                height: 100%;
+                grid-template-columns: 38mm minmax(0, 1fr) 70mm;
+                grid-template-rows: 48mm minmax(0, 1fr);
+                gap: 3mm;
+            }
+            .report-panel, .kpi-card {
+                color: #172033 !important;
+                background: #fff !important;
+                border: .25mm solid #cbd5e1;
+                border-radius: 2.5mm;
+                box-shadow: none !important;
+            }
+            .panel-heading { min-height: 9mm; padding: 2mm 3mm; background: #e8f1ff !important; color: #0b3d91 !important; }
+            .panel-title { color: #0b3d91 !important; font-size: 9pt; }
+            .panel-title i, .panel-meta { color: #2563eb !important; }
+            .identity-panel { padding: 4mm 3mm; background: #eef5ff !important; border-color: #93c5fd; }
+            .identity-logo { width: 16mm; height: 16mm; margin-bottom: 4mm; border-radius: 5mm; background: #dbeafe !important; color: #0b3d91 !important; box-shadow: none; font-size: 17pt; }
+            .identity-eyebrow, .identity-subtitle, .week-label, .identity-footer, .summary-tile span { color: #47627f !important; }
+            .identity-title, .week-value, .identity-footer strong { color: #12356b !important; }
+            .identity-title { font-size: 15pt; }
+            .week-block { margin-top: 8mm; padding: 3mm 2mm; background: #dbeafe !important; }
+            .week-value { font-size: 13pt; }
+            .week-range { color: #35516f !important; font-size: 8pt; }
+            .summary-tile { padding: 2mm 1mm; background: #fff !important; border: .2mm solid #bfdbfe; }
+            .summary-tile strong { color: #12356b; font-size: 12pt; }
+            .kpi-grid { height: calc(100% - 9mm); padding: 2mm; gap: 2mm; }
+            .kpi-card { padding: 3mm; background: #f8fafc !important; }
+            .kpi-card-label, .kpi-source { color: #47627f !important; font-size: 7pt; }
+            .metric-row { padding: 2.5mm 0; }
+            .metric-row + .metric-row { border-top-color: #dbe3ef; }
+            .metric-name { color: #172033 !important; font-size: 8pt; }
+            .metric-note, .empty-note, .cause-list { color: #52657d !important; font-size: 7pt; }
+            .metric-value { font-size: 14pt; }
+            .issues-wrap, .alert-list { overflow: hidden; }
+            .issues-table th { position: static; padding: 2mm 1.8mm; background: #dbeafe !important; color: #24466c !important; font-size: 6.5pt; }
+            .issues-table td { padding: 2mm 1.8mm; color: #26364d !important; background: #fff !important; border-top-color: #e2e8f0; font-size: 7pt; }
+            .topic-badge, .status-badge { padding: 1mm 1.5mm; font-size: 6.5pt; }
+            .topic-final { color: #6b21a8; background: #f3e8ff; }
+            .topic-endline { color: #b42318; background: #fee2e2; }
+            .topic-complaint { color: #92400e; background: #fef3c7; }
+            .topic-survey, .topic-audit { color: #075985; background: #e0f2fe; }
+            .topic-production { color: #166534; background: #dcfce7; }
+            .topic-default { color: #475569; background: #f1f5f9; }
+            .status-new { color: #b42318; background: #fee2e2; }
+            .status-doing { color: #92400e; background: #fef3c7; }
+            .status-done { color: #166534; background: #dcfce7; }
+            .status-overdue { color: #991b1b; background: #fecaca; }
+            .right-stack { gap: 3mm; grid-template-rows: minmax(30mm, .78fr) minmax(35mm, 1fr) auto; }
+            .compact-body { padding: 2mm 3mm; }
+            .reminder-table th, .reminder-table td { color: #52657d !important; padding: 1.5mm; font-size: 7pt; border-top-color: #e2e8f0; }
+            .reminder-owner { color: #075985; background: #e0f2fe; }
+            .alert-list { padding: 2mm 3mm; }
+            .quality-alert { background: #fffbeb; }
+            .alert-title { color: #172033; font-size: 7.5pt; }
+            .alert-content { color: #52657d !important; font-size: 7pt; }
+            .update-strip { min-height: 11mm; padding: 2mm 3mm; background: #e8f1ff !important; color: #172033 !important; box-shadow: none; border: .2mm solid #bfdbfe; }
+            .update-label, .version-chip { color: #47627f !important; }
+            .update-value { color: #172033 !important; font-size: 7pt; }
         }
     </style>
 </head>
