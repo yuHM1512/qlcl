@@ -2175,7 +2175,7 @@ async def bulletin_update_item(item_id: int, request: Request):
             if item["status_origin"] == "source" and requested_status:
                 raise HTTPException(
                     status_code=409,
-                    detail="Tiến độ CAP Final/Endline được đồng bộ từ Google Sheets",
+                    detail="Trạng thái được đồng bộ từ Google Sheets; chỉ cập nhật thời hạn hoặc người theo dõi tại đây",
                 )
             cur.execute(
                 """

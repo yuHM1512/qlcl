@@ -1202,7 +1202,7 @@
                 );
                 if (status === null) return;
             } else {
-                window.alert('Tiến độ CAP Final/Endline được lấy từ sheet nguồn. Bạn chỉ cập nhật thời hạn/người theo dõi tại đây.');
+                window.alert('Trạng thái được đồng bộ từ sheet nguồn. Bạn chỉ cập nhật thời hạn/người theo dõi tại đây.');
             }
             const currentDeadline = issue.due_date ? issue.due_date.split('/').reverse().join('-') : '';
             const deadline = await pickDeadline(currentDeadline);
