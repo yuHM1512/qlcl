@@ -263,7 +263,9 @@ def _source_record(source_type: str, row: Dict[str, Any], index: int, *, gid: Op
             topic="Khiếu nại",
             description=str(pick(row, "Mô tả lỗi", "Phân loại lỗi", default="Khiếu nại khách hàng") or "Khiếu nại khách hàng"),
             source_status="Hoàn thành" if pick(row, "Thời gian đóng HĐKP") else "Chưa tiếp nhận",
-            source_deadline=parse_date(pick(row, "Ngày yêu cầu làm HĐKP")),
+            # "Ngày yêu cầu làm HĐKP" is the request/creation date, not a due date.
+            # Keep it in payload for traceability, but let the bulletin user enter the deadline.
+            source_deadline=None,
             source_owner=str(pick(row, "Đơn vị giải quyết", default="") or ""),
         )
         action_url = pick(row, "Biểu mẫu hành động khắc phục")

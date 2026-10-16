@@ -58,6 +58,14 @@ class BulletinSyncTests(unittest.TestCase):
         self.assertEqual(row["target"], Decimal("3"))
         self.assertEqual(row["source_status"], "Đang thực hiện")
 
+    def test_complaint_request_date_is_not_used_as_deadline(self):
+        values = [
+            ["ID", "No", "Thời gian", "Đơn vị", "Mô tả lỗi", "Ngày yêu cầu làm HĐKP", "Thời gian đóng HĐKP"],
+            ["c-1", "KN0001", "08/10/2026", "XN2", "Lỗi chất lượng", "08/10/2026", ""],
+        ]
+        row = parse_source_rows("complaint", values, "sheet-id", 10)[0]
+        self.assertIsNone(row["source_deadline"])
+
     def test_done_status_normalization(self):
         self.assertTrue(is_done("Hoàn thành"))
         self.assertTrue(is_done("ĐÃ ĐÓNG"))
