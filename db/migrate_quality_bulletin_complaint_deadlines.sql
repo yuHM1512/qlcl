@@ -28,4 +28,17 @@ SET source_deadline = NULL,
     synced_at = NOW()
 WHERE source_type = 'complaint';
 
+-- Complaint status is authoritative in the source column "Kết quả giám sát".
+-- Existing complaint items become source-controlled as well.
+UPDATE public.quality_bulletin_items AS i
+SET source_status = sr.source_status,
+    status = sr.source_status,
+    status_origin = 'source',
+    updated_at = NOW()
+FROM public.bulletin_source_records AS sr
+WHERE i.source_record_id = sr.id
+  AND i.source_type = 'complaint'
+  AND sr.source_type = 'complaint'
+  AND NULLIF(trim(sr.source_status), '') IS NOT NULL;
+
 COMMIT;

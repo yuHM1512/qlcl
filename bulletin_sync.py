@@ -43,7 +43,7 @@ SHEET_SOURCES = (
     ("evaluation", EVALUATION_SHEET_ID, "1. VẤN ĐỀ", "A:AC", 507583362),
 )
 
-SOURCE_AUTHORITATIVE_TYPES = {"final", "endline_cap"}
+SOURCE_AUTHORITATIVE_TYPES = {"final", "endline_cap", "complaint"}
 DONE_MARKERS = ("hoan thanh", "da dong", "closed", "complete", "done")
 
 
@@ -262,7 +262,7 @@ def _source_record(source_type: str, row: Dict[str, Any], index: int, *, gid: Op
             product_type=str(pick(row, "Mã hàng", default="") or ""),
             topic="Khiếu nại",
             description=str(pick(row, "Mô tả lỗi", "Phân loại lỗi", default="Khiếu nại khách hàng") or "Khiếu nại khách hàng"),
-            source_status="Hoàn thành" if pick(row, "Thời gian đóng HĐKP") else "Chưa tiếp nhận",
+            source_status=str(pick(row, "Kết quả giám sát", default="") or "").strip(),
             # "Ngày yêu cầu làm HĐKP" is the request/creation date, not a due date.
             # Keep it in payload for traceability, but let the bulletin user enter the deadline.
             source_deadline=None,
