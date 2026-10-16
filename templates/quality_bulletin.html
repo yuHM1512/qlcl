@@ -24,6 +24,7 @@
         }
 
         * { box-sizing: border-box; }
+        body.modal-open { overflow: hidden; }
         body {
             margin: 0;
             background: var(--surface);
@@ -318,6 +319,8 @@
             min-height: 0;
         }
         .compact-body { padding: 10px 12px; }
+        .entry-editable { cursor: pointer; }
+        .entry-editable:hover { box-shadow: inset 0 0 0 1px rgba(85, 194, 255, .42); }
         .reminder-table { width: 100%; border-collapse: collapse; }
         .reminder-table th {
             padding: 5px 6px 7px;
@@ -413,6 +416,28 @@
             color: #6c757d;
             font-size: .78rem;
         }
+        .entry-modal[hidden] { display: none; }
+        .entry-modal { position: fixed; inset: 0; z-index: 2000; display: grid; place-items: center; padding: 20px; }
+        .entry-modal-backdrop { position: absolute; inset: 0; background: rgba(9, 17, 44, .72); backdrop-filter: blur(4px); }
+        .entry-modal-dialog { position: relative; width: min(760px, 100%); max-height: min(86vh, 760px); overflow: auto; border-radius: 18px; background: #f8fafc; color: #17213e; box-shadow: 0 24px 70px rgba(0,0,0,.35); }
+        .entry-modal-header, .entry-modal-footer { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 18px 20px; border-bottom: 1px solid #dbe3f0; }
+        .entry-modal-footer { border-top: 1px solid #dbe3f0; border-bottom: 0; }
+        .entry-modal-header h2 { margin: 0; font-size: 1.15rem; font-weight: 800; }
+        .entry-modal-header p { margin: 3px 0 0; color: #61708d; font-size: .83rem; }
+        .entry-modal-close { border: 0; background: transparent; color: #53627f; font-size: 1.15rem; }
+        .entry-rows { display: grid; gap: 10px; padding: 18px 20px; }
+        .entry-row { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(145px, .75fr) auto; gap: 8px; align-items: center; padding: 10px; border: 1px solid #dbe3f0; border-radius: 12px; background: #fff; }
+        .entry-row.alert-row { grid-template-columns: minmax(0, 1fr) auto; }
+        .entry-row input, .entry-row textarea { width: 100%; border: 1px solid #c8d3e4; border-radius: 8px; padding: 9px 10px; font: inherit; font-size: .88rem; color: #17213e; background: #fff; }
+        .entry-row textarea { min-height: 42px; resize: vertical; }
+        .entry-row input:focus, .entry-row textarea:focus { outline: 2px solid rgba(0, 86, 210, .22); border-color: #2876d7; }
+        .entry-remove { width: 32px; height: 32px; border: 0; border-radius: 8px; color: #b42318; background: #fff0ef; }
+        .deadline-dialog { width: min(520px, 100%); }
+        .deadline-picker-body { display: grid; gap: 7px; padding: 22px 20px; }
+        .deadline-picker-body label { color: #53627f; font-size: .82rem; font-weight: 700; }
+        .deadline-picker-body input { width: 100%; border: 1px solid #c8d3e4; border-radius: 9px; padding: 10px 11px; font: inherit; color: #17213e; background: #fff; }
+        .deadline-picker-body input:focus { outline: 2px solid rgba(0, 86, 210, .22); border-color: #2876d7; }
+        @media (max-width: 700px) { .entry-row, .entry-row.alert-row { grid-template-columns: 1fr; } .entry-remove { justify-self: end; } }
         .btn-report {
             border: 0;
             border-radius: 12px;
@@ -681,20 +706,20 @@
                     </section>
 
                     <aside class="right-stack">
-                        <section class="report-panel reminder-panel">
+                        <section class="report-panel reminder-panel entry-editable" tabindex="0" role="button" onclick="openEntryModal('reminder')" onkeydown="if(event.key==='Enter'||event.key===' ') openEntryModal('reminder')">
                             <div class="panel-heading">
                                 <h3 class="panel-title"><i class="fas fa-bell"></i>Nhắc nhở công việc</h3>
                                 <span class="panel-meta" id="reminderMeta">0 việc</span>
                             </div>
                             <div class="compact-body">
                                 <table class="reminder-table">
-                                    <thead><tr><th>Công việc</th><th>Ngày</th><th>Thực hiện</th></tr></thead>
+                                    <thead><tr><th>Công việc</th><th>Trách nhiệm</th><th>Ngày</th></tr></thead>
                                     <tbody id="remindersBody"></tbody>
                                 </table>
                             </div>
                         </section>
 
-                        <section class="report-panel alert-panel">
+                        <section class="report-panel alert-panel entry-editable" tabindex="0" role="button" onclick="openEntryModal('quality_alert')" onkeydown="if(event.key==='Enter'||event.key===' ') openEntryModal('quality_alert')">
                             <div class="panel-heading">
                                 <h3 class="panel-title"><i class="fas fa-triangle-exclamation"></i>Cảnh báo chất lượng</h3>
                                 <span class="panel-meta" id="alertMeta">0 cảnh báo</span>
@@ -720,8 +745,6 @@
                 <select id="yearSelector" class="form-select form-select-sm week-picker" aria-label="Chọn năm bản tin"></select>
                 <select id="weekSelector" class="form-select form-select-sm week-picker week-picker-week" aria-label="Chọn tuần bản tin"></select>
                 <button class="btn-report primary" type="button" onclick="loadSelectedBulletin()"><i class="fas fa-calendar-week me-1"></i>Xem kỳ</button>
-                <button class="btn-report secondary" id="addReminderBtn" type="button" onclick="createEntry('reminder')"><i class="fas fa-bell me-1"></i>Thêm nhắc nhở</button>
-                <button class="btn-report secondary" id="addAlertBtn" type="button" onclick="createEntry('quality_alert')"><i class="fas fa-triangle-exclamation me-1"></i>Thêm cảnh báo</button>
                 <button class="btn-report secondary" id="syncBtn" type="button" onclick="syncBulletin()"><i class="fas fa-cloud-arrow-down me-1"></i>Đồng bộ nguồn</button>
                 <button class="btn-report secondary" type="button" onclick="reloadBulletin()"><i class="fas fa-rotate me-1"></i>Làm mới</button>
                 <button class="btn-report primary" id="saveBtn" type="button" onclick="saveBulletin()"><i class="fas fa-floppy-disk me-1"></i>Lưu bản tin</button>
@@ -738,6 +761,36 @@
             </div>
         </details>
     </main>
+
+    <div class="entry-modal" id="entryModal" hidden aria-hidden="true">
+        <div class="entry-modal-backdrop" onclick="closeEntryModal()"></div>
+        <section class="entry-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="entryModalTitle">
+            <div class="entry-modal-header">
+                <div><h2 id="entryModalTitle">Nhập nội dung</h2><p id="entryModalHint"></p></div>
+                <button type="button" class="entry-modal-close" onclick="closeEntryModal()" aria-label="Đóng"><i class="fas fa-xmark"></i></button>
+            </div>
+            <div id="entryRows" class="entry-rows"></div>
+            <div class="entry-modal-footer">
+                <button type="button" class="btn-report secondary" onclick="addEntryRow()"><i class="fas fa-plus me-1"></i>Thêm +</button>
+                <div class="d-flex gap-2"><button type="button" class="btn-report secondary" onclick="closeEntryModal()">Hủy</button><button type="button" class="btn-report primary" id="entrySaveBtn" onclick="saveEntryModal()"><i class="fas fa-floppy-disk me-1"></i>Lưu</button></div>
+            </div>
+        </section>
+    </div>
+
+    <div class="entry-modal" id="deadlineModal" hidden aria-hidden="true">
+        <div class="entry-modal-backdrop" onclick="resolveDeadlinePicker(null)"></div>
+        <section class="entry-modal-dialog deadline-dialog" role="dialog" aria-modal="true" aria-labelledby="deadlineModalTitle">
+            <div class="entry-modal-header">
+                <div><h2 id="deadlineModalTitle">Chọn thời hạn</h2><p>Chọn ngày hoàn thành hoặc để trống nếu chưa xác định.</p></div>
+                <button type="button" class="entry-modal-close" onclick="resolveDeadlinePicker(null)" aria-label="Đóng"><i class="fas fa-xmark"></i></button>
+            </div>
+            <div class="deadline-picker-body"><label for="deadlineInput">Ngày hoàn thành</label><input id="deadlineInput" type="date"></div>
+            <div class="entry-modal-footer">
+                <button type="button" class="btn-report secondary" onclick="resolveDeadlinePicker('')">Bỏ thời hạn</button>
+                <div class="d-flex gap-2"><button type="button" class="btn-report secondary" onclick="resolveDeadlinePicker(null)">Hủy</button><button type="button" class="btn-report primary" onclick="resolveDeadlinePicker(document.getElementById('deadlineInput').value)"><i class="fas fa-check me-1"></i>Chọn ngày</button></div>
+            </div>
+        </section>
+    </div>
 
     <section id="verifiedTab" hidden>
         <div class="verified-list">
@@ -974,8 +1027,8 @@
                 const deadline = getDeadlineStatus(item.due_date, referenceDate);
                 return `<tr>
                     <td><span class="clamp-2" title="${escapeHtml(item.task || "")}">${escapeHtml(item.task || "--")}</span></td>
-                    <td class="${deadline === "overdue" ? "text-danger fw-bold" : deadline === "soon" ? "text-warning" : ""}">${escapeHtml(item.due_date || "--")}</td>
                     <td><span class="reminder-owner">${escapeHtml(item.assignee || "--")}</span></td>
+                    <td class="${deadline === "overdue" ? "text-danger fw-bold" : deadline === "soon" ? "text-warning" : ""}">${escapeHtml(item.due_date || "--")}</td>
                 </tr>`;
             }).join("") : '<tr><td colspan="3" class="text-center py-3 empty-note">Không có công việc cần nhắc.</td></tr>';
             document.getElementById("reminderMeta").textContent = `${rows.length} việc`;
@@ -1032,9 +1085,6 @@
                 : (report.saved_at
                     ? '<i class="fas fa-floppy-disk me-1"></i>Đã lưu — có thể tiếp tục chỉnh sửa.'
                     : '<i class="fas fa-calendar-week me-1"></i>Chọn kỳ bản tin');
-            ["addReminderBtn", "addAlertBtn"].forEach(id => {
-                document.getElementById(id).disabled = !isDraft;
-            });
             document.getElementById("saveBtn").disabled = !isDraft;
         }
 
@@ -1155,7 +1205,7 @@
                 window.alert('Tiến độ CAP Final/Endline được lấy từ sheet nguồn. Bạn chỉ cập nhật thời hạn/người theo dõi tại đây.');
             }
             const currentDeadline = issue.due_date ? issue.due_date.split('/').reverse().join('-') : '';
-            const deadline = window.prompt('Thời hạn (YYYY-MM-DD, bỏ trống nếu chưa có)', currentDeadline);
+            const deadline = await pickDeadline(currentDeadline);
             if (deadline === null) return;
             try {
                 await apiRequest(`/api/bulletin/items/${rowId}`, {
@@ -1166,25 +1216,123 @@
             } catch (error) { window.alert(error.message); }
         }
 
-        async function createEntry(entryType) {
+        let deadlineResolver = null;
+        function pickDeadline(currentValue = '') {
+            return new Promise(resolve => {
+                deadlineResolver = resolve;
+                const modal = document.getElementById('deadlineModal');
+                const input = document.getElementById('deadlineInput');
+                input.value = currentValue || '';
+                modal.hidden = false;
+                modal.setAttribute('aria-hidden', 'false');
+                document.body.classList.add('modal-open');
+                setTimeout(() => {
+                    input.focus();
+                    try { input.showPicker?.(); } catch (_) { /* click vào ô để mở lịch nếu trình duyệt chặn tự mở */ }
+                }, 0);
+            });
+        }
+        function resolveDeadlinePicker(value) {
+            if (!deadlineResolver) return;
+            const resolve = deadlineResolver;
+            deadlineResolver = null;
+            const modal = document.getElementById('deadlineModal');
+            modal.hidden = true;
+            modal.setAttribute('aria-hidden', 'true');
+            document.body.classList.remove('modal-open');
+            resolve(value);
+        }
+
+        let activeEntryType = null;
+        let activeEntryIds = [];
+        function openEntryModal(entryType) {
             const report = currentBulletinData?.report;
             if (!report?.id || report.status !== 'draft') return;
+            activeEntryType = entryType;
             const isReminder = entryType === 'reminder';
-            const title = window.prompt(isReminder ? 'Nội dung nhắc nhở' : 'Tiêu đề cảnh báo chất lượng');
-            if (!title) return;
-            const payload = { bulletin_id: report.id, entry_type: entryType, title };
-            if (isReminder) {
-                payload.due_date = window.prompt('Thời hạn (YYYY-MM-DD, có thể bỏ trống)', '') || null;
-                payload.assignee = window.prompt('Người/đơn vị thực hiện', '') || null;
-                payload.status = 'Chưa hoàn thành';
-            } else {
-                payload.content = window.prompt('Nội dung cảnh báo', '') || '';
-                payload.level = window.prompt('Mức độ: info / warning / critical', 'warning') || 'warning';
+            document.getElementById('entryModalTitle').textContent = isReminder ? 'Nhập nhắc nhở công việc' : 'Nhập cảnh báo chất lượng';
+            document.getElementById('entryModalHint').textContent = isReminder
+                ? 'Mỗi dòng gồm Công việc, Trách nhiệm và Ngày hoàn thành.'
+                : 'Mỗi dòng là một nội dung cảnh báo chất lượng.';
+            const existing = isReminder ? (currentBulletinData.reminders || []) : (currentBulletinData.quality_alerts || []);
+            activeEntryIds = existing.map(item => Number(item.id)).filter(Boolean);
+            const rows = existing.length ? existing : [{}];
+            document.getElementById('entryRows').innerHTML = rows.map(item => entryRowHtml(entryType, item)).join('');
+            const modal = document.getElementById('entryModal');
+            modal.hidden = false; modal.setAttribute('aria-hidden', 'false');
+            document.body.classList.add('modal-open');
+            setTimeout(() => document.querySelector('#entryRows input, #entryRows textarea')?.focus(), 0);
+        }
+        function closeEntryModal() {
+            const modal = document.getElementById('entryModal');
+            modal.hidden = true; modal.setAttribute('aria-hidden', 'true');
+            document.body.classList.remove('modal-open');
+            activeEntryType = null;
+            activeEntryIds = [];
+        }
+        function entryRowHtml(entryType, item = {}) {
+            if (entryType === 'reminder') {
+                const due = item.due_date ? String(item.due_date).split('/').reverse().join('-') : '';
+                return `<div class="entry-row" data-entry-id="${Number(item.id || 0)}">
+                    <input data-field="title" value="${escapeHtml(item.task || '')}" placeholder="Công việc" aria-label="Công việc">
+                    <input data-field="assignee" value="${escapeHtml(item.assignee || '')}" placeholder="Trách nhiệm" aria-label="Trách nhiệm">
+                    <input data-field="due_date" type="date" value="${escapeHtml(due)}" aria-label="Ngày hoàn thành">
+                    <button type="button" class="entry-remove" onclick="this.closest('.entry-row').remove()" aria-label="Xóa dòng"><i class="fas fa-trash"></i></button>
+                </div>`;
             }
+            return `<div class="entry-row alert-row" data-entry-id="${Number(item.id || 0)}">
+                <textarea data-field="content" placeholder="Nội dung cảnh báo" aria-label="Nội dung cảnh báo">${escapeHtml(item.content || item.title || '')}</textarea>
+                <button type="button" class="entry-remove" onclick="this.closest('.entry-row').remove()" aria-label="Xóa dòng"><i class="fas fa-trash"></i></button>
+            </div>`;
+        }
+        function addEntryRow() {
+            if (!activeEntryType) return;
+            document.getElementById('entryRows').insertAdjacentHTML('beforeend', entryRowHtml(activeEntryType));
+            const rows = document.querySelectorAll('#entryRows input, #entryRows textarea');
+            rows[rows.length - 1]?.focus();
+        }
+        async function saveEntryModal() {
+            const report = currentBulletinData?.report;
+            if (!report?.id || report.status !== 'draft' || !activeEntryType) return;
+            const isReminder = activeEntryType === 'reminder';
+            const rows = [...document.querySelectorAll('#entryRows .entry-row')];
+            const payloads = [];
+            for (const row of rows) {
+                const id = Number(row.dataset.entryId || 0);
+                const read = field => row.querySelector(`[data-field="${field}"]`)?.value.trim() || '';
+                if (isReminder) {
+                    const title = read('title');
+                    if (!title) continue;
+                    payloads.push({ id, bulletin_id: report.id, entry_type: 'reminder', title, assignee: read('assignee') || null, due_date: read('due_date') || null, status: 'Chưa hoàn thành' });
+                } else {
+                    const content = read('content');
+                    if (!content) continue;
+                    payloads.push({ id, bulletin_id: report.id, entry_type: 'quality_alert', title: 'Cảnh báo chất lượng', content, level: 'warning' });
+                }
+            }
+            if (!payloads.length) { window.alert('Vui lòng nhập ít nhất một mục.'); return; }
+            const button = document.getElementById('entrySaveBtn');
+            button.disabled = true;
             try {
-                await apiRequest('/api/bulletin/entries', { method: 'POST', body: JSON.stringify(payload) });
-                await reloadBulletin();
-            } catch (error) { window.alert(error.message); }
+                for (const payload of payloads) {
+                    const url = payload.id ? `/api/bulletin/entries/${payload.id}` : '/api/bulletin/entries';
+                    const method = payload.id ? 'PATCH' : 'POST';
+                    const requestPayload = { ...payload };
+                    if (payload.id) {
+                        delete requestPayload.id;
+                        delete requestPayload.bulletin_id;
+                        delete requestPayload.entry_type;
+                    }
+                    await apiRequest(url, { method, body: JSON.stringify(requestPayload) });
+                }
+                const retainedIds = new Set(payloads.map(item => Number(item.id)).filter(Boolean));
+                for (const id of activeEntryIds) {
+                    if (!retainedIds.has(id)) await apiRequest(`/api/bulletin/entries/${id}`, { method: 'DELETE' });
+                }
+                closeEntryModal();
+                await reloadBulletin(report.id);
+            } catch (error) { window.alert(describeError(error)); }
+            finally { button.disabled = false; }
         }
 
         async function syncBulletin() {
