@@ -483,7 +483,15 @@ def ensure_weekly_draft(connection_factory: Callable[[], Any], *, as_of: Optiona
                         source_record_id=EXCLUDED.source_record_id, source_no=EXCLUDED.source_no,
                         topic=EXCLUDED.topic, unit_name=EXCLUDED.unit_name,
                         description=EXCLUDED.description, source_status=EXCLUDED.source_status,
-                        status=CASE WHEN quality_bulletin_items.status_origin='source' THEN EXCLUDED.status ELSE quality_bulletin_items.status END,
+                        status=CASE
+                            WHEN EXCLUDED.source_type='complaint' OR quality_bulletin_items.status_origin='source'
+                            THEN EXCLUDED.status
+                            ELSE quality_bulletin_items.status
+                        END,
+                        status_origin=CASE
+                            WHEN EXCLUDED.source_type='complaint' THEN 'source'
+                            ELSE quality_bulletin_items.status_origin
+                        END,
                         deadline=COALESCE(quality_bulletin_items.deadline, EXCLUDED.deadline),
                         owner_name=COALESCE(NULLIF(quality_bulletin_items.owner_name,''), EXCLUDED.owner_name),
                         source_url=EXCLUDED.source_url, payload=EXCLUDED.payload, updated_at=NOW()
