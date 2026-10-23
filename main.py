@@ -195,6 +195,7 @@ SCHEMA_BOOTSTRAP_FILES = [
     "create_error_catalog_versioning.sql",
     "create_hdkp_tables.sql",
     "create_qa_final_internal.sql",
+    "create_qa_final_hdkp.sql",
     "create_quality_bulletin.sql",
     "alter_quality_bulletin_updated_by.sql",
     "alter_quality_bulletin_saved_at.sql",
@@ -1681,9 +1682,9 @@ def home(request: Request):
             pending_sql = """
                 SELECT COUNT(*)
                 FROM public.qa_final_inspection fi
-                LEFT JOIN public.input_error ie ON ie.id = fi.cap_error_id
+                LEFT JOIN public.qa_final_hdkp fh ON fh.inspection_id = fi.id
                 WHERE fi.cap_required = TRUE
-                  AND (fi.cap_error_id IS NULL OR ie.cap_form IS NULL)
+                  AND fh.pdf_url IS NULL
             """
             pending_params: List[Any] = []
             if final_factory_scope:
@@ -1755,14 +1756,11 @@ def _final_internal_where(
     if cap_status == "not_required":
         clauses.append("fi.cap_required = FALSE")
     elif cap_status == "missing":
-        clauses.append("fi.cap_required = TRUE AND fi.cap_error_id IS NULL")
+        clauses.append("fi.cap_required = TRUE AND fh.id IS NULL")
     elif cap_status == "draft":
-        clauses.append(
-            "fi.cap_required = TRUE AND fi.cap_error_id IS NOT NULL "
-            "AND ie.cap_form IS NULL"
-        )
+        clauses.append("fi.cap_required = TRUE AND fh.id IS NOT NULL AND fh.pdf_url IS NULL")
     elif cap_status == "completed":
-        clauses.append("fi.cap_required = TRUE AND ie.cap_form IS NOT NULL")
+        clauses.append("fi.cap_required = TRUE AND fh.pdf_url IS NOT NULL")
     if search:
         clauses.append(
             "(fi.po_code ILIKE %s OR fi.product_id ILIKE %s OR fi.inspector_name ILIKE %s)"
@@ -1800,10 +1798,10 @@ def api_final_internal_list(
                        COUNT(*) FILTER (WHERE fi.final_status_code = '0') AS fail_count,
                        COUNT(*) FILTER (
                            WHERE fi.cap_required = TRUE
-                             AND (fi.cap_error_id IS NULL OR ie.cap_form IS NULL)
+                             AND fh.pdf_url IS NULL
                        ) AS cap_pending_count
                 FROM public.qa_final_inspection fi
-                LEFT JOIN public.input_error ie ON ie.id = fi.cap_error_id
+                LEFT JOIN public.qa_final_hdkp fh ON fh.inspection_id = fi.id
                 WHERE {where_sql}
                 """,
                 tuple(params),
@@ -1812,13 +1810,13 @@ def api_final_internal_list(
             cur.execute(
                 f"""
                 SELECT fi.*,
-                       ie.cap_form,
+                       fh.pdf_url AS cap_form,
                        CASE
                            WHEN fi.cap_required = FALSE THEN 'not_required'
-                           WHEN fi.cap_error_id IS NULL THEN 'missing'
-                           WHEN ie.cap_form IS NOT NULL THEN 'completed'
+                           WHEN fh.id IS NULL THEN 'missing'
+                           WHEN fh.pdf_url IS NOT NULL THEN 'completed'
                            WHEN EXISTS (
-                               SELECT 1 FROM public.cap_mota cm WHERE cm.error_id = fi.cap_error_id
+                               SELECT 1 FROM public.qa_final_hdkp_mota cm WHERE cm.hdkp_id = fh.id
                            ) THEN 'draft'
                            ELSE 'missing'
                        END AS cap_status,
@@ -1837,7 +1835,7 @@ def api_final_internal_list(
                            WHERE fd.inspection_id = fi.id
                        ), '[]'::jsonb) AS defects
                 FROM public.qa_final_inspection fi
-                LEFT JOIN public.input_error ie ON ie.id = fi.cap_error_id
+                LEFT JOIN public.qa_final_hdkp fh ON fh.inspection_id = fi.id
                 WHERE {where_sql}
                 ORDER BY fi.qa_check_date DESC NULLS LAST,
                          fi.source_created_at DESC NULLS LAST,
@@ -1869,6 +1867,114 @@ def api_final_internal_list(
         "last_sync": dict(last_sync) if last_sync else None,
         "sync_state": dict(_final_sync_state),
     }
+
+
+@app.get("/api/final-internal/hdkp/{inspection_id}")
+def api_get_final_internal_hdkp(inspection_id: int = Path(...), request: Request = None):
+    """Read the dedicated HĐKP record for an internal Final inspection."""
+    user = require_authenticated_api_user(request)
+    with get_db_connection() as conn:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute("SELECT factory FROM public.qa_final_inspection WHERE id = %s", (inspection_id,))
+            inspection = cur.fetchone()
+            if not inspection:
+                raise HTTPException(status_code=404, detail="Không tìm thấy lần kiểm Final")
+            require_final_cap_access(user, factory=inspection.get("factory"))
+            cur.execute("SELECT id FROM public.qa_final_hdkp WHERE inspection_id = %s", (inspection_id,))
+            hdkp = cur.fetchone()
+            if not hdkp:
+                return {"mota": None, "kehoach": [], "chitiet": []}
+            hdkp_id = hdkp["id"]
+            cur.execute("SELECT * FROM public.qa_final_hdkp_mota WHERE hdkp_id = %s", (hdkp_id,))
+            mota = cur.fetchone()
+            cur.execute("SELECT * FROM public.qa_final_hdkp_kehoach WHERE hdkp_id = %s ORDER BY section, thu_tu", (hdkp_id,))
+            kehoach = cur.fetchall()
+            cur.execute("SELECT * FROM public.qa_final_hdkp_chitiet WHERE hdkp_id = %s ORDER BY thu_tu", (hdkp_id,))
+            chitiet = cur.fetchall()
+    return {"mota": dict(mota) if mota else None, "kehoach": [dict(r) for r in kehoach], "chitiet": [dict(r) for r in chitiet]}
+
+
+@app.get("/final-internal/hdkp-form/{inspection_id}")
+def final_internal_hdkp_form_page(inspection_id: int = Path(...), request: Request = None):
+    user = get_authenticated_user(request) if request else None
+    if not user:
+        return RedirectResponse(url="/login", status_code=303)
+    with get_db_connection() as conn:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute("SELECT * FROM public.qa_final_inspection WHERE id = %s", (inspection_id,))
+            inspection = cur.fetchone()
+            if not inspection:
+                raise HTTPException(status_code=404, detail="Không tìm thấy lần kiểm Final")
+            require_final_cap_access(user, factory=inspection.get("factory"))
+            if str(inspection.get("final_status_code") or "") != "0":
+                raise HTTPException(status_code=400, detail="Chỉ kết quả FAIL mới cần HĐKP 10.1")
+    error_row = {
+        "id": inspection_id,
+        "ma_nv": user.get("ma_nv"),
+        "ngay_ghi_nhan": inspection.get("qa_check_date"),
+        "task_name": "Kiểm pre-final/ Final nội bộ",
+        "phan_loai_loi": inspection.get("final_status_display"),
+        "mo_ta": f"Final nội bộ FAIL - PO {inspection.get('po_code')}, Iman {inspection.get('product_id')}",
+        "huong_giai_quyet": "Làm HĐKP 10.1",
+    }
+    return templates.TemplateResponse("hdkp_form.html", {
+        "request": request, "error": error_row, "error_id": inspection_id,
+        "return_url": "/final-noi-bo",
+        "api_base": f"/api/final-internal/hdkp/{inspection_id}",
+        "form_title": "HĐKP Final nội bộ",
+    })
+
+
+@app.post("/api/final-internal/hdkp/{inspection_id}")
+async def api_save_final_internal_hdkp(inspection_id: int = Path(...), request: Request = None):
+    user = require_authenticated_api_user(request)
+    payload = await request.json()
+    with get_db_connection() as conn:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute("SELECT * FROM public.qa_final_inspection WHERE id = %s FOR UPDATE", (inspection_id,))
+            inspection = cur.fetchone()
+            if not inspection:
+                raise HTTPException(status_code=404, detail="Không tìm thấy lần kiểm Final")
+            require_final_cap_access(user, factory=inspection.get("factory"))
+            if str(inspection.get("final_status_code") or "") != "0":
+                raise HTTPException(status_code=400, detail="Chỉ kết quả FAIL mới cần HĐKP 10.1")
+            cur.execute("""INSERT INTO public.qa_final_hdkp (inspection_id, created_by)
+                           VALUES (%s, %s) ON CONFLICT (inspection_id) DO UPDATE SET updated_at = NOW()
+                           RETURNING id""", (inspection_id, user["ma_nv"]))
+            hdkp_id = int(cur.fetchone()["id"])
+            mota = payload.get("mota", {})
+            cur.execute("""INSERT INTO public.qa_final_hdkp_mota
+                (hdkp_id, vd_what, vd_when, vd_who, vd_where, vd_how, vd_before, vd_importance, vd_image)
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                ON CONFLICT (hdkp_id) DO UPDATE SET vd_what=EXCLUDED.vd_what, vd_when=EXCLUDED.vd_when,
+                vd_who=EXCLUDED.vd_who, vd_where=EXCLUDED.vd_where, vd_how=EXCLUDED.vd_how,
+                vd_before=EXCLUDED.vd_before, vd_importance=EXCLUDED.vd_importance, vd_image=EXCLUDED.vd_image,
+                updated_at=NOW()""", (hdkp_id, mota.get("vd_what"), mota.get("vd_when"), mota.get("vd_who"), mota.get("vd_where"), mota.get("vd_how"), mota.get("vd_before"), mota.get("vd_importance"), mota.get("vd_image")))
+            cur.execute("DELETE FROM public.qa_final_hdkp_kehoach WHERE hdkp_id = %s", (hdkp_id,))
+            for idx, item in enumerate(payload.get("kehoach", []), 1):
+                cur.execute("""INSERT INTO public.qa_final_hdkp_kehoach
+                    (hdkp_id, section, root_cause, hdkp_tuc_thoi, hd_phong_ngua, tg_theo_doi, trach_nhiem, tg_thuc_hien, thu_tu)
+                    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)""", (hdkp_id, item.get("section"), item.get("root_cause"), item.get("hdkp_tuc_thoi"), item.get("hd_phong_ngua"), item.get("tg_theo_doi"), item.get("trach_nhiem"), item.get("tg_thuc_hien"), idx))
+            cur.execute("DELETE FROM public.qa_final_hdkp_chitiet WHERE hdkp_id = %s", (hdkp_id,))
+            for idx, item in enumerate(payload.get("chitiet", []), 1):
+                start = date.fromisoformat(item["ngay_bat_dau"]) if item.get("ngay_bat_dau") else None
+                end = date.fromisoformat(item["ngay_hoan_thanh"]) if item.get("ngay_hoan_thanh") else None
+                cur.execute("""INSERT INTO public.qa_final_hdkp_chitiet
+                    (hdkp_id, cong_viec, trach_nhiem, ngay_bat_dau, ngay_hoan_thanh, giam_sat, ket_qua, ket_luan, thu_tu)
+                    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)""", (hdkp_id, item.get("cong_viec"), item.get("trach_nhiem"), start, end, item.get("giam_sat"), item.get("ket_qua"), item.get("ket_luan"), idx))
+            conn.commit()
+            pdf_url = None
+            try:
+                row = dict(inspection)
+                row["ma_nv"] = user.get("ma_nv")
+                row["ngay_ghi_nhan"] = inspection.get("qa_check_date")
+                hdkp_data = prepare_hdkp_data_for_pdf(hdkp_id, row, ("qa_final_hdkp_mota", "qa_final_hdkp_kehoach", "qa_final_hdkp_chitiet"), "hdkp_id")
+                pdf_url = create_hdkp_pdf(inspection_id, hdkp_data)
+                cur.execute("UPDATE public.qa_final_hdkp SET pdf_url = %s WHERE id = %s", (pdf_url, hdkp_id))
+                conn.commit()
+            except Exception:
+                logger.exception("Không thể tạo PDF HĐKP Final nội bộ inspection_id=%s", inspection_id)
+    return {"status": "ok", "id": inspection_id, "pdf_url": pdf_url}
 
 
 @app.get("/api/final-internal/filters")
@@ -1936,83 +2042,35 @@ def api_final_internal_create_cap(inspection_id: int, request: Request):
                     status_code=400,
                     detail="Chỉ kết quả FAIL mới cần HĐKP 10.1",
                 )
-            if inspection.get("cap_error_id"):
+            cur.execute(
+                "SELECT id FROM public.qa_final_hdkp WHERE inspection_id = %s",
+                (inspection_id,),
+            )
+            existing_hdkp = cur.fetchone()
+            if existing_hdkp:
                 return {
                     "status": "exists",
-                    "error_id": inspection["cap_error_id"],
-                    "url": f"/hdkp-form/{inspection['cap_error_id']}?next=/final-noi-bo",
+                    "hdkp_id": existing_hdkp["id"],
+                    "url": f"/final-internal/hdkp-form/{inspection_id}",
                 }
 
             cur.execute(
                 """
-                SELECT STRING_AGG(
-                    CONCAT_WS(' - ', NULLIF(error_code, ''), NULLIF(error_name, ''))
-                    || CASE WHEN amount > 0 THEN ' × ' || amount::text ELSE '' END,
-                    '; ' ORDER BY id
-                ) AS defect_text
-                FROM public.qa_final_defect
-                WHERE inspection_id = %s
-                """,
-                (inspection_id,),
-            )
-            defect_text = (cur.fetchone() or {}).get("defect_text") or "Không có chi tiết lỗi"
-            chuc_vu = (user.get("department") or "").upper()
-            if chuc_vu not in {"QAPL", "QANL", "QAQT"}:
-                chuc_vu = "QAQT"
-            description = (
-                f"Kết quả Final {inspection.get('final_status_display') or ''} - "
-                f"PO {inspection.get('po_code') or ''}, Iman {inspection.get('product_id') or ''}. "
-                f"Lỗi ghi nhận: {defect_text}"
-            )
-            cur.execute(
-                """
-                INSERT INTO public.input_error (
-                    ma_nv, chuc_vu, ngay_ghi_nhan, task_name, phan_loai_loi,
-                    mo_ta, huong_giai_quyet, tien_do, ghi_chu
-                ) VALUES (%s, %s, %s, 'Kiểm pre-final/ Final', %s, %s,
-                          'Làm HĐKP 10.1', 'Chưa hoàn thành', %s)
+                INSERT INTO public.qa_final_hdkp (inspection_id, created_by)
+                VALUES (%s, %s)
                 RETURNING id
                 """,
                 (
+                    inspection_id,
                     user["ma_nv"],
-                    chuc_vu,
-                    inspection.get("qa_check_date") or date.today(),
-                    inspection.get("final_status_display"),
-                    description,
-                    f"Nguồn Final API · history_id={inspection.get('source_history_id')}",
                 ),
             )
-            error_id = int(cur.fetchone()["id"])
-            when_text = ""
-            if inspection.get("qa_check_date"):
-                when_text = inspection["qa_check_date"].strftime("%d/%m/%Y")
-            cur.execute(
-                """
-                INSERT INTO public.cap_mota (
-                    error_id, vd_what, vd_when, vd_who, vd_where,
-                    vd_how, vd_before, vd_importance
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-                """,
-                (
-                    error_id,
-                    description,
-                    when_text,
-                    inspection.get("inspector_name"),
-                    inspection.get("factory"),
-                    defect_text,
-                    "",
-                    f"Kết quả Final {inspection.get('final_status_display') or ''} yêu cầu hành động khắc phục phòng ngừa.",
-                ),
-            )
-            cur.execute(
-                "UPDATE public.qa_final_inspection SET cap_error_id = %s WHERE id = %s",
-                (error_id, inspection_id),
-            )
+            hdkp_id = int(cur.fetchone()["id"])
             conn.commit()
     return {
         "status": "created",
-        "error_id": error_id,
-        "url": f"/hdkp-form/{error_id}?next=/final-noi-bo",
+        "hdkp_id": hdkp_id,
+        "url": f"/final-internal/hdkp-form/{inspection_id}",
     }
 
 
@@ -2859,6 +2917,7 @@ def api_summary(
                 JOIN public.quality_employees d ON d.ma_nv = e.ma_nv
                 WHERE d.chuc_vu = %s
                   AND e.ngay_ghi_nhan IS NOT NULL
+                  AND COALESCE(e.ghi_chu, '') NOT LIKE 'Nguồn Final API%'
                   {err_clause}
                 GROUP BY 1,2,3
                 HAVING to_char(ngay_ghi_nhan, '"W"IW-YYYY') IS NOT NULL
@@ -2967,6 +3026,7 @@ def api_summary_monthly(
                 JOIN public.quality_employees d ON d.ma_nv = e.ma_nv
                 WHERE d.chuc_vu = %s
                   AND e.ngay_ghi_nhan IS NOT NULL
+                  AND COALESCE(e.ghi_chu, '') NOT LIKE 'Nguồn Final API%'
                   {err_month_clause}
                 GROUP BY 1,2,3
                 HAVING to_char(ngay_ghi_nhan, 'YYYY-MM') IS NOT NULL
@@ -3104,6 +3164,7 @@ def api_summary_quarterly(
                 JOIN public.quality_employees d ON d.ma_nv = e.ma_nv
                 WHERE d.chuc_vu = %s
                   AND e.ngay_ghi_nhan IS NOT NULL
+                  AND COALESCE(e.ghi_chu, '') NOT LIKE 'Nguồn Final API%'
                   {err_period_clause}
                 GROUP BY 1,2,3,4,5
                 ORDER BY 1,2,3,5
@@ -3161,10 +3222,10 @@ def api_errors(chuc_vu: Optional[str] = Query(None, pattern="^(QAPL|QANL|QAQT)$"
             base = (
                 "SELECT id, ngay_ghi_nhan, chuc_vu, ma_nv, task_name, phan_loai_loi, mo_ta, muc_do_anh_huong, huong_giai_quyet, "
                 "hanh_dong, trach_nhiem, thoi_han, tien_do, ngay_hoan_thanh, ket_luan, cap_form, ghi_chu, created_at "
-                "FROM public.input_error"
+                "FROM public.input_error WHERE COALESCE(ghi_chu, '') NOT LIKE 'Nguồn Final API%'"
             )
             if chuc_vu:
-                cur.execute(base + " WHERE chuc_vu=%s ORDER BY created_at DESC", (chuc_vu,))
+                cur.execute(base + " AND chuc_vu=%s ORDER BY created_at DESC", (chuc_vu,))
             else:
                 cur.execute(base + " ORDER BY created_at DESC")
             rows = cur.fetchall()
@@ -3657,7 +3718,12 @@ async def api_save_qc_hdkp(dps_id: int = Path(...), request: Request = None):
     return {"status": "ok", "id": dps_id, "pdf_url": pdf_url}
 
 
-def prepare_hdkp_data_for_pdf(error_id: int, error_row: Dict) -> Dict:
+def prepare_hdkp_data_for_pdf(
+    error_id: int,
+    error_row: Dict,
+    table_names: Tuple[str, str, str] = ("cap_mota", "cap_kehoach", "cap_chitiet"),
+    key_column: str = "error_id",
+) -> Dict:
     """
     Chuẩn bị dữ liệu từ 3 tables để tạo PDF.
     Tập hợp tất cả dữ liệu và format cho mapping vào Excel template.
@@ -3665,19 +3731,20 @@ def prepare_hdkp_data_for_pdf(error_id: int, error_row: Dict) -> Dict:
     with get_db_connection() as conn:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             # Lấy Section I: Mô tả vấn đề
-            cur.execute("SELECT * FROM public.cap_mota WHERE error_id = %s", (error_id,))
+            mota_table, kehoach_table, chitiet_table = table_names
+            cur.execute(f"SELECT * FROM public.{mota_table} WHERE {key_column} = %s", (error_id,))
             mota = cur.fetchone()
             
             # Lấy Section II: Kế hoạch (section A và B)
             cur.execute(
-                "SELECT * FROM public.cap_kehoach WHERE error_id = %s ORDER BY section, thu_tu",
+                f"SELECT * FROM public.{kehoach_table} WHERE {key_column} = %s ORDER BY section, thu_tu",
                 (error_id,)
             )
             kehoach_rows = cur.fetchall()
             
             # Lấy Section III: Chi tiết
             cur.execute(
-                "SELECT * FROM public.cap_chitiet WHERE error_id = %s ORDER BY thu_tu",
+                f"SELECT * FROM public.{chitiet_table} WHERE {key_column} = %s ORDER BY thu_tu",
                 (error_id,)
             )
             chitiet_rows = cur.fetchall()

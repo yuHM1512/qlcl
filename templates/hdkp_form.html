@@ -71,7 +71,7 @@
                 </div>
                 <div class="col">
                     <h4 class="mb-0">BÁO CÁO HÀNH ĐỘNG KHẮC PHỤC PHÒNG NGỪA</h4>
-                    <small>Error ID: {{error_id}}</small>
+                    <small>{{ form_title or 'HĐKP' }} · ID: {{error_id}}</small>
                 </div>
                 <div class="col-auto">
                     <a href="{{ return_url }}" class="btn btn-light btn-sm">
@@ -85,7 +85,7 @@
     <div class="container">
         <div id="alert-container"></div>
 
-        <form id="hdkp-form" data-error-id="{{ error_id }}">
+        <form id="hdkp-form" data-error-id="{{ error_id }}" data-api-base="{{ api_base or ('/api/hdkp/' ~ error_id) }}">
             <!-- Section I: Mô tả vấn đề -->
             <div class="section-card">
                 <div class="section-header">
@@ -370,7 +370,7 @@
         // Load dữ liệu đã lưu
         async function loadSavedData() {
             try {
-                const response = await fetch(`/api/hdkp/${errorId}`);
+                const response = await fetch(document.getElementById('hdkp-form').dataset.apiBase);
                 if (!response.ok) return;
                 
                 const data = await response.json();
@@ -503,7 +503,7 @@
             });
 
             try {
-                const response = await fetch(`/api/hdkp/${errorId}`, {
+                const response = await fetch(document.getElementById('hdkp-form').dataset.apiBase, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)
