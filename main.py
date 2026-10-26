@@ -2917,7 +2917,7 @@ def api_summary(
                 JOIN public.quality_employees d ON d.ma_nv = e.ma_nv
                 WHERE d.chuc_vu = %s
                   AND e.ngay_ghi_nhan IS NOT NULL
-                  AND COALESCE(e.ghi_chu, '') NOT LIKE 'Nguồn Final API%'
+                  AND COALESCE(e.ghi_chu, '') NOT LIKE 'Nguồn Final API%%'
                   {err_clause}
                 GROUP BY 1,2,3
                 HAVING to_char(ngay_ghi_nhan, '"W"IW-YYYY') IS NOT NULL
@@ -3026,7 +3026,7 @@ def api_summary_monthly(
                 JOIN public.quality_employees d ON d.ma_nv = e.ma_nv
                 WHERE d.chuc_vu = %s
                   AND e.ngay_ghi_nhan IS NOT NULL
-                  AND COALESCE(e.ghi_chu, '') NOT LIKE 'Nguồn Final API%'
+                  AND COALESCE(e.ghi_chu, '') NOT LIKE 'Nguồn Final API%%'
                   {err_month_clause}
                 GROUP BY 1,2,3
                 HAVING to_char(ngay_ghi_nhan, 'YYYY-MM') IS NOT NULL
@@ -3164,7 +3164,7 @@ def api_summary_quarterly(
                 JOIN public.quality_employees d ON d.ma_nv = e.ma_nv
                 WHERE d.chuc_vu = %s
                   AND e.ngay_ghi_nhan IS NOT NULL
-                  AND COALESCE(e.ghi_chu, '') NOT LIKE 'Nguồn Final API%'
+                  AND COALESCE(e.ghi_chu, '') NOT LIKE 'Nguồn Final API%%'
                   {err_period_clause}
                 GROUP BY 1,2,3,4,5
                 ORDER BY 1,2,3,5
@@ -3222,7 +3222,7 @@ def api_errors(chuc_vu: Optional[str] = Query(None, pattern="^(QAPL|QANL|QAQT)$"
             base = (
                 "SELECT id, ngay_ghi_nhan, chuc_vu, ma_nv, task_name, phan_loai_loi, mo_ta, muc_do_anh_huong, huong_giai_quyet, "
                 "hanh_dong, trach_nhiem, thoi_han, tien_do, ngay_hoan_thanh, ket_luan, cap_form, ghi_chu, created_at "
-                "FROM public.input_error WHERE COALESCE(ghi_chu, '') NOT LIKE 'Nguồn Final API%'"
+                "FROM public.input_error WHERE COALESCE(ghi_chu, '') NOT LIKE 'Nguồn Final API%%'"
             )
             if chuc_vu:
                 cur.execute(base + " AND chuc_vu=%s ORDER BY created_at DESC", (chuc_vu,))
