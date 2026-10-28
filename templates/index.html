@@ -136,7 +136,7 @@
 
         <!-- Module Grid -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {% if not final_only %}
+            {% if not final_only and not is_qc_role %}
             <!-- KPI Module -->
             <a href="/kpi" class="glass-card p-10 rounded-[3rem] group">
                 <div
@@ -170,24 +170,28 @@
                 </div>
             </a>
 
+            {% endif %}
+
+            {% if not final_only %}
             <!-- QC Module -->
-            <a href="/qc" class="glass-card p-10 rounded-[3rem] group">
+            <a href="{% if is_qc_role %}/qc-input{% else %}/qc{% endif %}" class="glass-card p-10 rounded-[3rem] group">
                 <div
                     class="w-16 h-16 bg-indigo-600 text-white rounded-2xl flex items-center justify-center mb-8 shadow-xl shadow-indigo-200 module-icon">
                     <span class="material-symbols-outlined !text-4xl">fact_check</span>
                 </div>
                 <h3 class="text-2xl font-bold text-slate-800 mb-3 group-hover:text-indigo-600 transition-colors">QC Inline/Endline</h3>
                 <p class="text-slate-500 text-sm leading-relaxed mb-6">
-                    Module kiểm soát chất lượng Inline và Endline (Đang phát triển).
+                    Module kiểm soát chất lượng Inline và Endline{% if not is_qc_role %} (Đang phát triển){% endif %}.
                 </p>
                 <div class="flex items-center gap-2 text-indigo-600 font-bold text-sm">
-                    Truy cập Module
+                    {% if is_qc_role %}Bắt đầu nhập liệu{% else %}Truy cập Module{% endif %}
                     <span
                         class="material-symbols-outlined text-lg transition-transform group-hover:translate-x-1">arrow_forward</span>
                 </div>
             </a>
             {% endif %}
 
+            {% if not is_qc_role %}
             <!-- Internal Final Module -->
             <a href="/final-noi-bo" class="glass-card p-10 rounded-[3rem] group relative overflow-hidden">
                 {% if final_cap_pending %}
@@ -208,8 +212,9 @@
                     <span class="material-symbols-outlined text-lg transition-transform group-hover:translate-x-1">arrow_forward</span>
                 </div>
             </a>
+            {% endif %}
 
-            {% if not final_only %}
+            {% if not final_only and not is_qc_role %}
             <!-- Coming Soon Block -->
             <div
                 class="glass-card p-10 rounded-[3rem] opacity-50 grayscale cursor-not-allowed flex flex-col items-center justify-center min-h-[300px] text-center">

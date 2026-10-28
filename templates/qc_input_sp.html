@@ -981,9 +981,20 @@
     </div>
 
     <div id="planSelectionArea">
+        <div id="recentPlansSection" style="display:none; margin-bottom:1.25rem;">
+            <h6 class="text-muted fw-bold mb-2 ms-1" style="font-size: 0.78rem; letter-spacing: 0.5px; text-transform: uppercase;">
+                <i class="fas fa-clock me-1" style="opacity:0.5;"></i> GẦN ĐÂY
+            </h6>
+            <div id="recentPlansList" class="d-flex flex-column gap-2"></div>
+        </div>
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h6 class="text-muted fw-bold mb-0 ms-1" style="font-size: 0.85rem; letter-spacing: 0.5px;">KẾ HOẠCH CÓ SẴN</h6>
-
+        </div>
+        <div style="position:relative; margin-bottom:0.85rem;">
+            <i class="fas fa-search" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:0.85rem;"></i>
+            <input type="text" id="planSearchInput" placeholder="Tìm mã hàng, khách hàng, PO..."
+                oninput="filterPlans()"
+                style="width:100%; padding:0.65rem 0.65rem 0.65rem 2.2rem; border:1.5px solid #e2e8f0; border-radius:12px; font-size:0.88rem; font-weight:600; background:#fff; color:#0f172a; outline:none;">
         </div>
         <div id="plansList" class="d-flex flex-column gap-3">
             <div class="text-center text-muted my-4" id="loadingPlansMsg">
@@ -1907,6 +1918,7 @@
         await loadMasterMaLoiOptions();
         refreshQuickComboDropdowns();
         initSpeechRecognition();
+        if (getOfflineQueue().length) showOfflineBanner(true);
     });
 
     async function loadPlans(options = {}) {
@@ -1927,9 +1939,79 @@
         }
     }
 
+    const RECENT_PLANS_KEY = 'qlcl_recent_plans_' + userDonVi + '_' + userBoPhan;
+    const MAX_RECENT = 3;
+
+    function getRecentPlanIds() {
+        try { return JSON.parse(localStorage.getItem(RECENT_PLANS_KEY) || '[]'); } catch (e) { return []; }
+    }
+    function saveRecentPlanId(planId) {
+        try {
+            let ids = getRecentPlanIds().filter(id => id !== planId);
+            ids.unshift(planId);
+            if (ids.length > MAX_RECENT) ids = ids.slice(0, MAX_RECENT);
+            localStorage.setItem(RECENT_PLANS_KEY, JSON.stringify(ids));
+        } catch (e) {}
+    }
+
+    function renderPlanCard(p) {
+        return `
+        <div class="card-lite plan-select-card" style="cursor: pointer;" onclick="selectPlan(${p.id})" data-plan-id="${p.id}">
+            <div class="plan-select-main">
+                <div style="flex: 1 1 auto;">
+                    <div class="plan-select-title">${p.ma_hang || '--'}</div>
+                    <div class="plan-select-customer">${p.khach_hang || '--'}</div>
+                </div>
+                <div class="plan-select-badge">${(p.bo_phan || '--').replace('Tổ ', '')}</div>
+            </div>
+            <div class="po-panel">
+                <div class="po-panel-title">Danh sách PO & SL</div>
+                ${renderPoLines(p.po_info, p.ke_hoach || 'Chưa có PO')}
+            </div>
+            <div class="plan-select-footer">
+                <div>
+                    <div class="plan-select-date-label">Ngày sản xuất</div>
+                    <div class="plan-select-date-value">${fmtDate(p.ngay_rc)}</div>
+                </div>
+                <div class="text-end">
+                    <div class="plan-select-action">
+                        <span>Báo số</span>
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        `;
+    }
+
+    function renderRecentPlans() {
+        const section = document.getElementById('recentPlansSection');
+        const container = document.getElementById('recentPlansList');
+        if (!section || !container) return;
+        const recentIds = getRecentPlanIds();
+        const recentPlans = recentIds.map(id => availablePlans.find(p => p.id === id)).filter(Boolean);
+        if (!recentPlans.length) { section.style.display = 'none'; return; }
+        section.style.display = 'block';
+        container.innerHTML = recentPlans.map(p => `
+            <div class="card-lite" style="cursor:pointer; padding:0.75rem 1rem; border:1.5px solid #dbeafe; background:linear-gradient(135deg,#eff6ff 0%,#fff 60%); border-radius:14px;" onclick="selectPlan(${p.id})">
+                <div style="display:flex; align-items:center; justify-content:space-between; gap:0.75rem;">
+                    <div style="min-width:0;">
+                        <div style="font-weight:800; font-size:1rem; color:#1e40af;">${p.ma_hang || '--'}</div>
+                        <div style="font-size:0.78rem; color:#64748b; font-weight:600;">${p.khach_hang || '--'} · ${(p.bo_phan || '--').replace('Tổ ','')} · ${fmtDate(p.ngay_rc)}</div>
+                    </div>
+                    <i class="fas fa-chevron-right" style="color:#93c5fd; font-size:0.85rem;"></i>
+                </div>
+            </div>
+        `).join('');
+    }
+
     function renderPlansList() {
         const container = document.getElementById('plansList');
         document.getElementById('loadingPlansMsg').style.display = 'none';
+        renderRecentPlans();
+
+        const searchInput = document.getElementById('planSearchInput');
+        if (searchInput) searchInput.value = '';
 
         if (availablePlans.length === 0) {
             container.innerHTML = `
@@ -1942,37 +2024,28 @@
             return;
         }
 
-        let html = '';
-        availablePlans.forEach(p => {
-            html += `
-            <div class="card-lite plan-select-card" style="cursor: pointer;" onclick="selectPlan(${p.id})">
-                <div class="plan-select-main">
-                    <div style="flex: 1 1 auto;">
-                        <div class="plan-select-title">${p.ma_hang || '--'}</div>
-                        <div class="plan-select-customer">${p.khach_hang || '--'}</div>
-                    </div>
-                    <div class="plan-select-badge">${(p.bo_phan || '--').replace('Tổ ', '')}</div>
-                </div>
-                <div class="po-panel">
-                    <div class="po-panel-title">Danh sách PO & SL</div>
-                    ${renderPoLines(p.po_info, p.ke_hoach || 'Chưa có PO')}
-                </div>
-                <div class="plan-select-footer">
-                    <div>
-                        <div class="plan-select-date-label">Ngày sản xuất</div>
-                        <div class="plan-select-date-value">${fmtDate(p.ngay_rc)}</div>
-                    </div>
-                    <div class="text-end">
-                        <div class="plan-select-action">
-                            <span>Báo số</span>
-                            <i class="fas fa-chevron-right"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            `;
+        container.innerHTML = availablePlans.map(p => renderPlanCard(p)).join('');
+    }
+
+    function filterPlans() {
+        const raw = (document.getElementById('planSearchInput')?.value || '').trim().toLowerCase();
+        const container = document.getElementById('plansList');
+        if (!raw) {
+            container.innerHTML = availablePlans.map(p => renderPlanCard(p)).join('');
+            return;
+        }
+        const terms = raw.split(/\s+/);
+        const filtered = availablePlans.filter(p => {
+            const haystack = [p.ma_hang, p.khach_hang, p.ke_hoach, p.bo_phan, p.loai_hang,
+                ...(Array.isArray(p.po_info) ? p.po_info.map(po => po?.po || po?.code || '') : [])
+            ].join(' ').toLowerCase();
+            return terms.every(t => haystack.includes(t));
         });
-        container.innerHTML = html;
+        if (!filtered.length) {
+            container.innerHTML = `<div class="text-center text-muted my-3"><i class="fas fa-search me-1"></i> Không tìm thấy kế hoạch phù hợp.</div>`;
+            return;
+        }
+        container.innerHTML = filtered.map(p => renderPlanCard(p)).join('');
     }
 
     async function syncQtcnPlans(options = {}) {
@@ -2045,7 +2118,9 @@
     }
 
     async function selectPlan(planId) {
+        if (hasUnsavedData() && !confirm('Bạn đang có dữ liệu chưa lưu. Chuyển kế hoạch sẽ mất dữ liệu này. Tiếp tục?')) return;
         selectedPlanId = planId;
+        saveRecentPlanId(planId);
         const plan = availablePlans.find(p => p.id == planId);
         selectedStation = '';
         stationList = [];
@@ -2130,7 +2205,20 @@
         } catch (e) { console.error(e); }
     }
 
+    function hasUnsavedData() {
+        const products = document.querySelectorAll('.defect-product');
+        for (const p of products) {
+            if (p.dataset.existing !== '1') return true;
+        }
+        return pendingFailedCount > 0;
+    }
+
+    window.addEventListener('beforeunload', function(e) {
+        if (hasUnsavedData()) { e.preventDefault(); e.returnValue = ''; }
+    });
+
     function backToPlanSelection() {
+        if (hasUnsavedData() && !confirm('Bạn đang có dữ liệu chưa lưu. Quay lại sẽ mất dữ liệu này. Tiếp tục?')) return;
         stopHlAutoRefresh();
         document.getElementById('inputDataArea').style.display = 'none';
         document.getElementById('planSelectionArea').style.display = 'block';
@@ -2332,6 +2420,12 @@
                     status: status
                 })
             });
+             if (res.status === 409) {
+                 const err = await res.json().catch(() => ({}));
+                 alert(err.detail || 'Kế hoạch đã bị đóng bởi quản lý. Vui lòng chọn kế hoạch khác.');
+                 backToPlanSelection();
+                 return;
+             }
              if (!res.ok) throw new Error('API Error');
              const data = await res.json();
              setOutputDisplay(data.total || 0, data.failed_count || 0);
@@ -3565,18 +3659,92 @@
                     btn.style.background = '';
                 }, 800);
             } else {
-                const err = await res.json();
-                alert('Lỗi: ' + (err.detail || 'Không thể lưu.'));
+                const err = await res.json().catch(() => ({}));
+                if (res.status === 409) {
+                    alert(err.detail || 'Kế hoạch đã bị đóng bởi quản lý. Vui lòng chọn kế hoạch khác.');
+                    backToPlanSelection();
+                } else {
+                    alert('Lỗi: ' + (err.detail || 'Không thể lưu.'));
+                }
                 btn.disabled = false;
                 btn.innerHTML = originalBtnHtml;
             }
         } catch (e) {
             console.error(e);
-            alert('Lỗi kết nối server.');
+            savePayloadOffline(payload);
             btn.disabled = false;
             btn.innerHTML = originalBtnHtml;
         }
     }
+
+    // ========== Offline retry ==========
+    const OFFLINE_QUEUE_KEY = 'qlcl_offline_queue';
+
+    function savePayloadOffline(payload) {
+        try {
+            const queue = JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) || '[]');
+            queue.push({ payload, savedAt: new Date().toISOString() });
+            localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(queue));
+        } catch (e) { console.error('Không lưu được offline:', e); }
+        showOfflineBanner(true);
+    }
+
+    function getOfflineQueue() {
+        try { return JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) || '[]'); } catch (e) { return []; }
+    }
+
+    function clearOfflineQueue() {
+        try { localStorage.removeItem(OFFLINE_QUEUE_KEY); } catch (e) {}
+        showOfflineBanner(false);
+    }
+
+    function showOfflineBanner(show) {
+        let banner = document.getElementById('offlineBanner');
+        if (show) {
+            const count = getOfflineQueue().length;
+            if (!count) { if (banner) banner.hidden = true; return; }
+            if (!banner) {
+                banner = document.createElement('div');
+                banner.id = 'offlineBanner';
+                banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:1100;background:#fbbf24;color:#78350f;text-align:center;padding:8px 16px;font-size:0.82rem;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px;';
+                document.body.appendChild(banner);
+            }
+            banner.hidden = false;
+            banner.innerHTML = `<i class="fas fa-wifi" style="opacity:0.6;"></i> Có ${count} bản ghi chưa gửi được <button onclick="retryOfflineQueue()" style="background:#78350f;color:#fef3c7;border:none;border-radius:8px;padding:4px 12px;font-weight:700;font-size:0.78rem;margin-left:6px;cursor:pointer;">Gửi lại</button>`;
+        } else {
+            if (banner) banner.hidden = true;
+        }
+    }
+
+    async function retryOfflineQueue() {
+        const queue = getOfflineQueue();
+        if (!queue.length) { showOfflineBanner(false); return; }
+        const remaining = [];
+        for (const item of queue) {
+            try {
+                const res = await fetch('/api/qc/error-log-sp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(item.payload)
+                });
+                if (!res.ok) remaining.push(item);
+            } catch (e) {
+                remaining.push(item);
+            }
+        }
+        if (remaining.length) {
+            try { localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(remaining)); } catch (e) {}
+            showOfflineBanner(true);
+        } else {
+            clearOfflineQueue();
+            await fetchOutputTotal();
+            loadPosSummary();
+        }
+    }
+
+    window.addEventListener('online', () => {
+        if (getOfflineQueue().length) retryOfflineQueue();
+    });
 </script>
 </body>
 </html>

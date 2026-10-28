@@ -40,6 +40,7 @@ from fastapi.templating import Jinja2Templates
 
 import psycopg2
 import psycopg2.extras
+import psycopg2.pool
 try:
     import pyodbc
     PYODBC_AVAILABLE = True
@@ -231,6 +232,7 @@ SCHEMA_BOOTSTRAP_FILES = [
     "alter_prod_plan_add_is_finished.sql",
     "alter_prod_plan_add_mono.sql",
     "create_qc_hanging_output.sql",
+    "migrate_perf_indexes_20261028.sql",
 ]
 
 # Tạo thư mục lưu PDF và images nếu chưa có
@@ -239,12 +241,76 @@ os.makedirs(IMAGES_STORAGE_DIR, exist_ok=True)
 os.makedirs(os.path.join(IMAGES_STORAGE_DIR, "qc_sp"), exist_ok=True)
 
 
+_db_pool = psycopg2.pool.ThreadedConnectionPool(
+    minconn=2, maxconn=10, dsn=DATABASE_URL
+)
+
+_prod_factory_pool = psycopg2.pool.ThreadedConnectionPool(
+    minconn=1, maxconn=4, dsn=PROD_FACTORY_DATABASE_URL
+)
+
+
+class _PooledConnection:
+    """Context manager that returns a connection to the pool on exit."""
+    __slots__ = ("_pool", "_conn")
+
+    def __init__(self, pool):
+        self._pool = pool
+        self._conn = pool.getconn()
+
+    def __enter__(self):
+        return self._conn
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if exc_type is not None:
+            self._conn.rollback()
+        self._pool.putconn(self._conn)
+        return False
+
+    @property
+    def autocommit(self):
+        return self._conn.autocommit
+
+    @autocommit.setter
+    def autocommit(self, value):
+        self._conn.autocommit = value
+
+    def cursor(self, *a, **kw):
+        return self._conn.cursor(*a, **kw)
+
+    def commit(self):
+        return self._conn.commit()
+
+    def rollback(self):
+        return self._conn.rollback()
+
+
 def get_db_connection():
-    return psycopg2.connect(DATABASE_URL)
+    return _PooledConnection(_db_pool)
 
 
 def get_prod_factory_connection():
-    return psycopg2.connect(PROD_FACTORY_DATABASE_URL)
+    return _PooledConnection(_prod_factory_pool)
+
+
+# --- Cache prod_plan.bo_phan column type (avoid information_schema on every request) ---
+_PROD_PLAN_BO_PHAN_IS_JSONB: Optional[bool] = None
+
+
+def _detect_bo_phan_jsonb() -> bool:
+    global _PROD_PLAN_BO_PHAN_IS_JSONB
+    if _PROD_PLAN_BO_PHAN_IS_JSONB is not None:
+        return _PROD_PLAN_BO_PHAN_IS_JSONB
+    with get_db_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT data_type FROM information_schema.columns
+                WHERE table_schema='public' AND table_name='prod_plan' AND column_name='bo_phan'
+                LIMIT 1
+            """)
+            row = cur.fetchone()
+            _PROD_PLAN_BO_PHAN_IS_JSONB = (row[0] == "jsonb") if row else False
+    return _PROD_PLAN_BO_PHAN_IS_JSONB
 
 
 # --- Hanging Line (SQL Server) connection ---
@@ -1454,8 +1520,11 @@ def create_hdkp_pdf(error_id: int, hdkp_data: Dict) -> str:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    _detect_bo_phan_jsonb()
     startup_auto_sync()
     yield
+    _db_pool.closeall()
+    _prod_factory_pool.closeall()
 
 
 app = FastAPI(title="QLCL KPI", lifespan=lifespan)
@@ -1674,7 +1743,9 @@ def home(request: Request):
         response.delete_cookie("ma_nv")
         return response
 
-    final_only = get_qc_role(user_data) == FINAL_CAP_ROLE
+    user_qc_role = get_qc_role(user_data)
+    final_only = user_qc_role == FINAL_CAP_ROLE
+    is_qc_role = user_qc_role == "QC"
     final_factory_scope = get_final_factory_scope(user_data)
     final_cap_pending = 0
     with get_db_connection() as conn:
@@ -1699,6 +1770,7 @@ def home(request: Request):
             "user": user_data,
             "final_cap_pending": final_cap_pending,
             "final_only": final_only,
+            "is_qc_role": is_qc_role,
         },
     )
 
@@ -4333,16 +4405,7 @@ def api_qc_dashboard(
     with get_db_connection() as conn:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             # Detect prod_plan.bo_phan type for compatibility
-            cur.execute("""
-                SELECT data_type
-                FROM information_schema.columns
-                WHERE table_schema = 'public'
-                  AND table_name = 'prod_plan'
-                  AND column_name = 'bo_phan'
-                LIMIT 1
-            """)
-            bo_phan_type = (cur.fetchone() or {}).get("data_type")
-            use_jsonb_bo_phan = bo_phan_type == "jsonb"
+            use_jsonb_bo_phan = _detect_bo_phan_jsonb()
 
             # NOTE: Use a non-conflicting alias for this LATERAL join because
             # other queries in this endpoint also join dm_bo_phan as "bp".
@@ -5168,16 +5231,7 @@ def api_qc_cap(
     with get_db_connection() as conn:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             # Detect prod_plan.bo_phan type to avoid jsonb/text mismatch across deployments
-            cur.execute("""
-                SELECT data_type
-                FROM information_schema.columns
-                WHERE table_schema = 'public'
-                  AND table_name = 'prod_plan'
-                  AND column_name = 'bo_phan'
-                LIMIT 1
-            """)
-            bo_phan_type = (cur.fetchone() or {}).get("data_type")
-            use_jsonb_bo_phan = bo_phan_type == "jsonb"
+            use_jsonb_bo_phan = _detect_bo_phan_jsonb()
 
             bo_phan_expr = "bp.bo_phan_text" if use_jsonb_bo_phan else "p.bo_phan"
             bo_phan_join = (
@@ -5835,16 +5889,7 @@ def api_qc_cap_filters(request: Request, don_vi: Optional[str] = Query(None)):
     don_vi, _user = resolve_qc_don_vi_scope(request, don_vi)
     with get_db_connection() as conn:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute("""
-                SELECT data_type
-                FROM information_schema.columns
-                WHERE table_schema = 'public'
-                  AND table_name = 'prod_plan'
-                  AND column_name = 'bo_phan'
-                LIMIT 1
-            """)
-            bo_phan_type = (cur.fetchone() or {}).get("data_type")
-            use_jsonb_bo_phan = bo_phan_type == "jsonb"
+            use_jsonb_bo_phan = _detect_bo_phan_jsonb()
 
             # don_vi options
             don_vi_filter_params: List[Any] = []
@@ -6782,16 +6827,7 @@ def api_prod_plan_list(
 
     with get_db_connection() as conn:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute("""
-                SELECT data_type
-                FROM information_schema.columns
-                WHERE table_schema = 'public'
-                  AND table_name = 'prod_plan'
-                  AND column_name = 'bo_phan'
-                LIMIT 1
-            """)
-            bo_phan_type = (cur.fetchone() or {}).get("data_type")
-            use_jsonb_bo_phan = bo_phan_type == "jsonb"
+            use_jsonb_bo_phan = _detect_bo_phan_jsonb()
 
             clauses = []
             params = []
@@ -8445,6 +8481,33 @@ def api_qc_input_pos_summary(
             )
             mass_rows = cur.fetchall()
 
+            # HDKP map (reuse same connection)
+            cur.execute(
+                """
+                SELECT
+                    dps.time_bucket,
+                    dps.loai_loi,
+                    COALESCE(dps.ma_loi, '') AS ma_loi,
+                    COALESCE(dps.vi_tri, '') AS vi_tri,
+                    CASE WHEN hm.qc_error_dps_id IS NOT NULL THEN TRUE ELSE FALSE END AS has_hdkp
+                FROM public.qc_error_dps dps
+                LEFT JOIN public.qc_hdkp_mota hm ON hm.qc_error_dps_id = dps.id
+                WHERE dps.plan_id = %s
+                  AND dps.date = %s
+                  AND COALESCE(dps.station, '') = COALESCE(%s, '')
+                """,
+                (plan_id, date_str, station),
+            )
+            hdkp_map = {
+                (
+                    r.get("time_bucket") or "",
+                    r.get("loai_loi") or "",
+                    r.get("ma_loi") or "",
+                    r.get("vi_tri") or "",
+                ): bool(r.get("has_hdkp"))
+                for r in cur.fetchall()
+            }
+
     bucket_map: Dict[str, List[Dict]] = {b: [] for b in bucket_order}
     loai_order = {"Lỗi đại trà": 0, "Lỗi nghiêm trọng": 1, "Lỗi nguy cơ hàng loạt": 2}
 
@@ -8500,34 +8563,6 @@ def api_qc_input_pos_summary(
             "vi_tri": f"{ma_loi} - {vi_tri}",
             "qty": qty,
         })
-
-    with get_db_connection() as conn:
-        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute(
-                """
-                SELECT
-                    dps.time_bucket,
-                    dps.loai_loi,
-                    COALESCE(dps.ma_loi, '') AS ma_loi,
-                    COALESCE(dps.vi_tri, '') AS vi_tri,
-                    CASE WHEN hm.qc_error_dps_id IS NOT NULL THEN TRUE ELSE FALSE END AS has_hdkp
-                FROM public.qc_error_dps dps
-                LEFT JOIN public.qc_hdkp_mota hm ON hm.qc_error_dps_id = dps.id
-                WHERE dps.plan_id = %s
-                  AND dps.date = %s
-                  AND COALESCE(dps.station, '') = COALESCE(%s, '')
-                """,
-                (plan_id, date_str, station),
-            )
-            hdkp_map = {
-                (
-                    r.get("time_bucket") or "",
-                    r.get("loai_loi") or "",
-                    r.get("ma_loi") or "",
-                    r.get("vi_tri") or "",
-                ): bool(r.get("has_hdkp"))
-                for r in cur.fetchall()
-            }
 
     buckets = []
     for b in bucket_order:
