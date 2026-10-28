@@ -1166,6 +1166,7 @@
     let vpBlockState = {};           // blockId -> { nhom, bo_phan_id }
     let outputTotal = 0;
     let outputFailed = 0;
+    let outputReworked = 0;
     let hlPassedCount = 0;
     let flatOutput = null;
     let hlAutoRefreshTimer = null;
@@ -2292,14 +2293,18 @@
 
         let passed, failed, total, rate;
         if (isCurrentPlanFlatLine()) {
+            // Tổ sync: Tổng kiểm = Tổng đạt (sync) + lỗi CHƯA sửa. Cuối ngày sửa hết → = Tổng đạt.
+            // "Tổng lỗi" vẫn đếm toàn bộ lỗi phát sinh; tỉ lệ = tổng lỗi / tổng kiểm.
             passed = flatOutput?.available ? flatOutput.qty : null;
-            failed = flatOutput?.records === 0 ? null : flatOutput?.defects ?? outputFailed ?? 0;
-            total = passed == null || failed == null ? null : passed + failed;
+            failed = flatOutput?.records === 0 ? null : (flatOutput?.defects ?? 0);
+            const unreworked = Math.max(0, (flatOutput?.defects ?? 0) - (flatOutput?.reworked ?? 0));
+            total = passed == null ? null : passed + unreworked;
             rate = total > 0 && failed != null ? failed / total * 100 : null;
         } else if (isCurrentPlanHangingLine()) {
             passed = hlPassedCount || 0;
             failed = outputFailed || 0;
-            total = passed + failed;
+            const unreworked = Math.max(0, failed - (outputReworked || 0));
+            total = passed + unreworked;
             rate = total > 0 ? (failed / total) * 100 : 0;
         } else {
             passed = Math.max(0, (outputTotal || 0) - (outputFailed || 0));
@@ -2328,9 +2333,10 @@
         }
     }
 
-    function setOutputDisplay(total, failed) {
+    function setOutputDisplay(total, failed, reworked) {
         outputTotal = total || 0;
         outputFailed = failed || 0;
+        outputReworked = reworked || 0;
         renderOutputDisplay();
     }
 
@@ -2385,7 +2391,7 @@
             if (station) params.append('station', station);
             const res = await fetch(`/api/qc/output-sp?${params.toString()}`);
             const data = await res.json();
-            setOutputDisplay(data.total || 0, data.failed_count || 0);
+            setOutputDisplay(data.total || 0, data.failed_count || 0, data.reworked_count || 0);
             if (isCurrentPlanFlatLine()) await fetchHangingOutput();
         } catch (e) {
             console.error(e);

@@ -48,9 +48,18 @@ def get_output(cur, plan, day):
     cur.execute("SELECT COUNT(*) AS records, COALESCE(SUM(defect_count),0) AS defects FROM public.qc_error_log_sp WHERE plan_id=%s AND date=%s AND BTRIM(station)='QC kiểm thành phẩm'", (plan['id'],day))
     summary = cur.fetchone()
     defects = int(summary['defects'])
+    # Sản phẩm lỗi đã sửa xong đã quay lại sản lượng "đạt" sync → trừ khỏi mẫu số, tránh đếm trùng.
+    cur.execute("""SELECT COUNT(*) FROM (
+        SELECT d.error_log_sp_id, d.sp_index
+        FROM public.qc_defect d JOIN public.qc_error_log_sp sp ON sp.id=d.error_log_sp_id
+        WHERE sp.plan_id=%s AND sp.date=%s AND BTRIM(sp.station)='QC kiểm thành phẩm' AND d.sp_index IS NOT NULL
+        GROUP BY d.error_log_sp_id, d.sp_index HAVING BOOL_AND(COALESCE(d.rework_done,FALSE))
+    ) t""", (plan['id'],day))
+    reworked = int(cur.fetchone()[0] or 0)
+    unreworked = max(0, defects - reworked)
     qty = float(row['qty']) if row and row['qty'] is not None else None
-    inspected = qty + defects if qty is not None else None
-    return dict(source='flat_line_sheet',qty=qty,available=qty is not None,defects=defects,records=summary['records'],
+    inspected = qty + unreworked if qty is not None else None
+    return dict(source='flat_line_sheet',qty=qty,available=qty is not None,defects=defects,reworked=reworked,records=summary['records'],
         rate=round(defects/inspected*100,1) if summary['records'] and inspected and inspected>0 else None,
         slots=row['slots'] if row else [],synced_at=row['synced_at'].isoformat() if row else None)
 

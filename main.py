@@ -8339,7 +8339,7 @@ def api_qc_output_sp_get(
         with conn.cursor() as cur:
             cur.execute(
                 """
-                SELECT 
+                SELECT
                     COALESCE(COUNT(*), 0) AS total,
                     COALESCE(SUM(CASE WHEN status = 'Passed' THEN 1 ELSE 0 END), 0) AS passed_count,
                     COALESCE(SUM(CASE WHEN status = 'Failed' THEN 1 ELSE 0 END), 0) AS failed_count
@@ -8349,7 +8349,29 @@ def api_qc_output_sp_get(
                 (plan_id, date_str, station)
             )
             row = cur.fetchone()
-            return {"total": row[0], "passed_count": row[1], "failed_count": row[2]}
+            # Số sản phẩm lỗi đã sửa xong (dùng để trừ double-count ở tổ sync).
+            cur.execute(
+                """
+                SELECT COUNT(*) FROM (
+                    SELECT d.error_log_sp_id, d.sp_index
+                    FROM public.qc_defect d
+                    JOIN public.qc_error_log_sp sp ON sp.id = d.error_log_sp_id
+                    WHERE sp.plan_id = %s AND sp.date = %s
+                      AND COALESCE(sp.station, '') = COALESCE(%s, '')
+                      AND d.sp_index IS NOT NULL
+                    GROUP BY d.error_log_sp_id, d.sp_index
+                    HAVING BOOL_AND(COALESCE(d.rework_done, FALSE))
+                ) t
+                """,
+                (plan_id, date_str, station)
+            )
+            reworked_count = cur.fetchone()[0] or 0
+            return {
+                "total": row[0],
+                "passed_count": row[1],
+                "failed_count": row[2],
+                "reworked_count": reworked_count,
+            }
 
 
 @app.get("/api/qc/input/pos-summary", dependencies=[Depends(require_plan_reader)])
