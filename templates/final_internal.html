@@ -226,7 +226,7 @@
             if (!row.cap_required) return '<span class="text-xs text-on-surface-variant">Không yêu cầu</span>';
             if (row.cap_status === 'completed' && row.cap_form) return `<a href="${escapeHtml(row.cap_form)}" target="_blank" onclick="event.stopPropagation()" class="btn-tertiary px-3 py-2 text-xs inline-flex items-center gap-1"><span class="material-symbols-outlined text-[17px]">picture_as_pdf</span>Xem HĐKP</a>`;
             const label = row.cap_status === 'draft' ? 'Tiếp tục HĐKP' : 'Điền HĐKP 10.1';
-            return `<button onclick="event.stopPropagation(); openCap(${row.id})" class="btn-primary px-3 py-2 text-xs whitespace-nowrap">${label}</button>`;
+            return `<button type="button" data-cap-id="${row.id}" class="btn-primary px-3 py-2 text-xs whitespace-nowrap">${label}</button>`;
         }
 
         function renderRows() {
@@ -287,13 +287,32 @@
         function closeDetail() { el('drawerBackdrop').classList.remove('open'); el('detailDrawer').classList.remove('open'); el('detailDrawer').setAttribute('aria-hidden','true'); }
 
         async function openCap(id) {
+            const button = document.querySelector(`[data-cap-id="${id}"]`);
+            if (button) {
+                button.disabled = true;
+                button.classList.add('opacity-60', 'cursor-wait');
+            }
             try {
                 const res = await fetch(`/api/final-internal/${id}/cap`, {method:'POST'});
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.detail || 'Không thể tạo HĐKP');
                 window.location.href = data.url;
-            } catch (error) { showToast(error.message, 'error'); }
+            } catch (error) {
+                if (button) {
+                    button.disabled = false;
+                    button.classList.remove('opacity-60', 'cursor-wait');
+                }
+                showToast(error.message, 'error');
+            }
         }
+
+        document.addEventListener('click', event => {
+            const button = event.target.closest('[data-cap-id]');
+            if (!button) return;
+            event.preventDefault();
+            event.stopPropagation();
+            openCap(button.dataset.capId);
+        });
 
         let searchTimer;
         ['dateFrom','dateTo','factoryFilter','resultFilter','capFilter'].forEach(id => el(id).addEventListener('change', () => { state.page = 1; loadData(); }));

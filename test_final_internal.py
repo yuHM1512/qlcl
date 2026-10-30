@@ -43,6 +43,8 @@ class FinalInternalTests(unittest.TestCase):
         self.assertIn("Final nội bộ", html)
         self.assertIn("/api/final-internal/sync", html)
         self.assertIn("/api/final-internal/${id}/cap", html)
+        self.assertIn('type="button" data-cap-id="${row.id}"', html)
+        self.assertIn("event.preventDefault()", html)
         self.assertIn("Điền HĐKP 10.1", html)
 
 
