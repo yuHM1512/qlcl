@@ -42,9 +42,7 @@ class FinalInternalTests(unittest.TestCase):
         html = Path("templates/final_internal.html").read_text(encoding="utf-8")
         self.assertIn("Final nội bộ", html)
         self.assertIn("/api/final-internal/sync", html)
-        self.assertIn("/api/final-internal/${id}/cap", html)
-        self.assertIn('type="button" data-cap-id="${row.id}"', html)
-        self.assertIn("event.preventDefault()", html)
+        self.assertIn('/final-internal/hdkp-form/${row.id}', html)
         self.assertIn("Điền HĐKP 10.1", html)
 
 

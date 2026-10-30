@@ -1980,6 +1980,15 @@ def final_internal_hdkp_form_page(inspection_id: int = Path(...), request: Reque
             require_final_cap_access(user, factory=inspection.get("factory"))
             if str(inspection.get("final_status_code") or "") != "0":
                 raise HTTPException(status_code=400, detail="Chỉ kết quả FAIL mới cần HĐKP 10.1")
+            cur.execute(
+                """
+                INSERT INTO public.qa_final_hdkp (inspection_id, created_by)
+                VALUES (%s, %s)
+                ON CONFLICT (inspection_id) DO NOTHING
+                """,
+                (inspection_id, user["ma_nv"]),
+            )
+            conn.commit()
     error_row = {
         "id": inspection_id,
         "ma_nv": user.get("ma_nv"),
