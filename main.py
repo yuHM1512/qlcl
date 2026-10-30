@@ -202,6 +202,7 @@ SCHEMA_BOOTSTRAP_FILES = [
     "alter_quality_bulletin_saved_at.sql",
     "migrate_qa_final_cap_fail_only.sql",
     "migrate_final_cap_editors.sql",
+    "migrate_final_cap_all_qc_leaders.sql",
     "create_prod_plan.sql",
     "migrate_prod_plan_bo_phan_json.sql",
     "create_qc_output_sp_log.sql",

@@ -31,6 +31,12 @@ class FinalInternalTests(unittest.TestCase):
         app_source = Path("main.py").read_text(encoding="utf-8")
         self.assertIn('"/final-internal/"', app_source)
 
+    def test_qc_leader_final_cap_migration_is_separate_from_kpi_roles(self):
+        migration = Path("db/migrate_final_cap_all_qc_leaders.sql").read_text(encoding="utf-8")
+        self.assertIn("lower(trim(chuc_vu)) = lower('QC trưởng')", migration)
+        self.assertIn("SET qc_role = 'FINAL_CAP'", migration)
+        self.assertIn("don_vi IN ('XN1-V1', 'XN2', 'XN3', 'XNDT')", migration)
+
     def test_final_cap_editors_are_factory_scoped(self):
         app_source = Path("main.py").read_text(encoding="utf-8")
         migration = Path("db/migrate_final_cap_editors.sql").read_text(encoding="utf-8")
