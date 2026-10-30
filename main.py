@@ -1548,6 +1548,7 @@ app.include_router(gemba_admin_router.router, dependencies=[Depends(require_auth
 FINAL_CAP_PUBLIC_PATHS = {"/", "/login", "/logout", "/healthz", "/favicon.ico"}
 FINAL_CAP_ALLOWED_PREFIXES = (
     "/final-noi-bo",
+    "/final-internal/",
     "/api/final-internal",
     "/hdkp-form/",
     "/api/hdkp/",

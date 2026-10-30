@@ -27,6 +27,10 @@ class FinalInternalTests(unittest.TestCase):
         self.assertIn('detail="Chỉ kết quả FAIL mới cần HĐKP 10.1"', app_source)
         self.assertIn('status_code == "0"', sync_source)
 
+    def test_final_cap_editor_can_reach_dedicated_form_route(self):
+        app_source = Path("main.py").read_text(encoding="utf-8")
+        self.assertIn('"/final-internal/"', app_source)
+
     def test_final_cap_editors_are_factory_scoped(self):
         app_source = Path("main.py").read_text(encoding="utf-8")
         migration = Path("db/migrate_final_cap_editors.sql").read_text(encoding="utf-8")
@@ -44,6 +48,10 @@ class FinalInternalTests(unittest.TestCase):
         self.assertIn("/api/final-internal/sync", html)
         self.assertIn('/final-internal/hdkp-form/${row.id}', html)
         self.assertIn("Điền HĐKP 10.1", html)
+
+    def test_hdkp_form_return_button_keeps_javascript_attribute_valid(self):
+        html = Path("templates/hdkp_form.html").read_text(encoding="utf-8")
+        self.assertIn("onclick='window.location.href={{ return_url | tojson }}'", html)
 
 
 if __name__ == "__main__":
