@@ -2076,7 +2076,19 @@ async def api_complete_final_internal_hdkp(inspection_id: int = Path(...), reque
             if not hdkp:
                 raise HTTPException(status_code=400, detail="Chưa có HĐKP để hoàn thành")
             if hdkp["completed_at"]:
-                return {"status": "already_completed"}
+                if not hdkp["pdf_url"]:
+                    try:
+                        row = dict(inspection)
+                        row["ma_nv"] = user.get("ma_nv")
+                        row["ngay_ghi_nhan"] = inspection.get("qa_check_date")
+                        hdkp_data = prepare_hdkp_data_for_pdf(hdkp_id, row, ("qa_final_hdkp_mota", "qa_final_hdkp_kehoach", "qa_final_hdkp_chitiet"), "hdkp_id")
+                        retry_pdf = create_hdkp_pdf(inspection_id, hdkp_data)
+                        cur.execute("UPDATE public.qa_final_hdkp SET pdf_url = %s WHERE id = %s", (retry_pdf, hdkp_id))
+                        conn.commit()
+                        return {"status": "ok", "pdf_url": retry_pdf}
+                    except Exception:
+                        logger.exception("Retry PDF thất bại cho inspection_id=%s", inspection_id)
+                return {"status": "already_completed", "pdf_url": hdkp.get("pdf_url")}
             hdkp_id = hdkp["id"]
             cur.execute("SELECT 1 FROM public.qa_final_hdkp_mota WHERE hdkp_id = %s", (hdkp_id,))
             has_mota = cur.fetchone()

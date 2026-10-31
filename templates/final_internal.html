@@ -238,8 +238,13 @@
 
         function capAction(row) {
             if (!row.cap_required) return '<span class="text-xs text-on-surface-variant">Không yêu cầu</span>';
-            if (row.cap_status === 'completed' && row.cap_form) return `<a href="${escapeHtml(row.cap_form)}" target="_blank" onclick="event.stopPropagation()" class="btn-tertiary px-3 py-2 text-xs inline-flex items-center gap-1"><span class="material-symbols-outlined text-[17px]">picture_as_pdf</span>Xem HĐKP</a>`;
-            if (row.cap_status === 'completed') return '<span class="text-xs text-green-700 font-semibold">Đã hoàn thành</span>';
+            if (row.cap_status === 'completed') {
+                let h = '<div class="flex flex-col gap-1.5" onclick="event.stopPropagation()">';
+                if (row.cap_form) h += `<a href="${escapeHtml(row.cap_form)}" target="_blank" class="btn-primary px-3 py-2 text-xs inline-flex items-center justify-center gap-1 whitespace-nowrap"><span class="material-symbols-outlined text-[17px]">picture_as_pdf</span>Xem PDF</a>`;
+                else h += `<button onclick="retryPdf(${row.id})" class="px-3 py-2 text-xs font-semibold rounded-xl bg-amber-500 text-white hover:bg-amber-600 transition whitespace-nowrap inline-flex items-center justify-center gap-1"><span class="material-symbols-outlined text-[17px]">picture_as_pdf</span>Tạo PDF</button>`;
+                h += `<a href="/final-internal/hdkp-form/${row.id}" class="btn-tertiary px-3 py-2 text-xs text-center whitespace-nowrap">Xem HĐKP</a>`;
+                return h + '</div>';
+            }
             const editLabel = row.cap_status === 'draft' ? 'Tiếp tục HĐKP' : 'Điền HĐKP 10.1';
             let html = `<div class="flex flex-col gap-1.5" onclick="event.stopPropagation()"><a href="/final-internal/hdkp-form/${row.id}" class="btn-primary px-3 py-2 text-xs whitespace-nowrap text-center">${editLabel}</a>`;
             if (row.cap_status === 'draft') html += `<button onclick="confirmComplete(${row.id})" class="px-3 py-2 text-xs font-semibold rounded-xl bg-green-600 text-white hover:bg-green-700 transition whitespace-nowrap">Hoàn thành</button>`;
@@ -317,6 +322,16 @@
                 closeCompleteModal(); closeDetail(); loadData();
             } catch(error) { showToast(error.message, 'error'); }
             finally { btn.disabled = false; btn.textContent = 'Hoàn thành'; }
+        }
+
+        async function retryPdf(id) {
+            try {
+                const res = await fetch(`/api/final-internal/hdkp/${id}/complete`, {method:'POST'});
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.detail || 'Lỗi');
+                if (data.pdf_url) { showToast('Đã tạo PDF thành công'); loadData(); }
+                else showToast('Không thể tạo PDF, vui lòng thử lại sau', 'error');
+            } catch(e) { showToast(e.message, 'error'); }
         }
 
         let searchTimer;
