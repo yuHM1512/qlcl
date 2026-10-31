@@ -51,6 +51,7 @@ from openpyxl.styles import Alignment
 from openpyxl.drawing.image import Image
 try:
     import win32com.client  # type: ignore
+    import pythoncom  # type: ignore
     WIN32_AVAILABLE = True
 except ImportError:
     WIN32_AVAILABLE = False
@@ -1445,14 +1446,23 @@ def excel_to_pdf(excel_path: str, pdf_path: str):
     if not WIN32_AVAILABLE:
         raise HTTPException(status_code=500, detail="Không thể xuất PDF: win32com không khả dụng. Chỉ hỗ trợ trên Windows.")
     
+    # Event loop thread của FastAPI chưa khởi tạo COM apartment
+    pythoncom.CoInitialize()
+    excel = None
+    workbook = None
     try:
-        excel = win32com.client.Dispatch("Excel.Application")
-        excel.Visible = False
-        excel.DisplayAlerts = False
-        
+        # DispatchEx tạo process Excel riêng thay vì bám vào instance đang mở
+        # (instance cũ có thể đang treo dialog và từ chối mọi lệnh automation)
+        excel = win32com.client.DispatchEx("Excel.Application")
+        for prop in ("Visible", "DisplayAlerts"):
+            try:
+                setattr(excel, prop, False)
+            except Exception:
+                pass
+
         # Má»Ÿ file Excel
         workbook = excel.Workbooks.Open(os.path.abspath(excel_path))
-        
+
         # Thiết lập page setup cho tất cả các sheets
         for sheet in workbook.Worksheets:
             # Thiết lập margins nhỏ để tránh lề thừa
@@ -1472,13 +1482,24 @@ def excel_to_pdf(excel_path: str, pdf_path: str):
         
         # Xuất sang PDF
         workbook.ExportAsFixedFormat(0, os.path.abspath(pdf_path))  # 0 = xlTypePDF
-        
-        workbook.Close(False)
-        excel.Quit()
-        
+
         return pdf_path
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Lá»—i khi chuyá»ƒn Excel sang PDF: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Lỗi khi chuyển Excel sang PDF: {str(e)}")
+    finally:
+        # Không cleanup thì mỗi lần lỗi để lại một EXCEL.EXE treo,
+        # lần gọi sau bám vào nó và hỏng theo kiểu khác
+        if workbook is not None:
+            try:
+                workbook.Close(False)
+            except Exception:
+                pass
+        if excel is not None:
+            try:
+                excel.Quit()
+            except Exception:
+                pass
+        pythoncom.CoUninitialize()
 
 
 def create_hdkp_pdf(error_id: int, hdkp_data: Dict) -> str:
