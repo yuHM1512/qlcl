@@ -159,7 +159,7 @@
         <div id="drawerFooter" class="sticky bottom-0 bg-white/90 backdrop-blur-xl p-5 flex justify-end"></div>
     </aside>
 
-    <div id="completeModal" class="modal-overlay hidden">
+    <div id="completeModal" class="modal-overlay">
         <div class="modal-box max-w-md">
             <div class="flex items-center gap-3 mb-4">
                 <div class="h-11 w-11 rounded-xl bg-green-100 flex items-center justify-center"><span class="material-symbols-outlined text-green-700">task_alt</span></div>
@@ -241,7 +241,7 @@
             if (row.cap_status === 'completed' && row.cap_form) return `<a href="${escapeHtml(row.cap_form)}" target="_blank" onclick="event.stopPropagation()" class="btn-tertiary px-3 py-2 text-xs inline-flex items-center gap-1"><span class="material-symbols-outlined text-[17px]">picture_as_pdf</span>Xem HĐKP</a>`;
             if (row.cap_status === 'completed') return '<span class="text-xs text-green-700 font-semibold">Đã hoàn thành</span>';
             const editLabel = row.cap_status === 'draft' ? 'Tiếp tục HĐKP' : 'Điền HĐKP 10.1';
-            let html = `<div class="flex items-center gap-2" onclick="event.stopPropagation()"><a href="/final-internal/hdkp-form/${row.id}" class="btn-primary px-3 py-2 text-xs whitespace-nowrap">${editLabel}</a>`;
+            let html = `<div class="flex flex-col gap-1.5" onclick="event.stopPropagation()"><a href="/final-internal/hdkp-form/${row.id}" class="btn-primary px-3 py-2 text-xs whitespace-nowrap text-center">${editLabel}</a>`;
             if (row.cap_status === 'draft') html += `<button onclick="confirmComplete(${row.id})" class="px-3 py-2 text-xs font-semibold rounded-xl bg-green-600 text-white hover:bg-green-700 transition whitespace-nowrap">Hoàn thành</button>`;
             return html + '</div>';
         }
@@ -304,8 +304,8 @@
         function closeDetail() { el('drawerBackdrop').classList.remove('open'); el('detailDrawer').classList.remove('open'); el('detailDrawer').setAttribute('aria-hidden','true'); }
 
         let _completeId = null;
-        function confirmComplete(id) { _completeId = id; el('completeModal').classList.remove('hidden'); }
-        function closeCompleteModal() { _completeId = null; el('completeModal').classList.add('hidden'); }
+        function confirmComplete(id) { _completeId = id; el('completeModal').classList.add('active'); }
+        function closeCompleteModal() { _completeId = null; el('completeModal').classList.remove('active'); }
         async function doComplete() {
             if (!_completeId) return;
             const btn = el('confirmCompleteBtn'); btn.disabled = true; btn.textContent = 'Đang xử lý…';
