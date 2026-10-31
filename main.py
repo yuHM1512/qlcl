@@ -57,6 +57,8 @@ try:
 except ImportError:
     WIN32_AVAILABLE = False
 
+from hdkp_pdf import render_hdkp_pdf
+
 
 # Lấy cấu hình từ environment variables hoặc file .env
 # Tất cả các biến này là bắt buộc, phải được cấu hình trong file .env hoặc environment variables
@@ -1653,32 +1655,17 @@ def create_hdkp_pdf(error_id: int, hdkp_data: Dict) -> str:
         filename = f"SAISOT_{hdkp_data.get('ma_nv', 'UNKNOWN')}_{hdkp_data.get('ngay_ghi_nhan', '').replace('-', '')}.pdf"
         pdf_path = os.path.join(PDF_STORAGE_DIR, filename)
         logger.info(f"Tạo PDF: {pdf_path}")
-        
-        # Tạo file Excel tạm
-        temp_excel_path = pdf_path.replace('.pdf', '.xlsx')
-        
-        # Kiểm tra template có tồn tại không
-        if not os.path.exists(EXCEL_TEMPLATE_PATH):
-            raise FileNotFoundError(f"Template Excel không tồn tại: {EXCEL_TEMPLATE_PATH}")
-        
-        logger.info(f"Điền dữ liệu vào Excel template...")
-        # Điền dữ liệu vào Excel template
-        fill_excel_template(EXCEL_TEMPLATE_PATH, hdkp_data, temp_excel_path)
-        logger.info(f"Đã điền xong, chuyển sang PDF...")
-        
-        # Chuyá»ƒn Excel sang PDF
-        excel_to_pdf(temp_excel_path, pdf_path)
+
+        logo_path = os.path.join(TEMPLATES_DIR, "Logo.png") if TEMPLATES_DIR else None
+        render_hdkp_pdf(hdkp_data, pdf_path,
+                        images_dir=IMAGES_STORAGE_DIR, logo_path=logo_path)
         logger.info(f"Đã tạo PDF thành công: {pdf_path}")
-        
-        # Xóa file Excel tạm
-        if os.path.exists(temp_excel_path):
-            os.remove(temp_excel_path)
-        
+
         # Trả về URL để truy cập file
         return f"/api/pdf/{filename}"
-        
+
     except Exception as e:
-        logger.error(f"Lá»—i trong create_hdkp_pdf: {str(e)}", exc_info=True)
+        logger.error(f"Lỗi trong create_hdkp_pdf: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Lỗi khi tạo file PDF: {str(e)}")
 
 
