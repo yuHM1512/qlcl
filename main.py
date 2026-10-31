@@ -2075,6 +2075,7 @@ async def api_complete_final_internal_hdkp(inspection_id: int = Path(...), reque
             hdkp = cur.fetchone()
             if not hdkp:
                 raise HTTPException(status_code=400, detail="Chưa có HĐKP để hoàn thành")
+            hdkp_id = hdkp["id"]
             if hdkp["completed_at"]:
                 if not hdkp["pdf_url"]:
                     try:
@@ -2089,7 +2090,6 @@ async def api_complete_final_internal_hdkp(inspection_id: int = Path(...), reque
                     except Exception:
                         logger.exception("Retry PDF thất bại cho inspection_id=%s", inspection_id)
                 return {"status": "already_completed", "pdf_url": hdkp.get("pdf_url")}
-            hdkp_id = hdkp["id"]
             cur.execute("SELECT 1 FROM public.qa_final_hdkp_mota WHERE hdkp_id = %s", (hdkp_id,))
             has_mota = cur.fetchone()
             if not has_mota:
