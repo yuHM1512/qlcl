@@ -66,6 +66,22 @@ class HdkpPdfTests(unittest.TestCase):
                        "30/09/2026", "Kiểm tra toàn bộ lô hàng tồn kho"):
             self.assertIn(" ".join(needle.split()), self.text)
 
+    def test_accepts_both_spellings_of_the_action_columns(self):
+        # prepare_hdkp_data_for_pdf (Final nội bộ, HĐKP thường) spells these
+        # with đ; prepare_qc_hdkp_data_for_pdf (endline) spells them with d.
+        for key_action, key_prevent in (
+            ("a_hdkp_tuc_thoi_1", "a_hd_phong_ngua_1"),
+            ("a_hđkp_tuc_thoi_1", "a_hđ_phong_ngua_1"),
+        ):
+            data = {"ma_nv": "X", "ngay_ghi_nhan": "2026-01-01",
+                    "a_root_cause_1": "Nguyên nhân",
+                    key_action: "Kiểm tra lại toàn bộ lô hàng",
+                    key_prevent: "Quán triệt công nhân kiểm tra trước khi chuyển"}
+            _, _, text = _render(data)
+            self.assertIn("Kiểm tra lại toàn bộ lô hàng", text, key_action)
+            self.assertIn("Quán triệt công nhân kiểm tra trước khi chuyển",
+                          text, key_prevent)
+
     def test_blank_form_still_renders(self):
         _, doc, text = _render({"ma_nv": "X", "ngay_ghi_nhan": "2026-01-01"})
         self.assertGreaterEqual(doc.page_count, 1)

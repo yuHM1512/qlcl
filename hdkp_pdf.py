@@ -123,8 +123,23 @@ def _merge(widths: List[float], first: int, last: int) -> float:
     return sum(widths[first:last + 1])
 
 
+# Hai hàm chuẩn bị dữ liệu đặt tên khác nhau cho cùng một cột: luồng Final nội
+# bộ và HĐKP thường viết có dấu ("a_hđkp_tuc_thoi"), luồng endline viết không
+# dấu. Nhận cả hai để không luồng nào mất cột.
+_FIELD_ALIASES = {
+    "a_hdkp_tuc_thoi": ("a_hdkp_tuc_thoi", "a_hđkp_tuc_thoi"),
+    "a_hd_phong_ngua": ("a_hd_phong_ngua", "a_hđ_phong_ngua"),
+    "b_hdkp_tuc_thoi": ("b_hdkp_tuc_thoi", "b_hđkp_tuc_thoi"),
+    "b_hd_phong_ngua": ("b_hd_phong_ngua", "b_hđ_phong_ngua"),
+}
+
+
 def _numbered(data: Dict, prefix: str, index: int) -> str:
-    return (data.get(f"{prefix}_{index}") or "").strip()
+    for name in _FIELD_ALIASES.get(prefix, (prefix,)):
+        value = data.get(f"{name}_{index}")
+        if value is not None and str(value).strip():
+            return str(value).strip()
+    return ""
 
 
 def _count_items(data: Dict, probe_prefixes, minimum: int) -> int:
