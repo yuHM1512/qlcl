@@ -1573,6 +1573,21 @@ def _grow_row_heights_to_fit_text(sheet):
                 pass
 
 
+class RevalidatedStaticFiles(StaticFiles):
+    """Phục vụ file nhưng bắt trình duyệt và CDN hỏi lại server mỗi lần.
+
+    File PDF của một HĐKP được dựng lại mỗi khi nội dung thay đổi mà tên file
+    giữ nguyên. Nếu để cache theo mặc định thì người xem nhận bản cũ hàng giờ
+    sau khi HĐKP đã sửa. Dùng no-cache chứ không phải no-store nên vẫn còn
+    ETag: file không đổi thì server trả 304, không tốn băng thông.
+    """
+
+    def file_response(self, *args, **kwargs):
+        response = super().file_response(*args, **kwargs)
+        response.headers["Cache-Control"] = "no-cache, must-revalidate"
+        return response
+
+
 def excel_to_pdf(excel_path: str, pdf_path: str):
     """
     Chuyển đổi Excel sang PDF sử dụng win32com (Windows only).
@@ -1685,7 +1700,7 @@ gemba_cp_templates = Jinja2Templates(directory=str(GEMBA_CP_TEMPLATES_DIR))
 # Serve logo and other assets from templates folder under /templates
 app.mount("/templates", StaticFiles(directory=TEMPLATES_DIR), name="templates")
 # Serve PDF files
-app.mount("/api/pdf", StaticFiles(directory=PDF_STORAGE_DIR), name="pdf")
+app.mount("/api/pdf", RevalidatedStaticFiles(directory=PDF_STORAGE_DIR), name="pdf")
 # Serve uploaded images
 app.mount("/api/images", StaticFiles(directory=IMAGES_STORAGE_DIR), name="images")
 app.mount("/static", StaticFiles(directory=str(GEMBA_CP_STATIC_DIR)), name="gemba-static")

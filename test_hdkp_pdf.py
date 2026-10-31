@@ -87,6 +87,29 @@ class HdkpPdfTests(unittest.TestCase):
         self.assertGreaterEqual(doc.page_count, 1)
         self.assertIn("I. Mô tả vấn đề", text)
 
+    def test_served_pdf_must_be_revalidated(self):
+        # the file behind a given URL is rebuilt whenever the HĐKP changes,
+        # so neither the browser nor Cloudflare may hand out a stale copy
+        from fastapi import FastAPI
+        from fastapi.testclient import TestClient
+
+        import main
+
+        served = os.path.join(main.PDF_STORAGE_DIR, "_cache_header_check.pdf")
+        with open(served, "wb") as handle:
+            handle.write(b"%PDF-1.4\n%check\n")
+        try:
+            app = FastAPI()
+            app.mount("/api/pdf",
+                      main.RevalidatedStaticFiles(directory=main.PDF_STORAGE_DIR),
+                      name="pdf")
+            response = TestClient(app).get("/api/pdf/_cache_header_check.pdf")
+            self.assertEqual(response.status_code, 200)
+            self.assertIn("no-cache", response.headers.get("cache-control", ""))
+            self.assertTrue(response.headers.get("etag"))
+        finally:
+            os.remove(served)
+
     def test_pdf_generation_does_not_need_excel(self):
         source = Path("main.py").read_text(encoding="utf-8-sig")
         start = source.index("def create_hdkp_pdf")
