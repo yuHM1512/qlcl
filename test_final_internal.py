@@ -59,6 +59,35 @@ class FinalInternalTests(unittest.TestCase):
         html = Path("templates/hdkp_form.html").read_text(encoding="utf-8")
         self.assertIn("onclick='window.location.href={{ return_url | tojson }}'", html)
 
+    def test_final_hdkp_completed_migration_exists(self):
+        sql = Path("db/alter_qa_final_hdkp_completed.sql").read_text(encoding="utf-8")
+        self.assertIn("completed_at", sql)
+        self.assertIn("completed_by", sql)
+        self.assertIn("ALTER TABLE", sql)
+
+    def test_final_hdkp_complete_endpoint_exists(self):
+        app_source = Path("main.py").read_text(encoding="utf-8")
+        self.assertIn("/api/final-internal/hdkp/{inspection_id}/complete", app_source)
+        self.assertIn("completed_at IS NOT NULL", app_source)
+        self.assertIn("already_completed", app_source)
+
+    def test_final_hdkp_cap_status_uses_completed_at(self):
+        app_source = Path("main.py").read_text(encoding="utf-8")
+        self.assertIn("fh.completed_at IS NOT NULL THEN 'completed'", app_source)
+        self.assertIn("fh.completed_at IS NULL", app_source)
+        self.assertNotIn("fh.pdf_url IS NOT NULL THEN 'completed'", app_source)
+
+    def test_final_ui_contains_complete_button_and_modal(self):
+        html = Path("templates/final_internal.html").read_text(encoding="utf-8")
+        self.assertIn("confirmComplete", html)
+        self.assertIn("completeModal", html)
+        self.assertIn("Hoàn thành", html)
+        self.assertIn("/complete", html)
+
+    def test_final_migration_registered_in_main(self):
+        app_source = Path("main.py").read_text(encoding="utf-8")
+        self.assertIn('"alter_qa_final_hdkp_completed.sql"', app_source)
+
 
 if __name__ == "__main__":
     unittest.main()

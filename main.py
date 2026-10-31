@@ -234,6 +234,7 @@ SCHEMA_BOOTSTRAP_FILES = [
     "alter_prod_plan_add_mono.sql",
     "create_qc_hanging_output.sql",
     "migrate_perf_indexes_20261028.sql",
+    "alter_qa_final_hdkp_completed.sql",
 ]
 
 # Tạo thư mục lưu PDF và images nếu chưa có
@@ -1832,9 +1833,9 @@ def _final_internal_where(
     elif cap_status == "missing":
         clauses.append("fi.cap_required = TRUE AND fh.id IS NULL")
     elif cap_status == "draft":
-        clauses.append("fi.cap_required = TRUE AND fh.id IS NOT NULL AND fh.pdf_url IS NULL")
+        clauses.append("fi.cap_required = TRUE AND fh.id IS NOT NULL AND fh.completed_at IS NULL")
     elif cap_status == "completed":
-        clauses.append("fi.cap_required = TRUE AND fh.pdf_url IS NOT NULL")
+        clauses.append("fi.cap_required = TRUE AND fh.completed_at IS NOT NULL")
     if search:
         clauses.append(
             "(fi.po_code ILIKE %s OR fi.product_id ILIKE %s OR fi.inspector_name ILIKE %s)"
@@ -1872,7 +1873,7 @@ def api_final_internal_list(
                        COUNT(*) FILTER (WHERE fi.final_status_code = '0') AS fail_count,
                        COUNT(*) FILTER (
                            WHERE fi.cap_required = TRUE
-                             AND fh.pdf_url IS NULL
+                             AND fh.completed_at IS NULL
                        ) AS cap_pending_count
                 FROM public.qa_final_inspection fi
                 LEFT JOIN public.qa_final_hdkp fh ON fh.inspection_id = fi.id
@@ -1888,7 +1889,7 @@ def api_final_internal_list(
                        CASE
                            WHEN fi.cap_required = FALSE THEN 'not_required'
                            WHEN fh.id IS NULL THEN 'missing'
-                           WHEN fh.pdf_url IS NOT NULL THEN 'completed'
+                           WHEN fh.completed_at IS NOT NULL THEN 'completed'
                            WHEN EXISTS (
                                SELECT 1 FROM public.qa_final_hdkp_mota cm WHERE cm.hdkp_id = fh.id
                            ) THEN 'draft'
@@ -2058,6 +2059,45 @@ async def api_save_final_internal_hdkp(inspection_id: int = Path(...), request: 
             except Exception:
                 logger.exception("Không thể tạo PDF HĐKP Final nội bộ inspection_id=%s", inspection_id)
     return {"status": "ok", "id": inspection_id, "pdf_url": pdf_url}
+
+
+@app.post("/api/final-internal/hdkp/{inspection_id}/complete")
+async def api_complete_final_internal_hdkp(inspection_id: int = Path(...), request: Request = None):
+    user = require_authenticated_api_user(request)
+    with get_db_connection() as conn:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute("SELECT * FROM public.qa_final_inspection WHERE id = %s FOR UPDATE", (inspection_id,))
+            inspection = cur.fetchone()
+            if not inspection:
+                raise HTTPException(status_code=404, detail="Không tìm thấy lần kiểm Final")
+            require_final_cap_access(user, factory=inspection.get("factory"))
+            cur.execute("SELECT id, completed_at, pdf_url FROM public.qa_final_hdkp WHERE inspection_id = %s", (inspection_id,))
+            hdkp = cur.fetchone()
+            if not hdkp:
+                raise HTTPException(status_code=400, detail="Chưa có HĐKP để hoàn thành")
+            if hdkp["completed_at"]:
+                return {"status": "already_completed"}
+            hdkp_id = hdkp["id"]
+            cur.execute("SELECT 1 FROM public.qa_final_hdkp_mota WHERE hdkp_id = %s", (hdkp_id,))
+            has_mota = cur.fetchone()
+            if not has_mota:
+                raise HTTPException(status_code=400, detail="Cần điền nội dung HĐKP trước khi hoàn thành")
+            pdf_url = hdkp["pdf_url"]
+            if not pdf_url:
+                try:
+                    row = dict(inspection)
+                    row["ma_nv"] = user.get("ma_nv")
+                    row["ngay_ghi_nhan"] = inspection.get("qa_check_date")
+                    hdkp_data = prepare_hdkp_data_for_pdf(hdkp_id, row, ("qa_final_hdkp_mota", "qa_final_hdkp_kehoach", "qa_final_hdkp_chitiet"), "hdkp_id")
+                    pdf_url = create_hdkp_pdf(inspection_id, hdkp_data)
+                except Exception:
+                    logger.exception("Không thể tạo PDF HĐKP Final nội bộ inspection_id=%s", inspection_id)
+            cur.execute(
+                "UPDATE public.qa_final_hdkp SET completed_at = NOW(), completed_by = %s, pdf_url = COALESCE(%s, pdf_url) WHERE id = %s",
+                (user["ma_nv"], pdf_url, hdkp_id),
+            )
+            conn.commit()
+    return {"status": "ok", "pdf_url": pdf_url}
 
 
 @app.get("/api/final-internal/filters")

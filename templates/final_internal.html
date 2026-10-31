@@ -159,6 +159,20 @@
         <div id="drawerFooter" class="sticky bottom-0 bg-white/90 backdrop-blur-xl p-5 flex justify-end"></div>
     </aside>
 
+    <div id="completeModal" class="modal-overlay hidden">
+        <div class="modal-box max-w-md">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="h-11 w-11 rounded-xl bg-green-100 flex items-center justify-center"><span class="material-symbols-outlined text-green-700">task_alt</span></div>
+                <h3 class="font-display text-xl font-bold">Xác nhận hoàn thành</h3>
+            </div>
+            <p class="text-on-surface-variant">HĐKP sẽ được đánh dấu hoàn thành và tạo file PDF. Bạn chắc chắn muốn tiếp tục?</p>
+            <div class="flex justify-end gap-3 mt-6">
+                <button onclick="closeCompleteModal()" class="btn-tertiary px-5 py-2.5">Hủy</button>
+                <button id="confirmCompleteBtn" onclick="doComplete()" class="px-5 py-2.5 rounded-xl bg-green-600 text-white font-semibold hover:bg-green-700 transition disabled:opacity-50">Hoàn thành</button>
+            </div>
+        </div>
+    </div>
+
     <div id="toast" class="toast"><span id="toastIcon" class="material-symbols-outlined"></span><span id="toastMessage"></span></div>
     {% include '_base_scripts.html' %}
     <script>
@@ -225,8 +239,11 @@
         function capAction(row) {
             if (!row.cap_required) return '<span class="text-xs text-on-surface-variant">Không yêu cầu</span>';
             if (row.cap_status === 'completed' && row.cap_form) return `<a href="${escapeHtml(row.cap_form)}" target="_blank" onclick="event.stopPropagation()" class="btn-tertiary px-3 py-2 text-xs inline-flex items-center gap-1"><span class="material-symbols-outlined text-[17px]">picture_as_pdf</span>Xem HĐKP</a>`;
-            const label = row.cap_status === 'draft' ? 'Tiếp tục HĐKP' : 'Điền HĐKP 10.1';
-            return `<a href="/final-internal/hdkp-form/${row.id}" onclick="event.stopPropagation()" class="btn-primary px-3 py-2 text-xs whitespace-nowrap">${label}</a>`;
+            if (row.cap_status === 'completed') return '<span class="text-xs text-green-700 font-semibold">Đã hoàn thành</span>';
+            const editLabel = row.cap_status === 'draft' ? 'Tiếp tục HĐKP' : 'Điền HĐKP 10.1';
+            let html = `<div class="flex items-center gap-2" onclick="event.stopPropagation()"><a href="/final-internal/hdkp-form/${row.id}" class="btn-primary px-3 py-2 text-xs whitespace-nowrap">${editLabel}</a>`;
+            if (row.cap_status === 'draft') html += `<button onclick="confirmComplete(${row.id})" class="px-3 py-2 text-xs font-semibold rounded-xl bg-green-600 text-white hover:bg-green-700 transition whitespace-nowrap">Hoàn thành</button>`;
+            return html + '</div>';
         }
 
         function renderRows() {
@@ -285,6 +302,22 @@
         }
 
         function closeDetail() { el('drawerBackdrop').classList.remove('open'); el('detailDrawer').classList.remove('open'); el('detailDrawer').setAttribute('aria-hidden','true'); }
+
+        let _completeId = null;
+        function confirmComplete(id) { _completeId = id; el('completeModal').classList.remove('hidden'); }
+        function closeCompleteModal() { _completeId = null; el('completeModal').classList.add('hidden'); }
+        async function doComplete() {
+            if (!_completeId) return;
+            const btn = el('confirmCompleteBtn'); btn.disabled = true; btn.textContent = 'Đang xử lý…';
+            try {
+                const res = await fetch(`/api/final-internal/hdkp/${_completeId}/complete`, {method:'POST'});
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.detail || 'Không thể hoàn thành');
+                showToast('HĐKP đã được hoàn thành');
+                closeCompleteModal(); closeDetail(); loadData();
+            } catch(error) { showToast(error.message, 'error'); }
+            finally { btn.disabled = false; btn.textContent = 'Hoàn thành'; }
+        }
 
         let searchTimer;
         ['dateFrom','dateTo','factoryFilter','resultFilter','capFilter'].forEach(id => el(id).addEventListener('change', () => { state.page = 1; loadData(); }));
