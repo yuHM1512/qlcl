@@ -1,4 +1,5 @@
-﻿from datetime import date, datetime
+﻿from collections import defaultdict
+from datetime import date, datetime
 from typing import Any, List, Optional, Dict, Tuple
 from contextlib import asynccontextmanager
 from datetime import timedelta
@@ -1438,6 +1439,138 @@ def _duplicate_section_rows(ws, base_var_name: str, max_items: int, data: Dict):
                     pass
 
 
+EXCEL_MAX_ROW_HEIGHT = 409.0  # giới hạn cứng của Excel
+XL_SHEET_VISIBLE = -1
+XL_CALCULATION_MANUAL = -4135
+
+
+def _grow_row_heights_to_fit_text(sheet):
+    """
+    Giãn chiều cao các dòng cho vừa nội dung đã wrap.
+
+    Excel AutoFit bỏ qua ô đã merge, mà biểu mẫu HĐKP merge gần hết vùng nhập
+    liệu (C:J, C:E, F:G), nên nội dung dài bị cắt ngang. Ở đây đo chiều cao cần
+    thiết bằng một ô nháp đặt ngoài vùng in rồi áp lại cho dòng.
+
+    Chỉ tăng, không bao giờ giảm, để giữ nguyên bố cục gốc của biểu mẫu.
+    """
+    used = sheet.UsedRange
+    first_row, last_row = used.Row, used.Row + used.Rows.Count - 1
+    first_col, last_col = used.Column, used.Column + used.Columns.Count - 1
+
+    # Ghim vùng in vào nội dung thật để ô nháp không lọt vào PDF
+    if not sheet.PageSetup.PrintArea:
+        sheet.PageSetup.PrintArea = used.Address
+
+    # Đọc cả vùng bằng một lệnh COM. UsedRange có thể phình tới hàng nghìn dòng
+    # dù chỉ vài chục ô có chữ, duyệt từng ô qua COM sẽ mất hàng phút.
+    values = used.Value2
+    if not isinstance(values, tuple):
+        values = ((values,),)
+
+    heights = {}
+    pending = defaultdict(list)  # độ rộng cần đo -> các ô dùng chung độ rộng đó
+    for row_offset, row_values in enumerate(values):
+        if not any(v is not None and str(v).strip() for v in row_values):
+            continue
+        row_idx = first_row + row_offset
+        for col_offset, value in enumerate(row_values):
+            if value is None or not str(value).strip():
+                continue
+            cell = sheet.Cells(row_idx, first_col + col_offset)
+            if not cell.WrapText:
+                continue
+            area = cell.MergeArea
+            # Chỉ đo từ ô gốc của vùng merge; bỏ qua merge dọc vì nội dung
+            # của nó thuộc về cả khối chứ không riêng dòng nào
+            if cell.Row != area.Row or cell.Column != area.Column:
+                continue
+            if area.Rows.Count > 1:
+                continue
+            text = cell.Text
+            if text is None or not str(text).strip():
+                continue
+            text = str(text)
+            width = sum(
+                sheet.Columns(x).ColumnWidth
+                for x in range(area.Column, area.Column + area.Columns.Count)
+            )
+            # Đơn vị ColumnWidth xấp xỉ số ký tự vừa một dòng; chuỗi ngắn hơn
+            # nhiều thì chắc chắn không xuống dòng nên khỏi tốn một lượt đo
+            if "\n" not in text and len(text) <= width * 0.75:
+                continue
+            if row_idx not in heights:
+                heights[row_idx] = sheet.Rows(row_idx).RowHeight
+            font = cell.Font
+            pending[(round(width, 2), font.Name, font.Size, bool(font.Bold))].append(
+                (row_idx, text))
+
+    if not pending:
+        return
+
+    probe_row, probe_col = last_row + 4, last_col + 2
+    probe_rows = max(len(entries) for entries in pending.values())
+    probe_area = sheet.Range(
+        sheet.Cells(probe_row, probe_col),
+        sheet.Cells(probe_row + probe_rows - 1, probe_col),
+    )
+    saved_width = sheet.Columns(probe_col).ColumnWidth
+    app = sheet.Application
+    saved_calc = None
+    needed = dict(heights)
+    try:
+        # Mỗi lần đổi ColumnWidth Excel vẽ lại cả sheet; tắt đi nhanh hơn gấp đôi
+        for prop, val in (("ScreenUpdating", False), ("EnableEvents", False)):
+            try:
+                setattr(app, prop, val)
+            except Exception:
+                pass
+        try:
+            saved_calc = app.Calculation
+            app.Calculation = XL_CALCULATION_MANUAL
+        except Exception:
+            saved_calc = None
+
+        # Đo cả nhóm trong một lượt: xếp các chuỗi cùng độ rộng và cùng font
+        # xuống các dòng nháp liên tiếp rồi AutoFit một lần cho cả khối
+        for (width, font_name, font_size, font_bold), entries in pending.items():
+            sheet.Columns(probe_col).ColumnWidth = width
+            block = sheet.Range(
+                sheet.Cells(probe_row, probe_col),
+                sheet.Cells(probe_row + len(entries) - 1, probe_col),
+            )
+            block.WrapText = True
+            block.Font.Name = font_name
+            block.Font.Size = font_size
+            block.Font.Bold = font_bold
+            block.Value = tuple((text,) for _, text in entries)
+            block.Rows.AutoFit()
+            for offset, (row_idx, _) in enumerate(entries):
+                measured = sheet.Rows(probe_row + offset).RowHeight
+                if measured > needed[row_idx]:
+                    needed[row_idx] = measured
+            block.Clear()
+
+        for row_idx, height in needed.items():
+            if height > heights[row_idx]:
+                sheet.Rows(row_idx).RowHeight = min(height, EXCEL_MAX_ROW_HEIGHT)
+    finally:
+        probe_area.Clear()
+        sheet.Columns(probe_col).ColumnWidth = saved_width
+        # Trả Calculation về trước khi export, nếu không template có công thức
+        # sẽ in ra giá trị cũ
+        if saved_calc is not None:
+            try:
+                app.Calculation = saved_calc
+            except Exception:
+                pass
+        for prop in ("ScreenUpdating", "EnableEvents"):
+            try:
+                setattr(app, prop, True)
+            except Exception:
+                pass
+
+
 def excel_to_pdf(excel_path: str, pdf_path: str):
     """
     Chuyển đổi Excel sang PDF sử dụng win32com (Windows only).
@@ -1479,7 +1612,15 @@ def excel_to_pdf(excel_path: str, pdf_path: str):
             
             # Đảm bảo sử dụng fit to page
             sheet.PageSetup.Zoom = False
-        
+
+            # Sheet ẩn không vào PDF, biểu mẫu kèm theo chúng lại rất rộng
+            if sheet.Visible == XL_SHEET_VISIBLE:
+                try:
+                    _grow_row_heights_to_fit_text(sheet)
+                except Exception:
+                    # Bố cục chưa giãn vẫn hơn là không có PDF
+                    logger.warning("Không thể giãn chiều cao dòng cho sheet %s", sheet.Name, exc_info=True)
+
         # Xuất sang PDF
         workbook.ExportAsFixedFormat(0, os.path.abspath(pdf_path))  # 0 = xlTypePDF
 
