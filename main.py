@@ -34,7 +34,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 from fastapi import FastAPI, Request, Form, Depends, HTTPException, Query, Path, File, UploadFile
-from fastapi.responses import RedirectResponse, JSONResponse, FileResponse
+from fastapi.responses import RedirectResponse, JSONResponse, FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 # from starlette.middleware.sessions import SessionMiddleware
@@ -2385,6 +2385,74 @@ def view_kpi(request: Request):
     if not get_authenticated_user(request):
         return RedirectResponse(url="/login", status_code=303)
     return templates.TemplateResponse("view_kpi.html", {"request": request})
+
+
+QLCL_DASHBOARD_URL = "https://kpi.hachibavn.com"
+
+
+@app.get("/view-kpi-dashboard")
+async def view_kpi_dashboard(request: Request):
+    """Render the embedded QLCL dashboard with selected cards hidden.
+
+    The dashboard is hosted on another origin, so the parent page cannot
+    manipulate its DOM directly. Serving the HTML through this endpoint lets
+    us apply the requested presentation change while keeping the dashboard's
+    own JavaScript and data endpoints intact.
+    """
+    if not get_authenticated_user(request):
+        return RedirectResponse(url="/login", status_code=303)
+
+    import httpx
+
+    async with httpx.AsyncClient(timeout=20.0, follow_redirects=True) as client:
+        upstream = await client.get(f"{QLCL_DASHBOARD_URL}/qlcl")
+    if upstream.status_code >= 400:
+        return Response(
+            content="Không thể tải dashboard KPI.",
+            status_code=502,
+            media_type="text/plain; charset=utf-8",
+        )
+
+    hide_cards_script = """
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const qlcl153 = document.getElementById("qlcl153-value");
+    qlcl153 && qlcl153.closest(".col-md-3")?.remove();
+
+    const qlcl158 = document.getElementById("qlcl158-target");
+    qlcl158 && qlcl158.closest(".chart-container")?.remove();
+});
+</script>
+"""
+    html = upstream.text.replace(
+        'src="/static/js/qlcl.js"',
+        f'src="{QLCL_DASHBOARD_URL}/static/js/qlcl.js"',
+    )
+    html = html.replace("</body>", f"{hide_cards_script}</body>")
+    return Response(content=html, media_type="text/html; charset=utf-8")
+
+
+@app.get("/api/qlcl/{endpoint:path}")
+async def proxy_qlcl_dashboard_api(endpoint: str, request: Request):
+    """Proxy the embedded dashboard's API calls through the local origin."""
+    if not get_authenticated_user(request):
+        return JSONResponse({"detail": "Not authenticated"}, status_code=401)
+
+    import httpx
+
+    query = list(request.query_params.multi_items())
+    async with httpx.AsyncClient(timeout=20.0, follow_redirects=True) as client:
+        upstream = await client.get(
+            f"{QLCL_DASHBOARD_URL}/api/qlcl/{endpoint}",
+            params=query,
+            headers={"Accept": "application/json"},
+        )
+    content_type = upstream.headers.get("content-type", "application/json")
+    return Response(
+        content=upstream.content,
+        status_code=upstream.status_code,
+        media_type=content_type.split(";", 1)[0],
+    )
 
 
 @app.get("/dashboard-summary")
