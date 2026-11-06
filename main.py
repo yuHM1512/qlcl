@@ -2419,6 +2419,11 @@ document.addEventListener("DOMContentLoaded", function () {
     const qlcl153 = document.getElementById("qlcl153-value");
     qlcl153 && qlcl153.closest(".col-md-3")?.remove();
 
+    const qlcl152 = document.getElementById("qlcl152-value");
+    const qlcl152Column = qlcl152?.closest(".col-md-3");
+    qlcl152Column?.classList.remove("col-md-3");
+    qlcl152Column?.classList.add("col-md-6");
+
     const qlcl158 = document.getElementById("qlcl158-target");
     qlcl158 && qlcl158.closest(".chart-container")?.remove();
 });
