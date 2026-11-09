@@ -298,10 +298,9 @@
                         <tr class="border-b-2 border-surface-high">
                             <th class="text-left">Tháng</th>
                             <th class="text-left">Mã hàng</th>
-                            <th class="text-left">Bộ phận</th>
-                            <th class="text-left">Chi tiết</th>
-                            <th class="text-left min-w-[300px]">Góp ý KH</th>
+                            <th class="text-left min-w-[300px]">Góp ý</th>
                             <th class="text-left">Hành động</th>
+                            <th class="text-left">Ghi chú</th>
                         </tr>
                     </thead>
                     <tbody id="csBody"></tbody>
@@ -440,10 +439,9 @@ function renderCS() {
         tr.innerHTML = `
             <td class="whitespace-nowrap font-medium">${esc(r.thang_display)}</td>
             <td><span class="badge badge-part">${esc(r.ma_hang)}</span></td>
-            <td>${esc(r.bo_phan)}</td>
-            <td>${esc(r.chi_tiet)}</td>
             <td class="text-sm leading-relaxed max-w-md">${esc(r.gop_y)}</td>
             <td>${r.hanh_dong ? '<span class="badge badge-action">' + esc(r.hanh_dong) + '</span>' : '<span class="text-on-surface-variant/50">—</span>'}</td>
+            <td class="text-sm text-on-surface-variant">${esc(r.ghi_chu)}</td>
         `;
         body.appendChild(tr);
     }
