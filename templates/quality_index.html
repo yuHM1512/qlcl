@@ -199,7 +199,8 @@
                     <span class="flex items-center gap-1"><span class="inline-block w-3 h-0.5" style="background:#e34948"></span> Mục tiêu giảm so với cùng kỳ</span>
                     <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded-full" style="background:#0040a1"></span> Thực tế giảm</span>
                 </div>
-                <div class="chart-wrap"><canvas id="rpmChart"></canvas></div>
+                <div class="chart-wrap" style="cursor:pointer"><canvas id="rpmChart"></canvas></div>
+                <p class="text-center text-[10px] text-on-surface-variant mt-2 opacity-60">Click vào điểm dữ liệu để xem chi tiết RPM</p>
             </div>
 
             <!-- NQC Index -->
@@ -234,6 +235,27 @@
                 </table>
             </div>
         </section>
+    </div>
+
+    <!-- RPM Detail Modal -->
+    <div id="rpmModal" class="fixed inset-0 z-[300] hidden">
+        <div class="absolute inset-0 bg-black/30 backdrop-blur-sm" onclick="closeRpmModal()"></div>
+        <div class="absolute inset-4 sm:inset-8 lg:inset-x-[10%] lg:inset-y-8 bg-surface-lowest rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+            <div class="flex items-center justify-between px-6 py-4 border-b border-surface-high">
+                <div>
+                    <h3 class="font-display font-bold text-on-surface text-lg" id="rpmModalTitle">Chi tiết RPM</h3>
+                    <p class="text-xs text-on-surface-variant mt-0.5" id="rpmModalSub"></p>
+                </div>
+                <button onclick="closeRpmModal()" class="w-9 h-9 rounded-full bg-surface-low flex items-center justify-center hover:bg-surface-high transition">
+                    <span class="material-symbols-outlined text-[20px]">close</span>
+                </button>
+            </div>
+            <div id="rpmModalBody" class="flex-1 overflow-auto px-6 py-4">
+                <div class="flex items-center justify-center h-full">
+                    <div class="spinner"></div>
+                </div>
+            </div>
+        </div>
     </div>
 
 <script>
@@ -432,6 +454,13 @@ function renderCharts() {
         label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y != null ? ctx.parsed.y.toFixed(1) + '%' : '-'}`,
     };
     const rpmTargetLine = labels.map(() => d.rpm.target_change);
+    rpmOpts.onClick = (evt, elements) => {
+        if (!elements.length) return;
+        const idx = elements[0].index;
+        const month = currentData.month_nums[idx];
+        if (month) openRpmModal(currentData.selected_year, month);
+    };
+    rpmOpts.plugins.tooltip.callbacks.afterBody = () => ['', '🖱️ Click để xem chi tiết'];
     rpmChart = new Chart(rpmCtx, {
         type: 'line',
         data: {
@@ -534,10 +563,115 @@ function renderTable() {
     }
 }
 
+function openRpmModal(year, month) {
+    const modal = document.getElementById('rpmModal');
+    modal.classList.remove('hidden');
+    document.getElementById('rpmModalTitle').textContent = `Chi tiết RPM — Tháng ${month}/${year}`;
+    document.getElementById('rpmModalSub').textContent = 'Đang tải dữ liệu...';
+    document.getElementById('rpmModalBody').innerHTML = '<div class="flex items-center justify-center h-full"><div class="spinner"></div></div>';
+
+    fetch(`/api/quality-index/rpm-detail?year=${year}&month=${month}`)
+        .then(r => { if (!r.ok) throw new Error(r.statusText); return r.json(); })
+        .then(data => {
+            const rpm = data.rpm || [];
+            const cs = data.cs || [];
+            document.getElementById('rpmModalSub').textContent =
+                `${rpm.length} lỗi RPM · ${cs.length} phản hồi CS`;
+
+            let html = '';
+            if (rpm.length) {
+                html += `<div class="mb-6">
+                    <h4 class="font-display font-bold text-sm text-on-surface mb-3 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[18px] text-primary">bug_report</span>
+                        Lỗi RPM (${rpm.length})
+                    </h4>
+                    <div class="overflow-x-auto rounded-xl border border-surface-high">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="bg-surface-low">
+                                    <th class="text-left py-2.5 px-3 text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">Mã hàng</th>
+                                    <th class="text-left py-2.5 px-3 text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">Bộ phận</th>
+                                    <th class="text-left py-2.5 px-3 text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">Chi tiết</th>
+                                    <th class="text-left py-2.5 px-3 text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">Dạng lỗi</th>
+                                    <th class="text-left py-2.5 px-3 text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">Hành động</th>
+                                    <th class="text-left py-2.5 px-3 text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">Ghi chú</th>
+                                </tr>
+                            </thead>
+                            <tbody>`;
+                for (const r of rpm) {
+                    html += `<tr class="border-b border-surface-low hover:bg-surface-low/50 transition">
+                        <td class="py-2 px-3 font-medium">${esc(r.ma_hang)}</td>
+                        <td class="py-2 px-3">${esc(r.bo_phan)}</td>
+                        <td class="py-2 px-3">${esc(r.chi_tiet)}</td>
+                        <td class="py-2 px-3">${esc(r.dang_loi)}</td>
+                        <td class="py-2 px-3 text-xs">${esc(r.hanh_dong)}</td>
+                        <td class="py-2 px-3 text-xs text-on-surface-variant">${esc(r.ghi_chu)}</td>
+                    </tr>`;
+                }
+                html += '</tbody></table></div></div>';
+            }
+
+            if (cs.length) {
+                html += `<div>
+                    <h4 class="font-display font-bold text-sm text-on-surface mb-3 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[18px] text-teal-600">feedback</span>
+                        Phản hồi khách hàng (${cs.length})
+                    </h4>
+                    <div class="overflow-x-auto rounded-xl border border-surface-high">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="bg-surface-low">
+                                    <th class="text-left py-2.5 px-3 text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">Mã hàng</th>
+                                    <th class="text-left py-2.5 px-3 text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">Bộ phận</th>
+                                    <th class="text-left py-2.5 px-3 text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">Chi tiết</th>
+                                    <th class="text-left py-2.5 px-3 text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">Góp ý KH</th>
+                                    <th class="text-left py-2.5 px-3 text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">Hành động</th>
+                                </tr>
+                            </thead>
+                            <tbody>`;
+                for (const c of cs) {
+                    html += `<tr class="border-b border-surface-low hover:bg-surface-low/50 transition">
+                        <td class="py-2 px-3 font-medium">${esc(c.ma_hang)}</td>
+                        <td class="py-2 px-3">${esc(c.bo_phan)}</td>
+                        <td class="py-2 px-3">${esc(c.chi_tiet)}</td>
+                        <td class="py-2 px-3 text-xs">${esc(c.gop_y)}</td>
+                        <td class="py-2 px-3 text-xs">${esc(c.hanh_dong)}</td>
+                    </tr>`;
+                }
+                html += '</tbody></table></div></div>';
+            }
+
+            if (!rpm.length && !cs.length) {
+                html = '<div class="flex flex-col items-center justify-center h-full text-on-surface-variant"><span class="material-symbols-outlined text-4xl mb-2">info</span><p>Không có dữ liệu chi tiết cho tháng này.</p></div>';
+            }
+
+            document.getElementById('rpmModalBody').innerHTML = html;
+        })
+        .catch(err => {
+            document.getElementById('rpmModalSub').textContent = 'Lỗi tải dữ liệu';
+            document.getElementById('rpmModalBody').innerHTML =
+                `<div class="flex flex-col items-center justify-center h-full text-red-500"><span class="material-symbols-outlined text-4xl mb-2">error</span><p>${esc(err.message)}</p></div>`;
+        });
+}
+
+function closeRpmModal() {
+    document.getElementById('rpmModal').classList.add('hidden');
+}
+
+function esc(s) {
+    if (!s) return '';
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     loadData(null);
     document.getElementById('yearSelect').addEventListener('change', (e) => {
         loadData(parseInt(e.target.value));
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeRpmModal();
     });
 });
 </script>
