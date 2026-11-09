@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import os
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -13,8 +14,14 @@ logger = logging.getLogger(__name__)
 
 SHEETS_READONLY_SCOPE = "https://www.googleapis.com/auth/spreadsheets.readonly"
 
-QUALITY_INDEX_SPREADSHEET_ID = "1Ii9MdvSFmzK4GI435QYRgzyfw3Ea_LUB9nAZgrMzGz0"
-RPM_DETAIL_SPREADSHEET_ID = "1uH2kUrcy1hcRxgfDtuY94nh2XlmcQgwWJLKHW3Ov1ws"
+QUALITY_INDEX_SPREADSHEET_ID = os.getenv(
+    "QUALITY_INDEX_SPREADSHEET_ID",
+    "1Ii9MdvSFmzK4GI435QYRgzyfw3Ea_LUB9nAZgrMzGz0",
+)
+RPM_DETAIL_SPREADSHEET_ID = os.getenv(
+    "RPM_DETAIL_SPREADSHEET_ID",
+    "1uH2kUrcy1hcRxgfDtuY94nh2XlmcQgwWJLKHW3Ov1ws",
+)
 
 
 def _get_service(credentials_file: Path):
