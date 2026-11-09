@@ -14,14 +14,8 @@ logger = logging.getLogger(__name__)
 
 SHEETS_READONLY_SCOPE = "https://www.googleapis.com/auth/spreadsheets.readonly"
 
-QUALITY_INDEX_SPREADSHEET_ID = os.getenv(
-    "QUALITY_INDEX_SPREADSHEET_ID",
-    "1Ii9MdvSFmzK4GI435QYRgzyfw3Ea_LUB9nAZgrMzGz0",
-)
-RPM_DETAIL_SPREADSHEET_ID = os.getenv(
-    "RPM_DETAIL_SPREADSHEET_ID",
-    "1uH2kUrcy1hcRxgfDtuY94nh2XlmcQgwWJLKHW3Ov1ws",
-)
+QUALITY_INDEX_SPREADSHEET_ID = os.getenv("QUALITY_INDEX_SPREADSHEET_ID", "").strip()
+RPM_DETAIL_SPREADSHEET_ID = os.getenv("RPM_DETAIL_SPREADSHEET_ID", "").strip()
 
 
 def _get_service(credentials_file: Path):
@@ -79,6 +73,9 @@ def fetch_quality_index(credentials_file: Path, year: int | None = None) -> dict
       U(20): QCA Target, V(21): NQC Target,
       W(22): (blank), X(23): month number
     """
+    if not QUALITY_INDEX_SPREADSHEET_ID:
+        raise ValueError("Chưa cấu hình QUALITY_INDEX_SPREADSHEET_ID trong .env")
+
     service = _get_service(credentials_file)
 
     rows = _fetch_values(
@@ -262,6 +259,9 @@ def fetch_rpm_detail(
       A(0): Tháng (date serial), B(1): Mã hàng, C(2): Bộ phận,
       D(3): Chi tiết, E(4): Dạng lỗi, F(5): Hành động, G(6): Ghi chú
     """
+    if not RPM_DETAIL_SPREADSHEET_ID:
+        raise ValueError("Chưa cấu hình RPM_DETAIL_SPREADSHEET_ID trong .env")
+
     service = _get_service(credentials_file)
 
     rpm_rows = _fetch_values(
