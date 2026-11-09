@@ -1,8 +1,16 @@
-"""Google Sheets reader for Quality Index and RPM detail data."""
+"""Google Sheets reader for Quality Index and RPM detail data.
+
+Supports an in-memory cache with background auto-sync:
+  - Quality Index: weekly (default 10080 minutes)
+  - RPM Detail: daily (default 1440 minutes)
+  - Manual sync via sync_all() / sync_quality_index() / sync_rpm_detail()
+"""
 from __future__ import annotations
 
 import logging
 import os
+import threading
+import time
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -11,6 +19,16 @@ from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 
 logger = logging.getLogger(__name__)
+
+# ── In-memory cache ──
+_cache_lock = threading.Lock()
+_quality_index_cache: dict[str, Any] | None = None
+_quality_index_cache_time: datetime | None = None
+_rpm_detail_cache: dict[str, Any] | None = None
+_rpm_detail_cache_time: datetime | None = None
+
+_auto_sync_started = False
+_auto_sync_lock = threading.Lock()
 
 SHEETS_READONLY_SCOPE = "https://www.googleapis.com/auth/spreadsheets.readonly"
 
@@ -349,3 +367,172 @@ def fetch_rpm_detail(
         "ma_hang_options": sorted(ma_hang_set),
         "month_options": sorted(months_set),
     }
+
+
+# ── Cache helpers ──
+
+def sync_quality_index(credentials_file: Path) -> dict[str, Any]:
+    """Fetch Quality Index from Sheets and update cache. Returns summary."""
+    global _quality_index_cache, _quality_index_cache_time
+    data = fetch_quality_index(credentials_file, year=None)
+    all_years = data.get("years", [])
+    cache: dict[int, dict] = {}
+    for y in all_years:
+        cache[y] = fetch_quality_index(credentials_file, year=y)
+    with _cache_lock:
+        _quality_index_cache = cache
+        _quality_index_cache_time = datetime.now()
+    logger.info("Quality Index cache updated — %d years", len(all_years))
+    return {"years": all_years, "synced_at": _quality_index_cache_time.isoformat()}
+
+
+def sync_rpm_detail(credentials_file: Path) -> dict[str, Any]:
+    """Fetch RPM Detail from Sheets and update cache. Returns summary."""
+    global _rpm_detail_cache, _rpm_detail_cache_time
+    data = fetch_rpm_detail(credentials_file)
+    with _cache_lock:
+        _rpm_detail_cache = data
+        _rpm_detail_cache_time = datetime.now()
+    rpm_count = len(data.get("rpm", []))
+    cs_count = len(data.get("cs", []))
+    logger.info("RPM Detail cache updated — %d RPM, %d CS records", rpm_count, cs_count)
+    return {"rpm": rpm_count, "cs": cs_count, "synced_at": _rpm_detail_cache_time.isoformat()}
+
+
+def sync_all(credentials_file: Path) -> dict[str, Any]:
+    """Sync both Quality Index and RPM Detail."""
+    qi = sync_quality_index(credentials_file)
+    rpm = sync_rpm_detail(credentials_file)
+    return {"quality_index": qi, "rpm_detail": rpm}
+
+
+def get_cached_quality_index(year: int | None = None) -> dict[str, Any] | None:
+    """Return cached Quality Index data for the given year, or None if not cached."""
+    with _cache_lock:
+        if _quality_index_cache is None:
+            return None
+        if year is None:
+            all_years = sorted(_quality_index_cache.keys(), reverse=True)
+            year = all_years[0] if all_years else None
+        if year is None:
+            return None
+        data = _quality_index_cache.get(year)
+        if data is None:
+            return None
+        data = dict(data)
+        data["cache_time"] = _quality_index_cache_time.isoformat() if _quality_index_cache_time else None
+        return data
+
+
+def get_cached_rpm_detail(
+    year: int | None = None,
+    month: int | None = None,
+    ma_hang: str | None = None,
+) -> dict[str, Any] | None:
+    """Return cached RPM Detail data with optional filters, or None if not cached."""
+    with _cache_lock:
+        if _rpm_detail_cache is None:
+            return None
+        data = _rpm_detail_cache
+    rpm = data.get("rpm", [])
+    cs = data.get("cs", [])
+    if year:
+        rpm = [r for r in rpm if r["thang"].startswith(f"{year}-")]
+        cs = [c for c in cs if c["thang"].startswith(f"{year}-")]
+    if month:
+        m_str = f"-{month:02d}"
+        rpm = [r for r in rpm if r["thang"].endswith(m_str)]
+        cs = [c for c in cs if c["thang"].endswith(m_str)]
+    if ma_hang:
+        rpm = [r for r in rpm if r["ma_hang"] == ma_hang]
+        cs = [c for c in cs if c.get("ma_hang") == ma_hang]
+    all_ma = sorted({r["ma_hang"] for r in rpm if r["ma_hang"]})
+    all_months = sorted({r["thang"] for r in rpm})
+    return {
+        "rpm": rpm,
+        "cs": cs,
+        "ma_hang_options": all_ma,
+        "month_options": all_months,
+        "cache_time": _rpm_detail_cache_time.isoformat() if _rpm_detail_cache_time else None,
+    }
+
+
+def get_cache_status() -> dict[str, Any]:
+    """Return sync status for both caches."""
+    with _cache_lock:
+        return {
+            "quality_index": {
+                "cached": _quality_index_cache is not None,
+                "synced_at": _quality_index_cache_time.isoformat() if _quality_index_cache_time else None,
+            },
+            "rpm_detail": {
+                "cached": _rpm_detail_cache is not None,
+                "synced_at": _rpm_detail_cache_time.isoformat() if _rpm_detail_cache_time else None,
+            },
+        }
+
+
+# ── Auto-sync background threads ──
+
+def _quality_index_sync_interval() -> int:
+    """Minutes between Quality Index syncs (default: 10080 = 1 week)."""
+    return int(os.getenv("QUALITY_INDEX_SYNC_INTERVAL_MINUTES", "10080"))
+
+
+def _rpm_detail_sync_interval() -> int:
+    """Minutes between RPM Detail syncs (default: 1440 = 1 day)."""
+    return int(os.getenv("RPM_DETAIL_SYNC_INTERVAL_MINUTES", "1440"))
+
+
+def _quality_index_auto_sync_loop(credentials_file: Path) -> None:
+    interval = _quality_index_sync_interval()
+    logger.info("Quality Index auto-sync started, interval=%d minutes", interval)
+    while True:
+        try:
+            sync_quality_index(credentials_file)
+        except Exception:
+            logger.exception("Quality Index auto-sync failed")
+        time.sleep(interval * 60)
+
+
+def _rpm_detail_auto_sync_loop(credentials_file: Path) -> None:
+    interval = _rpm_detail_sync_interval()
+    logger.info("RPM Detail auto-sync started, interval=%d minutes", interval)
+    while True:
+        try:
+            sync_rpm_detail(credentials_file)
+        except Exception:
+            logger.exception("RPM Detail auto-sync failed")
+        time.sleep(interval * 60)
+
+
+def start_auto_sync(credentials_file: Path) -> None:
+    """Start background sync threads for Quality Index (weekly) and RPM Detail (daily)."""
+    global _auto_sync_started
+    with _auto_sync_lock:
+        if _auto_sync_started:
+            return
+        _auto_sync_started = True
+
+    qi_enabled = os.getenv("QUALITY_INDEX_AUTO_SYNC_ENABLED", "true").lower() in ("1", "true", "yes")
+    rpm_enabled = os.getenv("RPM_DETAIL_AUTO_SYNC_ENABLED", "true").lower() in ("1", "true", "yes")
+
+    if qi_enabled:
+        threading.Thread(
+            target=_quality_index_auto_sync_loop,
+            args=(credentials_file,),
+            name="quality-index-sync",
+            daemon=True,
+        ).start()
+    else:
+        logger.info("Quality Index auto-sync disabled")
+
+    if rpm_enabled:
+        threading.Thread(
+            target=_rpm_detail_auto_sync_loop,
+            args=(credentials_file,),
+            name="rpm-detail-sync",
+            daemon=True,
+        ).start()
+    else:
+        logger.info("RPM Detail auto-sync disabled")
