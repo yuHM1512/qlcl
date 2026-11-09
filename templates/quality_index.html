@@ -282,6 +282,7 @@ const COL = {
     textPrimary: '#191c1d',
 };
 
+Chart.register(ChartDataLabels);
 let csChart, qcaChart, rpmChart, nqcChart;
 let currentData = null;
 
@@ -397,7 +398,6 @@ function renderCharts() {
     csOpts.plugins.tooltip.callbacks.afterBody = () => ['', '🖱️ Click để xem góp ý KH'];
     csChart = new Chart(csCtx, {
         type: 'bar',
-        plugins: [ChartDataLabels],
         data: {
             labels,
             datasets: [
@@ -444,6 +444,13 @@ function renderCharts() {
     const qcaMax = Math.max(1, ...d.qca.values.filter(v => v != null));
     qcaOpts.scales.y.min = -0.5;
     qcaOpts.scales.y.max = qcaMax + 0.5;
+    qcaOpts.plugins.datalabels = {
+        display: (ctx) => ctx.datasetIndex === 0 && ctx.dataset.data[ctx.dataIndex] != null,
+        anchor: 'end', align: 'end', offset: 2,
+        font: { family: 'Inter', size: 10, weight: '600' },
+        color: COL.primary,
+        formatter: (v) => v != null ? v.toFixed(2) : '',
+    };
     qcaChart = new Chart(qcaCtx, {
         type: 'line',
         data: {
@@ -494,6 +501,13 @@ function renderCharts() {
         if (month) openRpmModal(currentData.selected_year, month);
     };
     rpmOpts.plugins.tooltip.callbacks.afterBody = () => ['', '🖱️ Click để xem chi tiết'];
+    rpmOpts.plugins.datalabels = {
+        display: (ctx) => ctx.datasetIndex === 1 && ctx.dataset.data[ctx.dataIndex] != null,
+        anchor: 'end', align: 'end', offset: 2,
+        font: { family: 'Inter', size: 10, weight: '600' },
+        color: COL.primary,
+        formatter: (v) => v != null ? v.toFixed(1) + '%' : '',
+    };
     rpmChart = new Chart(rpmCtx, {
         type: 'line',
         data: {
@@ -539,6 +553,13 @@ function renderCharts() {
         label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y != null ? ctx.parsed.y.toFixed(1) + '%' : '-'}`,
     };
     const nqcTargetLine = labels.map(() => d.nqc.target_change);
+    nqcOpts.plugins.datalabels = {
+        display: (ctx) => ctx.datasetIndex === 1 && ctx.dataset.data[ctx.dataIndex] != null,
+        anchor: 'end', align: 'end', offset: 2,
+        font: { family: 'Inter', size: 10, weight: '600' },
+        color: COL.primary,
+        formatter: (v) => v != null ? v.toFixed(1) + '%' : '',
+    };
     nqcChart = new Chart(nqcCtx, {
         type: 'line',
         data: {
