@@ -14,8 +14,12 @@ logger = logging.getLogger(__name__)
 
 SHEETS_READONLY_SCOPE = "https://www.googleapis.com/auth/spreadsheets.readonly"
 
-QUALITY_INDEX_SPREADSHEET_ID = os.getenv("QUALITY_INDEX_SPREADSHEET_ID", "").strip()
-RPM_DETAIL_SPREADSHEET_ID = os.getenv("RPM_DETAIL_SPREADSHEET_ID", "").strip()
+def _quality_index_sheet_id() -> str:
+    return os.getenv("QUALITY_INDEX_SPREADSHEET_ID", "").strip()
+
+
+def _rpm_detail_sheet_id() -> str:
+    return os.getenv("RPM_DETAIL_SPREADSHEET_ID", "").strip()
 
 
 def _get_service(credentials_file: Path):
@@ -73,17 +77,18 @@ def fetch_quality_index(credentials_file: Path, year: int | None = None) -> dict
       U(20): QCA Target, V(21): NQC Target,
       W(22): (blank), X(23): month number
     """
-    if not QUALITY_INDEX_SPREADSHEET_ID:
+    sheet_id = _quality_index_sheet_id()
+    if not sheet_id:
         raise ValueError("Chưa cấu hình QUALITY_INDEX_SPREADSHEET_ID trong .env")
 
     service = _get_service(credentials_file)
 
     rows = _fetch_values(
-        service, QUALITY_INDEX_SPREADSHEET_ID, "'Quality index'!A2:X100"
+        service, sheet_id, "'Quality index'!A2:X100"
     )
 
     target_rows = _fetch_values(
-        service, QUALITY_INDEX_SPREADSHEET_ID, "'Target'!A2:E20"
+        service, sheet_id, "'Target'!A2:E20"
     )
 
     targets_by_year: dict[int, dict] = {}
@@ -259,16 +264,17 @@ def fetch_rpm_detail(
       A(0): Tháng (date serial), B(1): Mã hàng, C(2): Bộ phận,
       D(3): Chi tiết, E(4): Dạng lỗi, F(5): Hành động, G(6): Ghi chú
     """
-    if not RPM_DETAIL_SPREADSHEET_ID:
+    sheet_id = _rpm_detail_sheet_id()
+    if not sheet_id:
         raise ValueError("Chưa cấu hình RPM_DETAIL_SPREADSHEET_ID trong .env")
 
     service = _get_service(credentials_file)
 
     rpm_rows = _fetch_values(
-        service, RPM_DETAIL_SPREADSHEET_ID, "'RPM'!A1:G500"
+        service, sheet_id, "'RPM'!A1:G500"
     )
     cs_rows = _fetch_values(
-        service, RPM_DETAIL_SPREADSHEET_ID, "'CS'!A1:I500"
+        service, sheet_id, "'CS'!A1:I500"
     )
 
     rpm_records = []
