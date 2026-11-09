@@ -186,8 +186,8 @@ def fetch_quality_index(credentials_file: Path, year: int | None = None) -> dict
                 changes.append(None)
         return changes
 
-    rpm_yoy = compute_yoy_change(rpm_values, prev_year_lookup, "rpm")
-    nqc_yoy = compute_yoy_change(nqc_values, prev_year_lookup, "nqc")
+    rpm_yoy = compute_yoy_change(rpm_ytd, prev_year_lookup, "rpm_ytd")
+    nqc_yoy = compute_yoy_change(nqc_ytd, prev_year_lookup, "nqc_ytd")
 
     return {
         "years": sorted_years,

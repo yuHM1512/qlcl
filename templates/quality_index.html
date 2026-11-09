@@ -7,6 +7,7 @@
     <title>Chỉ số chất lượng - QLCL</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@500;700;800&display=swap" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
     <script>
@@ -175,8 +176,8 @@
             <div class="chart-card">
                 <div class="chart-title">Customer Satisfaction Score</div>
                 <div class="flex items-center justify-center gap-4 text-[11px] text-on-surface-variant mb-2">
-                    <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded-sm" style="background:#1baf7a"></span> CS Score</span>
-                    <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded-full" style="background:#0040a1"></span> CS Score (YTD)</span>
+                    <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded-sm" style="background:#5ec4a0"></span> CS Score</span>
+                    <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded-sm" style="background:#1a7a6a"></span> CS Score (YTD)</span>
                     <span class="flex items-center gap-1"><span class="inline-block w-3 h-0.5" style="background:#e34948"></span> Mục tiêu</span>
                 </div>
                 <div class="chart-wrap" style="cursor:pointer"><canvas id="csChart"></canvas></div>
@@ -327,6 +328,7 @@ function chartDefaults() {
         maintainAspectRatio: false,
         plugins: {
             legend: { display: false },
+            datalabels: { display: false },
             tooltip: {
                 backgroundColor: '#ffffff',
                 titleColor: COL.textPrimary,
@@ -365,16 +367,26 @@ function renderCharts() {
     const d = currentData;
     const labels = d.months;
 
-    // CS Score — bar + line combo
+    // CS Score — grouped bars + target dashed line
     const csCtx = document.getElementById('csChart').getContext('2d');
     const csOpts = chartDefaults();
-    csOpts.scales.y.min = Math.min(4.0, ...d.cs.scores.filter(v => v != null).map(v => v - 0.2));
-    csOpts.scales.y.max = Math.max(6.0, ...d.cs.scores.filter(v => v != null).map(v => v + 0.3));
+    const allCsVals = [...d.cs.scores, ...d.cs.ytd].filter(v => v != null);
+    csOpts.scales.y.min = Math.min(4.0, ...allCsVals) - 0.2;
+    csOpts.scales.y.max = Math.max(5.0, ...allCsVals) + 0.15;
     csOpts.plugins.tooltip.callbacks = {
         label: (ctx) => {
             const lbl = ctx.dataset.label || '';
             return `${lbl}: ${ctx.parsed.y != null ? ctx.parsed.y.toFixed(2) : '-'}`;
         }
+    };
+    csOpts.plugins.datalabels = {
+        display: (ctx) => ctx.dataset.type !== 'line',
+        anchor: 'end',
+        align: 'end',
+        offset: 2,
+        font: { family: 'Inter', size: 10, weight: '600' },
+        color: (ctx) => ctx.datasetIndex === 0 ? '#1baf7a' : COL.primary,
+        formatter: (v) => v != null ? v.toFixed(2) : '',
     };
     csOpts.onClick = (evt, elements) => {
         if (!elements.length) return;
@@ -385,28 +397,27 @@ function renderCharts() {
     csOpts.plugins.tooltip.callbacks.afterBody = () => ['', '🖱️ Click để xem góp ý KH'];
     csChart = new Chart(csCtx, {
         type: 'bar',
+        plugins: [ChartDataLabels],
         data: {
             labels,
             datasets: [
                 {
                     label: 'CS Score',
                     data: d.cs.scores,
-                    backgroundColor: COL.bar,
+                    backgroundColor: '#5ec4a0',
                     borderRadius: { topLeft: 4, topRight: 4 },
-                    barPercentage: 0.6,
+                    barPercentage: 0.8,
+                    categoryPercentage: 0.7,
                     order: 2,
                 },
                 {
                     label: 'CS Score (YTD)',
                     data: d.cs.ytd,
-                    type: 'line',
-                    borderColor: COL.primary,
-                    backgroundColor: COL.primary,
-                    pointRadius: 5,
-                    pointHoverRadius: 7,
-                    borderWidth: 2,
-                    tension: 0,
-                    order: 1,
+                    backgroundColor: '#1a7a6a',
+                    borderRadius: { topLeft: 4, topRight: 4 },
+                    barPercentage: 0.8,
+                    categoryPercentage: 0.7,
+                    order: 2,
                 },
                 {
                     label: 'Mục tiêu',
@@ -415,10 +426,12 @@ function renderCharts() {
                     borderColor: COL.target,
                     borderDash: [6, 4],
                     borderWidth: 2,
-                    pointRadius: 0,
-                    pointHoverRadius: 4,
+                    pointRadius: 3,
+                    pointBackgroundColor: COL.target,
+                    pointHoverRadius: 5,
                     tension: 0,
                     order: 0,
+                    datalabels: { display: false },
                 },
             ],
         },
