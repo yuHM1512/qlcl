@@ -215,18 +215,22 @@
             {% endif %}
 
             {% if not final_only and not is_qc_role %}
-            <!-- Coming Soon Block -->
-            <div
-                class="glass-card p-10 rounded-[3rem] opacity-50 grayscale cursor-not-allowed flex flex-col items-center justify-center min-h-[300px] text-center">
-                <div class="w-16 h-16 bg-slate-200 text-slate-400 rounded-2xl flex items-center justify-center mb-6">
-                    <span class="material-symbols-outlined !text-4xl">hourglass_empty</span>
-                </div>
-                <h3 class="text-xl font-bold text-slate-600 mb-2">Tính năng mới</h3>
+            <!-- Quality Index Module -->
+            <a href="/quality-index" class="glass-card p-10 rounded-[3rem] group">
                 <div
-                    class="inline-flex px-3 py-1 bg-slate-100 text-slate-400 rounded-lg text-[10px] uppercase font-bold tracking-wider">
-                    Sắp ra mắt
+                    class="w-16 h-16 bg-teal-600 text-white rounded-2xl flex items-center justify-center mb-8 shadow-xl shadow-teal-200 module-icon">
+                    <span class="material-symbols-outlined !text-4xl">monitoring</span>
                 </div>
-            </div>
+                <h3 class="text-2xl font-bold text-slate-800 mb-3 group-hover:text-teal-600 transition-colors">Chỉ số chất lượng</h3>
+                <p class="text-slate-500 text-sm leading-relaxed mb-6">
+                    Dashboard theo dõi CS Score, QCA, RPM, NQC Index và chi tiết phân tích RPM.
+                </p>
+                <div class="flex items-center gap-2 text-teal-600 font-bold text-sm">
+                    Truy cập Module
+                    <span
+                        class="material-symbols-outlined text-lg transition-transform group-hover:translate-x-1">arrow_forward</span>
+                </div>
+            </a>
             {% endif %}
         </div>
 

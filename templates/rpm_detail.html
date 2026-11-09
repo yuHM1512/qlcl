@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chi tiết RPM - QLCL</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@500;700;800&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Manrope', 'sans-serif'],
+                    },
+                    colors: {
+                        surface: '#f8f9fa',
+                        'surface-lowest': '#ffffff',
+                        'surface-low': '#f3f4f6',
+                        'surface-high': '#e7e8e9',
+                        'on-surface': '#191c1d',
+                        'on-surface-variant': '#424654',
+                        primary: '#0040a1',
+                        'primary-container': '#0056d2',
+                        'secondary-container': '#9cb4fe',
+                        'error-container': '#ffdad6',
+                    },
+                    boxShadow: {
+                        cloud: '0px 20px 40px rgba(25, 28, 29, 0.05)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #f8f9fa; color: #191c1d; }
+
+        .glass-header {
+            background: rgba(248, 249, 250, 0.8);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #0040a1 0%, #0056d2 100%);
+            color: #ffffff;
+            border-radius: 0.75rem;
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0px 8px 16px rgba(0, 64, 161, 0.2);
+        }
+        .btn-tertiary {
+            background: transparent;
+            color: #0040a1;
+            border-radius: 0.75rem;
+            transition: all 0.3s ease;
+        }
+        .btn-tertiary:hover { background-color: #f3f4f6; }
+        .input-field {
+            background-color: #f3f4f6;
+            border: none;
+            border-radius: 0.75rem;
+            padding: 12px 16px;
+            font-size: 14px;
+            color: #191c1d;
+            transition: all 0.2s;
+            width: 100%;
+        }
+        .input-field:focus {
+            outline: none;
+            background-color: #ffffff;
+            box-shadow: 0 0 0 1px rgba(0, 64, 161, 0.3);
+        }
+        select.input-field {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23424654' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 16px center;
+            padding-right: 40px;
+        }
+
+        .data-table { width: 100%; border-collapse: collapse; }
+        .data-table th {
+            background: transparent;
+            font-size: 11px;
+            font-weight: 600;
+            color: #424654;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 14px 12px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .data-table td {
+            padding: 14px 12px;
+            font-size: 13px;
+            color: #191c1d;
+        }
+        .table-row {
+            border-radius: 0.75rem;
+            transition: all 0.2s;
+        }
+        .table-row:hover {
+            background-color: #ffffff;
+            box-shadow: 0px 4px 12px rgba(25, 28, 29, 0.03);
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 3px 10px;
+            border-radius: 9999px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .badge-loi { background: #ffdad6; color: #ba1a1a; }
+        .badge-action { background: #dbeafe; color: #0040a1; }
+        .badge-part { background: #e7e8e9; color: #424654; }
+
+        .loading-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(248, 249, 250, 0.7);
+            backdrop-filter: blur(4px);
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .loading-overlay.hidden { display: none; }
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #e7e8e9;
+            border-top-color: #0040a1;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .tab-btn {
+            padding: 10px 20px;
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: 0.75rem;
+            transition: all 0.2s;
+            color: #424654;
+            background: transparent;
+        }
+        .tab-btn:hover { background: #f3f4f6; }
+        .tab-btn.active {
+            background: #0040a1;
+            color: #ffffff;
+        }
+
+        .stat-card {
+            background: #ffffff;
+            border-radius: 1rem;
+            padding: 1.25rem;
+            box-shadow: 0px 20px 40px rgba(25, 28, 29, 0.05);
+        }
+    </style>
+</head>
+
+<body class="min-h-screen">
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- Header -->
+    <header class="glass-header sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <a href="/quality-index"
+                   class="flex items-center justify-center w-10 h-10 rounded-full bg-surface-lowest shadow-sm hover:shadow-cloud transition text-on-surface-variant"
+                   title="Quay lại Dashboard">
+                    <span class="material-symbols-outlined">arrow_back</span>
+                </a>
+                <div>
+                    <h1 class="text-xl font-display font-bold tracking-tight text-on-surface">Chi tiết RPM</h1>
+                    <p class="text-xs font-medium text-on-surface-variant mt-0.5">RPM Detail Analysis</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                {% if user %}
+                <div class="text-right hidden sm:block">
+                    <div class="text-sm font-semibold text-on-surface">{{ user.name }}</div>
+                    <div class="text-[11px] text-on-surface-variant mt-0.5">{{ user.don_vi }} · {{ user.bo_phan }}</div>
+                </div>
+                <div class="h-10 w-10 rounded-full bg-surface-low flex items-center justify-center">
+                    <span class="material-symbols-outlined text-primary text-[20px]">person</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-6">
+        <!-- Filters -->
+        <section class="bg-surface-lowest rounded-2xl p-5 shadow-cloud">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div>
+                    <label class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Năm</label>
+                    <select id="fYear" class="input-field">
+                        <option value="">Tất cả</option>
+                        <option value="2026" selected>2026</option>
+                        <option value="2025">2025</option>
+                        <option value="2024">2024</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Tháng</label>
+                    <select id="fMonth" class="input-field">
+                        <option value="">Tất cả</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Mã hàng</label>
+                    <select id="fMaHang" class="input-field">
+                        <option value="">Tất cả</option>
+                    </select>
+                </div>
+                <div class="flex items-end">
+                    <button id="btnFilter" class="btn-primary w-full py-3 font-semibold text-sm flex items-center justify-center gap-2">
+                        <span class="material-symbols-outlined text-[18px]">filter_list</span>
+                        Lọc dữ liệu
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tab bar -->
+        <div class="flex gap-2">
+            <button class="tab-btn active" data-tab="rpm" onclick="switchTab('rpm')">
+                <span class="material-symbols-outlined text-[16px] align-middle mr-1">bug_report</span>
+                RPM (<span id="rpmCount">0</span>)
+            </button>
+            <button class="tab-btn" data-tab="cs" onclick="switchTab('cs')">
+                <span class="material-symbols-outlined text-[16px] align-middle mr-1">reviews</span>
+                Customer Satisfaction (<span id="csCount">0</span>)
+            </button>
+        </div>
+
+        <!-- Stats cards -->
+        <section id="statsSection" class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div class="stat-card">
+                <div class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Tổng lỗi RPM</div>
+                <div id="statTotal" class="text-2xl font-display font-bold text-on-surface mt-1">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Mã hàng</div>
+                <div id="statProducts" class="text-2xl font-display font-bold text-on-surface mt-1">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Bộ phận phổ biến</div>
+                <div id="statTopPart" class="text-lg font-display font-bold text-primary mt-1">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Lỗi phổ biến</div>
+                <div id="statTopDefect" class="text-lg font-display font-bold text-primary mt-1">-</div>
+            </div>
+        </section>
+
+        <!-- RPM Table -->
+        <section id="rpmSection" class="bg-surface-lowest rounded-2xl p-5 shadow-cloud">
+            <div class="overflow-x-auto">
+                <table class="data-table">
+                    <thead>
+                        <tr class="border-b-2 border-surface-high">
+                            <th class="text-left">Tháng</th>
+                            <th class="text-left">Mã hàng</th>
+                            <th class="text-left">Bộ phận</th>
+                            <th class="text-left">Chi tiết</th>
+                            <th class="text-left">Dạng lỗi</th>
+                            <th class="text-left">Hành động</th>
+                            <th class="text-left">Ghi chú</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rpmBody"></tbody>
+                </table>
+            </div>
+            <div id="rpmEmpty" class="hidden text-center py-12 text-on-surface-variant">
+                <span class="material-symbols-outlined text-4xl mb-2 opacity-40">search_off</span>
+                <p class="text-sm">Không có dữ liệu RPM cho bộ lọc hiện tại</p>
+            </div>
+        </section>
+
+        <!-- CS Table -->
+        <section id="csSection" class="bg-surface-lowest rounded-2xl p-5 shadow-cloud hidden">
+            <div class="overflow-x-auto">
+                <table class="data-table">
+                    <thead>
+                        <tr class="border-b-2 border-surface-high">
+                            <th class="text-left">Tháng</th>
+                            <th class="text-left">Mã hàng</th>
+                            <th class="text-left">Bộ phận</th>
+                            <th class="text-left">Chi tiết</th>
+                            <th class="text-left min-w-[300px]">Góp ý KH</th>
+                            <th class="text-left">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody id="csBody"></tbody>
+                </table>
+            </div>
+            <div id="csEmpty" class="hidden text-center py-12 text-on-surface-variant">
+                <span class="material-symbols-outlined text-4xl mb-2 opacity-40">search_off</span>
+                <p class="text-sm">Không có dữ liệu góp ý khách hàng cho bộ lọc hiện tại</p>
+            </div>
+        </section>
+    </div>
+
+<script>
+let currentData = null;
+let activeTab = 'rpm';
+
+function esc(s) {
+    const d = document.createElement('div');
+    d.textContent = s || '';
+    return d.innerHTML;
+}
+
+function switchTab(tab) {
+    activeTab = tab;
+    document.querySelectorAll('.tab-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.tab === tab);
+    });
+    document.getElementById('rpmSection').classList.toggle('hidden', tab !== 'rpm');
+    document.getElementById('csSection').classList.toggle('hidden', tab !== 'cs');
+    document.getElementById('statsSection').classList.toggle('hidden', tab !== 'rpm');
+}
+
+async function loadData() {
+    document.getElementById('loadingOverlay').classList.remove('hidden');
+    try {
+        const year = document.getElementById('fYear').value;
+        const month = document.getElementById('fMonth').value;
+        const maHang = document.getElementById('fMaHang').value;
+        const params = new URLSearchParams();
+        if (year) params.set('year', year);
+        if (month) params.set('month', month);
+        if (maHang) params.set('ma_hang', maHang);
+        const res = await fetch(`/api/quality-index/rpm-detail?${params}`);
+        if (!res.ok) throw new Error(await res.text());
+        currentData = await res.json();
+        renderFilters();
+        renderStats();
+        renderRPM();
+        renderCS();
+    } catch (e) {
+        console.error('loadData error:', e);
+    } finally {
+        document.getElementById('loadingOverlay').classList.add('hidden');
+    }
+}
+
+function renderFilters() {
+    const d = currentData;
+    const monthSel = document.getElementById('fMonth');
+    const maHangSel = document.getElementById('fMaHang');
+    const curMonth = monthSel.value;
+    const curMa = maHangSel.value;
+
+    const months = [...new Set(d.rpm.map(r => r.thang).concat(d.cs.map(r => r.thang)))].sort();
+    monthSel.innerHTML = '<option value="">Tất cả</option>';
+    for (const m of months) {
+        const parts = m.split('-');
+        const opt = document.createElement('option');
+        opt.value = parseInt(parts[1]);
+        opt.textContent = `Tháng ${parseInt(parts[1])}`;
+        if (opt.value === curMonth) opt.selected = true;
+        monthSel.appendChild(opt);
+    }
+
+    maHangSel.innerHTML = '<option value="">Tất cả</option>';
+    for (const ma of (d.ma_hang_options || [])) {
+        const opt = document.createElement('option');
+        opt.value = ma;
+        opt.textContent = ma;
+        if (ma === curMa) opt.selected = true;
+        maHangSel.appendChild(opt);
+    }
+}
+
+function renderStats() {
+    const rpm = currentData.rpm || [];
+    document.getElementById('statTotal').textContent = rpm.length;
+    const products = new Set(rpm.map(r => r.ma_hang));
+    document.getElementById('statProducts').textContent = products.size;
+
+    const partCount = {};
+    const defectCount = {};
+    for (const r of rpm) {
+        if (r.bo_phan) partCount[r.bo_phan] = (partCount[r.bo_phan] || 0) + 1;
+        if (r.dang_loi) defectCount[r.dang_loi] = (defectCount[r.dang_loi] || 0) + 1;
+    }
+    const topPart = Object.entries(partCount).sort((a, b) => b[1] - a[1])[0];
+    const topDefect = Object.entries(defectCount).sort((a, b) => b[1] - a[1])[0];
+    document.getElementById('statTopPart').textContent = topPart ? topPart[0] : '-';
+    document.getElementById('statTopDefect').textContent = topDefect ? topDefect[0] : '-';
+}
+
+function renderRPM() {
+    const rpm = currentData.rpm || [];
+    document.getElementById('rpmCount').textContent = rpm.length;
+    const body = document.getElementById('rpmBody');
+    body.innerHTML = '';
+    document.getElementById('rpmEmpty').classList.toggle('hidden', rpm.length > 0);
+
+    for (const r of rpm) {
+        const tr = document.createElement('tr');
+        tr.className = 'table-row border-b border-surface-low';
+        tr.innerHTML = `
+            <td class="whitespace-nowrap font-medium">${esc(r.thang_display)}</td>
+            <td><span class="badge badge-part">${esc(r.ma_hang)}</span></td>
+            <td>${esc(r.bo_phan)}</td>
+            <td>${esc(r.chi_tiet)}</td>
+            <td><span class="badge badge-loi">${esc(r.dang_loi)}</span></td>
+            <td>${r.hanh_dong ? '<span class="badge badge-action">' + esc(r.hanh_dong) + '</span>' : '<span class="text-on-surface-variant/50">—</span>'}</td>
+            <td class="max-w-xs truncate" title="${esc(r.ghi_chu)}">${esc(r.ghi_chu)}</td>
+        `;
+        body.appendChild(tr);
+    }
+}
+
+function renderCS() {
+    const cs = currentData.cs || [];
+    document.getElementById('csCount').textContent = cs.length;
+    const body = document.getElementById('csBody');
+    body.innerHTML = '';
+    document.getElementById('csEmpty').classList.toggle('hidden', cs.length > 0);
+
+    for (const r of cs) {
+        const tr = document.createElement('tr');
+        tr.className = 'table-row border-b border-surface-low';
+        tr.innerHTML = `
+            <td class="whitespace-nowrap font-medium">${esc(r.thang_display)}</td>
+            <td><span class="badge badge-part">${esc(r.ma_hang)}</span></td>
+            <td>${esc(r.bo_phan)}</td>
+            <td>${esc(r.chi_tiet)}</td>
+            <td class="text-sm leading-relaxed max-w-md">${esc(r.gop_y)}</td>
+            <td>${r.hanh_dong ? '<span class="badge badge-action">' + esc(r.hanh_dong) + '</span>' : '<span class="text-on-surface-variant/50">—</span>'}</td>
+        `;
+        body.appendChild(tr);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadData();
+    document.getElementById('btnFilter').addEventListener('click', loadData);
+    document.getElementById('fYear').addEventListener('change', loadData);
+});
+</script>
+</body>
+</html>

@@ -9553,6 +9553,15 @@ def api_tv3_qc_data(
 from flat_output import register as register_flat_output
 register_flat_output(app, get_db_connection, _PUSH_API_KEY)
 
+from quality_index_routes import register as register_quality_index
+register_quality_index(
+    app,
+    get_authenticated_user=get_authenticated_user,
+    redirect_to_login=redirect_to_login_for_current_path,
+    templates=templates,
+    credentials_path_fn=get_flat_line_credentials_path,
+)
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8008, reload=True)

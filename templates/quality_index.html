@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chỉ số chất lượng - QLCL</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@500;700;800&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Manrope', 'sans-serif'],
+                    },
+                    colors: {
+                        surface: '#f8f9fa',
+                        'surface-lowest': '#ffffff',
+                        'surface-low': '#f3f4f6',
+                        'surface-high': '#e7e8e9',
+                        'on-surface': '#191c1d',
+                        'on-surface-variant': '#424654',
+                        primary: '#0040a1',
+                        'primary-container': '#0056d2',
+                        'secondary-container': '#9cb4fe',
+                        'error-container': '#ffdad6',
+                    },
+                    boxShadow: {
+                        cloud: '0px 20px 40px rgba(25, 28, 29, 0.05)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #f8f9fa; color: #191c1d; }
+
+        .glass-header {
+            background: rgba(248, 249, 250, 0.8);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #0040a1 0%, #0056d2 100%);
+            color: #ffffff;
+            border-radius: 0.75rem;
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0px 8px 16px rgba(0, 64, 161, 0.2);
+        }
+        .input-field {
+            background-color: #f3f4f6;
+            border: none;
+            border-radius: 0.75rem;
+            padding: 12px 16px;
+            font-size: 14px;
+            color: #191c1d;
+            transition: all 0.2s;
+            width: 100%;
+        }
+        .input-field:focus {
+            outline: none;
+            background-color: #ffffff;
+            box-shadow: 0 0 0 1px rgba(0, 64, 161, 0.3);
+        }
+        select.input-field {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23424654' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 16px center;
+            padding-right: 40px;
+        }
+
+        .chart-card {
+            background: #ffffff;
+            border-radius: 1rem;
+            box-shadow: 0px 20px 40px rgba(25, 28, 29, 0.05);
+            padding: 1.5rem;
+        }
+        .chart-title {
+            font-family: 'Manrope', sans-serif;
+            font-weight: 700;
+            font-size: 15px;
+            color: #191c1d;
+            text-align: center;
+            margin-bottom: 0.75rem;
+        }
+        .chart-wrap {
+            position: relative;
+            width: 100%;
+            height: 280px;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(248, 249, 250, 0.7);
+            backdrop-filter: blur(4px);
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .loading-overlay.hidden { display: none; }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #e7e8e9;
+            border-top-color: #0040a1;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+
+<body class="min-h-screen">
+    <!-- Loading -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- Header -->
+    <header class="glass-header sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <a href="/"
+                   class="flex items-center justify-center w-10 h-10 rounded-full bg-surface-lowest shadow-sm hover:shadow-cloud transition text-on-surface-variant"
+                   title="Về trang chính">
+                    <span class="material-symbols-outlined">arrow_back</span>
+                </a>
+                <div>
+                    <h1 class="text-xl font-display font-bold tracking-tight text-on-surface">Chỉ số chất lượng</h1>
+                    <p class="text-xs font-medium text-on-surface-variant mt-0.5">Quality Index Dashboard</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                {% if user %}
+                <div class="text-right hidden sm:block">
+                    <div class="text-sm font-semibold text-on-surface">{{ user.name }}</div>
+                    <div class="text-[11px] text-on-surface-variant mt-0.5">{{ user.don_vi }} · {{ user.bo_phan }}</div>
+                </div>
+                <div class="h-10 w-10 rounded-full bg-surface-low flex items-center justify-center">
+                    <span class="material-symbols-outlined text-primary text-[20px]">person</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-6">
+        <!-- Year filter -->
+        <section class="flex items-center gap-4">
+            <div class="flex items-center gap-2">
+                <label class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Năm</label>
+                <select id="yearSelect" class="input-field w-32"></select>
+            </div>
+            <a href="/quality-index/rpm-detail"
+               class="btn-primary px-4 py-2.5 text-sm font-semibold flex items-center gap-2">
+                <span class="material-symbols-outlined text-[18px]">table_chart</span>
+                Chi tiết RPM
+            </a>
+        </section>
+
+        <!-- Charts grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- CS Score -->
+            <div class="chart-card">
+                <div class="chart-title">Customer Satisfaction Score</div>
+                <div class="flex items-center justify-center gap-4 text-[11px] text-on-surface-variant mb-2">
+                    <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded-sm" style="background:#1baf7a"></span> CS Score</span>
+                    <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded-full" style="background:#0040a1"></span> CS Score (YTD)</span>
+                    <span class="flex items-center gap-1"><span class="inline-block w-3 h-0.5" style="background:#e34948"></span> Mục tiêu</span>
+                </div>
+                <div class="chart-wrap"><canvas id="csChart"></canvas></div>
+            </div>
+
+            <!-- QCA Index -->
+            <div class="chart-card">
+                <div class="chart-title">QCA Index</div>
+                <div class="flex items-center justify-center gap-4 text-[11px] text-on-surface-variant mb-2">
+                    <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded-full" style="background:#0040a1"></span> QCA</span>
+                    <span class="flex items-center gap-1"><span class="inline-block w-3 h-0.5" style="background:#e34948"></span> Mục tiêu</span>
+                </div>
+                <div class="chart-wrap"><canvas id="qcaChart"></canvas></div>
+            </div>
+
+            <!-- RPM Index -->
+            <div class="chart-card">
+                <div class="chart-title">RPM Index</div>
+                <div class="flex items-center justify-center gap-4 text-[11px] text-on-surface-variant mb-2">
+                    <span class="flex items-center gap-1"><span class="inline-block w-3 h-0.5" style="background:#e34948"></span> Mục tiêu giảm so với cùng kỳ</span>
+                    <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded-full" style="background:#0040a1"></span> Thực tế giảm</span>
+                </div>
+                <div class="chart-wrap"><canvas id="rpmChart"></canvas></div>
+            </div>
+
+            <!-- NQC Index -->
+            <div class="chart-card">
+                <div class="chart-title">NQC Index</div>
+                <div class="flex items-center justify-center gap-4 text-[11px] text-on-surface-variant mb-2">
+                    <span class="flex items-center gap-1"><span class="inline-block w-3 h-0.5" style="background:#e34948"></span> Mục tiêu giảm so với cùng kỳ</span>
+                    <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded-full" style="background:#0040a1"></span> Thực tế giảm</span>
+                </div>
+                <div class="chart-wrap"><canvas id="nqcChart"></canvas></div>
+            </div>
+        </div>
+
+        <!-- Summary table -->
+        <section class="chart-card">
+            <div class="chart-title">Bảng tổng hợp chỉ số theo tháng</div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="border-b border-surface-high">
+                            <th class="text-left py-3 px-3 text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">Tháng</th>
+                            <th class="text-right py-3 px-3 text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">CS Score</th>
+                            <th class="text-right py-3 px-3 text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">CS YTD</th>
+                            <th class="text-right py-3 px-3 text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">QCA</th>
+                            <th class="text-right py-3 px-3 text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">RPM</th>
+                            <th class="text-right py-3 px-3 text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">RPM YoY</th>
+                            <th class="text-right py-3 px-3 text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">NQC</th>
+                            <th class="text-right py-3 px-3 text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">NQC YoY</th>
+                        </tr>
+                    </thead>
+                    <tbody id="summaryBody"></tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
+<script>
+const COL = {
+    bar: '#1baf7a',
+    primary: '#0040a1',
+    target: '#e34948',
+    grid: '#e7e8e9',
+    text: '#424654',
+    textPrimary: '#191c1d',
+};
+
+let csChart, qcaChart, rpmChart, nqcChart;
+let currentData = null;
+
+function fv(v) { return v != null ? v : '-'; }
+function pct(v) { return v != null ? v.toFixed(1) + '%' : '-'; }
+
+async function loadData(year) {
+    document.getElementById('loadingOverlay').classList.remove('hidden');
+    try {
+        const url = year ? `/api/quality-index?year=${year}` : '/api/quality-index';
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(await res.text());
+        currentData = await res.json();
+        renderYearSelect();
+        renderCharts();
+        renderTable();
+    } catch (e) {
+        console.error('loadData error:', e);
+    } finally {
+        document.getElementById('loadingOverlay').classList.add('hidden');
+    }
+}
+
+function renderYearSelect() {
+    const sel = document.getElementById('yearSelect');
+    const current = sel.value;
+    sel.innerHTML = '';
+    for (const y of (currentData.years || [])) {
+        const opt = document.createElement('option');
+        opt.value = y;
+        opt.textContent = y;
+        if (y === currentData.selected_year) opt.selected = true;
+        sel.appendChild(opt);
+    }
+}
+
+function destroyCharts() {
+    [csChart, qcaChart, rpmChart, nqcChart].forEach(c => c && c.destroy());
+}
+
+function chartDefaults() {
+    return {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                backgroundColor: '#ffffff',
+                titleColor: COL.textPrimary,
+                bodyColor: COL.text,
+                borderColor: COL.grid,
+                borderWidth: 1,
+                cornerRadius: 8,
+                padding: 12,
+                titleFont: { family: 'Inter', weight: '600', size: 12 },
+                bodyFont: { family: 'Inter', size: 12 },
+            },
+        },
+        scales: {
+            x: {
+                grid: { display: false },
+                ticks: {
+                    font: { family: 'Inter', size: 11 },
+                    color: COL.text,
+                    maxRotation: 45,
+                    minRotation: 0,
+                },
+            },
+            y: {
+                grid: { color: COL.grid, lineWidth: 0.5 },
+                ticks: {
+                    font: { family: 'Inter', size: 11 },
+                    color: COL.text,
+                },
+            },
+        },
+    };
+}
+
+function renderCharts() {
+    destroyCharts();
+    const d = currentData;
+    const labels = d.months;
+
+    // CS Score — bar + line combo
+    const csCtx = document.getElementById('csChart').getContext('2d');
+    const csOpts = chartDefaults();
+    csOpts.scales.y.min = Math.min(4.0, ...d.cs.scores.filter(v => v != null).map(v => v - 0.2));
+    csOpts.scales.y.max = Math.max(6.0, ...d.cs.scores.filter(v => v != null).map(v => v + 0.3));
+    csOpts.plugins.tooltip.callbacks = {
+        label: (ctx) => {
+            const lbl = ctx.dataset.label || '';
+            return `${lbl}: ${ctx.parsed.y != null ? ctx.parsed.y.toFixed(2) : '-'}`;
+        }
+    };
+    csChart = new Chart(csCtx, {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [
+                {
+                    label: 'CS Score',
+                    data: d.cs.scores,
+                    backgroundColor: COL.bar,
+                    borderRadius: { topLeft: 4, topRight: 4 },
+                    barPercentage: 0.6,
+                    order: 2,
+                },
+                {
+                    label: 'CS Score (YTD)',
+                    data: d.cs.ytd,
+                    type: 'line',
+                    borderColor: COL.primary,
+                    backgroundColor: COL.primary,
+                    pointRadius: 5,
+                    pointHoverRadius: 7,
+                    borderWidth: 2,
+                    tension: 0,
+                    order: 1,
+                },
+                {
+                    label: 'Mục tiêu',
+                    data: d.cs.targets,
+                    type: 'line',
+                    borderColor: COL.target,
+                    borderDash: [6, 4],
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    pointHoverRadius: 4,
+                    tension: 0,
+                    order: 0,
+                },
+            ],
+        },
+        options: csOpts,
+    });
+
+    // QCA Index
+    const qcaCtx = document.getElementById('qcaChart').getContext('2d');
+    const qcaOpts = chartDefaults();
+    const qcaMax = Math.max(1, ...d.qca.values.filter(v => v != null));
+    qcaOpts.scales.y.min = -0.5;
+    qcaOpts.scales.y.max = qcaMax + 0.5;
+    qcaChart = new Chart(qcaCtx, {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [
+                {
+                    label: 'QCA',
+                    data: d.qca.values,
+                    borderColor: COL.primary,
+                    backgroundColor: COL.primary,
+                    pointRadius: 5,
+                    pointHoverRadius: 7,
+                    borderWidth: 2,
+                    tension: 0,
+                },
+                {
+                    label: 'Mục tiêu',
+                    data: d.qca.targets,
+                    borderColor: COL.target,
+                    borderDash: [6, 4],
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    pointHoverRadius: 4,
+                    tension: 0,
+                },
+            ],
+        },
+        options: qcaOpts,
+    });
+
+    // RPM Index — YoY change %
+    const rpmCtx = document.getElementById('rpmChart').getContext('2d');
+    const rpmOpts = chartDefaults();
+    const rpmVals = d.rpm.yoy_change.filter(v => v != null);
+    const rpmMin = Math.min(-5, ...rpmVals);
+    const rpmMax = Math.max(10, ...rpmVals);
+    rpmOpts.scales.y.min = Math.floor(rpmMin / 5) * 5 - 5;
+    rpmOpts.scales.y.max = Math.ceil(rpmMax / 5) * 5 + 5;
+    rpmOpts.scales.y.ticks.callback = (v) => v + '%';
+    rpmOpts.plugins.tooltip.callbacks = {
+        label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y != null ? ctx.parsed.y.toFixed(1) + '%' : '-'}`,
+    };
+    const rpmTargetLine = labels.map(() => d.rpm.target_change);
+    rpmChart = new Chart(rpmCtx, {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [
+                {
+                    label: 'Mục tiêu giảm',
+                    data: rpmTargetLine,
+                    borderColor: COL.target,
+                    borderDash: [6, 4],
+                    borderWidth: 2,
+                    pointRadius: 4,
+                    pointBackgroundColor: COL.target,
+                    pointHoverRadius: 6,
+                    tension: 0,
+                },
+                {
+                    label: 'Thực tế giảm',
+                    data: d.rpm.yoy_change,
+                    borderColor: COL.primary,
+                    backgroundColor: COL.primary,
+                    pointRadius: 5,
+                    pointHoverRadius: 7,
+                    borderWidth: 2,
+                    tension: 0,
+                    spanGaps: false,
+                },
+            ],
+        },
+        options: rpmOpts,
+    });
+
+    // NQC Index — YoY change %
+    const nqcCtx = document.getElementById('nqcChart').getContext('2d');
+    const nqcOpts = chartDefaults();
+    const nqcVals = d.nqc.yoy_change.filter(v => v != null);
+    const nqcMin = Math.min(-5, ...nqcVals);
+    const nqcMax = Math.max(10, ...nqcVals);
+    nqcOpts.scales.y.min = Math.floor(nqcMin / 5) * 5 - 5;
+    nqcOpts.scales.y.max = Math.ceil(nqcMax / 5) * 5 + 5;
+    nqcOpts.scales.y.ticks.callback = (v) => v + '%';
+    nqcOpts.plugins.tooltip.callbacks = {
+        label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y != null ? ctx.parsed.y.toFixed(1) + '%' : '-'}`,
+    };
+    const nqcTargetLine = labels.map(() => d.nqc.target_change);
+    nqcChart = new Chart(nqcCtx, {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [
+                {
+                    label: 'Mục tiêu giảm',
+                    data: nqcTargetLine,
+                    borderColor: COL.target,
+                    borderDash: [6, 4],
+                    borderWidth: 2,
+                    pointRadius: 4,
+                    pointBackgroundColor: COL.target,
+                    pointHoverRadius: 6,
+                    tension: 0,
+                },
+                {
+                    label: 'Thực tế giảm',
+                    data: d.nqc.yoy_change,
+                    borderColor: COL.primary,
+                    backgroundColor: COL.primary,
+                    pointRadius: 5,
+                    pointHoverRadius: 7,
+                    borderWidth: 2,
+                    tension: 0,
+                    spanGaps: false,
+                },
+            ],
+        },
+        options: nqcOpts,
+    });
+}
+
+function renderTable() {
+    const d = currentData;
+    const body = document.getElementById('summaryBody');
+    body.innerHTML = '';
+    const data = d.all_data || [];
+    for (const row of data) {
+        const rpmYoy = d.rpm.yoy_change[d.month_nums.indexOf(row.month)];
+        const nqcYoy = d.nqc.yoy_change[d.month_nums.indexOf(row.month)];
+        const tr = document.createElement('tr');
+        tr.className = 'border-b border-surface-low hover:bg-surface-low/50 transition';
+        tr.innerHTML = `
+            <td class="py-3 px-3 font-medium">Tháng ${row.month}</td>
+            <td class="py-3 px-3 text-right">${fv(row.cs)}</td>
+            <td class="py-3 px-3 text-right">${fv(row.cs_ytd)}</td>
+            <td class="py-3 px-3 text-right">${fv(row.qca)}</td>
+            <td class="py-3 px-3 text-right font-semibold">${fv(row.rpm)}</td>
+            <td class="py-3 px-3 text-right ${rpmYoy != null && rpmYoy < 0 ? 'text-green-600' : rpmYoy != null && rpmYoy > 0 ? 'text-red-600' : ''}">${pct(rpmYoy)}</td>
+            <td class="py-3 px-3 text-right font-semibold">${fv(row.nqc)}</td>
+            <td class="py-3 px-3 text-right ${nqcYoy != null && nqcYoy < 0 ? 'text-green-600' : nqcYoy != null && nqcYoy > 0 ? 'text-red-600' : ''}">${pct(nqcYoy)}</td>
+        `;
+        body.appendChild(tr);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadData(null);
+    document.getElementById('yearSelect').addEventListener('change', (e) => {
+        loadData(parseInt(e.target.value));
+    });
+});
+</script>
+</body>
+</html>
