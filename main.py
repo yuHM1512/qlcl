@@ -2429,9 +2429,27 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 </script>
 """
+    qa_filter_markup = """
+                    <div class="d-flex align-items-center gap-2 mt-2 mt-md-0">
+                        <label for="qlcl-qa-filter" class="form-label mb-0 fw-semibold">
+                            <i class="fas fa-user-check me-2"></i>Lọc theo QA
+                        </label>
+                        <select class="form-select form-select-sm w-auto" id="qlcl-qa-filter">
+                            <option value="">Tất cả</option>
+                            <option value="QAPL">QAPL</option>
+                            <option value="QANL">QANL</option>
+                            <option value="QAQT">QAQT</option>
+                        </select>
+                    </div>
+"""
     html = upstream.text.replace(
         'src="/static/js/qlcl.js"',
         f'src="{QLCL_DASHBOARD_URL}/static/js/qlcl.js"',
+    )
+    html = html.replace(
+        '</div>\n                <p class="text-muted small mb-0 mt-2">',
+        f'</div>{qa_filter_markup}\n                <p class="text-muted small mb-0 mt-2">',
+        1,
     )
     html = html.replace("</body>", f"{hide_cards_script}</body>")
     return Response(content=html, media_type="text/html; charset=utf-8")
