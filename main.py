@@ -2443,6 +2443,10 @@ document.addEventListener("DOMContentLoaded", function () {
                     </div>
 """
     html = upstream.text.replace(
+        "QLCL150, 151, 152, 153, 154, 158",
+        "QLCL150, 151, 152, 153, 154, 155",
+    )
+    html = html.replace(
         'src="/static/js/qlcl.js"',
         f'src="{QLCL_DASHBOARD_URL}/static/js/qlcl.js"',
     )
