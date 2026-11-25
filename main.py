@@ -3,9 +3,11 @@ from datetime import date, datetime
 from typing import Any, List, Optional, Dict, Tuple
 from contextlib import asynccontextmanager
 from datetime import timedelta
+from datetime import timezone as _dt_timezone
 from pydantic import BaseModel
 import os
 import re
+import random
 import shutil
 import logging
 import json
@@ -33,7 +35,7 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-from fastapi import FastAPI, Request, Form, Depends, HTTPException, Query, Path, File, UploadFile
+from fastapi import FastAPI, Request, Form, Depends, HTTPException, Query, Path, File, UploadFile, Body
 from fastapi.responses import RedirectResponse, JSONResponse, FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -239,6 +241,8 @@ SCHEMA_BOOTSTRAP_FILES = [
     "create_qc_hanging_output.sql",
     "migrate_perf_indexes_20261028.sql",
     "alter_qa_final_hdkp_completed.sql",
+    "create_qc_client_request.sql",
+    "migrate_qc_input_perf_20261125.sql",
 ]
 
 # Tạo thư mục lưu PDF và images nếu chưa có
@@ -8212,38 +8216,156 @@ def api_dm_ma_loi_options(date_str: Optional[str] = Query(None, alias="date")):
             return {"rows": rows, "catalog_id": catalog_id}
 
 
+# ---------------------------------------------------------------------------
+# QC input write helpers (idempotency, locking, validation)
+# ---------------------------------------------------------------------------
+_VN_TZ = _dt_timezone(timedelta(hours=7))
+QC_SP_MAX_PRODUCTS_PER_SUBMIT = 200
+_CLIENT_REQUEST_ID_RE = re.compile(r"^[A-Za-z0-9_-]{8,64}$")
+
+
+def vn_today() -> date:
+    """Ngày hiện tại theo giờ Việt Nam (không phụ thuộc timezone của máy chủ)."""
+    return datetime.now(_VN_TZ).date()
+
+
+def parse_qc_input_date(value: Any) -> str:
+    """Validate ngày báo cáo từ client; mặc định hôm nay (giờ VN)."""
+    if value in (None, ""):
+        return vn_today().isoformat()
+    try:
+        parsed = date.fromisoformat(str(value).strip()[:10])
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Ngày báo cáo không hợp lệ (định dạng YYYY-MM-DD)")
+    if parsed > vn_today() + timedelta(days=1):
+        raise HTTPException(status_code=400, detail="Không thể ghi nhận cho ngày trong tương lai")
+    return parsed.isoformat()
+
+
+def normalize_client_request_id(value: Any) -> Optional[str]:
+    raw = str(value or "").strip()
+    if not raw:
+        return None
+    if not _CLIENT_REQUEST_ID_RE.match(raw):
+        raise HTTPException(status_code=400, detail="client_request_id không hợp lệ")
+    return raw
+
+
+def claim_client_request(cur, request_id: Optional[str], endpoint: str) -> Tuple[bool, Optional[Dict]]:
+    """Đăng ký request_id trong transaction hiện tại.
+
+    Trả về (is_new, previous_response). Nếu request_id đã được xử lý trước đó
+    (client gửi lại do mất mạng), is_new = False và trả về response đã lưu.
+    """
+    if not request_id:
+        return True, None
+    cur.execute(
+        """
+        INSERT INTO public.qc_client_request (request_id, endpoint)
+        VALUES (%s, %s)
+        ON CONFLICT (request_id) DO NOTHING
+        RETURNING request_id
+        """,
+        (request_id, endpoint),
+    )
+    if cur.fetchone():
+        return True, None
+    cur.execute("SELECT response FROM public.qc_client_request WHERE request_id = %s", (request_id,))
+    row = cur.fetchone()
+    prev = row[0] if row else None
+    return False, (prev if isinstance(prev, dict) else None)
+
+
+def get_completed_client_request(request_id: Optional[str]) -> Optional[Dict]:
+    """Response đã lưu của request_id (nếu lần gửi trước đã commit), tra trước mọi kiểm tra khác
+    để client gửi lại sau khi mất response không nhận nhầm lỗi 409/400."""
+    if not request_id:
+        return None
+    with get_db_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT response FROM public.qc_client_request WHERE request_id = %s AND response IS NOT NULL",
+                (request_id,),
+            )
+            row = cur.fetchone()
+    return row[0] if row and isinstance(row[0], dict) else None
+
+
+def store_client_request_response(cur, request_id: Optional[str], response: Dict) -> None:
+    if not request_id:
+        return
+    cur.execute(
+        "UPDATE public.qc_client_request SET response = %s WHERE request_id = %s",
+        (psycopg2.extras.Json(response), request_id),
+    )
+    # Dọn dần các key cũ (client chỉ retry trong vài giờ/ngày) để bảng không phình mãi.
+    if random.random() < 0.02:
+        cur.execute(
+            "DELETE FROM public.qc_client_request WHERE created_at < NOW() - INTERVAL '14 days'"
+        )
+
+
+def lock_qc_sp_slot(cur, plan_id: int, date_str: str, station: str) -> None:
+    """Khoá theo (plan, ngày, cụm) trong transaction để tránh tạo trùng log / trùng sp_index."""
+    cur.execute(
+        "SELECT pg_advisory_xact_lock(hashtext(%s))",
+        (f"qc_sp:{plan_id}:{date_str}:{station or ''}",),
+    )
+
+
+def ensure_qc_plan_writable(user: Dict, plan_id: Any) -> int:
+    """Gộp check_plan_access + ensure_prod_plan_is_active vào 1 query (cùng mã lỗi như cũ)."""
+    try:
+        plan_id_int = int(plan_id)
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="plan_id không hợp lệ")
+    with get_db_connection() as conn:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(
+                """
+                SELECT don_vi, COALESCE(is_active, TRUE) AS is_active, is_finished
+                FROM public.prod_plan
+                WHERE id = %s
+                """,
+                (plan_id_int,),
+            )
+            row = cur.fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="Không tìm thấy kế hoạch")
+    check_factory_access(user, row.get("don_vi"))
+    if row.get("is_finished"):
+        raise HTTPException(status_code=409, detail="Kế hoạch đã kết thúc. Vui lòng chọn lại kế hoạch khác.")
+    if not row.get("is_active"):
+        raise HTTPException(status_code=409, detail="Kế hoạch đã ngừng hiệu lực. Vui lòng chọn lại kế hoạch khác.")
+    return plan_id_int
+
+
 @app.post("/api/qc/error-log-sp")
-async def api_qc_error_log_sp_create(request: Request):
-    """Ghi nhận lỗi QC theo sản phẩm (real-time, không chọn mốc thời gian)."""
+def api_qc_error_log_sp_create(request: Request, body: Dict[str, Any] = Body(...)):
+    """Ghi nhận lỗi QC theo sản phẩm (real-time, không chọn mốc thời gian).
+
+    Chỉ hỗ trợ chế độ append (mỗi lần lưu thêm SP lỗi mới).
+    Gửi kèm client_request_id để retry an toàn khi mất mạng.
+    """
     user = require_qc_input_user(request)
-    body = await request.json()
-    ma_nv_cookie = request.cookies.get("ma_nv")
-    ma_nv_db = None
-    if ma_nv_cookie:
-        ma_nv = decode_ma_nv_cookie(ma_nv_cookie)
-        ma_nv_variants = generate_ma_nv_variants(ma_nv)
-        with get_db_connection() as conn:
-            with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-                cur.execute(
-                    """
-                    SELECT ma_nv
-                    FROM public.quality_employees
-                    WHERE ma_nv = ANY(%s) AND qc_role = 'QC'
-                    ORDER BY CASE WHEN ma_nv = %s THEN 0 ELSE 1 END
-                    LIMIT 1
-                    """,
-                    (ma_nv_variants, ma_nv),
-                )
-                row_nv = cur.fetchone()
-                if row_nv:
-                    ma_nv_db = row_nv.get("ma_nv")
-    plan_id = body.get("plan_id")
-    check_plan_access(user, plan_id)
-    ensure_prod_plan_is_active(plan_id)
-    date_str = body.get("date") or datetime.now().strftime("%Y-%m-%d")
+    ma_nv_db = user.get("ma_nv")
+    client_request_id = normalize_client_request_id(body.get("client_request_id"))
+    already_done = get_completed_client_request(client_request_id)
+    if already_done:
+        return already_done
+    plan_id = ensure_qc_plan_writable(user, body.get("plan_id"))
+    date_str = parse_qc_input_date(body.get("date"))
     station = (body.get("station") or "").strip()
     defect_products = body.get("defect_products", []) or []
-    append_only = bool(body.get("append_only"))
+    if not isinstance(defect_products, list):
+        raise HTTPException(status_code=400, detail="defect_products phải là danh sách")
+    if len(defect_products) > QC_SP_MAX_PRODUCTS_PER_SUBMIT:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Tối đa {QC_SP_MAX_PRODUCTS_PER_SUBMIT} sản phẩm lỗi mỗi lần lưu",
+        )
+    if not bool(body.get("append_only")):
+        raise HTTPException(status_code=400, detail="Chỉ hỗ trợ ghi nhận bổ sung (append_only)")
     pending_failed_count = body.get("pending_failed_count", 0) or 0
     try:
         pending_failed_count = int(pending_failed_count)
@@ -8253,8 +8375,8 @@ async def api_qc_error_log_sp_create(request: Request):
         pending_failed_count = 0
     if pending_failed_count > 0 and len(defect_products) == 0:
         raise HTTPException(status_code=400, detail="pending_failed_count requires defect_products")
-
-    output = 0
+    # Mỗi SP lỗi tương ứng tối đa 1 dòng Failed — không cho phép đếm dư.
+    pending_failed_count = min(pending_failed_count, len(defect_products))
 
     def _defect_key(d: Dict) -> Tuple:
         return (
@@ -8263,13 +8385,6 @@ async def api_qc_error_log_sp_create(request: Request):
             d.get("ma_loi_id"),
             d.get("mo_ta_loi_id"),
             (d.get("muc_do") or "").strip(),
-        )
-
-    def _defect_key_multi(d: Dict) -> Tuple:
-        return (
-            d.get("bo_phan_id"),
-            d.get("chi_tiet_id"),
-            d.get("ma_loi_id"),
         )
 
     def _has_defect(prod: Dict, key: Tuple) -> bool:
@@ -8292,6 +8407,12 @@ async def api_qc_error_log_sp_create(request: Request):
 
     with get_db_connection() as conn:
         with conn.cursor() as cur:
+            lock_qc_sp_slot(cur, plan_id, date_str, station)
+            is_new, prev_response = claim_client_request(cur, client_request_id, "error-log-sp")
+            if not is_new:
+                conn.commit()
+                return prev_response or {"status": "ok", "duplicate": True}
+
             # Calculate output from real-time log (+1/-1)
             cur.execute(
                 """
@@ -8316,41 +8437,27 @@ async def api_qc_error_log_sp_create(request: Request):
             row = cur.fetchone()
             if row:
                 log_id = row[0]
-                if append_only:
-                    cur.execute(
-                        """
-                        SELECT COALESCE(MAX(sp_index), 0)
-                        FROM public.qc_defect
-                        WHERE error_log_sp_id = %s
-                        """,
-                        (log_id,)
-                    )
-                    base_index = cur.fetchone()[0] or 0
-                    total_after = base_index + defect_count
-                    cur.execute(
-                        """
-                        UPDATE public.qc_error_log_sp
-                        SET output = %s,
-                            defect_count = %s,
-                            ma_nv = COALESCE(ma_nv, %s),
-                            updated_at = NOW()
-                        WHERE id = %s
-                        """,
-                        (output, total_after, ma_nv_db, log_id)
-                    )
-                else:
-                    cur.execute(
-                        """
-                        UPDATE public.qc_error_log_sp
-                        SET output = %s,
-                            defect_count = %s,
-                            ma_nv = COALESCE(ma_nv, %s),
-                            updated_at = NOW()
-                        WHERE id = %s
-                        """,
-                        (output, defect_count, ma_nv_db, log_id)
-                    )
-                    cur.execute("DELETE FROM public.qc_defect WHERE error_log_sp_id = %s", (log_id,))
+                cur.execute(
+                    """
+                    SELECT COALESCE(MAX(sp_index), 0)
+                    FROM public.qc_defect
+                    WHERE error_log_sp_id = %s
+                    """,
+                    (log_id,)
+                )
+                base_index = cur.fetchone()[0] or 0
+                total_after = base_index + defect_count
+                cur.execute(
+                    """
+                    UPDATE public.qc_error_log_sp
+                    SET output = %s,
+                        defect_count = %s,
+                        ma_nv = COALESCE(ma_nv, %s),
+                        updated_at = NOW()
+                    WHERE id = %s
+                    """,
+                    (output, total_after, ma_nv_db, log_id)
+                )
                 updated = True
             else:
                 cur.execute(
@@ -8365,8 +8472,6 @@ async def api_qc_error_log_sp_create(request: Request):
                 updated = False
                 base_index = 0
 
-            if not append_only:
-                base_index = 0
             for idx, prod in enumerate(defect_products, start=1):
                 defects = prod.get("defects", []) or []
                 for d in defects:
@@ -8422,19 +8527,19 @@ async def api_qc_error_log_sp_create(request: Request):
                             d.get("ma_loi_id"),
                         )
                     )
+            failed_times = []
             if pending_failed_count > 0:
-                failed_times = []
-                for _ in range(pending_failed_count):
-                    cur.execute(
-                        """
-                        INSERT INTO public.qc_output_sp_log (plan_id, date, station, delta, status, ma_nv)
-                        VALUES (%s, %s, %s, 1, 'Failed', %s)
-                        RETURNING created_at
-                        """,
-                        (plan_id, date_str, station, ma_nv_db)
-                    )
-                    row = cur.fetchone()
-                    failed_times.append(row[0] if row else None)
+                # Insert hàng loạt các dòng Failed; trả về giờ VN để ghi qc_defect_multi.
+                cur.execute(
+                    """
+                    INSERT INTO public.qc_output_sp_log (plan_id, date, station, delta, status, ma_nv)
+                    SELECT %s, %s, %s, 1, 'Failed', %s
+                    FROM generate_series(1, %s)
+                    RETURNING timezone('Asia/Ho_Chi_Minh', created_at)
+                    """,
+                    (plan_id, date_str, station, ma_nv_db, pending_failed_count)
+                )
+                failed_times = [r[0] for r in cur.fetchall()]
                 cur.execute(
                     """
                     SELECT COALESCE(COUNT(*), 0)
@@ -8452,8 +8557,6 @@ async def api_qc_error_log_sp_create(request: Request):
                     """
                     , (output, log_id)
                 )
-            else:
-                failed_times = []
 
             # Detect 3 consecutive failed products sharing same (bo_phan, chi_tiet, ma_loi)
             # and log to qc_defect_multi at the 3rd occurrence only.
@@ -8524,7 +8627,7 @@ async def api_qc_error_log_sp_create(request: Request):
                     for sp_idx, key in records:
                         bp_id, ct_id, ml_id = key
                         t = time_by_sp.get(sp_idx)
-                        time_val = t.time() if hasattr(t, "time") else datetime.now().time()
+                        time_val = t.time() if hasattr(t, "time") else datetime.now(_VN_TZ).time()
                         cur.execute(
                             """
                             INSERT INTO public.qc_defect_multi
@@ -8542,8 +8645,15 @@ async def api_qc_error_log_sp_create(request: Request):
                                 ma_nv_db,
                             )
                         )
+            response = {
+                "status": "ok",
+                "id": log_id,
+                "updated": updated,
+                "last_sp_index": base_index + defect_count,
+            }
+            store_client_request_response(cur, client_request_id, response)
             conn.commit()
-    return {"status": "ok", "id": log_id, "updated": updated}
+    return response
 
 
 @app.post("/api/qc/upload-sp-image", dependencies=[Depends(require_qc_input_user)])
@@ -8552,10 +8662,21 @@ async def api_qc_upload_sp_image(file: UploadFile = File(...)):
     import uuid
     sub_dir = os.path.join(IMAGES_STORAGE_DIR, "qc_sp")
     os.makedirs(sub_dir, exist_ok=True)
-    ext = os.path.splitext(file.filename or "photo.jpg")[1] or ".jpg"
+    max_bytes = 10 * 1024 * 1024
+    contents = await file.read(max_bytes + 1)
+    if len(contents) > max_bytes:
+        raise HTTPException(status_code=413, detail="Ảnh vượt quá 10MB")
+    # Xác định loại ảnh theo magic bytes, không tin phần mở rộng client gửi lên.
+    if contents.startswith(b"\xff\xd8\xff"):
+        ext = ".jpg"
+    elif contents.startswith(b"\x89PNG\r\n\x1a\n"):
+        ext = ".png"
+    elif contents[:4] == b"RIFF" and contents[8:12] == b"WEBP":
+        ext = ".webp"
+    else:
+        raise HTTPException(status_code=400, detail="Chỉ chấp nhận ảnh JPG, PNG hoặc WEBP")
     unique_name = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:8]}{ext}"
     file_path = os.path.join(sub_dir, unique_name)
-    contents = await file.read()
     with open(file_path, "wb") as f:
         f.write(contents)
     relative_path = f"qc_sp/{unique_name}"
@@ -8564,36 +8685,20 @@ async def api_qc_upload_sp_image(file: UploadFile = File(...)):
 
 
 @app.post("/api/qc/output-sp-log")
-async def api_qc_output_sp_log_create(request: Request):
-    """Ghi nhận thao tác +1/-1 cho số sản phẩm đã kiểm (theo sản phẩm)."""
+def api_qc_output_sp_log_create(request: Request, body: Dict[str, Any] = Body(...)):
+    """Ghi nhận thao tác +1/-1 cho số sản phẩm đã kiểm (theo sản phẩm).
+
+    -1 chỉ hoàn tác dòng 'Passed' gần nhất của chính QC (không đụng dòng 'Failed'
+    vì dòng đó gắn với SP lỗi trong qc_defect).
+    """
     user = require_qc_input_user(request)
-    body = await request.json()
-    ma_nv_cookie = request.cookies.get("ma_nv")
-    if not ma_nv_cookie:
-        raise HTTPException(status_code=401, detail="Chưa đăng nhập")
-    ma_nv = decode_ma_nv_cookie(ma_nv_cookie)
-    ma_nv_variants = generate_ma_nv_variants(ma_nv)
-    with get_db_connection() as conn:
-        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute(
-                """
-                SELECT ma_nv
-                FROM public.quality_employees
-                WHERE ma_nv = ANY(%s) AND qc_role = 'QC'
-                ORDER BY CASE WHEN ma_nv = %s THEN 0 ELSE 1 END
-                LIMIT 1
-                """,
-                (ma_nv_variants, ma_nv),
-            )
-            row_nv = cur.fetchone()
-            if not row_nv:
-                raise HTTPException(status_code=403, detail="Không có quyền (QC only)")
-            ma_nv_db = row_nv["ma_nv"]
-    plan_id = body.get("plan_id")
-    check_plan_access(user, plan_id)
-    ensure_prod_plan_is_active(plan_id)
-    date_str = body.get("date") or datetime.now().strftime("%Y-%m-%d")
+    ma_nv_db = user.get("ma_nv")
+    if not ma_nv_db:
+        raise HTTPException(status_code=403, detail="Không có quyền (QC only)")
+    plan_id = ensure_qc_plan_writable(user, body.get("plan_id"))
+    date_str = parse_qc_input_date(body.get("date"))
     station = (body.get("station") or "").strip()
+    client_request_id = normalize_client_request_id(body.get("client_request_id"))
     delta = body.get("delta", 1)
     status = (body.get("status") or "Passed").strip()
     try:
@@ -8607,34 +8712,37 @@ async def api_qc_output_sp_log_create(request: Request):
 
     with get_db_connection() as conn:
         with conn.cursor() as cur:
-            if delta == 1:
-                cur.execute(
-                    """
-                    INSERT INTO public.qc_output_sp_log (plan_id, date, station, delta, status, ma_nv)
-                    VALUES (%s, %s, %s, 1, %s, %s)
-                    """,
-                    (plan_id, date_str, station, status, ma_nv_db)
-                )
-            else:
-                # Remove latest +1 log (same plan/date/station) for the current QC user
-                cur.execute(
-                    """
-                    DELETE FROM public.qc_output_sp_log
-                    WHERE id = (
-                        SELECT id FROM public.qc_output_sp_log
-                        WHERE plan_id = %s
-                          AND date = %s
-                          AND COALESCE(station, '') = COALESCE(%s, '')
-                          AND COALESCE(ma_nv, '') = COALESCE(%s, '')
-                        ORDER BY created_at DESC, id DESC
-                        LIMIT 1
+            is_new, _prev = claim_client_request(cur, client_request_id, "output-sp-log")
+            if is_new:
+                if delta == 1:
+                    cur.execute(
+                        """
+                        INSERT INTO public.qc_output_sp_log (plan_id, date, station, delta, status, ma_nv)
+                        VALUES (%s, %s, %s, 1, %s, %s)
+                        """,
+                        (plan_id, date_str, station, status, ma_nv_db)
                     )
-                    """,
-                    (plan_id, date_str, station, ma_nv_db)
-                )
+                else:
+                    # Hoàn tác +1 Đạt gần nhất (same plan/date/station) của QC hiện tại
+                    cur.execute(
+                        """
+                        DELETE FROM public.qc_output_sp_log
+                        WHERE id = (
+                            SELECT id FROM public.qc_output_sp_log
+                            WHERE plan_id = %s
+                              AND date = %s
+                              AND COALESCE(station, '') = COALESCE(%s, '')
+                              AND COALESCE(ma_nv, '') = COALESCE(%s, '')
+                              AND status = 'Passed'
+                            ORDER BY created_at DESC, id DESC
+                            LIMIT 1
+                        )
+                        """,
+                        (plan_id, date_str, station, ma_nv_db)
+                    )
             cur.execute(
                 """
-                SELECT 
+                SELECT
                     COALESCE(COUNT(*), 0) AS total,
                     COALESCE(SUM(CASE WHEN status = 'Passed' THEN 1 ELSE 0 END), 0) AS passed_count,
                     COALESCE(SUM(CASE WHEN status = 'Failed' THEN 1 ELSE 0 END), 0) AS failed_count
@@ -8969,6 +9077,10 @@ def api_qc_input_quick_defect_combos(
             catalog_to = catalog_row.get("effective_to")
             catalog_code = catalog_row.get("code")
             map_legacy_codes = (catalog_code == "qlcl-hdkt-8.9-bm3-rev08")
+            try:
+                history_ref_date = date.fromisoformat((date_str or "").strip()[:10])
+            except ValueError:
+                history_ref_date = vn_today()
             cur.execute(
                 """
                 WITH selected AS (
@@ -8995,7 +9107,7 @@ def api_qc_input_quick_defect_combos(
                       ON p.loai_hang = s.loai_hang
                     JOIN public.qc_error_log_sp sp
                       ON sp.plan_id = p.id
-                     AND COALESCE(sp.station, '') = s.station
+                     AND sp.station = s.station
                     JOIN public.qc_defect d
                       ON d.error_log_sp_id = sp.id
                     JOIN public.dm_bo_phan bp
@@ -9012,6 +9124,12 @@ def api_qc_input_quick_defect_combos(
                       AND d.chi_tiet_id IS NOT NULL
                       AND d.ma_loi_id IS NOT NULL
                       AND d.mo_ta_loi_id IS NOT NULL
+                      -- Giới hạn lịch sử: tối thiểu 180 ngày gần nhất, luôn bao trùm
+                      -- toàn bộ thời gian hiệu lực của catalog hiện tại (giữ nguyên defect_qty).
+                      AND sp.date >= LEAST(
+                          COALESCE(%s::date, %s::date),
+                          %s::date - INTERVAL '180 days'
+                      )
                 ),
                 mapped_history AS (
                     SELECT
@@ -9099,6 +9217,9 @@ def api_qc_input_quick_defect_combos(
                 (
                     station_clean,
                     plan_id,
+                    catalog_from,
+                    history_ref_date,
+                    history_ref_date,
                     map_legacy_codes,
                     map_legacy_codes,
                     catalog_from,
@@ -9262,7 +9383,12 @@ def api_qc_error_log_sp_get(
 
 @app.get("/qc-input/rework")
 def qc_rework_page(request: Request):
-    require_qc_input_user(request)
+    try:
+        require_qc_input_user(request)
+    except HTTPException as exc:
+        if exc.status_code == 401:
+            return RedirectResponse(url="/qc-login", status_code=303)
+        raise
     ma_nv_cookie = request.cookies.get("ma_nv")
     if not ma_nv_cookie:
         return RedirectResponse(url="/qc-login", status_code=303)
@@ -9298,20 +9424,31 @@ def api_qc_rework_sp(
     request: Request,
     date_str: str = Query(None),
     plan_id: Optional[int] = Query(None),
+    station: Optional[str] = Query(None),
 ):
+    """Danh sách SP lỗi cần tái chế.
+
+    - Có plan_id: mọi SP lỗi của kế hoạch đó (trong XN của QC), lọc thêm theo cụm nếu có.
+      Không lọc theo người lưu đầu tiên, để QC đổi ca/hỗ trợ cùng cụm vẫn thấy.
+    - Không có plan_id (trang /qc-input/rework): chỉ các log do chính QC tạo.
+    """
     user = require_qc_input_user(request)
-    if not date_str:
-        date_str = datetime.now().strftime("%Y-%m-%d")
-    ma_nv_cookie = request.cookies.get("ma_nv")
-    ma_nv = decode_ma_nv_cookie(ma_nv_cookie)
-    ma_nv_variants = generate_ma_nv_variants(ma_nv)
+    date_str = parse_qc_input_date(date_str)
+    ma_nv_variants = generate_ma_nv_variants(user.get("ma_nv") or "")
     with get_db_connection() as conn:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            params: List[Any] = [date_str, ma_nv_variants, user['don_vi']]
+            params: List[Any] = [date_str, user['don_vi']]
             plan_where = ""
             if plan_id:
                 plan_where = " AND e.plan_id = %s"
                 params.append(plan_id)
+                station_clean = (station or "").strip()
+                if station_clean:
+                    plan_where += " AND COALESCE(e.station, '') = %s"
+                    params.append(station_clean)
+            else:
+                plan_where = " AND e.ma_nv = ANY(%s)"
+                params.append(ma_nv_variants)
             cur.execute("""
                 SELECT 
                     e.id as error_log_sp_id,
@@ -9331,7 +9468,6 @@ def api_qc_rework_sp(
                 LEFT JOIN public.dm_chi_tiet ct ON d.chi_tiet_id = ct.id
                 LEFT JOIN public.dm_ma_loi ml ON d.ma_loi_id = ml.id
                 WHERE e.date = %s
-                  AND e.ma_nv = ANY(%s)
                   AND p.don_vi = %s
                   {plan_where}
                 GROUP BY e.id, e.plan_id, e.created_at, p.ke_hoach, p.ma_hang, p.loai_hang, d.sp_index
@@ -9345,13 +9481,9 @@ def api_qc_rework_sp(
 
 
 @app.patch("/api/qc/rework-2/{log_id}/{sp_index}", dependencies=[Depends(require_qc_input_user)])
-async def api_update_rework_sp(log_id: int, sp_index: int, request: Request):
+def api_update_rework_sp(log_id: int, sp_index: int, request: Request, body: Dict[str, Any] = Body(...)):
     user = require_qc_input_user(request)
-    body = await request.json()
     rework_done = bool(body.get("rework_done"))
-    ma_nv_cookie = request.cookies.get("ma_nv")
-    ma_nv = decode_ma_nv_cookie(ma_nv_cookie)
-    ma_nv_variants = generate_ma_nv_variants(ma_nv)
     with get_db_connection() as conn:
         with conn.cursor() as cur:
             cur.execute(
@@ -9361,12 +9493,15 @@ async def api_update_rework_sp(log_id: int, sp_index: int, request: Request):
                 WHERE error_log_sp_id = %s
                   AND sp_index = %s
                   AND error_log_sp_id IN (
-                      SELECT e.id FROM public.qc_error_log_sp e JOIN public.prod_plan p ON p.id = e.plan_id WHERE e.ma_nv = ANY(%s) AND p.don_vi = %s
+                      SELECT e.id FROM public.qc_error_log_sp e JOIN public.prod_plan p ON p.id = e.plan_id WHERE p.don_vi = %s
                   )
                 """,
-                (rework_done, log_id, sp_index, ma_nv_variants, user['don_vi'])
+                (rework_done, log_id, sp_index, user['don_vi'])
             )
+            updated_rows = cur.rowcount
         conn.commit()
+    if not updated_rows:
+        raise HTTPException(status_code=404, detail="Không tìm thấy sản phẩm lỗi để cập nhật")
     return {"status": "ok", "rework_done": rework_done}
 
 @app.get("/healthz")

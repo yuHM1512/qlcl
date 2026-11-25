@@ -2,8 +2,8 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Tái chế lỗi (Sản phẩm)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kiểm lại / Tái chế lỗi (Sản phẩm)</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;800&display=swap" rel="stylesheet">
@@ -17,30 +17,40 @@
         .rework-card { border-radius: 16px; border: 1px solid #e2e8f0; padding: 1rem; display: flex; flex-direction: column; gap: 0.65rem; }
         .rework-card.pending { background: #fff1f2; border-color: #fecdd3; }
         .rework-card.done { background: #ecfdf3; border-color: #bbf7d0; }
-        .sp-tag { font-weight: 800; color: #0f172a; background: #e0e7ff; padding: 4px 10px; border-radius: 999px; font-size: 0.8rem; }
-        .status-pill { font-weight: 700; border-radius: 999px; padding: 4px 10px; font-size: 0.75rem; }
+        .sp-tag { font-weight: 800; color: #0f172a; background: #e0e7ff; padding: 4px 10px; border-radius: 999px; font-size: 0.85rem; }
+        .status-pill { font-weight: 700; border-radius: 999px; padding: 4px 10px; font-size: 0.8rem; }
         .status-pending { background: #fee2e2; color: #991b1b; }
         .status-ok { background: #dcfce7; color: #166534; }
-        .meta-grid { display: grid; grid-template-columns: 90px 1fr; row-gap: 6px; column-gap: 10px; font-size: 0.9rem; }
-        .meta-label { color: #64748b; font-weight: 700; text-transform: uppercase; font-size: 0.7rem; letter-spacing: 0.04em; }
+        .meta-grid { display: grid; grid-template-columns: 90px 1fr; row-gap: 6px; column-gap: 10px; font-size: 0.95rem; }
+        .meta-label { color: #64748b; font-weight: 700; text-transform: uppercase; font-size: 0.78rem; letter-spacing: 0.04em; }
         .defect-list { display: flex; flex-direction: column; gap: 6px; }
-        .defect-item { background: #fff; border: 1px dashed #cbd5f5; border-radius: 10px; padding: 0.5rem 0.65rem; font-size: 0.9rem; }
+        .defect-item { background: #fff; border: 1px dashed #cbd5f5; border-radius: 10px; padding: 0.5rem 0.65rem; font-size: 0.95rem; }
         .action-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-        .btn-verify { border-radius: 999px; font-weight: 700; }
+        .btn-verify { border-radius: 999px; font-weight: 700; min-height: 44px; min-width: 44px; padding: 0.4rem 1rem; font-size: 0.95rem; }
+        .btn-verify:disabled { opacity: .6; }
+        .header-icon-btn { min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; }
+        .app-toast {
+            position: fixed; left: 50%; bottom: 32px; transform: translate(-50%, 20px);
+            z-index: 1200; max-width: calc(100% - 24px);
+            background: #b91c1c; color: #fff; border-radius: 12px;
+            padding: 10px 14px; font-size: 0.9rem; font-weight: 600;
+            opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s;
+        }
+        .app-toast.show { opacity: 1; transform: translate(-50%, 0); }
     </style>
 </head>
 <body>
 <div class="mobile-container">
     <div class="glass-header">
-        <a href="/qc-input-2" class="text-secondary"><i class="fas fa-arrow-left fa-lg"></i></a>
-        <h1 class="header-title">TÁI CHẾ LỖI (SP)</h1>
-        <button onclick="logout()" class="btn btn-sm text-danger" title="Đăng xuất"><i class="fas fa-sign-out-alt fa-lg"></i></button>
+        <a href="/qc-input" class="text-secondary header-icon-btn" title="Về trang nhập liệu"><i class="fas fa-arrow-left fa-lg"></i></a>
+        <h1 class="header-title">KIỂM LẠI / TÁI CHẾ (SP)</h1>
+        <button onclick="logout()" class="btn btn-sm text-danger header-icon-btn" title="Đăng xuất"><i class="fas fa-sign-out-alt fa-lg"></i></button>
     </div>
 
     <div class="card-lite d-flex align-items-center justify-content-between mb-3">
         <div class="fw-bold text-muted" style="font-size: 0.9rem;">CHỌN NGÀY</div>
         <div>
-            <input type="date" id="dateFilter" class="form-control" style="background: #f1f5f9; border: none; font-weight: bold; color: var(--primary)" onchange="fetchReworkData()">
+            <input type="date" id="dateFilter" class="form-control" style="background: #f1f5f9; border: none; font-weight: bold; color: var(--primary); min-height: 44px;" onchange="fetchReworkData()">
         </div>
     </div>
 
@@ -53,7 +63,37 @@
 </div>
 
 <script>
+    // Escape chuỗi trước khi chèn vào innerHTML (dữ liệu kế hoạch đến từ nguồn ngoài).
+    function esc(value) {
+        return String(value ?? '').replace(/[&<>"']/g, ch => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        }[ch]));
+    }
+
+    // Ngày hôm nay theo giờ Việt Nam, không phụ thuộc múi giờ thiết bị.
+    function todayVN() {
+        return new Intl.DateTimeFormat('en-CA', {
+            timeZone: 'Asia/Ho_Chi_Minh', year: 'numeric', month: '2-digit', day: '2-digit'
+        }).format(new Date());
+    }
+
+    let _toastTimer = null;
+    function showToast(message) {
+        let el = document.getElementById('appToast');
+        if (!el) {
+            el = document.createElement('div');
+            el.id = 'appToast';
+            el.className = 'app-toast';
+            document.body.appendChild(el);
+        }
+        el.textContent = message;
+        el.classList.add('show');
+        clearTimeout(_toastTimer);
+        _toastTimer = setTimeout(() => el.classList.remove('show'), 4000);
+    }
+
     async function logout() {
+        if (!confirm('Đăng xuất khỏi tài khoản?')) return;
         try {
             const res = await fetch('/logout', { method: 'POST' });
             if (res.redirected) window.location.href = res.url;
@@ -64,17 +104,15 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-        const today = new Date();
-        const y = today.getFullYear();
-        const m = String(today.getMonth() + 1).padStart(2, '0');
-        const d = String(today.getDate()).padStart(2, '0');
-        document.getElementById('dateFilter').value = `${y}-${m}-${d}`;
+        document.getElementById('dateFilter').value = todayVN();
         fetchReworkData();
     });
 
+    let fetchSeq = 0;
     async function fetchReworkData() {
         const dateStr = document.getElementById('dateFilter').value;
         const container = document.getElementById('reworkDataArea');
+        const seq = ++fetchSeq;
         container.innerHTML = `
             <div class="text-center text-muted my-5">
                 <i class="fas fa-spinner fa-spin fa-2x mb-3"></i>
@@ -83,16 +121,19 @@
         `;
 
         try {
-            const res = await fetch(`/api/qc/rework-2?date_str=${dateStr}`);
+            const params = new URLSearchParams({ date_str: dateStr });
+            const res = await fetch(`/api/qc/rework-2?${params.toString()}`);
             if (!res.ok) throw new Error('API Error');
             const data = await res.json();
+            if (seq !== fetchSeq) return; // đã đổi ngày trong lúc chờ
             renderData(data.rows || []);
         } catch (e) {
             console.error(e);
+            if (seq !== fetchSeq) return;
             container.innerHTML = `
                 <div class="text-center text-danger my-5">
                     <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
-                    <p>Lỗi tải dữ liệu. Vui lòng thử lại.</p>
+                    <p>Lỗi tải dữ liệu kiểm lại. Vui lòng thử lại.</p>
                 </div>
             `;
         }
@@ -111,8 +152,8 @@
             container.innerHTML = `
                 <div class="text-center my-5 p-4 bg-white rounded shadow-sm border">
                     <i class="fas fa-check-circle fa-3x text-success mb-3 opacity-75"></i>
-                    <h6 class="text-muted fw-bold">KHÔNG CÓ LỖI NÀO TRONG NGÀY</h6>
-                    <p class="small text-muted mb-0">Tuyệt vời! Không có sản phẩm lỗi cần tái chế.</p>
+                    <h6 class="text-muted fw-bold">CHƯA CÓ SẢN PHẨM LỖI</h6>
+                    <p class="small text-muted mb-0">Không có sản phẩm lỗi cần kiểm lại trong ngày này.</p>
                 </div>
             `;
             return;
@@ -122,63 +163,84 @@
         list.className = 'd-flex flex-column gap-3';
 
         rows.forEach(r => {
-            const done = !!r.rework_done;
             const card = document.createElement('div');
-            card.className = `rework-card ${done ? 'done' : 'pending'}`;
             card.id = `row-${r.error_log_sp_id}-${r.sp_index}`;
-
-            const statusHtml = done
-                ? `<span class="status-pill status-ok">Đã sửa</span>`
-                : `<span class="status-pill status-pending">Chưa sửa</span>`;
-
-            const btnHtml = done
-                ? `<button class="btn btn-sm btn-outline-secondary btn-verify" onclick="updateRework(${r.error_log_sp_id}, ${r.sp_index}, false)"><i class="fas fa-undo me-1"></i> Hoàn tác</button>`
-                : `<button class="btn btn-sm btn-success btn-verify" onclick="updateRework(${r.error_log_sp_id}, ${r.sp_index}, true)"><i class="fas fa-check me-1"></i> Xác nhận</button>`;
-
-            const defects = (r.defect_list || []).filter(Boolean);
-            const defectHtml = defects.length
-                ? defects.map(d => `<div class="defect-item">${d}</div>`).join('')
-                : `<div class="defect-item text-muted">Chưa có mô tả lỗi.</div>`;
-
-            card.innerHTML = `
-                <div class="action-row">
-                    <span class="sp-tag">#SP${formatSpIndex(r.sp_index)}</span>
-                    ${statusHtml}
-                </div>
-                <div class="meta-grid">
-                    <div class="meta-label">ID</div>
-                    <div><strong>${r.error_log_sp_id}</strong></div>
-                    <div class="meta-label">Kế hoạch</div>
-                    <div><strong>${r.ke_hoach || '--'}</strong></div>
-                    <div class="meta-label">Mã hàng</div>
-                    <div>${r.ma_hang || '--'}</div>
-                    <div class="meta-label">Lỗi</div>
-                    <div class="defect-list">${defectHtml}</div>
-                </div>
-                <div class="action-row">
-                    <div class="text-muted small">Tổng lỗi: <strong>${r.defect_items || 0}</strong></div>
-                    ${btnHtml}
-                </div>
-            `;
-
+            card._row = r;
+            fillCard(card, r);
             list.appendChild(card);
         });
 
         container.appendChild(list);
     }
 
+    function fillCard(card, r) {
+        const done = !!r.rework_done;
+        card.className = `rework-card ${done ? 'done' : 'pending'}`;
+
+        const statusHtml = done
+            ? `<span class="status-pill status-ok">Đã sửa</span>`
+            : `<span class="status-pill status-pending">Chưa sửa</span>`;
+
+        const logId = Number(r.error_log_sp_id);
+        const spIndex = Number(r.sp_index);
+        const btnHtml = done
+            ? `<button class="btn btn-sm btn-outline-secondary btn-verify" onclick="updateRework(${logId}, ${spIndex}, false)"><i class="fas fa-undo me-1"></i> Hoàn tác</button>`
+            : `<button class="btn btn-sm btn-success btn-verify" onclick="updateRework(${logId}, ${spIndex}, true)"><i class="fas fa-check me-1"></i> Xác nhận</button>`;
+
+        const defects = (r.defect_list || []).filter(Boolean);
+        const defectHtml = defects.length
+            ? defects.map(d => `<div class="defect-item">${esc(d)}</div>`).join('')
+            : `<div class="defect-item text-muted">Chưa có mô tả lỗi.</div>`;
+
+        card.innerHTML = `
+            <div class="action-row">
+                <span class="sp-tag">#SP${formatSpIndex(r.sp_index)}</span>
+                ${statusHtml}
+            </div>
+            <div class="meta-grid">
+                <div class="meta-label">Kế hoạch</div>
+                <div><strong>${esc(r.ke_hoach || '--')}</strong></div>
+                <div class="meta-label">Mã hàng</div>
+                <div>${esc(r.ma_hang || '--')}</div>
+                <div class="meta-label">Lỗi</div>
+                <div class="defect-list">${defectHtml}</div>
+            </div>
+            <div class="action-row">
+                <div class="text-muted small">Tổng lỗi: <strong>${Number(r.defect_items) || 0}</strong></div>
+                ${btnHtml}
+            </div>
+        `;
+    }
+
     async function updateRework(logId, spIndex, done) {
+        const card = document.getElementById(`row-${logId}-${spIndex}`);
+        const btn = card ? card.querySelector('.btn-verify') : null;
+        if (btn) {
+            if (btn.disabled) return; // chặn bấm đúp
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Đang lưu';
+        }
         try {
             const res = await fetch(`/api/qc/rework-2/${logId}/${spIndex}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ rework_done: done })
             });
-            if (!res.ok) throw new Error('Update failed');
-            await fetchReworkData();
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.detail || 'Update failed');
+            }
+            // Chỉ cập nhật thẻ vừa bấm — giữ nguyên vị trí cuộn.
+            if (card && card._row) {
+                card._row.rework_done = done;
+                fillCard(card, card._row);
+            } else {
+                await fetchReworkData();
+            }
         } catch (e) {
             console.error(e);
-            alert('Lỗi khi cập nhật trạng thái tái chế.');
+            showToast('Lỗi khi cập nhật trạng thái kiểm lại: ' + e.message);
+            if (card && card._row) fillCard(card, card._row);
         }
     }
 </script>

@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QC Input (Sản phẩm)</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
@@ -1062,14 +1062,49 @@
             padding: 2px 8px;
             color: #fff;
         }
+        /* Toast dùng chung (thay alert) */
+        .app-toast {
+            position: fixed; left: 50%; bottom: 96px; transform: translate(-50%, 20px);
+            z-index: 1200; max-width: calc(100% - 24px);
+            display: flex; align-items: center; gap: 12px;
+            background: #0f172a; color: #fff; border-radius: 12px;
+            padding: 10px 14px; font-size: 0.9rem; font-weight: 600;
+            box-shadow: 0 10px 24px rgba(15,23,42,0.25);
+            opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s;
+        }
+        .app-toast.show { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+        .app-toast.error { background: #b91c1c; }
+        .app-toast.success { background: #047857; }
+        .app-toast.warn { background: #92400e; }
+        .app-toast button {
+            background: rgba(255,255,255,0.18); color: #fff; border: none;
+            border-radius: 8px; padding: 8px 12px; min-height: 40px;
+            font-weight: 800; white-space: nowrap;
+        }
+        /* Trường thiếu khi validate */
+        .field-invalid { outline: 3px solid #ef4444 !important; outline-offset: 2px; border-radius: 10px; }
+        /* Banner nhắc khi đang nhập cho ngày khác hôm nay */
+        .date-warning-banner {
+            display: none; align-items: center; justify-content: space-between; gap: 8px;
+            background: #fef3c7; border: 1.5px solid #f59e0b; color: #78350f;
+            border-radius: 12px; padding: 8px 12px; margin-bottom: 0.85rem;
+            font-size: 0.9rem; font-weight: 700;
+        }
+        .date-warning-banner button {
+            background: #78350f; color: #fef3c7; border: none; border-radius: 8px;
+            padding: 6px 12px; min-height: 40px; font-weight: 800; white-space: nowrap;
+        }
+        /* Vùng chạm tối thiểu cho các nút thao tác chính */
+        .btn-verify { min-height: 44px; min-width: 44px; font-size: 0.95rem; font-weight: 700; }
+        .btn-verify:disabled { opacity: .6; }
     </style>
 </head>
 <body>
 <div class="mobile-container">
     <div class="glass-header">
-        <a href="/qc" class="text-secondary"><i class="fas fa-arrow-left fa-lg"></i></a>
+        <a href="/" class="text-secondary" onclick="return onHeaderBack(event)" title="Quay lại" style="padding:8px;"><i class="fas fa-arrow-left fa-lg"></i></a>
         <h1 class="header-title">NHẬP LỖI QC (SP)</h1>
-        <button onclick="logout()" class="btn btn-sm text-danger" title="Đăng xuất"><i class="fas fa-sign-out-alt fa-lg"></i></button>
+        <button onclick="logout()" class="btn btn-sm text-danger" title="Đăng xuất" style="min-width:44px;min-height:44px;"><i class="fas fa-sign-out-alt fa-lg"></i></button>
     </div>
 
     <div class="quick-nav">
@@ -1131,6 +1166,11 @@
                     title="Về hôm nay"
                     style="background:none;border:none;font-size:0.9rem;color:#92400e;cursor:pointer;padding:0 0 0 2px;line-height:1;flex-shrink:0;">↺</button>
             </div>
+        </div>
+
+        <div id="dateWarningBanner" class="date-warning-banner">
+            <span><i class="fas fa-exclamation-triangle me-1"></i> Đang nhập cho ngày <strong id="dateWarningText">--</strong>, không phải hôm nay</span>
+            <button type="button" onclick="resetReportDateToToday()">Về hôm nay</button>
         </div>
 
         <div id="stationCard" class="card-lite mb-3" style="display: none;">
@@ -1258,12 +1298,84 @@
 <div class="speech-toast" id="speechToast"></div>
 
 <script id="pageContext" type="application/json">
-    {{ {"don_vi": user.don_vi, "bo_phan": user.bo_phan, "station": (user.station or [])} | tojson }}
+    {{ {"don_vi": user.don_vi, "bo_phan": user.bo_phan, "station": (user.station or []), "ma_nv": user.ma_nv} | tojson }}
 </script>
 
 <script>
     const pageContextEl = document.getElementById('pageContext');
     const pageContext = pageContextEl ? JSON.parse(pageContextEl.textContent || '{}') : {};
+
+    // ========== Tiện ích dùng chung ==========
+    // Escape chuỗi trước khi chèn vào innerHTML (dữ liệu kế hoạch đến từ Google Sheets / chuyền treo / QTCN).
+    function esc(value) {
+        return String(value ?? '').replace(/[&<>"']/g, ch => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        }[ch]));
+    }
+
+    // Ngày hôm nay theo giờ Việt Nam, không phụ thuộc múi giờ thiết bị.
+    function todayVN() {
+        return new Intl.DateTimeFormat('en-CA', {
+            timeZone: 'Asia/Ho_Chi_Minh', year: 'numeric', month: '2-digit', day: '2-digit'
+        }).format(new Date());
+    }
+
+    function newRequestId() {
+        if (window.crypto && crypto.randomUUID) return crypto.randomUUID().replace(/-/g, '');
+        return Date.now().toString(36) + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+    }
+
+    let _uiIdSeq = 0;
+    function nextUiId() {
+        _uiIdSeq += 1;
+        return Date.now() * 1000 + (_uiIdSeq % 1000);
+    }
+
+    // Mỗi lần đổi kế hoạch / cụm / ngày → tăng ctxSeq; response của ngữ cảnh cũ bị bỏ qua.
+    let ctxSeq = 0;
+    function bumpCtx() {
+        ctxSeq += 1;
+        if (typeof hideToast === 'function') hideToast();
+        return ctxSeq;
+    }
+    function isStaleCtx(seq) { return seq !== ctxSeq; }
+
+    // Toast nhỏ ở cuối màn hình, có thể kèm nút hành động (VD: Hoàn tác).
+    let _toastTimer = null;
+    function showToast(message, opts = {}) {
+        let el = document.getElementById('appToast');
+        if (!el) {
+            el = document.createElement('div');
+            el.id = 'appToast';
+            el.className = 'app-toast';
+            document.body.appendChild(el);
+        }
+        el.className = `app-toast show ${opts.type || ''}`;
+        el.innerHTML = `<span>${esc(message)}</span>`;
+        if (opts.actionLabel && typeof opts.onAction === 'function') {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.textContent = opts.actionLabel;
+            btn.onclick = () => { hideToast(); opts.onAction(); };
+            el.appendChild(btn);
+        }
+        clearTimeout(_toastTimer);
+        _toastTimer = setTimeout(hideToast, opts.duration || 3000);
+    }
+    function hideToast() {
+        const el = document.getElementById('appToast');
+        if (el) el.classList.remove('show');
+    }
+
+    // Đánh dấu trường thiếu: cuộn tới + viền đỏ, thay cho alert() không chỉ chỗ.
+    function flagInvalid(el, message) {
+        if (!el) { showToast(message, { type: 'error' }); return; }
+        const target = el.closest('.bo-phan-block, .defect-item, .defect-product') || el;
+        target.classList.add('field-invalid');
+        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setTimeout(() => target.classList.remove('field-invalid'), 2500);
+        showToast(message, { type: 'error' });
+    }
     const userDonVi = pageContext.don_vi || "";
     const userBoPhan = pageContext.bo_phan || "";
     const userStationsRaw = pageContext.station || [];
@@ -1284,7 +1396,10 @@
     let flatOutput = null;
     let hlAutoRefreshTimer = null;
     let selectedTargetPercent = null;
-    let pendingFailedCount = 0;
+    // Thứ tự các request đọc/ghi số đã kiểm — chỉ áp dụng kết quả của request mới nhất,
+    // tránh số "nhảy lùi" khi response về không theo thứ tự trên wifi chậm.
+    let outputReqSeq = 0;
+    let inlineReworkReqSeq = 0;
     let baseSpIndex = 0;
     let currentWorkTab = 'input';
     let recognition = null;
@@ -1299,31 +1414,84 @@
     let quickDefectCombosToday = [];
     let quickComboMode = 'history';
 
-    // Ngày báo cáo — mặc định hôm nay, có thể đổi qua picker
+    // Ngày báo cáo — mặc định hôm nay (giờ VN), có thể đổi qua picker
     function todayStr() {
-        const now = new Date();
-        const y = now.getFullYear();
-        const m = String(now.getMonth() + 1).padStart(2, '0');
-        const d = String(now.getDate()).padStart(2, '0');
-        return `${y}-${m}-${d}`;
+        return todayVN();
     }
     let reportDateStr = todayStr();
     let reworkDateStr = reportDateStr;
+    // Ngày "hôm nay" tại thời điểm QC đang theo — dùng để tự chuyển ngày khi để máy qua đêm.
+    let reportDateFollowsToday = true;
 
     // Khởi tạo giá trị cho input date picker
     function initReportDatePicker() {
         const inp = document.getElementById('reportDateInput');
         if (inp) inp.value = reportDateStr;
+        updateDateWarning();
     }
 
-    async function onReportDateChange(value) {
+    function updateDateWarning() {
+        const banner = document.getElementById('dateWarningBanner');
+        if (!banner) return;
+        const isToday = reportDateStr === todayStr();
+        banner.style.display = isToday ? 'none' : 'flex';
+        const txt = document.getElementById('dateWarningText');
+        if (txt) txt.textContent = fmtDate(reportDateStr);
+    }
+
+    // Khi màn hình được mở lại (tablet để qua đêm), nếu QC đang theo "hôm nay"
+    // mà ngày đã đổi → tự chuyển sang ngày mới (nếu không có dữ liệu chưa lưu).
+    function syncReportDateWithToday() {
+        const today = todayStr();
+        if (reportDateFollowsToday && reportDateStr !== today) {
+            if (hasUnsavedData()) {
+                updateDateWarning();
+                showToast('Đã sang ngày mới. Lưu dữ liệu đang nhập rồi bấm "Về hôm nay".', { type: 'warn', duration: 6000 });
+                return;
+            }
+            const inp = document.getElementById('reportDateInput');
+            if (inp) inp.value = today;
+            onReportDateChange(today, { skipConfirm: true });
+            showToast(`Đã chuyển ngày báo cáo sang ${fmtDate(today)}`, { type: 'warn', duration: 4000 });
+        } else {
+            updateDateWarning();
+        }
+    }
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) syncReportDateWithToday();
+    });
+    window.addEventListener('focus', syncReportDateWithToday);
+
+    async function onReportDateChange(value, opts = {}) {
         if (!value) return;
+        const inp = document.getElementById('reportDateInput');
+        if (value === reportDateStr) {
+            // Không đổi ngày (VD bấm "Về hôm nay" khi đang ở hôm nay) → không xoá dữ liệu đang nhập.
+            reportDateFollowsToday = value === todayStr();
+            updateDateWarning();
+            return;
+        }
+        if (!opts.skipConfirm && hasUnsavedData()
+            && !confirm('Bạn đang có sản phẩm lỗi chưa lưu. Đổi ngày sẽ mất dữ liệu này. Tiếp tục?')) {
+            if (inp) inp.value = reportDateStr;
+            return;
+        }
         reportDateStr = value;
         reworkDateStr = value;
-        await loadMasterMaLoiOptions();
-        if (selectedLoaiHangId) {
-            await loadProductVisualCatalog(selectedLoaiHangId);
+        reportDateFollowsToday = value === todayStr();
+        updateDateWarning();
+        const seq = bumpCtx();
+        resetEntryState();
+        try {
+            await loadMasterMaLoiOptions();
+            if (selectedLoaiHangId) {
+                await loadProductVisualCatalog(selectedLoaiHangId);
+            }
+        } catch (e) {
+            console.error(e);
+            showToast('Không tải được danh mục lỗi theo ngày báo cáo. Vui lòng thử lại.', { type: 'error' });
         }
+        if (isStaleCtx(seq)) return;
         // Cập nhật label trong compact plan header (nếu đang có kế hoạch được chọn)
         const lbl = document.getElementById('lblReportDateCompact');
         if (lbl) lbl.textContent = fmtDate(value);
@@ -1410,15 +1578,15 @@
     function renderPoLines(poInfo, emptyText = 'Chưa có PO') {
         const items = normalizePoInfo(poInfo);
         if (!items.length) {
-            return `<div class="text-muted small">${emptyText}</div>`;
+            return `<div class="text-muted small">${esc(emptyText)}</div>`;
         }
         return items.map(item => {
             if (item && typeof item === 'object') {
                 const po = item.po || item.code || item.name || '--';
                 const qty = item.quantity != null && item.quantity !== '' ? fmtNumber(item.quantity) : '--';
-                return `<div class="po-line"><span class="po-code">${po}</span><span class="po-qty">${qty}</span></div>`;
+                return `<div class="po-line"><span class="po-code">${esc(po)}</span><span class="po-qty">${esc(qty)}</span></div>`;
             }
-            return `<div class="po-line"><span class="po-code">${String(item || '').trim()}</span><span class="po-qty">--</span></div>`;
+            return `<div class="po-line"><span class="po-code">${esc(String(item || '').trim())}</span><span class="po-qty">--</span></div>`;
         }).join('');
     }
 
@@ -1440,6 +1608,7 @@
         }
     }
 
+
     function renderInlineReworkData(rows) {
         const container = document.getElementById('reworkInlineDataArea');
         if (!container) return;
@@ -1460,10 +1629,19 @@
         list.className = 'd-flex flex-column gap-3';
 
         rows.forEach(r => {
-            const done = !!r.rework_done;
             const card = document.createElement('div');
-            card.className = `rework-card ${done ? 'done' : 'pending'}`;
             card.id = `inline-row-${r.error_log_sp_id}-${r.sp_index}`;
+            card._row = r;
+            fillInlineReworkCard(card, r);
+            list.appendChild(card);
+        });
+
+        container.appendChild(list);
+    }
+
+    function fillInlineReworkCard(card, r) {
+            const done = !!r.rework_done;
+            card.className = `rework-card ${done ? 'done' : 'pending'}`;
 
             const statusHtml = done
                 ? `<span class="status-pill status-ok">Đã sửa</span>`
@@ -1475,7 +1653,7 @@
 
             const defects = (r.defect_list || []).filter(Boolean);
             const defectHtml = defects.length
-                ? defects.map(d => `<div class="defect-item">${d}</div>`).join('')
+                ? defects.map(d => `<div class="defect-item">${esc(d)}</div>`).join('')
                 : `<div class="defect-item text-muted">Chưa có mô tả lỗi.</div>`;
 
             card.innerHTML = `
@@ -1485,21 +1663,17 @@
                 </div>
                 <div class="meta-grid">
                     <div class="meta-label">Kế hoạch</div>
-                    <div><strong>${r.ke_hoach || '--'}</strong></div>
+                    <div><strong>${esc(r.ke_hoach || '--')}</strong></div>
                     <div class="meta-label">Mã hàng</div>
-                    <div>${r.ma_hang || '--'}</div>
+                    <div>${esc(r.ma_hang || '--')}</div>
                     <div class="meta-label">Lỗi</div>
                     <div class="defect-list">${defectHtml}</div>
                 </div>
                 <div class="action-row">
-                    <div class="text-muted small">Tổng lỗi: <strong>${r.defect_items || 0}</strong></div>
+                    <div class="text-muted small">Tổng lỗi: <strong>${Number(r.defect_items) || 0}</strong></div>
                     ${btnHtml}
                 </div>
             `;
-            list.appendChild(card);
-        });
-
-        container.appendChild(list);
     }
 
     async function fetchInlineReworkData() {
@@ -1521,10 +1695,14 @@
             </div>
         `;
         try {
+            const seq = ++inlineReworkReqSeq;
             const params = new URLSearchParams({ date_str: reworkDateStr, plan_id: selectedPlanId });
+            const station = getActiveStation();
+            if (station) params.append('station', station);
             const res = await fetch(`/api/qc/rework-2?${params.toString()}`);
             if (!res.ok) throw new Error('API Error');
             const data = await res.json();
+            if (seq !== inlineReworkReqSeq) return;
             renderInlineReworkData(data.rows || []);
         } catch (e) {
             console.error(e);
@@ -1545,21 +1723,55 @@
     }
 
     async function updateInlineRework(logId, spIndex, done) {
+        const card = document.getElementById(`inline-row-${logId}-${spIndex}`);
+        const btn = card ? card.querySelector('.btn-verify') : null;
+        if (btn) {
+            if (btn.disabled) return; // chặn bấm đúp
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Đang lưu';
+        }
         try {
             const res = await fetch(`/api/qc/rework-2/${logId}/${spIndex}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ rework_done: done })
             });
-            if (!res.ok) throw new Error('Update failed');
-            await fetchInlineReworkData();
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.detail || 'Update failed');
+            }
+            // Cập nhật đúng thẻ vừa bấm, không tải lại cả danh sách (giữ vị trí cuộn).
+            if (card && card._row) {
+                card._row.rework_done = done;
+                fillInlineReworkCard(card, card._row);
+            } else {
+                await fetchInlineReworkData();
+            }
+            fetchOutputTotal(); // số "lỗi chưa sửa" ảnh hưởng tổng kiểm của chuyền treo/bệt
         } catch (e) {
             console.error(e);
-            alert('Lỗi khi cập nhật trạng thái kiểm lại.');
+            showToast('Lỗi khi cập nhật trạng thái kiểm lại: ' + e.message, { type: 'error', duration: 4000 });
+            if (card && card._row) fillInlineReworkCard(card, card._row);
         }
     }
 
+    // Nút back trên header: đang nhập liệu → về danh sách kế hoạch; còn lại → trang chủ.
+    // (Trước đây trỏ /qc, nhưng với role QC /qc lại redirect về chính trang này.)
+    function onHeaderBack(event) {
+        if (document.getElementById('inputDataArea').style.display !== 'none') {
+            if (event) event.preventDefault();
+            backToPlanSelection();
+            return false;
+        }
+        return true;
+    }
+
     async function logout() {
+        const msg = hasUnsavedData()
+            ? 'Bạn đang có dữ liệu chưa lưu. Đăng xuất sẽ mất dữ liệu này. Tiếp tục?'
+            : 'Đăng xuất khỏi tài khoản?';
+        if (!confirm(msg)) return;
+        skipUnloadGuard = true;
         try {
             const res = await fetch('/logout', { method: 'POST' });
             if (res.redirected) window.location.href = res.url;
@@ -1706,19 +1918,24 @@
     }
 
     function setSelectedStation(station) {
-        selectedStation = station || '';
+        const next = station || '';
+        if (next !== selectedStation && hasUnsavedData()
+            && !confirm('Bạn đang có sản phẩm lỗi chưa lưu. Đổi cụm/trạm sẽ mất dữ liệu này. Tiếp tục?')) {
+            renderStationSelector(); // trả dropdown về giá trị cũ
+            return;
+        }
+        selectedStation = next;
+        bumpCtx();
         renderStationSelector();
         // Reset counts and current defects on station change
-        document.getElementById('defectProducts').innerHTML = '';
-        chiTietOptionsByBlock = {};
-        pendingFailedCount = 0;
+        resetEntryState();
         setOutputDisplay(0, 0);
-        baseSpIndex = 0;
         loadExistingEntry();
         fetchOutputTotal();
         loadPosSummary();
         loadQuickDefectCombos();
         loadQuickDefectCombosToday();
+        if (currentWorkTab === 'rework') fetchInlineReworkData();
     }
 
     function getActiveStation() {
@@ -1766,7 +1983,7 @@
         combos.forEach((combo, idx) => {
             const qty = Number(combo.defect_qty || 0);
             const qtyLabel = qty > 0 ? ` (${qty})` : '';
-            options.push(`<option value="${idx}">${combo.label || '--'}${qtyLabel}</option>`);
+            options.push(`<option value="${idx}">${esc(combo.label || '--')}${qtyLabel}</option>`);
         });
         return options.join('');
     }
@@ -1847,8 +2064,10 @@
         refreshQuickComboDropdowns();
         try {
             const params = new URLSearchParams({ plan_id: selectedPlanId, station: station || '', date: reportDateStr });
+            const seq = ctxSeq;
             const res = await fetch(`/api/qc/input/quick-defect-combos?${params.toString()}`);
             const data = await res.json();
+            if (isStaleCtx(seq)) return;
             if (!res.ok) throw new Error(data.detail || 'API Error');
             quickDefectCombos = data.rows || [];
             refreshQuickComboDropdowns();
@@ -1868,8 +2087,10 @@
         }
         try {
             const params = new URLSearchParams({ plan_id: selectedPlanId, station: station || '', date: reportDateStr });
+            const seq = ctxSeq;
             const res = await fetch(`/api/qc/input/quick-defect-combos-today?${params.toString()}`);
             const data = await res.json();
+            if (isStaleCtx(seq)) return;
             if (!res.ok) throw new Error(data.detail || 'API Error');
             quickDefectCombosToday = data.rows || [];
             if (quickComboMode === 'today') refreshQuickComboDropdowns();
@@ -2070,13 +2291,13 @@
 
     function renderPlanCard(p) {
         return `
-        <div class="card-lite plan-select-card" style="cursor: pointer;" onclick="selectPlan(${p.id})" data-plan-id="${p.id}">
+        <div class="card-lite plan-select-card" style="cursor: pointer;" onclick="selectPlan(${Number(p.id)})" data-plan-id="${Number(p.id)}">
             <div class="plan-select-main">
                 <div style="flex: 1 1 auto;">
-                    <div class="plan-select-title">${p.ma_hang || '--'}</div>
-                    <div class="plan-select-customer">${p.khach_hang || '--'}</div>
+                    <div class="plan-select-title">${esc(p.ma_hang || '--')}</div>
+                    <div class="plan-select-customer">${esc(p.khach_hang || '--')}</div>
                 </div>
-                <div class="plan-select-badge">${(p.bo_phan || '--').replace('Tổ ', '')}</div>
+                <div class="plan-select-badge">${esc(String(p.bo_phan || '--').replace('Tổ ', ''))}</div>
             </div>
             <div class="po-panel">
                 <div class="po-panel-title">Danh sách PO & SL</div>
@@ -2110,8 +2331,8 @@
             <div class="card-lite" style="cursor:pointer; padding:0.75rem 1rem; border:1.5px solid #dbeafe; background:linear-gradient(135deg,#eff6ff 0%,#fff 60%); border-radius:14px;" onclick="selectPlan(${p.id})">
                 <div style="display:flex; align-items:center; justify-content:space-between; gap:0.75rem;">
                     <div style="min-width:0;">
-                        <div style="font-weight:800; font-size:1rem; color:#1e40af;">${p.ma_hang || '--'}</div>
-                        <div style="font-size:0.78rem; color:#64748b; font-weight:600;">${p.khach_hang || '--'} · ${(p.bo_phan || '--').replace('Tổ ','')} · ${fmtDate(p.ngay_rc)}</div>
+                        <div style="font-weight:800; font-size:1rem; color:#1e40af;">${esc(p.ma_hang || '--')}</div>
+                        <div style="font-size:0.78rem; color:#64748b; font-weight:600;">${esc(p.khach_hang || '--')} · ${esc(String(p.bo_phan || '--').replace('Tổ ',''))} · ${fmtDate(p.ngay_rc)}</div>
                     </div>
                     <i class="fas fa-chevron-right" style="color:#93c5fd; font-size:0.85rem;"></i>
                 </div>
@@ -2275,24 +2496,25 @@
 
         switchWorkTab(currentWorkTab);
 
-        document.getElementById('defectProducts').innerHTML = '';
-        chiTietOptionsByBlock = {};
-        baseSpIndex = 0;
-        pendingFailedCount = 0;
+        resetEntryState();
         hlPassedCount = 0;
         setOutputDisplay(0, 0);
         startHlAutoRefresh();
+        const seq = bumpCtx();
 
         try {
             const lhRes = await fetch('/api/dm/loai-hang');
             const lhData = await lhRes.json();
+            if (isStaleCtx(seq)) return;
             const lh = lhData.rows.find(l => l.ten_loai === plan.loai_hang);
             if (lh) {
                 selectedLoaiHangId = lh.id;
                 selectedTargetPercent = lh.target_percent != null ? Number(lh.target_percent) : null;
                 renderOutputDisplay();
                 await loadProductVisualCatalog(lh.id);
+                if (isStaleCtx(seq)) return;
                 await loadClusterOptions(lh.id);
+                if (isStaleCtx(seq)) return;
                 renderStationSelector();
                 if (getActiveStation()) {
                     await loadExistingEntry();
@@ -2324,15 +2546,33 @@
         for (const p of products) {
             if (p.dataset.existing !== '1') return true;
         }
-        return pendingFailedCount > 0;
+        return false;
     }
 
+    // Số SP lỗi mới (mỗi lần "+1 Lỗi" tạo đúng 1 SP) — tính từ DOM thay vì giữ biến đếm riêng
+    // để không bao giờ lệch với số SP thực tế gửi lên.
+    function getPendingFailedCount() {
+        return document.querySelectorAll('.defect-product[data-pending-failed="1"]:not([data-existing="1"])').length;
+    }
+
+    // Xoá toàn bộ trạng thái nhập liệu đang dở — gọi ở mọi chỗ đổi ngữ cảnh (kế hoạch/cụm/ngày).
+    function resetEntryState() {
+        const container = document.getElementById('defectProducts');
+        if (container) container.innerHTML = '';
+        chiTietOptionsByBlock = {};
+        vpBlockState = {};
+        baseSpIndex = 0;
+    }
+
+    let skipUnloadGuard = false;
     window.addEventListener('beforeunload', function(e) {
-        if (hasUnsavedData()) { e.preventDefault(); e.returnValue = ''; }
+        if (!skipUnloadGuard && hasUnsavedData()) { e.preventDefault(); e.returnValue = ''; }
     });
 
-    function backToPlanSelection() {
-        if (hasUnsavedData() && !confirm('Bạn đang có dữ liệu chưa lưu. Quay lại sẽ mất dữ liệu này. Tiếp tục?')) return;
+    function backToPlanSelection(force = false) {
+        if (!force && hasUnsavedData() && !confirm('Bạn đang có dữ liệu chưa lưu. Quay lại sẽ mất dữ liệu này. Tiếp tục?')) return;
+        bumpCtx();
+        resetEntryState();
         stopHlAutoRefresh();
         document.getElementById('inputDataArea').style.display = 'none';
         document.getElementById('planSelectionArea').style.display = 'block';
@@ -2359,22 +2599,30 @@
         if (!selectedPlanId) return;
         const station = getActiveStation();
         if (!station && (stationMode === 'cluster' || stationList.length > 1)) return;
+        const seq = ctxSeq;
         try {
             const params = new URLSearchParams({ plan_id: selectedPlanId, date: reportDateStr });
             if (station) params.append('station', station);
             const res = await fetch(`/api/qc/error-log-sp?${params.toString()}`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const data = await res.json();
-            document.getElementById('defectProducts').innerHTML = '';
-            // reset per-block counters implicitly by clearing UI
-            chiTietOptionsByBlock = {};
-            if (!data.exists) return;
-            const d = data.data || {};
-            if (d.defect_products && d.defect_products.length) {
-                baseSpIndex = d.defect_products.length;
-            }
+            if (isStaleCtx(seq)) return;
+            // Chỉ đọc số thứ tự SP lớn nhất đã lưu để đánh số "#SP" tiếp theo.
+            // Không xoá form ở đây — việc reset do resetEntryState() đảm nhiệm khi đổi ngữ cảnh.
+            const products = (data.exists && data.data && data.data.defect_products) || [];
+            baseSpIndex = products.reduce((mx, p) => Math.max(mx, Number(p.product_no) || 0), 0);
+            renumberDefectProducts();
         } catch (e) {
             console.error(e);
         }
+    }
+
+    function renumberDefectProducts() {
+        document.querySelectorAll('.defect-product').forEach((p, idx) => {
+            p.dataset.displayIndex = idx + 1;
+            const label = p.querySelector('.label');
+            if (label) label.textContent = `Sản phẩm lỗi #${baseSpIndex + idx + 1}`;
+        });
     }
 
     async function loadMasterMaLoiOptions() {
@@ -2484,7 +2732,8 @@
         stopHlAutoRefresh();
         if (isCurrentPlanHangingLine()) {
             fetchHangingOutput();
-            hlAutoRefreshTimer = setInterval(fetchHangingOutput, 30_000);
+            // Không gọi API khi tab bị ẩn / màn hình tắt.
+            hlAutoRefreshTimer = setInterval(() => { if (!document.hidden) fetchHangingOutput(); }, 30_000);
         }
     }
 
@@ -2499,11 +2748,16 @@
             setOutputDisplay(0, 0);
             return;
         }
+        const seq = ctxSeq;
+        const reqSeq = ++outputReqSeq;
         try {
             const params = new URLSearchParams({ plan_id: selectedPlanId, date: reportDateStr });
             if (station) params.append('station', station);
             const res = await fetch(`/api/qc/output-sp?${params.toString()}`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const data = await res.json();
+            // Bỏ qua nếu đã đổi ngữ cảnh hoặc có thao tác +1/-1 mới hơn đang/đã gửi.
+            if (isStaleCtx(seq) || reqSeq !== outputReqSeq) return;
             setOutputDisplay(data.total || 0, data.failed_count || 0, data.reworked_count || 0);
             if (isCurrentPlanFlatLine()) await fetchHangingOutput();
         } catch (e) {
@@ -2511,48 +2765,89 @@
         }
     }
 
+    async function postOutputDelta(delta, ctx = null) {
+        // ctx: ngữ cảnh lúc bấm +1 (dùng cho Hoàn tác). Đã đổi kế hoạch/cụm/ngày → bỏ qua.
+        if (ctx && isStaleCtx(ctx.seq)) {
+            showToast('Đã đổi kế hoạch/cụm/ngày — không hoàn tác được nữa.', { type: 'warn' });
+            return false;
+        }
+        const seq = ctxSeq;
+        const reqSeq = ++outputReqSeq;
+        const body = {
+            plan_id: parseInt(selectedPlanId),
+            date: reportDateStr,
+            station: getActiveStation(),
+            delta: delta,
+            status: 'Passed',
+            client_request_id: newRequestId(),
+        };
+        // Hiển thị ngay (optimistic), đối chiếu lại khi server trả về.
+        outputTotal = Math.max(0, (outputTotal || 0) + delta);
+        renderOutputDisplay();
+        if (navigator.vibrate) { try { navigator.vibrate(30); } catch (e) {} }
+
+        const send = () => fetch('/api/qc/output-sp-log', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+        let res;
+        try {
+            try {
+                res = await send();
+            } catch (netErr) {
+                // Mất mạng thoáng qua: gửi lại 1 lần với cùng client_request_id (server tự bỏ trùng).
+                await new Promise(r => setTimeout(r, 1500));
+                res = await send();
+            }
+            if (res.status === 409) {
+                const err = await res.json().catch(() => ({}));
+                alert(err.detail || 'Kế hoạch đã bị đóng bởi quản lý. Vui lòng chọn kế hoạch khác.');
+                backToPlanSelection(true);
+                return false;
+            }
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.detail || `HTTP ${res.status}`);
+            }
+            const data = await res.json();
+            if (!isStaleCtx(seq) && reqSeq === outputReqSeq) {
+                setOutputDisplay(data.total || 0, data.failed_count || 0, outputReworked);
+            }
+            loadPosSummary();
+            return true;
+        } catch (e) {
+            console.error(e);
+            if (!isStaleCtx(seq)) {
+                showToast(delta > 0 ? 'Chưa ghi được +1 Đạt — kiểm tra wifi rồi bấm lại.' : 'Chưa hoàn tác được — vui lòng thử lại.', { type: 'error', duration: 4000 });
+                fetchOutputTotal(); // đồng bộ lại số thật từ server
+            }
+            return false;
+        }
+    }
+
     async function adjustOutputStatus(status) {
         if (!selectedPlanId) { alert('Vui lòng chọn Kế hoạch!'); return; }
         if (!ensureStationSelected()) return;
-        const station = getActiveStation();
         if (status === 'Failed') {
-            pendingFailedCount += 1;
+            const product = addDefectProduct(null, true);
+            if (!product) return;
             renderOutputDisplay();
-            addDefectProduct(null, true);
             setTimeout(() => {
-                const container = document.getElementById('defectProducts');
-                if (container && container.lastElementChild) {
-                    container.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
+                product.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }, 50);
             return;
         }
-        try {
-            const res = await fetch('/api/qc/output-sp-log', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    plan_id: parseInt(selectedPlanId),
-                    date: reportDateStr,
-                    station: station,
-                    delta: 1,
-                    status: status
-                })
+        const ctx = { seq: ctxSeq };
+        const ok = await postOutputDelta(1);
+        if (ok && !isStaleCtx(ctx.seq)) {
+            showToast('Đã +1 Đạt', {
+                type: 'success',
+                duration: 5000,
+                actionLabel: 'Hoàn tác',
+                onAction: () => postOutputDelta(-1, ctx).then(done => { if (done) showToast('Đã hoàn tác 1 sản phẩm Đạt'); }),
             });
-             if (res.status === 409) {
-                 const err = await res.json().catch(() => ({}));
-                 alert(err.detail || 'Kế hoạch đã bị đóng bởi quản lý. Vui lòng chọn kế hoạch khác.');
-                 backToPlanSelection();
-                 return;
-             }
-             if (!res.ok) throw new Error('API Error');
-             const data = await res.json();
-             setOutputDisplay(data.total || 0, data.failed_count || 0);
-             loadPosSummary();
-         } catch (e) {
-             console.error(e);
-             alert('Lỗi khi cập nhật số sản phẩm đã kiểm.');
-         }
+        }
      }
 
      function loaiPillClass(loai) {
@@ -2605,12 +2900,12 @@
                      <tbody>
                          ${items.map((it) => `
                              <tr>
-                                 <td><span class="pos-pill ${loaiPillClass(it.loai_loi)}">${it.loai_loi}</span></td>
-                                 <td class="text-muted pos-vi-tri">${it.vi_tri}</td>
+                                 <td><span class="pos-pill ${loaiPillClass(it.loai_loi)}">${esc(it.loai_loi)}</span></td>
+                                 <td class="text-muted pos-vi-tri">${esc(it.vi_tri)}</td>
                                  <td class="text-center">
                                      <span class="hdkp-check ${it.has_hdkp ? 'done' : ''}">${it.has_hdkp ? '✓' : ''}</span>
                                  </td>
-                                 <td class="text-end fw-bold">${it.qty || 0}</td>
+                                 <td class="text-end fw-bold">${Number(it.qty) || 0}</td>
                              </tr>
                          `).join('')}
                      </tbody>
@@ -2620,7 +2915,7 @@
          return `
              <div class="pos-bucket">
                  <div class="pos-bucket-header">
-                     <span class="pos-badge">${b.time_bucket}</span>
+                     <span class="pos-badge">${esc(b.time_bucket)}</span>
                      <span class="pos-bucket-meta pos-bucket-stats">${meta}</span>
                  </div>
                  ${table}
@@ -2704,8 +2999,11 @@
          try {
              const params = new URLSearchParams({ plan_id: selectedPlanId, date: reportDateStr });
              if (st) params.append('station', st);
+             const seq = ctxSeq;
              const res = await fetch(`/api/qc/input/pos-summary?${params.toString()}`);
+             if (!res.ok) throw new Error(`HTTP ${res.status}`);
              const data = await res.json();
+             if (isStaleCtx(seq)) return;
              renderPosSummary(data);
          } catch (e) {
              console.error(e);
@@ -2739,10 +3037,10 @@
     function addDefectProduct(prefill = null, pendingFailed = false, isExisting = !!prefill) {
         if (!masterBoPhan || masterBoPhan.length === 0) {
             alert('Chưa có danh mục Bộ phận cho loại hàng này.');
-            return;
+            return null;
         }
         const container = document.getElementById('defectProducts');
-        const productId = Date.now() + Math.floor(Math.random() * 1000);
+        const productId = nextUiId();
         const displayIndex = baseSpIndex + container.querySelectorAll('.defect-product').length + 1;
         const product = document.createElement('div');
         product.className = 'defect-product';
@@ -2753,7 +3051,7 @@
         product.innerHTML = `
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <div class="label mb-0">Sản phẩm lỗi #${displayIndex}</div>
-                <button class="btn btn-sm btn-outline-danger" onclick="removeDefectProduct(${productId})"><i class="fas fa-trash me-1"></i>Xóa</button>
+                <button class="btn btn-outline-danger" style="min-height:44px;" onclick="removeDefectProduct(${productId})"><i class="fas fa-trash me-1"></i>Xóa SP</button>
             </div>
             <div class="bo-phan-blocks d-flex flex-column gap-2"></div>
             <div class="text-end mt-2">
@@ -2768,22 +3066,28 @@
             addBoPhanBlock(productId);
         }
         ensureQuickComboPosition(product);
+        return product;
     }
 
     function removeDefectProduct(productId) {
         const product = document.querySelector(`.defect-product[data-product-id="${productId}"]`);
-        if (product) {
-            if (product.dataset.pendingFailed === '1') {
-                pendingFailedCount = Math.max(0, pendingFailedCount - 1);
+        if (!product) return;
+        const container = product.parentNode;
+        const nextSibling = product.nextSibling;
+        const seq = ctxSeq;
+        product.remove();
+        renumberDefectProducts();
+        renderOutputDisplay();
+        // Cho phép hoàn tác trong vài giây thay vì xoá luôn không hỏi.
+        showToast('Đã xoá 1 sản phẩm lỗi', {
+            duration: 5000,
+            actionLabel: 'Hoàn tác',
+            onAction: () => {
+                if (isStaleCtx(seq) || !container) return;
+                container.insertBefore(product, nextSibling && nextSibling.parentNode === container ? nextSibling : null);
+                renumberDefectProducts();
                 renderOutputDisplay();
-            }
-            product.remove();
-        }
-        const products = document.querySelectorAll('.defect-product');
-        products.forEach((p, idx) => {
-            p.dataset.displayIndex = idx + 1;
-            const label = p.querySelector('.label');
-            if (label) label.textContent = `Sản phẩm lỗi #${baseSpIndex + idx + 1}`;
+            },
         });
     }
 
@@ -2791,7 +3095,7 @@
         const product = document.querySelector(`.defect-product[data-product-id="${productId}"]`);
         if (!product) return;
         const list = product.querySelector('.bo-phan-blocks');
-        const blockId = Date.now() + Math.floor(Math.random() * 1000);
+        const blockId = nextUiId();
         const displayIndex = list.querySelectorAll('.bo-phan-block').length + 1;
         const block = document.createElement('div');
         block.className = 'defect-item bo-phan-block';
@@ -2905,8 +3209,8 @@
     function renderVpBlockHTML(blockId, productId, displayIndex) {
         const nhomTabs = (visualPickerData.nhoms || []).map((n, idx) => `
             <button type="button" class="vp-nhom-tab${idx === 0 ? ' active' : ''}"
-                    data-nhom-key="${n.nhom}"
-                    onclick="vpSelectNhom(${blockId}, '${n.nhom}')">${n.label}</button>
+                    data-nhom-key="${esc(n.nhom)}"
+                    onclick="vpSelectNhom(${blockId}, this.dataset.nhomKey)">${esc(n.label)}</button>
         `).join('');
         return `
             <div class="d-flex justify-content-between align-items-center mb-2">
@@ -2988,8 +3292,8 @@
             <div class="vp-khoi-card${k.bo_phan_id === currentBp ? ' active' : ''}"
                  data-bo-phan-id="${k.bo_phan_id}"
                  onclick="vpSelectKhoi(${blockId}, ${k.bo_phan_id})">
-                <img src="${k.image_png}" alt="${k.ten_khoi}" loading="lazy">
-                <div class="vp-khoi-name">${k.ten_khoi}</div>
+                <img src="${esc(k.image_png)}" alt="${esc(k.ten_khoi)}" loading="lazy">
+                <div class="vp-khoi-name">${esc(k.ten_khoi)}</div>
             </div>
         `).join('');
     }
@@ -3050,7 +3354,7 @@
         const imgSrc = khoi.image_svg || khoi.image_png;
         stage.innerHTML = `
             <div class="vp-img-holder" data-vp-holder>
-                <img src="${imgSrc}" alt="${khoi.ten_khoi}" data-vp-img>
+                <img src="${esc(imgSrc)}" alt="${esc(khoi.ten_khoi)}" data-vp-img>
             </div>
         `;
         // After image loads, position hotspots (so we have its rendered width/height)
@@ -3254,7 +3558,7 @@
         const block = document.querySelector(`.bo-phan-block[data-block-id="${blockId}"]`);
         if (!block) return;
         const list = block.querySelector('.defect-items');
-        const itemId = Date.now() + Math.floor(Math.random() * 1000);
+        const itemId = nextUiId();
         const nextIndex = list.querySelectorAll('.defect-item').length + 1;
         const item = document.createElement('div');
         item.className = 'defect-item';
@@ -3765,46 +4069,46 @@
         `;
     }
     */
-    async function submitReport() {
-        const planId = selectedPlanId;
-        const output = outputTotal || 0;
-        if (!planId) { alert('Vui lòng chọn Kế hoạch!'); return; }
-        if (!ensureStationSelected()) return;
-        const station = getActiveStation();
+    let isSubmittingReport = false;
 
+    // Thu thập SP lỗi mới từ form. Trả về null nếu thiếu trường (đã cuộn tới + tô đỏ chỗ thiếu).
+    function collectDefectProducts() {
         const defectProductsEls = document.querySelectorAll('.defect-product');
         const defect_products = [];
         for (let product of defectProductsEls) {
             if (product.dataset.existing === '1') continue;
             const boPhanBlocks = product.querySelectorAll('.bo-phan-block');
             if (!boPhanBlocks || boPhanBlocks.length === 0) {
-                alert('Mỗi Sản phẩm lỗi cần ít nhất 1 Bộ phận.');
-                return;
+                flagInvalid(product, 'Mỗi Sản phẩm lỗi cần ít nhất 1 Bộ phận.');
+                return null;
             }
             const defects = [];
             for (let block of boPhanBlocks) {
-                const bpId = block.querySelector('.sel-bo-phan').value;
-                const ctId = block.querySelector('.sel-chi-tiet').value;
+                const selBp = block.querySelector('.sel-bo-phan');
+                const selCt = block.querySelector('.sel-chi-tiet');
+                const bpId = selBp ? selBp.value : '';
+                const ctId = selCt ? selCt.value : '';
                 if (!bpId || !ctId) {
-                    alert('Vui lòng chọn Bộ phận và Chi tiết cho tất cả các block!');
-                    return;
+                    flagInvalid(block, 'Chọn Bộ phận và Chi tiết cho block được tô đỏ.');
+                    return null;
                 }
                 const defectItems = block.querySelectorAll('.defect-item');
                 if (!defectItems || defectItems.length === 0) {
-                    alert('Mỗi Bộ phận cần ít nhất 1 lỗi.');
-                    return;
+                    flagInvalid(block, 'Mỗi Bộ phận cần ít nhất 1 lỗi.');
+                    return null;
                 }
                 for (let item of defectItems) {
-                    const mlVal = item.querySelector('.sel-ma-loi').value;
+                    const selMl = item.querySelector('.sel-ma-loi');
+                    const mlVal = selMl ? selMl.value : '';
                     const mucDoElem = item.querySelector('.sel-muc-do');
-                    const mucDo = mucDoElem.value;
+                    const mucDo = mucDoElem ? mucDoElem.value : '';
                     if (!mlVal) {
-                        alert('Vui lòng chọn Mã lỗi cho tất cả các lỗi!');
-                        return;
+                        flagInvalid(item, 'Chọn Mã lỗi cho lỗi được tô đỏ.');
+                        return null;
                     }
-                    if (!mucDo && mucDoElem.dataset.skip !== '1') {
-                        alert('Vui lòng chọn Mức độ cho tất cả các lỗi!');
-                        return;
+                    if (!mucDo && (!mucDoElem || mucDoElem.dataset.skip !== '1')) {
+                        flagInvalid(item, 'Chọn Mức độ cho lỗi được tô đỏ.');
+                        return null;
                     }
                     const parts = mlVal.split('|');
                     const maLoiId = parseInt(parts[0]);
@@ -3826,23 +4130,58 @@
             }
             defect_products.push({ defects: defects });
         }
+        return defect_products;
+    }
 
+    function clearSubmittedEntry(savedCount, lastSpIndex) {
+        if (Number.isFinite(lastSpIndex) && lastSpIndex > 0) baseSpIndex = lastSpIndex;
+        else baseSpIndex += savedCount;
+        resetEntryStateKeepIndex();
+    }
+
+    // Giống resetEntryState nhưng giữ baseSpIndex (dùng sau khi lưu thành công / đưa vào hàng chờ).
+    function resetEntryStateKeepIndex() {
+        const keep = baseSpIndex;
+        resetEntryState();
+        baseSpIndex = keep;
+    }
+
+    async function submitReport() {
+        if (isSubmittingReport) return;
+        const planId = selectedPlanId;
+        if (!planId) { alert('Vui lòng chọn Kế hoạch!'); return; }
+        if (!ensureStationSelected()) return;
+        const station = getActiveStation();
+
+        const defect_products = collectDefectProducts();
+        if (!defect_products) return;
         if (defect_products.length === 0) {
-            alert('Chưa có Sản phẩm lỗi mới để lưu.');
+            showToast('Chưa có Sản phẩm lỗi mới để lưu.', { type: 'warn' });
+            return;
+        }
+        // Sang ngày mới mà vẫn đang theo "hôm nay" → hỏi trước khi ghi vào ngày cũ.
+        if (reportDateFollowsToday && reportDateStr !== todayStr()
+            && !confirm(`Đã sang ngày ${fmtDate(todayStr())}. Vẫn lưu cho ngày ${fmtDate(reportDateStr)}?`)) {
             return;
         }
         const payload = {
             plan_id: parseInt(planId),
             date: reportDateStr,
             station: station,
-            output: output,
             defect_products: defect_products,
-            pending_failed_count: pendingFailedCount,
-            append_only: true
+            pending_failed_count: getPendingFailedCount(),
+            append_only: true,
+            client_request_id: newRequestId()
         };
 
         const btn = document.getElementById('btnSubmitReport');
         const originalBtnHtml = btn.innerHTML;
+        const restoreBtn = () => {
+            btn.disabled = false;
+            btn.innerHTML = originalBtnHtml;
+            btn.style.background = '';
+        };
+        isSubmittingReport = true;
         btn.disabled = true;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> ĐANG LƯU...';
 
@@ -3853,47 +4192,78 @@
                 body: JSON.stringify(payload)
             });
             if (res.ok) {
+                const data = await res.json().catch(() => ({}));
                 btn.innerHTML = '<i class="fas fa-check me-2"></i> THÀNH CÔNG!';
                 btn.style.background = '#10b981';
-                baseSpIndex += defect_products.length;
-                document.getElementById('defectProducts').innerHTML = '';
-                chiTietOptionsByBlock = {};
-                pendingFailedCount = 0;
+                clearSubmittedEntry(defect_products.length, Number(data.last_sp_index));
                 await fetchOutputTotal();
                 loadPosSummary();
                 loadQuickDefectCombos();
                 loadQuickDefectCombosToday();
-                setTimeout(() => {
-                    btn.disabled = false;
-                    btn.innerHTML = originalBtnHtml;
-                    btn.style.background = '';
-                }, 800);
+                setTimeout(restoreBtn, 800);
             } else {
                 const err = await res.json().catch(() => ({}));
                 if (res.status === 409) {
                     alert(err.detail || 'Kế hoạch đã bị đóng bởi quản lý. Vui lòng chọn kế hoạch khác.');
-                    backToPlanSelection();
+                    backToPlanSelection(true);
+                } else if (res.status >= 500) {
+                    // Lỗi máy chủ tạm thời → đưa vào hàng chờ, tự gửi lại sau (an toàn nhờ client_request_id).
+                    queueOfflinePayload(payload, defect_products.length);
                 } else {
-                    alert('Lỗi: ' + (err.detail || 'Không thể lưu.'));
+                    showToast('Lỗi: ' + (err.detail || 'Không thể lưu.'), { type: 'error', duration: 5000 });
                 }
-                btn.disabled = false;
-                btn.innerHTML = originalBtnHtml;
+                restoreBtn();
             }
         } catch (e) {
+            // Mất mạng (hoặc mất response): request có thể đã tới server — client_request_id giúp
+            // lần gửi lại không bị ghi trùng.
             console.error(e);
-            savePayloadOffline(payload);
-            btn.disabled = false;
-            btn.innerHTML = originalBtnHtml;
+            queueOfflinePayload(payload, defect_products.length);
+            restoreBtn();
+        } finally {
+            isSubmittingReport = false;
         }
     }
 
+    function queueOfflinePayload(payload, savedCount) {
+        savePayloadOffline(payload);
+        // Xoá form ngay để QC không bấm lưu lại lần nữa (nguyên nhân ghi trùng trước đây).
+        clearSubmittedEntry(savedCount, NaN);
+        showToast('Mất kết nối — đã lưu tạm trên máy, sẽ tự gửi khi có mạng.', { type: 'warn', duration: 5000 });
+    }
+
     // ========== Offline retry ==========
-    const OFFLINE_QUEUE_KEY = 'qlcl_offline_queue';
+    // Key theo mã NV để tablet dùng chung không gửi bản ghi của QC trước dưới tên QC sau.
+    const OFFLINE_QUEUE_KEY = 'qlcl_offline_queue:' + (pageContext.ma_nv || 'unknown');
+    const LEGACY_OFFLINE_QUEUE_KEY = 'qlcl_offline_queue';
+    let isRetryingOfflineQueue = false;
+
+    // Hàng chờ cũ (trước khi tách theo mã NV, chưa có client_request_id) → chuyển sang key mới.
+    (function migrateLegacyOfflineQueue() {
+        try {
+            const legacy = JSON.parse(localStorage.getItem(LEGACY_OFFLINE_QUEUE_KEY) || '[]');
+            if (!legacy.length) return;
+            if (!confirm(`Máy này còn ${legacy.length} lần lưu lỗi chưa gửi từ phiên trước (không rõ QC nào nhập).\n\nOK = gửi dưới tài khoản của bạn\nHủy = bỏ các bản ghi này`)) {
+                localStorage.removeItem(LEGACY_OFFLINE_QUEUE_KEY);
+                return;
+            }
+            const current = JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) || '[]');
+            legacy.forEach(item => {
+                if (item && item.payload && !item.payload.client_request_id) {
+                    item.payload.client_request_id = newRequestId();
+                }
+            });
+            localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(current.concat(legacy)));
+            localStorage.removeItem(LEGACY_OFFLINE_QUEUE_KEY);
+        } catch (e) { console.error(e); }
+    })();
 
     function savePayloadOffline(payload) {
         try {
-            const queue = JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) || '[]');
-            queue.push({ payload, savedAt: new Date().toISOString() });
+            const queue = getOfflineQueue();
+            if (!queue.some(item => item.payload && item.payload.client_request_id === payload.client_request_id)) {
+                queue.push({ payload, savedAt: new Date().toISOString() });
+            }
             localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(queue));
         } catch (e) { console.error('Không lưu được offline:', e); }
         showOfflineBanner(true);
@@ -3916,38 +4286,81 @@
             if (!banner) {
                 banner = document.createElement('div');
                 banner.id = 'offlineBanner';
-                banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:1100;background:#fbbf24;color:#78350f;text-align:center;padding:8px 16px;font-size:0.82rem;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px;';
+                banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:1100;background:#fbbf24;color:#78350f;text-align:center;padding:8px 16px;font-size:0.88rem;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px;';
                 document.body.appendChild(banner);
             }
             banner.hidden = false;
-            banner.innerHTML = `<i class="fas fa-wifi" style="opacity:0.6;"></i> Có ${count} bản ghi chưa gửi được <button onclick="retryOfflineQueue()" style="background:#78350f;color:#fef3c7;border:none;border-radius:8px;padding:4px 12px;font-weight:700;font-size:0.78rem;margin-left:6px;cursor:pointer;">Gửi lại</button>`;
+            const busy = isRetryingOfflineQueue;
+            banner.innerHTML = `<i class="fas fa-wifi" style="opacity:0.6;"></i> Có ${count} lần lưu đang chờ gửi <button onclick="retryOfflineQueue()" ${busy ? 'disabled' : ''} style="background:#78350f;color:#fef3c7;border:none;border-radius:8px;padding:6px 14px;min-height:40px;font-weight:700;font-size:0.85rem;margin-left:6px;cursor:pointer;">${busy ? 'Đang gửi...' : 'Gửi lại'}</button>`;
         } else {
             if (banner) banner.hidden = true;
         }
     }
 
     async function retryOfflineQueue() {
+        if (isRetryingOfflineQueue) return;
         const queue = getOfflineQueue();
         if (!queue.length) { showOfflineBanner(false); return; }
-        const remaining = [];
-        for (const item of queue) {
-            try {
-                const res = await fetch('/api/qc/error-log-sp', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(item.payload)
-                });
-                if (!res.ok) remaining.push(item);
-            } catch (e) {
-                remaining.push(item);
+        isRetryingOfflineQueue = true;
+        showOfflineBanner(true);
+        const MAX_SERVER_ERROR_ATTEMPTS = 5;
+        const doneIds = new Set();      // đã gửi xong hoặc bị từ chối → bỏ khỏi hàng chờ
+        const failedIds = new Set();    // lỗi 5xx → tăng số lần thử
+        const rejected = [];
+        let sent = 0;
+        try {
+            for (const item of queue) {
+                if (item.payload && !item.payload.client_request_id) item.payload.client_request_id = newRequestId();
+                const rid = item.payload && item.payload.client_request_id;
+                try {
+                    const res = await fetch('/api/qc/error-log-sp', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(item.payload)
+                    });
+                    if (res.ok) {
+                        sent += 1;
+                        doneIds.add(rid);
+                    } else if (res.status >= 500) {
+                        if ((item.attempts || 0) + 1 >= MAX_SERVER_ERROR_ATTEMPTS) {
+                            doneIds.add(rid);
+                            rejected.push(`Máy chủ lỗi ${res.status} sau ${MAX_SERVER_ERROR_ATTEMPTS} lần thử`);
+                        } else {
+                            failedIds.add(rid);
+                        }
+                    } else if (res.status !== 401) {
+                        // 4xx (kế hoạch đã đóng, dữ liệu không hợp lệ...) → gửi lại cũng không được, bỏ khỏi hàng chờ.
+                        const err = await res.json().catch(() => ({}));
+                        rejected.push(err.detail || `Lỗi ${res.status}`);
+                        doneIds.add(rid);
+                    }
+                    // 401 (hết phiên) / lỗi mạng → giữ nguyên để thử lại sau
+                } catch (e) { /* mất mạng → giữ lại */ }
             }
+        } finally {
+            isRetryingOfflineQueue = false;
         }
-        if (remaining.length) {
-            try { localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(remaining)); } catch (e) {}
+        // Đọc lại hàng chờ hiện tại: trong lúc gửi, QC có thể vừa lưu thêm bản mới vào hàng chờ.
+        const latest = getOfflineQueue()
+            .filter(item => !doneIds.has(item.payload && item.payload.client_request_id))
+            .map(item => {
+                const rid = item.payload && item.payload.client_request_id;
+                return failedIds.has(rid) ? { ...item, attempts: (item.attempts || 0) + 1 } : item;
+            });
+        if (latest.length) {
+            try { localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(latest)); } catch (e) {}
             showOfflineBanner(true);
         } else {
             clearOfflineQueue();
+        }
+        if (rejected.length) {
+            alert(`Có ${rejected.length} lần lưu bị máy chủ từ chối và đã bỏ khỏi hàng chờ:\n- ${rejected.join('\n- ')}`);
+        } else if (sent) {
+            showToast(`Đã gửi ${sent} lần lưu đang chờ`, { type: 'success' });
+        }
+        if (sent && selectedPlanId) {
             await fetchOutputTotal();
+            loadExistingEntry();
             loadPosSummary();
         }
     }
@@ -3955,6 +4368,11 @@
     window.addEventListener('online', () => {
         if (getOfflineQueue().length) retryOfflineQueue();
     });
+    // Còn hàng chờ từ lần mở trước → hiện banner và thử gửi.
+    if (getOfflineQueue().length) {
+        showOfflineBanner(true);
+        if (navigator.onLine) setTimeout(retryOfflineQueue, 2000);
+    }
 </script>
 </body>
 </html>
