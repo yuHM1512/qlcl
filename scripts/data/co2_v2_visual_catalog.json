@@ -1,0 +1,6584 @@
+{
+ "format_version": 2,
+ "source_file": "Co-2 (1).pdf",
+ "products": [
+  {
+   "name": "Áo đồng phục y tế",
+   "version_code": "co2-v2",
+   "version_name": "Visual Co-2 lần 2",
+   "blocks": [
+    {
+     "name": "Cổ",
+     "group": "chinh",
+     "prefix": "Cô",
+     "sort_order": 1,
+     "page": 1,
+     "image_png": "positions/ao_dpyt/v2/chinh/p01_d66c71ed9a99.png",
+     "image_sha256": "d66c71ed9a99c99c50226271da2cbbd048115bb2b76fb848a43655c087d7a795",
+     "image_size": [
+      1694,
+      628
+     ],
+     "hotspots": [
+      {
+       "code": "Cô-1",
+       "label": "Nẹp cổ",
+       "rotation": 0,
+       "x_pct": 0.00473,
+       "y_pct": 0.05671,
+       "w_pct": 0.06033,
+       "h_pct": 0.08917
+      },
+      {
+       "code": "Cô-2",
+       "label": "Can nẹp cổ",
+       "rotation": 0,
+       "x_pct": 0.00431,
+       "y_pct": 0.31726,
+       "w_pct": 0.06263,
+       "h_pct": 0.08917
+      },
+      {
+       "code": "Cô-3",
+       "label": "Tra nẹp cổ",
+       "rotation": 0,
+       "x_pct": 0.00431,
+       "y_pct": 0.4628,
+       "w_pct": 0.06178,
+       "h_pct": 0.08917
+      },
+      {
+       "code": "Cô-4",
+       "label": "Diễu nẹp cổ",
+       "rotation": 0,
+       "x_pct": 0.00473,
+       "y_pct": 0.60756,
+       "w_pct": 0.06288,
+       "h_pct": 0.08917
+      },
+      {
+       "code": "Cô-5",
+       "label": "Bạ nẹp cổ",
+       "rotation": 0,
+       "x_pct": 0.00431,
+       "y_pct": 0.75232,
+       "w_pct": 0.06147,
+       "h_pct": 0.08917
+      },
+      {
+       "code": "Cô-6",
+       "label": "Diễu bạ nẹp cổ",
+       "rotation": 0,
+       "x_pct": 0.00579,
+       "y_pct": 0.90567,
+       "w_pct": 0.06359,
+       "h_pct": 0.08917
+      },
+      {
+       "code": "Cô-7",
+       "label": "Viền cổ",
+       "rotation": 0,
+       "x_pct": 0.43043,
+       "y_pct": 0.0118,
+       "w_pct": 0.06104,
+       "h_pct": 0.08917
+      },
+      {
+       "code": "Cô-8",
+       "label": "Diễu viền cổ",
+       "rotation": 0,
+       "x_pct": 0.43043,
+       "y_pct": 0.11066,
+       "w_pct": 0.06274,
+       "h_pct": 0.08917
+      },
+      {
+       "code": "Cô-9",
+       "label": "Bọ cổ",
+       "rotation": 0,
+       "x_pct": 0.43043,
+       "y_pct": 0.31726,
+       "w_pct": 0.06288,
+       "h_pct": 0.08917
+      },
+      {
+       "code": "Cô-10",
+       "label": "Lá cổ",
+       "rotation": 0,
+       "x_pct": 0.54023,
+       "y_pct": 0.09783,
+       "w_pct": 0.07728,
+       "h_pct": 0.08917
+      },
+      {
+       "code": "Cô-11",
+       "label": "Can lá cổ",
+       "rotation": 0,
+       "x_pct": 0.91837,
+       "y_pct": 0.008,
+       "w_pct": 0.07252,
+       "h_pct": 0.08917
+      },
+      {
+       "code": "Cô-12",
+       "label": "Tra lá cổ",
+       "rotation": 0,
+       "x_pct": 0.91837,
+       "y_pct": 0.14653,
+       "w_pct": 0.07481,
+       "h_pct": 0.08917
+      },
+      {
+       "code": "Cô-13",
+       "label": "Diễu lá cổ",
+       "rotation": 0,
+       "x_pct": 0.92013,
+       "y_pct": 0.2656,
+       "w_pct": 0.07396,
+       "h_pct": 0.08917
+      },
+      {
+       "code": "Cô-14",
+       "label": "Nút cổ",
+       "rotation": 0,
+       "x_pct": 0.92013,
+       "y_pct": 0.36011,
+       "w_pct": 0.07422,
+       "h_pct": 0.08917
+      },
+      {
+       "code": "Cô-15",
+       "label": "Khuy cổ",
+       "rotation": 0,
+       "x_pct": 0.92013,
+       "y_pct": 0.53336,
+       "w_pct": 0.07365,
+       "h_pct": 0.08917
+      },
+      {
+       "code": "Cô-16",
+       "label": "Khoá góc cổ",
+       "rotation": 0,
+       "x_pct": 0.92013,
+       "y_pct": 0.6625,
+       "w_pct": 0.07578,
+       "h_pct": 0.08917
+      }
+     ]
+    },
+    {
+     "name": "Thân trước",
+     "group": "chinh",
+     "prefix": "Th",
+     "sort_order": 2,
+     "page": 2,
+     "image_png": "positions/ao_dpyt/v2/chinh/p02_1796c9d79ed1.png",
+     "image_sha256": "1796c9d79ed14eb3d2c4102f58e1f909b6fb2b1c0dd870dc4bbd487b2ef70002",
+     "image_size": [
+      1725,
+      1170
+     ],
+     "hotspots": [
+      {
+       "code": "Th-1",
+       "label": "Đường can vai",
+       "rotation": 0,
+       "x_pct": 0.25103,
+       "y_pct": 0.00319,
+       "w_pct": 0.06,
+       "h_pct": 0.04786
+      },
+      {
+       "code": "Th-2",
+       "label": "Dây bách vai",
+       "rotation": 0,
+       "x_pct": 0.25103,
+       "y_pct": 0.08627,
+       "w_pct": 0.06225,
+       "h_pct": 0.04786
+      },
+      {
+       "code": "Th-3",
+       "label": "Vòng nách",
+       "rotation": 0,
+       "x_pct": 0.25103,
+       "y_pct": 0.15343,
+       "w_pct": 0.06141,
+       "h_pct": 0.04786
+      },
+      {
+       "code": "Th-4",
+       "label": "Viền nách",
+       "rotation": 0,
+       "x_pct": 0.25103,
+       "y_pct": 0.226,
+       "w_pct": 0.0625,
+       "h_pct": 0.04786
+      },
+      {
+       "code": "Th-5",
+       "label": "Diễu viền nách",
+       "rotation": 0,
+       "x_pct": 0.25103,
+       "y_pct": 0.32137,
+       "w_pct": 0.06111,
+       "h_pct": 0.04786
+      },
+      {
+       "code": "Th-6",
+       "label": "Thân trước",
+       "rotation": 0,
+       "x_pct": 0.25103,
+       "y_pct": 0.38369,
+       "w_pct": 0.0632,
+       "h_pct": 0.04786
+      },
+      {
+       "code": "Th-7",
+       "label": "Decoup thân trước",
+       "rotation": 0,
+       "x_pct": 0.25103,
+       "y_pct": 0.45928,
+       "w_pct": 0.06069,
+       "h_pct": 0.04786
+      },
+      {
+       "code": "Th-8",
+       "label": "Sườn trước",
+       "rotation": 0,
+       "x_pct": 0.25103,
+       "y_pct": 0.53698,
+       "w_pct": 0.06236,
+       "h_pct": 0.04786
+      },
+      {
+       "code": "Th-9",
+       "label": "Can sườn",
+       "rotation": 0,
+       "x_pct": 0.25103,
+       "y_pct": 0.5993,
+       "w_pct": 0.0625,
+       "h_pct": 0.04786
+      },
+      {
+       "code": "Th-10",
+       "label": "Chít ly thân trước",
+       "rotation": 0,
+       "x_pct": 0.65889,
+       "y_pct": 0.36691,
+       "w_pct": 0.07664,
+       "h_pct": 0.04786
+      },
+      {
+       "code": "Th-11",
+       "label": "Lai",
+       "rotation": 0,
+       "x_pct": 0.65889,
+       "y_pct": 0.47954,
+       "w_pct": 0.07196,
+       "h_pct": 0.04786
+      },
+      {
+       "code": "Th-12",
+       "label": "Diễu lai",
+       "rotation": 0,
+       "x_pct": 0.65889,
+       "y_pct": 0.56237,
+       "w_pct": 0.07421,
+       "h_pct": 0.04786
+      },
+      {
+       "code": "Th-13",
+       "label": "Xẻ lai",
+       "rotation": 0,
+       "x_pct": 0.65889,
+       "y_pct": 0.636,
+       "w_pct": 0.07338,
+       "h_pct": 0.04786
+      },
+      {
+       "code": "Th-14",
+       "label": "Diễu xẻ lai",
+       "rotation": 0,
+       "x_pct": 0.65889,
+       "y_pct": 0.71364,
+       "w_pct": 0.07363,
+       "h_pct": 0.04786
+      },
+      {
+       "code": "Th-15",
+       "label": "Bọ xẻ lai",
+       "rotation": 0,
+       "x_pct": 0.65889,
+       "y_pct": 0.78031,
+       "w_pct": 0.07307,
+       "h_pct": 0.04786
+      }
+     ]
+    },
+    {
+     "name": "Lưng",
+     "group": "chinh",
+     "prefix": "Lư",
+     "sort_order": 3,
+     "page": 3,
+     "image_png": "positions/ao_dpyt/v2/chinh/p03_b0bf67e70b9d.png",
+     "image_sha256": "b0bf67e70b9d3ce7753e6a00cb63949b9538c9d0c84cdff7aec29c6e6f4a6ed6",
+     "image_size": [
+      1499,
+      960
+     ],
+     "hotspots": [
+      {
+       "code": "Lư-1",
+       "label": "Vòng cổ",
+       "rotation": 0,
+       "x_pct": 0.00695,
+       "y_pct": 0.00247,
+       "w_pct": 0.06776,
+       "h_pct": 0.05833
+      },
+      {
+       "code": "Lư-2",
+       "label": "Lưng",
+       "rotation": 0,
+       "x_pct": 0.00434,
+       "y_pct": 0.38634,
+       "w_pct": 0.07035,
+       "h_pct": 0.05833
+      },
+      {
+       "code": "Lư-3",
+       "label": "Decoup lưng",
+       "rotation": 0,
+       "x_pct": 0.00434,
+       "y_pct": 0.51974,
+       "w_pct": 0.06939,
+       "h_pct": 0.05833
+      },
+      {
+       "code": "Lư-4",
+       "label": "Sườn sau",
+       "rotation": 0,
+       "x_pct": 0.00434,
+       "y_pct": 0.65996,
+       "w_pct": 0.07064,
+       "h_pct": 0.05833
+      },
+      {
+       "code": "Lư-5",
+       "label": "Can sóng lưng",
+       "rotation": 0,
+       "x_pct": 0.43169,
+       "y_pct": 0.84058,
+       "w_pct": 0.06904,
+       "h_pct": 0.05833
+      },
+      {
+       "code": "Lư-6",
+       "label": "Diễu sóng lưng",
+       "rotation": 0,
+       "x_pct": 0.43169,
+       "y_pct": 0.93922,
+       "w_pct": 0.07144,
+       "h_pct": 0.05833
+      },
+      {
+       "code": "Lư-7",
+       "label": "Đô lưng",
+       "rotation": 0,
+       "x_pct": 0.9036,
+       "y_pct": 0.13329,
+       "w_pct": 0.06856,
+       "h_pct": 0.05833
+      },
+      {
+       "code": "Lư-8",
+       "label": "Diễu đô lưng",
+       "rotation": 0,
+       "x_pct": 0.9036,
+       "y_pct": 0.25033,
+       "w_pct": 0.07048,
+       "h_pct": 0.05833
+      },
+      {
+       "code": "Lư-9",
+       "label": "Xếp ly lưng",
+       "rotation": 0,
+       "x_pct": 0.88459,
+       "y_pct": 0.36786,
+       "w_pct": 0.07064,
+       "h_pct": 0.05833
+      },
+      {
+       "code": "Lư-10",
+       "label": "Chít ly lưng",
+       "rotation": 0,
+       "x_pct": 0.90961,
+       "y_pct": 0.56809,
+       "w_pct": 0.08691,
+       "h_pct": 0.05833
+      }
+     ]
+    },
+    {
+     "name": "Tay",
+     "group": "chinh",
+     "prefix": "Ta",
+     "sort_order": 4,
+     "page": 4,
+     "image_png": "positions/ao_dpyt/v2/chinh/p04_7be4b58c7d53.png",
+     "image_sha256": "7be4b58c7d53631ba137af1dfcaea967a30c18997ba8ff95d56b4f63185a7212",
+     "image_size": [
+      1725,
+      1031
+     ],
+     "hotspots": [
+      {
+       "code": "Ta-1",
+       "label": "Tay",
+       "rotation": 0,
+       "x_pct": 0.28972,
+       "y_pct": 0.00257,
+       "w_pct": 0.0568,
+       "h_pct": 0.05432
+      },
+      {
+       "code": "Ta-2",
+       "label": "Đường tra tay",
+       "rotation": 0,
+       "x_pct": 0.28972,
+       "y_pct": 0.09176,
+       "w_pct": 0.05906,
+       "h_pct": 0.05432
+      },
+      {
+       "code": "Ta-3",
+       "label": "Đường sóng tay",
+       "rotation": 0,
+       "x_pct": 0.28972,
+       "y_pct": 0.21106,
+       "w_pct": 0.05822,
+       "h_pct": 0.05432
+      },
+      {
+       "code": "Ta-4",
+       "label": "Lai tay",
+       "rotation": 0,
+       "x_pct": 0.28972,
+       "y_pct": 0.32979,
+       "w_pct": 0.05931,
+       "h_pct": 0.05432
+      },
+      {
+       "code": "Ta-5",
+       "label": "Diễu lai tay",
+       "rotation": 0,
+       "x_pct": 0.28972,
+       "y_pct": 0.46663,
+       "w_pct": 0.05792,
+       "h_pct": 0.05432
+      },
+      {
+       "code": "Ta-6",
+       "label": "Viền lai tay",
+       "rotation": 0,
+       "x_pct": 0.28972,
+       "y_pct": 0.56787,
+       "w_pct": 0.06,
+       "h_pct": 0.05432
+      },
+      {
+       "code": "Ta-7",
+       "label": "Diễu viền lai tay",
+       "rotation": 0,
+       "x_pct": 0.28972,
+       "y_pct": 0.64732,
+       "w_pct": 0.0575,
+       "h_pct": 0.05432
+      },
+      {
+       "code": "Ta-8",
+       "label": "Đường sườn tay",
+       "rotation": 0,
+       "x_pct": 0.68114,
+       "y_pct": 0.64766,
+       "w_pct": 0.05917,
+       "h_pct": 0.05432
+      },
+      {
+       "code": "Ta-9",
+       "label": "Bọ tay",
+       "rotation": 0,
+       "x_pct": 0.68114,
+       "y_pct": 0.73786,
+       "w_pct": 0.05931,
+       "h_pct": 0.05432
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Quần đồng phục y tế",
+   "version_code": "co2-v2",
+   "version_name": "Visual Co-2 lần 2",
+   "blocks": [
+    {
+     "name": "Nhãn mác",
+     "group": "chinh",
+     "prefix": "Nh",
+     "sort_order": 1,
+     "page": 5,
+     "image_png": "positions/quan_dpyt/v2/chinh/p05_6ee1887435b7.png",
+     "image_sha256": "6ee1887435b7ee5a8d208036aa25b1da3710d41a3ac18cee05d9e777a707f0bd",
+     "image_size": [
+      1725,
+      1131
+     ],
+     "hotspots": [
+      {
+       "code": "Nh-1",
+       "label": "Nhãn care",
+       "rotation": 0,
+       "x_pct": 0.19745,
+       "y_pct": 0.00491,
+       "w_pct": 0.06462,
+       "h_pct": 0.04951
+      },
+      {
+       "code": "Nh-2",
+       "label": "Diễu nhãn care",
+       "rotation": 0,
+       "x_pct": 0.19477,
+       "y_pct": 0.10275,
+       "w_pct": 0.06687,
+       "h_pct": 0.04951
+      },
+      {
+       "code": "Nh-3",
+       "label": "Nhãn Barcode",
+       "rotation": 0,
+       "x_pct": 0.46927,
+       "y_pct": 0.00358,
+       "w_pct": 0.06603,
+       "h_pct": 0.04951
+      },
+      {
+       "code": "Nh-4",
+       "label": "Diễu nhãn barcode",
+       "rotation": 0,
+       "x_pct": 0.46753,
+       "y_pct": 0.09878,
+       "w_pct": 0.06712,
+       "h_pct": 0.04951
+      },
+      {
+       "code": "Nh-5",
+       "label": "Nhãn size",
+       "rotation": 0,
+       "x_pct": 0.79968,
+       "y_pct": 0.21869,
+       "w_pct": 0.06573,
+       "h_pct": 0.04951
+      },
+      {
+       "code": "Nh-6",
+       "label": "Diễu nhãn size",
+       "rotation": 0,
+       "x_pct": 0.79968,
+       "y_pct": 0.32384,
+       "w_pct": 0.06782,
+       "h_pct": 0.04951
+      },
+      {
+       "code": "Nh-7",
+       "label": "Nhãn dệt",
+       "rotation": 0,
+       "x_pct": 0.03307,
+       "y_pct": 0.63872,
+       "w_pct": 0.06531,
+       "h_pct": 0.04951
+      },
+      {
+       "code": "Nh-8",
+       "label": "Diễu nhãn dệt",
+       "rotation": 0,
+       "x_pct": 0.03575,
+       "y_pct": 0.75359,
+       "w_pct": 0.06698,
+       "h_pct": 0.04951
+      },
+      {
+       "code": "Nh-9",
+       "label": "Hình thêu",
+       "rotation": 0,
+       "x_pct": 0.47926,
+       "y_pct": 0.78271,
+       "w_pct": 0.06712,
+       "h_pct": 0.04951
+      },
+      {
+       "code": "Nh-10",
+       "label": "Hình in/ép",
+       "rotation": 0,
+       "x_pct": 0.90412,
+       "y_pct": 0.65938,
+       "w_pct": 0.08126,
+       "h_pct": 0.04951
+      }
+     ]
+    },
+    {
+     "name": "Lưng",
+     "group": "chinh",
+     "prefix": "Lư",
+     "sort_order": 2,
+     "page": 6,
+     "image_png": "positions/quan_dpyt/v2/chinh/p06_16a4814b3d03.png",
+     "image_sha256": "16a4814b3d038fdcef7aa47bc7a94f50eceaf2b901173e81f8cdd91c1e3cbb07",
+     "image_size": [
+      1688,
+      489
+     ],
+     "hotspots": [
+      {
+       "code": "Lư-1",
+       "label": "Lưng sau",
+       "rotation": 0,
+       "x_pct": 0.00431,
+       "y_pct": 0.4867,
+       "w_pct": 0.06017,
+       "h_pct": 0.11452
+      },
+      {
+       "code": "Lư-2",
+       "label": "Lưng trước",
+       "rotation": 0,
+       "x_pct": 0.00431,
+       "y_pct": 0.74846,
+       "w_pct": 0.06248,
+       "h_pct": 0.11452
+      },
+      {
+       "code": "Lư-3",
+       "label": "Đường nối lót lưng",
+       "rotation": 0,
+       "x_pct": 0.41952,
+       "y_pct": 0.00416,
+       "w_pct": 0.06162,
+       "h_pct": 0.11452
+      },
+      {
+       "code": "Lư-4",
+       "label": "Đường can bản lưng",
+       "rotation": 0,
+       "x_pct": 0.41952,
+       "y_pct": 0.1871,
+       "w_pct": 0.06273,
+       "h_pct": 0.11452
+      },
+      {
+       "code": "Lư-5",
+       "label": "Nẹp dây luồn",
+       "rotation": 0,
+       "x_pct": 0.41844,
+       "y_pct": 0.33845,
+       "w_pct": 0.06131,
+       "h_pct": 0.11452
+      },
+      {
+       "code": "Lư-6",
+       "label": "Diễu nẹp dây luồn",
+       "rotation": 0,
+       "x_pct": 0.41952,
+       "y_pct": 0.48342,
+       "w_pct": 0.06344,
+       "h_pct": 0.11452
+      },
+      {
+       "code": "Lư-7",
+       "label": "Dây luồn",
+       "rotation": 0,
+       "x_pct": 0.41952,
+       "y_pct": 0.62946,
+       "w_pct": 0.06088,
+       "h_pct": 0.11452
+      },
+      {
+       "code": "Lư-8",
+       "label": "Bọ đầu dây luồn",
+       "rotation": 0,
+       "x_pct": 0.41952,
+       "y_pct": 0.84581,
+       "w_pct": 0.06259,
+       "h_pct": 0.11452
+      },
+      {
+       "code": "Lư-9",
+       "label": "Bọ cố định dây luồn",
+       "rotation": 0,
+       "x_pct": 0.91925,
+       "y_pct": 0.3117,
+       "w_pct": 0.06273,
+       "h_pct": 0.11452
+      },
+      {
+       "code": "Lư-10",
+       "label": "Đường tra lưng",
+       "rotation": 0,
+       "x_pct": 0.91925,
+       "y_pct": 0.60819,
+       "w_pct": 0.07718,
+       "h_pct": 0.11452
+      }
+     ]
+    },
+    {
+     "name": "Thân",
+     "group": "chinh",
+     "prefix": "Th",
+     "sort_order": 3,
+     "page": 7,
+     "image_png": "positions/quan_dpyt/v2/chinh/p07_b2bcee53ba31.png",
+     "image_sha256": "b2bcee53ba31626aab6272247fa0b2480ae36a85490f207b4046a373e8b966d0",
+     "image_size": [
+      1453,
+      583
+     ],
+     "hotspots": [
+      {
+       "code": "Th-1",
+       "label": "Thân trước",
+       "rotation": 0,
+       "x_pct": 0.00826,
+       "y_pct": 0.00676,
+       "w_pct": 0.07123,
+       "h_pct": 0.09605
+      },
+      {
+       "code": "Th-2",
+       "label": "Bạ thân",
+       "rotation": 0,
+       "x_pct": 0.00557,
+       "y_pct": 0.25532,
+       "w_pct": 0.0739,
+       "h_pct": 0.09605
+      },
+      {
+       "code": "Th-3",
+       "label": "Can bạ thân",
+       "rotation": 0,
+       "x_pct": 0.00557,
+       "y_pct": 0.40878,
+       "w_pct": 0.07291,
+       "h_pct": 0.09605
+      },
+      {
+       "code": "Th-4",
+       "label": "Diễu bạ thân",
+       "rotation": 0,
+       "x_pct": 0.00826,
+       "y_pct": 0.56774,
+       "w_pct": 0.0742,
+       "h_pct": 0.09605
+      },
+      {
+       "code": "Th-5",
+       "label": "Đáy trước",
+       "rotation": 0,
+       "x_pct": 0.00557,
+       "y_pct": 0.75949,
+       "w_pct": 0.07255,
+       "h_pct": 0.09605
+      },
+      {
+       "code": "Th-6",
+       "label": "Diễu đáy trước",
+       "rotation": 0,
+       "x_pct": 0.00557,
+       "y_pct": 0.89928,
+       "w_pct": 0.07503,
+       "h_pct": 0.09605
+      },
+      {
+       "code": "Th-7",
+       "label": "Thân sau",
+       "rotation": 0,
+       "x_pct": 0.90522,
+       "y_pct": 0.05515,
+       "w_pct": 0.07205,
+       "h_pct": 0.09605
+      },
+      {
+       "code": "Th-8",
+       "label": "Decoup thân",
+       "rotation": 0,
+       "x_pct": 0.90625,
+       "y_pct": 0.23549,
+       "w_pct": 0.07403,
+       "h_pct": 0.09605
+      },
+      {
+       "code": "Th-9",
+       "label": "Diễu decoup thân",
+       "rotation": 0,
+       "x_pct": 0.90625,
+       "y_pct": 0.36808,
+       "w_pct": 0.0742,
+       "h_pct": 0.09605
+      },
+      {
+       "code": "Th-10",
+       "label": "Đáy sau",
+       "rotation": 0,
+       "x_pct": 0.90522,
+       "y_pct": 0.47871,
+       "w_pct": 0.09098,
+       "h_pct": 0.09605
+      },
+      {
+       "code": "Th-11",
+       "label": "Diễu đáy sau",
+       "rotation": 0,
+       "x_pct": 0.90522,
+       "y_pct": 0.58831,
+       "w_pct": 0.08543,
+       "h_pct": 0.09605
+      },
+      {
+       "code": "Th-12",
+       "label": "Bọ đáy",
+       "rotation": 0,
+       "x_pct": 0.90625,
+       "y_pct": 0.79057,
+       "w_pct": 0.08811,
+       "h_pct": 0.09605
+      }
+     ]
+    },
+    {
+     "name": "Ống",
+     "group": "chinh",
+     "prefix": "Ôn",
+     "sort_order": 4,
+     "page": 8,
+     "image_png": "positions/quan_dpyt/v2/chinh/p08_70f4cec026f4.png",
+     "image_sha256": "70f4cec026f42bfa18c6e5f86dab6d3760f21da4e35819a7579ac0bb5bf1d2f5",
+     "image_size": [
+      1474,
+      871
+     ],
+     "hotspots": [
+      {
+       "code": "Ôn-1",
+       "label": "Thân trước",
+       "rotation": 0,
+       "x_pct": 0.00838,
+       "y_pct": 0.0129,
+       "w_pct": 0.075,
+       "h_pct": 0.06429
+      },
+      {
+       "code": "Ôn-2",
+       "label": "Thân sau",
+       "rotation": 0,
+       "x_pct": 0.00838,
+       "y_pct": 0.11186,
+       "w_pct": 0.07764,
+       "h_pct": 0.06429
+      },
+      {
+       "code": "Ôn-3",
+       "label": "Dàn trong",
+       "rotation": 0,
+       "x_pct": 0.00867,
+       "y_pct": 0.24806,
+       "w_pct": 0.07666,
+       "h_pct": 0.06429
+      },
+      {
+       "code": "Ôn-4",
+       "label": "Sườn ngoài",
+       "rotation": 0,
+       "x_pct": 0.00867,
+       "y_pct": 0.36966,
+       "w_pct": 0.07793,
+       "h_pct": 0.06429
+      },
+      {
+       "code": "Ôn-5",
+       "label": "Chít ly ống",
+       "rotation": 0,
+       "x_pct": 0.00543,
+       "y_pct": 0.52204,
+       "w_pct": 0.0763,
+       "h_pct": 0.06429
+      },
+      {
+       "code": "Ôn-6",
+       "label": "Xẻ Lai",
+       "rotation": 0,
+       "x_pct": 0.0046,
+       "y_pct": 0.74492,
+       "w_pct": 0.07874,
+       "h_pct": 0.06429
+      },
+      {
+       "code": "Ôn-7",
+       "label": "Diễu xẻ lai",
+       "rotation": 0,
+       "x_pct": 0.0046,
+       "y_pct": 0.83861,
+       "w_pct": 0.07581,
+       "h_pct": 0.06429
+      },
+      {
+       "code": "Ôn-8",
+       "label": "Bọ xẻ lai",
+       "rotation": 0,
+       "x_pct": 0.0046,
+       "y_pct": 0.93265,
+       "w_pct": 0.07777,
+       "h_pct": 0.06429
+      },
+      {
+       "code": "Ôn-9",
+       "label": "Bạ đáy",
+       "rotation": 0,
+       "x_pct": 0.49946,
+       "y_pct": 0.28389,
+       "w_pct": 0.07793,
+       "h_pct": 0.06429
+      },
+      {
+       "code": "Ôn-10",
+       "label": "Can bạ đáy",
+       "rotation": 0,
+       "x_pct": 0.49946,
+       "y_pct": 0.40204,
+       "w_pct": 0.09447,
+       "h_pct": 0.06429
+      },
+      {
+       "code": "Ôn-11",
+       "label": "Diễu bạ đáy",
+       "rotation": 0,
+       "x_pct": 0.49946,
+       "y_pct": 0.4985,
+       "w_pct": 0.089,
+       "h_pct": 0.06429
+      },
+      {
+       "code": "Ôn-12",
+       "label": "Lai",
+       "rotation": 0,
+       "x_pct": 0.42821,
+       "y_pct": 0.60451,
+       "w_pct": 0.09164,
+       "h_pct": 0.06429
+      },
+      {
+       "code": "Ôn-13",
+       "label": "Diễu lai",
+       "rotation": 0,
+       "x_pct": 0.43228,
+       "y_pct": 0.74842,
+       "w_pct": 0.09066,
+       "h_pct": 0.06429
+      },
+      {
+       "code": "Ôn-14",
+       "label": "Decoup ống",
+       "rotation": 0,
+       "x_pct": 0.90417,
+       "y_pct": 0.33727,
+       "w_pct": 0.09095,
+       "h_pct": 0.06429
+      },
+      {
+       "code": "Ôn-15",
+       "label": "Diễu decoup ống",
+       "rotation": 0,
+       "x_pct": 0.9001,
+       "y_pct": 0.46611,
+       "w_pct": 0.0903,
+       "h_pct": 0.06429
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Quần thể thao",
+   "version_code": "co2-v2",
+   "version_name": "Visual Co-2 lần 2",
+   "blocks": [
+    {
+     "name": "Lưng",
+     "group": "chinh",
+     "prefix": "Lư",
+     "sort_order": 1,
+     "page": 10,
+     "image_png": "positions/quan_thethao/v2/chinh/p10_e75f77e6bfc4.png",
+     "image_sha256": "e75f77e6bfc49110876fc78fae570feca2671aba1991fb3e9d6f2d210cad0db3",
+     "image_size": [
+      1686,
+      1085
+     ],
+     "hotspots": [
+      {
+       "code": "Lư-1",
+       "label": "Đầu lưng",
+       "rotation": 0,
+       "x_pct": 0.00508,
+       "y_pct": 0.09345,
+       "w_pct": 0.06024,
+       "h_pct": 0.05161
+      },
+      {
+       "code": "Lư-2",
+       "label": "Lưng chính trước",
+       "rotation": 0,
+       "x_pct": 0.00508,
+       "y_pct": 0.18691,
+       "w_pct": 0.06255,
+       "h_pct": 0.05161
+      },
+      {
+       "code": "Lư-3",
+       "label": "Diễu lưng",
+       "rotation": 0,
+       "x_pct": 0.00419,
+       "y_pct": 0.31856,
+       "w_pct": 0.0617,
+       "h_pct": 0.05161
+      },
+      {
+       "code": "Lư-4",
+       "label": "Đường tra lưng chính",
+       "rotation": 0,
+       "x_pct": 0.00419,
+       "y_pct": 0.42882,
+       "w_pct": 0.06281,
+       "h_pct": 0.05161
+      },
+      {
+       "code": "Lư-5",
+       "label": "Mí lưng",
+       "rotation": 0,
+       "x_pct": 0.0061,
+       "y_pct": 0.50381,
+       "w_pct": 0.06138,
+       "h_pct": 0.05161
+      },
+      {
+       "code": "Lư-6",
+       "label": "Nút lưng",
+       "rotation": 0,
+       "x_pct": 0.00419,
+       "y_pct": 0.58469,
+       "w_pct": 0.06352,
+       "h_pct": 0.05161
+      },
+      {
+       "code": "Lư-7",
+       "label": "Khuy lưng",
+       "rotation": 0,
+       "x_pct": 0.00419,
+       "y_pct": 0.66017,
+       "w_pct": 0.06096,
+       "h_pct": 0.05161
+      },
+      {
+       "code": "Lư-8",
+       "label": "Lưng chính sau",
+       "rotation": 0,
+       "x_pct": 0.43502,
+       "y_pct": 0.00295,
+       "w_pct": 0.06266,
+       "h_pct": 0.05161
+      },
+      {
+       "code": "Lư-9",
+       "label": "Đường nối lưng chính sau",
+       "rotation": 0,
+       "x_pct": 0.43413,
+       "y_pct": 0.09761,
+       "w_pct": 0.06281,
+       "h_pct": 0.05161
+      },
+      {
+       "code": "Lư-10",
+       "label": "Lưng chính sườn",
+       "rotation": 0,
+       "x_pct": 0.43502,
+       "y_pct": 0.18977,
+       "w_pct": 0.07727,
+       "h_pct": 0.05161
+      },
+      {
+       "code": "Lư-11",
+       "label": "Đường nối lưng chính sườn",
+       "rotation": 0,
+       "x_pct": 0.42254,
+       "y_pct": 0.50381,
+       "w_pct": 0.06878,
+       "h_pct": 0.05161
+      },
+      {
+       "code": "Lư-12",
+       "label": "Đường nối lót lưng",
+       "rotation": 0,
+       "x_pct": 0.91737,
+       "y_pct": 0.06037,
+       "w_pct": 0.07479,
+       "h_pct": 0.05161
+      },
+      {
+       "code": "Lư-13",
+       "label": "Lưng lót sau",
+       "rotation": 0,
+       "x_pct": 0.92004,
+       "y_pct": 0.13062,
+       "w_pct": 0.07394,
+       "h_pct": 0.05161
+      },
+      {
+       "code": "Lư-14",
+       "label": "Đường nối lưng lót sau",
+       "rotation": 0,
+       "x_pct": 0.92004,
+       "y_pct": 0.20019,
+       "w_pct": 0.07419,
+       "h_pct": 0.05161
+      },
+      {
+       "code": "Lư-15",
+       "label": "Lưng lót sườn",
+       "rotation": 0,
+       "x_pct": 0.91737,
+       "y_pct": 0.27123,
+       "w_pct": 0.07362,
+       "h_pct": 0.05161
+      },
+      {
+       "code": "Lư-16",
+       "label": "Đường nối lưng lót sườn",
+       "rotation": 0,
+       "x_pct": 0.92004,
+       "y_pct": 0.34455,
+       "w_pct": 0.07576,
+       "h_pct": 0.05161
+      },
+      {
+       "code": "Lư-17",
+       "label": "Lưng lót trước",
+       "rotation": 0,
+       "x_pct": 0.91826,
+       "y_pct": 0.50896,
+       "w_pct": 0.07234,
+       "h_pct": 0.05161
+      },
+      {
+       "code": "Lư-18",
+       "label": "Đường tra lưng lót",
+       "rotation": 0,
+       "x_pct": 0.91737,
+       "y_pct": 0.60518,
+       "w_pct": 0.07491,
+       "h_pct": 0.05161
+      },
+      {
+       "code": "Lư-19",
+       "label": "Passant",
+       "rotation": 0,
+       "x_pct": 0.34112,
+       "y_pct": 0.83363,
+       "w_pct": 0.07505,
+       "h_pct": 0.05161
+      },
+      {
+       "code": "Lư-20",
+       "label": "Bọ passant",
+       "rotation": 0,
+       "x_pct": 0.77862,
+       "y_pct": 0.70632,
+       "w_pct": 0.07992,
+       "h_pct": 0.05161
+      },
+      {
+       "code": "Lư-21",
+       "label": "Diễu passant",
+       "rotation": 0,
+       "x_pct": 0.77862,
+       "y_pct": 0.82605,
+       "w_pct": 0.07479,
+       "h_pct": 0.05161
+      },
+      {
+       "code": "Lư-22",
+       "label": "Khoá chân passant",
+       "rotation": 0,
+       "x_pct": 0.77951,
+       "y_pct": 0.94578,
+       "w_pct": 0.0771,
+       "h_pct": 0.05161
+      }
+     ]
+    },
+    {
+     "name": "Thân",
+     "group": "chinh",
+     "prefix": "Th",
+     "sort_order": 2,
+     "page": 11,
+     "image_png": "positions/quan_thethao/v2/chinh/p11_500e6e2e1a5c.png",
+     "image_sha256": "500e6e2e1a5c83f8a89dd9eb3bcd5d233bdfd855095e0398849edcbf1a01ac97",
+     "image_size": [
+      1453,
+      669
+     ],
+     "hotspots": [
+      {
+       "code": "Th-1",
+       "label": "Thân trước",
+       "rotation": 0,
+       "x_pct": 0.00826,
+       "y_pct": 0.00678,
+       "w_pct": 0.07123,
+       "h_pct": 0.08371
+      },
+      {
+       "code": "Th-2",
+       "label": "Bạ thân",
+       "rotation": 0,
+       "x_pct": 0.00557,
+       "y_pct": 0.35105,
+       "w_pct": 0.0739,
+       "h_pct": 0.08371
+      },
+      {
+       "code": "Th-3",
+       "label": "Can bạ thân",
+       "rotation": 0,
+       "x_pct": 0.00557,
+       "y_pct": 0.48478,
+       "w_pct": 0.07291,
+       "h_pct": 0.08371
+      },
+      {
+       "code": "Th-4",
+       "label": "Diễu bạ thân",
+       "rotation": 0,
+       "x_pct": 0.00826,
+       "y_pct": 0.62331,
+       "w_pct": 0.0742,
+       "h_pct": 0.08371
+      },
+      {
+       "code": "Th-5",
+       "label": "Đáy trước",
+       "rotation": 0,
+       "x_pct": 0.00557,
+       "y_pct": 0.79041,
+       "w_pct": 0.07255,
+       "h_pct": 0.08371
+      },
+      {
+       "code": "Th-6",
+       "label": "Diễu đáy trước",
+       "rotation": 0,
+       "x_pct": 0.00557,
+       "y_pct": 0.91223,
+       "w_pct": 0.07503,
+       "h_pct": 0.08371
+      },
+      {
+       "code": "Th-7",
+       "label": "Thân sau",
+       "rotation": 0,
+       "x_pct": 0.91347,
+       "y_pct": 0.0367,
+       "w_pct": 0.07205,
+       "h_pct": 0.08371
+      },
+      {
+       "code": "Th-8",
+       "label": "Decoup thân",
+       "rotation": 0,
+       "x_pct": 0.90625,
+       "y_pct": 0.33377,
+       "w_pct": 0.07403,
+       "h_pct": 0.08371
+      },
+      {
+       "code": "Th-9",
+       "label": "Diễu decoup thân",
+       "rotation": 0,
+       "x_pct": 0.90625,
+       "y_pct": 0.44931,
+       "w_pct": 0.0742,
+       "h_pct": 0.08371
+      },
+      {
+       "code": "Th-10",
+       "label": "Đáy sau",
+       "rotation": 0,
+       "x_pct": 0.90522,
+       "y_pct": 0.54572,
+       "w_pct": 0.09098,
+       "h_pct": 0.08371
+      },
+      {
+       "code": "Th-11",
+       "label": "Diễu đáy sau",
+       "rotation": 0,
+       "x_pct": 0.90522,
+       "y_pct": 0.64123,
+       "w_pct": 0.08543,
+       "h_pct": 0.08371
+      },
+      {
+       "code": "Th-12",
+       "label": "Bọ đáy",
+       "rotation": 0,
+       "x_pct": 0.90625,
+       "y_pct": 0.81749,
+       "w_pct": 0.08811,
+       "h_pct": 0.08371
+      }
+     ]
+    },
+    {
+     "name": "Ống",
+     "group": "chinh",
+     "prefix": "Ôn",
+     "sort_order": 3,
+     "page": 12,
+     "image_png": "positions/quan_thethao/v2/chinh/p12_b316358bdca2.png",
+     "image_sha256": "b316358bdca2feaa47263e65771e067e3c4e7481eca321b753e267b74a962e96",
+     "image_size": [
+      1530,
+      1278
+     ],
+     "hotspots": [
+      {
+       "code": "Ôn-1",
+       "label": "Thân trước",
+       "rotation": 0,
+       "x_pct": 0.0486,
+       "y_pct": 0.16216,
+       "w_pct": 0.07225,
+       "h_pct": 0.04382
+      },
+      {
+       "code": "Ôn-2",
+       "label": "Thân sau",
+       "rotation": 0,
+       "x_pct": 0.0486,
+       "y_pct": 0.2296,
+       "w_pct": 0.07479,
+       "h_pct": 0.04382
+      },
+      {
+       "code": "Ôn-3",
+       "label": "Dàn trong",
+       "rotation": 0,
+       "x_pct": 0.04888,
+       "y_pct": 0.32243,
+       "w_pct": 0.07385,
+       "h_pct": 0.04382
+      },
+      {
+       "code": "Ôn-4",
+       "label": "Sườn ngoài",
+       "rotation": 0,
+       "x_pct": 0.04888,
+       "y_pct": 0.4053,
+       "w_pct": 0.07508,
+       "h_pct": 0.04382
+      },
+      {
+       "code": "Ôn-5",
+       "label": "Chít ly ống",
+       "rotation": 0,
+       "x_pct": 0.04576,
+       "y_pct": 0.50915,
+       "w_pct": 0.07351,
+       "h_pct": 0.04382
+      },
+      {
+       "code": "Ôn-6",
+       "label": "Xẻ Lai",
+       "rotation": 0,
+       "x_pct": 0.04495,
+       "y_pct": 0.66105,
+       "w_pct": 0.07586,
+       "h_pct": 0.04382
+      },
+      {
+       "code": "Ôn-7",
+       "label": "Diễu xẻ lai",
+       "rotation": 0,
+       "x_pct": 0.04495,
+       "y_pct": 0.7249,
+       "w_pct": 0.07304,
+       "h_pct": 0.04382
+      },
+      {
+       "code": "Ôn-8",
+       "label": "Bọ xẻ lai",
+       "rotation": 0,
+       "x_pct": 0.04495,
+       "y_pct": 0.789,
+       "w_pct": 0.07492,
+       "h_pct": 0.04382
+      },
+      {
+       "code": "Ôn-9",
+       "label": "Bạ đáy",
+       "rotation": 0,
+       "x_pct": 0.5217,
+       "y_pct": 0.34685,
+       "w_pct": 0.07508,
+       "h_pct": 0.04382
+      },
+      {
+       "code": "Ôn-10",
+       "label": "Can bạ đáy",
+       "rotation": 0,
+       "x_pct": 0.5217,
+       "y_pct": 0.42737,
+       "w_pct": 0.09101,
+       "h_pct": 0.04382
+      },
+      {
+       "code": "Ôn-11",
+       "label": "Diễu bạ đáy",
+       "rotation": 0,
+       "x_pct": 0.5217,
+       "y_pct": 0.49311,
+       "w_pct": 0.08574,
+       "h_pct": 0.04382
+      },
+      {
+       "code": "Ôn-12",
+       "label": "Lai",
+       "rotation": 0,
+       "x_pct": 0.45306,
+       "y_pct": 0.56536,
+       "w_pct": 0.08828,
+       "h_pct": 0.04382
+      },
+      {
+       "code": "Ôn-13",
+       "label": "Diễu lai",
+       "rotation": 0,
+       "x_pct": 0.45698,
+       "y_pct": 0.66344,
+       "w_pct": 0.08734,
+       "h_pct": 0.04382
+      },
+      {
+       "code": "Ôn-14",
+       "label": "Decoup ống",
+       "rotation": 0,
+       "x_pct": 0.90071,
+       "y_pct": 0.20254,
+       "w_pct": 0.08763,
+       "h_pct": 0.04382
+      },
+      {
+       "code": "Ôn-15",
+       "label": "Can decoup ống",
+       "rotation": 0,
+       "x_pct": 0.90071,
+       "y_pct": 0.28849,
+       "w_pct": 0.087,
+       "h_pct": 0.04382
+      },
+      {
+       "code": "Ôn-16",
+       "label": "Bạ ống",
+       "rotation": 0,
+       "x_pct": 0.90133,
+       "y_pct": 0.36367,
+       "w_pct": 0.08935,
+       "h_pct": 0.04382
+      },
+      {
+       "code": "Ôn-17",
+       "label": "Can bạ ống",
+       "rotation": 0,
+       "x_pct": 0.90133,
+       "y_pct": 0.42578,
+       "w_pct": 0.08559,
+       "h_pct": 0.04382
+      },
+      {
+       "code": "Ôn-18",
+       "label": "Diễu bạ ống",
+       "rotation": 0,
+       "x_pct": 0.90169,
+       "y_pct": 0.48213,
+       "w_pct": 0.08841,
+       "h_pct": 0.04382
+      },
+      {
+       "code": "Ôn-19",
+       "label": "Bạ lai",
+       "rotation": 0,
+       "x_pct": 0.90227,
+       "y_pct": 0.57037,
+       "w_pct": 0.08857,
+       "h_pct": 0.04382
+      },
+      {
+       "code": "Ôn-20",
+       "label": "Can bạ lai",
+       "rotation": 0,
+       "x_pct": 0.90227,
+       "y_pct": 0.62567,
+       "w_pct": 0.09393,
+       "h_pct": 0.04382
+      },
+      {
+       "code": "Ôn-21",
+       "label": "Diễu bạ lai",
+       "rotation": 0,
+       "x_pct": 0.90227,
+       "y_pct": 0.67829,
+       "w_pct": 0.08828,
+       "h_pct": 0.04382
+      },
+      {
+       "code": "Ôn-22",
+       "label": "Bạ dàn/sườn",
+       "rotation": 0,
+       "x_pct": 0.57276,
+       "y_pct": 0.62567,
+       "w_pct": 0.09083,
+       "h_pct": 0.04382
+      },
+      {
+       "code": "Ôn-23",
+       "label": "Can bạ dàn/sườn",
+       "rotation": 0,
+       "x_pct": 0.57276,
+       "y_pct": 0.67829,
+       "w_pct": 0.08988,
+       "h_pct": 0.04382
+      },
+      {
+       "code": "Ôn-24",
+       "label": "Diễu bạ dàn/sườn",
+       "rotation": 0,
+       "x_pct": 0.57276,
+       "y_pct": 0.74697,
+       "w_pct": 0.09111,
+       "h_pct": 0.04382
+      }
+     ]
+    },
+    {
+     "name": "Barget",
+     "group": "chinh",
+     "prefix": "Ba",
+     "sort_order": 4,
+     "page": 13,
+     "image_png": "positions/quan_thethao/v2/chinh/p13_151918be76c9.png",
+     "image_sha256": "151918be76c93501796b56435f28f116f98186bd6eabf8ae4a9db2a3f936ef1d",
+     "image_size": [
+      1725,
+      879
+     ],
+     "hotspots": [
+      {
+       "code": "Ba-1",
+       "label": "Barget",
+       "rotation": 0,
+       "x_pct": 0.13116,
+       "y_pct": 0.09086,
+       "w_pct": 0.05959,
+       "h_pct": 0.06371
+      },
+      {
+       "code": "Ba-2",
+       "label": "Can barget",
+       "rotation": 0,
+       "x_pct": 0.1289,
+       "y_pct": 0.24395,
+       "w_pct": 0.06184,
+       "h_pct": 0.06371
+      },
+      {
+       "code": "Ba-3",
+       "label": "Diễu barget",
+       "rotation": 0,
+       "x_pct": 0.12803,
+       "y_pct": 0.3489,
+       "w_pct": 0.06101,
+       "h_pct": 0.06371
+      },
+      {
+       "code": "Ba-4",
+       "label": "Bọ barget",
+       "rotation": 0,
+       "x_pct": 0.12803,
+       "y_pct": 0.48986,
+       "w_pct": 0.06209,
+       "h_pct": 0.06371
+      },
+      {
+       "code": "Ba-5",
+       "label": "Môi đôi",
+       "rotation": 0,
+       "x_pct": 0.86668,
+       "y_pct": 0.11633,
+       "w_pct": 0.0607,
+       "h_pct": 0.06371
+      },
+      {
+       "code": "Ba-6",
+       "label": "Mí parget",
+       "rotation": 0,
+       "x_pct": 0.86668,
+       "y_pct": 0.26481,
+       "w_pct": 0.06279,
+       "h_pct": 0.06371
+      },
+      {
+       "code": "Ba-7",
+       "label": "Dây kéo barget",
+       "rotation": 0,
+       "x_pct": 0.86668,
+       "y_pct": 0.36956,
+       "w_pct": 0.06028,
+       "h_pct": 0.06371
+      },
+      {
+       "code": "Ba-8",
+       "label": "Diễu dây kéo barget",
+       "rotation": 0,
+       "x_pct": 0.86668,
+       "y_pct": 0.54465,
+       "w_pct": 0.06195,
+       "h_pct": 0.06371
+      },
+      {
+       "code": "Ba-9",
+       "label": "Môi chiếc",
+       "rotation": 0,
+       "x_pct": 0.86668,
+       "y_pct": 0.66069,
+       "w_pct": 0.06209,
+       "h_pct": 0.06371
+      }
+     ]
+    },
+    {
+     "name": "Túi trước",
+     "group": "chinh",
+     "prefix": "Tt",
+     "sort_order": 5,
+     "page": 14,
+     "image_png": "positions/quan_thethao/v2/chinh/p14_5a86ea77013a.png",
+     "image_sha256": "5a86ea77013a0bcae121a7374fbbd7f22216b03a8ac1b94afe273442c995922b",
+     "image_size": [
+      1652,
+      1093
+     ],
+     "hotspots": [
+      {
+       "code": "Tt-1",
+       "label": "Miệng túi con (trước)",
+       "rotation": 0,
+       "x_pct": 0.48153,
+       "y_pct": 0.14753,
+       "w_pct": 0.05599,
+       "h_pct": 0.05124
+      },
+      {
+       "code": "Tt-2",
+       "label": "Diễu miệng túi con (trước)",
+       "rotation": 0,
+       "x_pct": 0.48153,
+       "y_pct": 0.26843,
+       "w_pct": 0.05835,
+       "h_pct": 0.05124
+      },
+      {
+       "code": "Tt-3",
+       "label": "Bọ miệng túi con (trước)",
+       "rotation": 0,
+       "x_pct": 0.48153,
+       "y_pct": 0.34404,
+       "w_pct": 0.05747,
+       "h_pct": 0.05124
+      },
+      {
+       "code": "Tt-4",
+       "label": "Dây kéo miệng túi con (trước)",
+       "rotation": 0,
+       "x_pct": 0.48153,
+       "y_pct": 0.40158,
+       "w_pct": 0.05861,
+       "h_pct": 0.05124
+      },
+      {
+       "code": "Tt-5",
+       "label": "Bao túi con (trước)",
+       "rotation": 0,
+       "x_pct": 0.48153,
+       "y_pct": 0.48108,
+       "w_pct": 0.05715,
+       "h_pct": 0.05124
+      },
+      {
+       "code": "Tt-6",
+       "label": "Đường may bao túi con (trước)",
+       "rotation": 0,
+       "x_pct": 0.48153,
+       "y_pct": 0.54935,
+       "w_pct": 0.05933,
+       "h_pct": 0.05124
+      },
+      {
+       "code": "Tt-7",
+       "label": "Miệng túi trước",
+       "rotation": 0,
+       "x_pct": 0.48153,
+       "y_pct": 0.64432,
+       "w_pct": 0.05672,
+       "h_pct": 0.05124
+      },
+      {
+       "code": "Tt-8",
+       "label": "Diễu miệng túi trước",
+       "rotation": 0,
+       "x_pct": 0.48153,
+       "y_pct": 0.71487,
+       "w_pct": 0.05846,
+       "h_pct": 0.05124
+      },
+      {
+       "code": "Tt-9",
+       "label": "Bọ miệng túi trước",
+       "rotation": 0,
+       "x_pct": 0.48153,
+       "y_pct": 0.79393,
+       "w_pct": 0.05861,
+       "h_pct": 0.05124
+      },
+      {
+       "code": "Tt-10",
+       "label": "Bao túi trước",
+       "rotation": 0,
+       "x_pct": 0.48153,
+       "y_pct": 0.88067,
+       "w_pct": 0.07337,
+       "h_pct": 0.05124
+      },
+      {
+       "code": "Tt-11",
+       "label": "Đường may bao túi trước",
+       "rotation": 0,
+       "x_pct": 0.48153,
+       "y_pct": 0.94586,
+       "w_pct": 0.06849,
+       "h_pct": 0.05124
+      },
+      {
+       "code": "Tt-12",
+       "label": "Nẹp túi trước",
+       "rotation": 0,
+       "x_pct": 0.68524,
+       "y_pct": 0.00184,
+       "w_pct": 0.07084,
+       "h_pct": 0.05124
+      },
+      {
+       "code": "Tt-13",
+       "label": "Diễu nẹp túi trước",
+       "rotation": 0,
+       "x_pct": 0.68355,
+       "y_pct": 0.12015,
+       "w_pct": 0.06997,
+       "h_pct": 0.05124
+      },
+      {
+       "code": "Tt-14",
+       "label": "Bọ nẹp túi trước",
+       "rotation": 0,
+       "x_pct": 0.68355,
+       "y_pct": 0.20258,
+       "w_pct": 0.07023,
+       "h_pct": 0.05124
+      },
+      {
+       "code": "Tt-15",
+       "label": "Dây kéo túi trước",
+       "rotation": 0,
+       "x_pct": 0.68355,
+       "y_pct": 0.33945,
+       "w_pct": 0.06965,
+       "h_pct": 0.05124
+      },
+      {
+       "code": "Tt-16",
+       "label": "Đầu cầm dây kéo túi trước",
+       "rotation": 0,
+       "x_pct": 0.68292,
+       "y_pct": 0.45528,
+       "w_pct": 0.07183,
+       "h_pct": 0.05124
+      }
+     ]
+    },
+    {
+     "name": "Túi sau",
+     "group": "chinh",
+     "prefix": "Ts",
+     "sort_order": 6,
+     "page": 15,
+     "image_png": "positions/quan_thethao/v2/chinh/p15_f2142ccaab6f.png",
+     "image_sha256": "f2142ccaab6fc13ecff3589d343b04ab7a64fd2aaad66da7cd252931b55b2ce7",
+     "image_size": [
+      1177,
+      954
+     ],
+     "hotspots": [
+      {
+       "code": "Ts-1",
+       "label": "Miệng túi sau",
+       "rotation": 0,
+       "x_pct": 0.00656,
+       "y_pct": 0.00212,
+       "w_pct": 0.08018,
+       "h_pct": 0.0587
+      },
+      {
+       "code": "Ts-2",
+       "label": "Diễu miệng túi sau",
+       "rotation": 0,
+       "x_pct": 0.00656,
+       "y_pct": 0.12529,
+       "w_pct": 0.08349,
+       "h_pct": 0.0587
+      },
+      {
+       "code": "Ts-3",
+       "label": "Bọ miệng túi sau",
+       "rotation": 0,
+       "x_pct": 0.01038,
+       "y_pct": 0.41579,
+       "w_pct": 0.08226,
+       "h_pct": 0.0587
+      },
+      {
+       "code": "Ts-4",
+       "label": "Bao túi sau",
+       "rotation": 0,
+       "x_pct": 0.00783,
+       "y_pct": 0.71454,
+       "w_pct": 0.08385,
+       "h_pct": 0.0587
+      },
+      {
+       "code": "Ts-5",
+       "label": "Đường may bao túi sau",
+       "rotation": 0,
+       "x_pct": 0.01038,
+       "y_pct": 0.83003,
+       "w_pct": 0.08181,
+       "h_pct": 0.0587
+      },
+      {
+       "code": "Ts-6",
+       "label": "Nẹp túi sau",
+       "rotation": 0,
+       "x_pct": 0.89043,
+       "y_pct": 0.06125,
+       "w_pct": 0.08487,
+       "h_pct": 0.0587
+      },
+      {
+       "code": "Ts-7",
+       "label": "Diễu nẹp túi sau",
+       "rotation": 0,
+       "x_pct": 0.89043,
+       "y_pct": 0.21438,
+       "w_pct": 0.0812,
+       "h_pct": 0.0587
+      },
+      {
+       "code": "Ts-8",
+       "label": "Bọ nẹp túi sau",
+       "rotation": 0,
+       "x_pct": 0.89043,
+       "y_pct": 0.33283,
+       "w_pct": 0.08365,
+       "h_pct": 0.0587
+      },
+      {
+       "code": "Ts-9",
+       "label": "Dây kéo túi sau",
+       "rotation": 0,
+       "x_pct": 0.89043,
+       "y_pct": 0.47058,
+       "w_pct": 0.08385,
+       "h_pct": 0.0587
+      },
+      {
+       "code": "Ts-10",
+       "label": "Đầu cầm dây kéo túi sau",
+       "rotation": 0,
+       "x_pct": 0.89043,
+       "y_pct": 0.58574,
+       "w_pct": 0.10457,
+       "h_pct": 0.0587
+      }
+     ]
+    },
+    {
+     "name": "Túi đùi",
+     "group": "chinh",
+     "prefix": "Tđ",
+     "sort_order": 7,
+     "page": 16,
+     "image_png": "positions/quan_thethao/v2/chinh/p16_e3127d0ca79c.png",
+     "image_sha256": "e3127d0ca79ce1032862e3c3ccfdc223f728ba19a69b86aea4958bfc8f70b9b9",
+     "image_size": [
+      1572,
+      862
+     ],
+     "hotspots": [
+      {
+       "code": "Tđ-1",
+       "label": "Nẹp dây kéo túi đùi",
+       "rotation": 0,
+       "x_pct": 0.01604,
+       "y_pct": 0.04284,
+       "w_pct": 0.06419,
+       "h_pct": 0.06497
+      },
+      {
+       "code": "Tđ-2",
+       "label": "Đầu cầm dây kéo túi đùi",
+       "rotation": 0,
+       "x_pct": 0.01604,
+       "y_pct": 0.14124,
+       "w_pct": 0.06667,
+       "h_pct": 0.06497
+      },
+      {
+       "code": "Tđ-3",
+       "label": "Dây kéo túi đùi",
+       "rotation": 0,
+       "x_pct": 0.01604,
+       "y_pct": 0.29547,
+       "w_pct": 0.06575,
+       "h_pct": 0.06497
+      },
+      {
+       "code": "Tđ-4",
+       "label": "Diễu dây kéo túi đùi",
+       "rotation": 0,
+       "x_pct": 0.01604,
+       "y_pct": 0.38553,
+       "w_pct": 0.06694,
+       "h_pct": 0.06497
+      },
+      {
+       "code": "Tđ-5",
+       "label": "Bọ dây kéo túi đùi",
+       "rotation": 0,
+       "x_pct": 0.01604,
+       "y_pct": 0.45097,
+       "w_pct": 0.06542,
+       "h_pct": 0.06497
+      },
+      {
+       "code": "Tđ-6",
+       "label": "Miệng túi con (đùi)",
+       "rotation": 0,
+       "x_pct": 0.01604,
+       "y_pct": 0.51152,
+       "w_pct": 0.06771,
+       "h_pct": 0.06497
+      },
+      {
+       "code": "Tđ-7",
+       "label": "Bọ miệng túi con (đùi)",
+       "rotation": 0,
+       "x_pct": 0.01604,
+       "y_pct": 0.59676,
+       "w_pct": 0.06496,
+       "h_pct": 0.06497
+      },
+      {
+       "code": "Tđ-8",
+       "label": "Diễu miệng túi con (đùi)",
+       "rotation": 0,
+       "x_pct": 0.01604,
+       "y_pct": 0.70396,
+       "w_pct": 0.06679,
+       "h_pct": 0.06497
+      },
+      {
+       "code": "Tđ-9",
+       "label": "Bao túi con (đùi)",
+       "rotation": 0,
+       "x_pct": 0.01604,
+       "y_pct": 0.81741,
+       "w_pct": 0.06694,
+       "h_pct": 0.06497
+      },
+      {
+       "code": "Tđ-10",
+       "label": "Diễu bao túi con (đùi)",
+       "rotation": 0,
+       "x_pct": 0.00485,
+       "y_pct": 0.92088,
+       "w_pct": 0.08245,
+       "h_pct": 0.06497
+      },
+      {
+       "code": "Tđ-11",
+       "label": "Nắp túi đùi",
+       "rotation": 0,
+       "x_pct": 0.91469,
+       "y_pct": 0.00462,
+       "w_pct": 0.07732,
+       "h_pct": 0.06497
+      },
+      {
+       "code": "Tđ-12",
+       "label": "Đường may nắp túi đùi",
+       "rotation": 0,
+       "x_pct": 0.91469,
+       "y_pct": 0.09206,
+       "w_pct": 0.0798,
+       "h_pct": 0.06497
+      },
+      {
+       "code": "Tđ-13",
+       "label": "Bọ nắp túi đùi",
+       "rotation": 0,
+       "x_pct": 0.91469,
+       "y_pct": 0.19305,
+       "w_pct": 0.07888,
+       "h_pct": 0.06497
+      },
+      {
+       "code": "Tđ-14",
+       "label": "Nút túi đùi",
+       "rotation": 0,
+       "x_pct": 0.91469,
+       "y_pct": 0.2747,
+       "w_pct": 0.07916,
+       "h_pct": 0.06497
+      },
+      {
+       "code": "Tđ-15",
+       "label": "Bao túi đùi",
+       "rotation": 0,
+       "x_pct": 0.91469,
+       "y_pct": 0.46027,
+       "w_pct": 0.07855,
+       "h_pct": 0.06497
+      },
+      {
+       "code": "Tđ-16",
+       "label": "Đường may bao túi đùi",
+       "rotation": 0,
+       "x_pct": 0.91469,
+       "y_pct": 0.58139,
+       "w_pct": 0.08084,
+       "h_pct": 0.06497
+      },
+      {
+       "code": "Tđ-17",
+       "label": "Chít ly bao túi đùi",
+       "rotation": 0,
+       "x_pct": 0.91469,
+       "y_pct": 0.69687,
+       "w_pct": 0.07717,
+       "h_pct": 0.06497
+      },
+      {
+       "code": "Tđ-18",
+       "label": "Bọ bao túi đùi",
+       "rotation": 0,
+       "x_pct": 0.91469,
+       "y_pct": 0.82326,
+       "w_pct": 0.07992,
+       "h_pct": 0.06497
+      }
+     ]
+    },
+    {
+     "name": "Cụm thắt lưng",
+     "group": "chinh",
+     "prefix": "Tl",
+     "sort_order": 8,
+     "page": 17,
+     "image_png": "positions/quan_thethao/v2/chinh/p17_01d2b4ab949f.png",
+     "image_sha256": "01d2b4ab949f3511a05ea60f08f5a607961b793395001032051f7c340b22090d",
+     "image_size": [
+      1504,
+      428
+     ],
+     "hotspots": [
+      {
+       "code": "Tl-1",
+       "label": "Dây nịt lưng",
+       "rotation": 0,
+       "x_pct": 0.00546,
+       "y_pct": 0.14838,
+       "w_pct": 0.05959,
+       "h_pct": 0.13084
+      },
+      {
+       "code": "Tl-2",
+       "label": "Bút khoá nịt lưng",
+       "rotation": 0,
+       "x_pct": 0.00546,
+       "y_pct": 0.86439,
+       "w_pct": 0.06217,
+       "h_pct": 0.13084
+      },
+      {
+       "code": "Tl-3",
+       "label": "Đường khoá bút nịt lưng",
+       "rotation": 0,
+       "x_pct": 0.92885,
+       "y_pct": 0.00948,
+       "w_pct": 0.06121,
+       "h_pct": 0.13084
+      },
+      {
+       "code": "Tl-4",
+       "label": "Dây tape nịt lưng",
+       "rotation": 0,
+       "x_pct": 0.93302,
+       "y_pct": 0.82302,
+       "w_pct": 0.06246,
+       "h_pct": 0.13084
+      }
+     ]
+    },
+    {
+     "name": "Cụm tháo ống",
+     "group": "chinh",
+     "prefix": "Tô",
+     "sort_order": 9,
+     "page": 18,
+     "image_png": "positions/quan_thethao/v2/chinh/p18_1fa62b760332.png",
+     "image_sha256": "1fa62b76033298577846692cf80c68c3a28cb2088570e35b8dd5b6cebdeaceed",
+     "image_size": [
+      1580,
+      1061
+     ],
+     "hotspots": [
+      {
+       "code": "Tô-1",
+       "label": "Dây kéo tháo ống",
+       "rotation": 0,
+       "x_pct": 0.01362,
+       "y_pct": 0.13707,
+       "w_pct": 0.06289,
+       "h_pct": 0.05278
+      },
+      {
+       "code": "Tô-2",
+       "label": "Can dây kéo tháo ống",
+       "rotation": 0,
+       "x_pct": 0.01428,
+       "y_pct": 0.32918,
+       "w_pct": 0.06535,
+       "h_pct": 0.05278
+      },
+      {
+       "code": "Tô-3",
+       "label": "Diễu dây kéo tháo ống",
+       "rotation": 0,
+       "x_pct": 0.00994,
+       "y_pct": 0.50081,
+       "w_pct": 0.06444,
+       "h_pct": 0.05278
+      },
+      {
+       "code": "Tô-4",
+       "label": "Bọ dây kéo tháo ống",
+       "rotation": 0,
+       "x_pct": 0.00994,
+       "y_pct": 0.62454,
+       "w_pct": 0.06562,
+       "h_pct": 0.05278
+      },
+      {
+       "code": "Tô-5",
+       "label": "Nẹp che dây kéo tháo ống",
+       "rotation": 0,
+       "x_pct": 0.00994,
+       "y_pct": 0.74591,
+       "w_pct": 0.06411,
+       "h_pct": 0.05278
+      },
+      {
+       "code": "Tô-6",
+       "label": "Diễu nẹp che dây kéo tháo ống",
+       "rotation": 0,
+       "x_pct": 0.00994,
+       "y_pct": 0.8441,
+       "w_pct": 0.06638,
+       "h_pct": 0.05278
+      },
+      {
+       "code": "Tô-7",
+       "label": "Bọ nẹp che dây kéo tháo ống",
+       "rotation": 0,
+       "x_pct": 0.005,
+       "y_pct": 0.94392,
+       "w_pct": 0.06365,
+       "h_pct": 0.05278
+      },
+      {
+       "code": "Tô-8",
+       "label": "Lai quần ngắn",
+       "rotation": 0,
+       "x_pct": 0.91556,
+       "y_pct": 0.0045,
+       "w_pct": 0.06547,
+       "h_pct": 0.05278
+      },
+      {
+       "code": "Tô-9",
+       "label": "Diễu lai quần ngắn",
+       "rotation": 0,
+       "x_pct": 0.91556,
+       "y_pct": 0.14861,
+       "w_pct": 0.06562,
+       "h_pct": 0.05278
+      },
+      {
+       "code": "Tô-10",
+       "label": "Can nẹp lai quần ngắn",
+       "rotation": 0,
+       "x_pct": 0.91556,
+       "y_pct": 0.29225,
+       "w_pct": 0.08106,
+       "h_pct": 0.05278
+      }
+     ]
+    },
+    {
+     "name": "Cụm mở ống",
+     "group": "chinh",
+     "prefix": "Mô",
+     "sort_order": 10,
+     "page": 19,
+     "image_png": "positions/quan_thethao/v2/chinh/p19_9f990d7d623a.png",
+     "image_sha256": "9f990d7d623add29f7cd6be79e5eb4542502300a62078f42b80fa289f873e6fa",
+     "image_size": [
+      681,
+      799
+     ],
+     "hotspots": [
+      {
+       "code": "Mô-1",
+       "label": "Dây kéo mỡ ống",
+       "rotation": 0,
+       "x_pct": 0.01751,
+       "y_pct": 0.09864,
+       "w_pct": 0.16997,
+       "h_pct": 0.07009
+      },
+      {
+       "code": "Mô-2",
+       "label": "Can dây kéo mở ống",
+       "rotation": 0,
+       "x_pct": 0.01751,
+       "y_pct": 0.29273,
+       "w_pct": 0.17568,
+       "h_pct": 0.07009
+      },
+      {
+       "code": "Mô-3",
+       "label": "Diễu dây kéo mở ống",
+       "rotation": 0,
+       "x_pct": 0.0109,
+       "y_pct": 0.48592,
+       "w_pct": 0.17357,
+       "h_pct": 0.07009
+      },
+      {
+       "code": "Mô-4",
+       "label": "Bọ dây kéo mở ống",
+       "rotation": 0,
+       "x_pct": 0.0109,
+       "y_pct": 0.68042,
+       "w_pct": 0.17631,
+       "h_pct": 0.07009
+      },
+      {
+       "code": "Mô-5",
+       "label": "Nẹp dây kéo mở ống",
+       "rotation": 0,
+       "x_pct": 0.81135,
+       "y_pct": 0.72683,
+       "w_pct": 0.17279,
+       "h_pct": 0.07009
+      },
+      {
+       "code": "Mô-6",
+       "label": "Bọ dây kéo mở ống",
+       "rotation": 0,
+       "x_pct": 0.81135,
+       "y_pct": 0.92657,
+       "w_pct": 0.17808,
+       "h_pct": 0.07009
+      }
+     ]
+    },
+    {
+     "name": "Cụm chỉnh lai",
+     "group": "chinh",
+     "prefix": "Cl",
+     "sort_order": 11,
+     "page": 20,
+     "image_png": "positions/quan_thethao/v2/chinh/p20_096e6b51a40f.png",
+     "image_sha256": "096e6b51a40f69944729d2859443721cc20a95f31600db36fceb33d0e7109333",
+     "image_size": [
+      1081,
+      1034
+     ],
+     "hotspots": [
+      {
+       "code": "Cl-1",
+       "label": "Dây thun cụm chỉnh lai",
+       "rotation": 0,
+       "x_pct": 0.01196,
+       "y_pct": 0.09237,
+       "w_pct": 0.08483,
+       "h_pct": 0.05416
+      },
+      {
+       "code": "Cl-2",
+       "label": "Tape chặn cụm chỉnh lai",
+       "rotation": 0,
+       "x_pct": 0.00641,
+       "y_pct": 0.25734,
+       "w_pct": 0.08843,
+       "h_pct": 0.05416
+      },
+      {
+       "code": "Cl-3",
+       "label": "Cục chặn cụm chỉnh lai",
+       "rotation": 0,
+       "x_pct": 0.00641,
+       "y_pct": 0.59208,
+       "w_pct": 0.0871,
+       "h_pct": 0.05416
+      },
+      {
+       "code": "Cl-4",
+       "label": "Mắt cáo cụm chỉnh lai",
+       "rotation": 0,
+       "x_pct": 0.00641,
+       "y_pct": 0.83567,
+       "w_pct": 0.08883,
+       "h_pct": 0.05416
+      },
+      {
+       "code": "Cl-5",
+       "label": "Dây tape cụm chỉnh lai",
+       "rotation": 0,
+       "x_pct": 0.90628,
+       "y_pct": 0.21351,
+       "w_pct": 0.08661,
+       "h_pct": 0.05416
+      },
+      {
+       "code": "Cl-6",
+       "label": "Khoá tape cụm chỉnh lai",
+       "rotation": 0,
+       "x_pct": 0.8994,
+       "y_pct": 0.47622,
+       "w_pct": 0.08994,
+       "h_pct": 0.05416
+      }
+     ]
+    },
+    {
+     "name": "Nhãn mác",
+     "group": "chinh",
+     "prefix": "Nh(1)",
+     "sort_order": 12,
+     "page": 21,
+     "image_png": "positions/quan_thethao/v2/chinh/p21_d1058e86496b.png",
+     "image_sha256": "d1058e86496bee73f53c3c02431833132c5d31ad860a2583c4a7df3f56e23dd9",
+     "image_size": [
+      1747,
+      1005
+     ],
+     "hotspots": [
+      {
+       "code": "Nh(1)-1",
+       "label": "Nhãn care",
+       "rotation": 0,
+       "x_pct": 0.00824,
+       "y_pct": 0.00833,
+       "w_pct": 0.0898,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-2",
+       "label": "Diễu nhãn care",
+       "rotation": 0,
+       "x_pct": 0.0056,
+       "y_pct": 0.11844,
+       "w_pct": 0.09203,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-3",
+       "label": "Nhãn chống trộm",
+       "rotation": 0,
+       "x_pct": 0.28006,
+       "y_pct": 0.00833,
+       "w_pct": 0.0912,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-4",
+       "label": "Diễu nhãn chống trộm",
+       "rotation": 0,
+       "x_pct": 0.28006,
+       "y_pct": 0.11844,
+       "w_pct": 0.09227,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-5",
+       "label": "Nhãn Barcode",
+       "rotation": 0,
+       "x_pct": 0.5366,
+       "y_pct": 0.00684,
+       "w_pct": 0.0909,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-6",
+       "label": "Diễu nhãn barcode",
+       "rotation": 0,
+       "x_pct": 0.53489,
+       "y_pct": 0.11397,
+       "w_pct": 0.09296,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-7",
+       "label": "Nhãn truy xuất",
+       "rotation": 0,
+       "x_pct": 0.89031,
+       "y_pct": 0.00386,
+       "w_pct": 0.09049,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-8",
+       "label": "Diễu nhãn truy xuất",
+       "rotation": 0,
+       "x_pct": 0.89031,
+       "y_pct": 0.12247,
+       "w_pct": 0.09214,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-9",
+       "label": "Nhãn size",
+       "rotation": 0,
+       "x_pct": 0.88859,
+       "y_pct": 0.35304,
+       "w_pct": 0.09227,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-10",
+       "label": "Diễu nhãn size",
+       "rotation": 0,
+       "x_pct": 0.89031,
+       "y_pct": 0.4257,
+       "w_pct": 0.10623,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-11",
+       "label": "Nhãn dệt",
+       "rotation": 0,
+       "x_pct": 0.0,
+       "y_pct": 0.6591,
+       "w_pct": 0.10162,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-12",
+       "label": "Diễu nhãn dệt",
+       "rotation": 0,
+       "x_pct": 0.00137,
+       "y_pct": 0.78836,
+       "w_pct": 0.10384,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-13",
+       "label": "Hình thêu",
+       "rotation": 0,
+       "x_pct": 0.37202,
+       "y_pct": 0.61858,
+       "w_pct": 0.10302,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-14",
+       "label": "Hình ép",
+       "rotation": 0,
+       "x_pct": 0.55233,
+       "y_pct": 0.56373,
+       "w_pct": 0.10326,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-15",
+       "label": "Hình in",
+       "rotation": 0,
+       "x_pct": 0.82607,
+       "y_pct": 0.55095,
+       "w_pct": 0.10271,
+       "h_pct": 0.05572
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Yếm thể thao",
+   "version_code": "co2-v2",
+   "version_name": "Visual Co-2 lần 2",
+   "blocks": [
+    {
+     "name": "Yếm",
+     "group": "chinh",
+     "prefix": "Yê",
+     "sort_order": 1,
+     "page": 22,
+     "image_png": "positions/yem_thethao/v2/chinh/p22_e3723821037b.png",
+     "image_sha256": "e3723821037b65700043aec28349b49bb60d0c58016785c24e9591684cc03f75",
+     "image_size": [
+      1615,
+      697
+     ],
+     "hotspots": [
+      {
+       "code": "Yê-1",
+       "label": "Yếm",
+       "rotation": 0,
+       "x_pct": 0.0054,
+       "y_pct": 0.27947,
+       "w_pct": 0.06031,
+       "h_pct": 0.08034
+      },
+      {
+       "code": "Yê-2",
+       "label": "Diễu yếm",
+       "rotation": 0,
+       "x_pct": 0.0054,
+       "y_pct": 0.40644,
+       "w_pct": 0.06272,
+       "h_pct": 0.08034
+      },
+      {
+       "code": "Yê-3",
+       "label": "Dây treo vai",
+       "rotation": 0,
+       "x_pct": 0.47146,
+       "y_pct": 0.25317,
+       "w_pct": 0.06182,
+       "h_pct": 0.08034
+      },
+      {
+       "code": "Yê-4",
+       "label": "Khoen dây treo vai",
+       "rotation": 0,
+       "x_pct": 0.47023,
+       "y_pct": 0.58193,
+       "w_pct": 0.06298,
+       "h_pct": 0.08034
+      },
+      {
+       "code": "Yê-5",
+       "label": "Khoá dây treo vai",
+       "rotation": 0,
+       "x_pct": 0.47146,
+       "y_pct": 0.68571,
+       "w_pct": 0.0615,
+       "h_pct": 0.08034
+      },
+      {
+       "code": "Yê-6",
+       "label": "Bách dây treo vai",
+       "rotation": 0,
+       "x_pct": 0.91997,
+       "y_pct": 0.19208,
+       "w_pct": 0.06373,
+       "h_pct": 0.08034
+      },
+      {
+       "code": "Yê-7",
+       "label": "Diễu bách dây treo vai",
+       "rotation": 0,
+       "x_pct": 0.91997,
+       "y_pct": 0.47721,
+       "w_pct": 0.06105,
+       "h_pct": 0.08034
+      },
+      {
+       "code": "Yê-8",
+       "label": "Khoen bách dây treo vai",
+       "rotation": 0,
+       "x_pct": 0.91997,
+       "y_pct": 0.60478,
+       "w_pct": 0.06283,
+       "h_pct": 0.08034
+      },
+      {
+       "code": "Yê-9",
+       "label": "Băng dính bách dây treo vai",
+       "rotation": 0,
+       "x_pct": 0.91997,
+       "y_pct": 0.72618,
+       "w_pct": 0.06298,
+       "h_pct": 0.08034
+      },
+      {
+       "code": "Yê-10",
+       "label": "Diễu băng dính bách dây treo vai",
+       "rotation": 0,
+       "x_pct": 0.91812,
+       "y_pct": 0.85445,
+       "w_pct": 0.07808,
+       "h_pct": 0.08034
+      }
+     ]
+    },
+    {
+     "name": "Lưng",
+     "group": "chinh",
+     "prefix": "Lư",
+     "sort_order": 2,
+     "page": 23,
+     "image_png": "positions/yem_thethao/v2/chinh/p23_1b84e6773fc2.png",
+     "image_sha256": "1b84e6773fc2655d10c51d003c788ccefc38fab58e7168b7bf782ddd5366dc12",
+     "image_size": [
+      1687,
+      770
+     ],
+     "hotspots": [
+      {
+       "code": "Lư-1",
+       "label": "Đầu lưng",
+       "rotation": 0,
+       "x_pct": 0.00567,
+       "y_pct": 0.13168,
+       "w_pct": 0.06021,
+       "h_pct": 0.07273
+      },
+      {
+       "code": "Lư-2",
+       "label": "Lưng chính trước",
+       "rotation": 0,
+       "x_pct": 0.00567,
+       "y_pct": 0.26338,
+       "w_pct": 0.06251,
+       "h_pct": 0.07273
+      },
+      {
+       "code": "Lư-3",
+       "label": "Diễu lưng",
+       "rotation": 0,
+       "x_pct": 0.00478,
+       "y_pct": 0.44888,
+       "w_pct": 0.06166,
+       "h_pct": 0.07273
+      },
+      {
+       "code": "Lư-4",
+       "label": "Đường tra lưng chính",
+       "rotation": 0,
+       "x_pct": 0.00478,
+       "y_pct": 0.60425,
+       "w_pct": 0.06277,
+       "h_pct": 0.07273
+      },
+      {
+       "code": "Lư-5",
+       "label": "Mí lưng",
+       "rotation": 0,
+       "x_pct": 0.00668,
+       "y_pct": 0.70992,
+       "w_pct": 0.06135,
+       "h_pct": 0.07273
+      },
+      {
+       "code": "Lư-6",
+       "label": "Nút lưng",
+       "rotation": 0,
+       "x_pct": 0.00478,
+       "y_pct": 0.82388,
+       "w_pct": 0.06348,
+       "h_pct": 0.07273
+      },
+      {
+       "code": "Lư-7",
+       "label": "Khuy lưng",
+       "rotation": 0,
+       "x_pct": 0.00478,
+       "y_pct": 0.93025,
+       "w_pct": 0.0621,
+       "h_pct": 0.07273
+      },
+      {
+       "code": "Lư-8",
+       "label": "Lưng chính sau",
+       "rotation": 0,
+       "x_pct": 0.43535,
+       "y_pct": 0.00416,
+       "w_pct": 0.06263,
+       "h_pct": 0.07273
+      },
+      {
+       "code": "Lư-9",
+       "label": "Đường nối lưng chính sau",
+       "rotation": 0,
+       "x_pct": 0.43446,
+       "y_pct": 0.13754,
+       "w_pct": 0.06277,
+       "h_pct": 0.07273
+      },
+      {
+       "code": "Lư-10",
+       "label": "Lưng chính sườn",
+       "rotation": 0,
+       "x_pct": 0.43535,
+       "y_pct": 0.2674,
+       "w_pct": 0.07722,
+       "h_pct": 0.07273
+      },
+      {
+       "code": "Lư-11",
+       "label": "Đường nối lưng chính sườn",
+       "rotation": 0,
+       "x_pct": 0.42288,
+       "y_pct": 0.70992,
+       "w_pct": 0.06874,
+       "h_pct": 0.07273
+      },
+      {
+       "code": "Lư-12",
+       "label": "Đường nối lót lưng",
+       "rotation": 0,
+       "x_pct": 0.91742,
+       "y_pct": 0.08506,
+       "w_pct": 0.07475,
+       "h_pct": 0.07273
+      },
+      {
+       "code": "Lư-13",
+       "label": "Lưng lót sau",
+       "rotation": 0,
+       "x_pct": 0.92009,
+       "y_pct": 0.18405,
+       "w_pct": 0.07389,
+       "h_pct": 0.07273
+      },
+      {
+       "code": "Lư-14",
+       "label": "Đường nối lưng lót sau",
+       "rotation": 0,
+       "x_pct": 0.92009,
+       "y_pct": 0.28209,
+       "w_pct": 0.07415,
+       "h_pct": 0.07273
+      },
+      {
+       "code": "Lư-15",
+       "label": "Lưng lót sườn",
+       "rotation": 0,
+       "x_pct": 0.91742,
+       "y_pct": 0.38219,
+       "w_pct": 0.07358,
+       "h_pct": 0.07273
+      },
+      {
+       "code": "Lư-16",
+       "label": "Đường nối lưng lót sườn",
+       "rotation": 0,
+       "x_pct": 0.92009,
+       "y_pct": 0.4855,
+       "w_pct": 0.07571,
+       "h_pct": 0.07273
+      },
+      {
+       "code": "Lư-17",
+       "label": "Lưng lót trước",
+       "rotation": 0,
+       "x_pct": 0.91831,
+       "y_pct": 0.71717,
+       "w_pct": 0.0723,
+       "h_pct": 0.07273
+      },
+      {
+       "code": "Lư-18",
+       "label": "Đường tra lưng lót",
+       "rotation": 0,
+       "x_pct": 0.91742,
+       "y_pct": 0.85275,
+       "w_pct": 0.07486,
+       "h_pct": 0.07273
+      }
+     ]
+    },
+    {
+     "name": "Thân",
+     "group": "chinh",
+     "prefix": "Th",
+     "sort_order": 3,
+     "page": 24,
+     "image_png": "positions/yem_thethao/v2/chinh/p24_500e6e2e1a5c.png",
+     "image_sha256": "500e6e2e1a5c83f8a89dd9eb3bcd5d233bdfd855095e0398849edcbf1a01ac97",
+     "image_size": [
+      1453,
+      669
+     ],
+     "hotspots": [
+      {
+       "code": "Th-1",
+       "label": "Thân trước",
+       "rotation": 0,
+       "x_pct": 0.00826,
+       "y_pct": 0.00678,
+       "w_pct": 0.07123,
+       "h_pct": 0.08371
+      },
+      {
+       "code": "Th-2",
+       "label": "Bạ thân",
+       "rotation": 0,
+       "x_pct": 0.00557,
+       "y_pct": 0.35105,
+       "w_pct": 0.0739,
+       "h_pct": 0.08371
+      },
+      {
+       "code": "Th-3",
+       "label": "Can bạ thân",
+       "rotation": 0,
+       "x_pct": 0.00557,
+       "y_pct": 0.48478,
+       "w_pct": 0.07291,
+       "h_pct": 0.08371
+      },
+      {
+       "code": "Th-4",
+       "label": "Diễu bạ thân",
+       "rotation": 0,
+       "x_pct": 0.00826,
+       "y_pct": 0.62331,
+       "w_pct": 0.0742,
+       "h_pct": 0.08371
+      },
+      {
+       "code": "Th-5",
+       "label": "Đáy trước",
+       "rotation": 0,
+       "x_pct": 0.00557,
+       "y_pct": 0.79041,
+       "w_pct": 0.07255,
+       "h_pct": 0.08371
+      },
+      {
+       "code": "Th-6",
+       "label": "Diễu đáy trước",
+       "rotation": 0,
+       "x_pct": 0.00557,
+       "y_pct": 0.91223,
+       "w_pct": 0.07503,
+       "h_pct": 0.08371
+      },
+      {
+       "code": "Th-7",
+       "label": "Thân sau",
+       "rotation": 0,
+       "x_pct": 0.91347,
+       "y_pct": 0.0367,
+       "w_pct": 0.07205,
+       "h_pct": 0.08371
+      },
+      {
+       "code": "Th-8",
+       "label": "Decoup thân",
+       "rotation": 0,
+       "x_pct": 0.90625,
+       "y_pct": 0.33377,
+       "w_pct": 0.07403,
+       "h_pct": 0.08371
+      },
+      {
+       "code": "Th-9",
+       "label": "Diễu decoup thân",
+       "rotation": 0,
+       "x_pct": 0.90625,
+       "y_pct": 0.44931,
+       "w_pct": 0.0742,
+       "h_pct": 0.08371
+      },
+      {
+       "code": "Th-10",
+       "label": "Đáy sau",
+       "rotation": 0,
+       "x_pct": 0.90522,
+       "y_pct": 0.54572,
+       "w_pct": 0.09098,
+       "h_pct": 0.08371
+      },
+      {
+       "code": "Th-11",
+       "label": "Diễu đáy sau",
+       "rotation": 0,
+       "x_pct": 0.90522,
+       "y_pct": 0.64123,
+       "w_pct": 0.08543,
+       "h_pct": 0.08371
+      },
+      {
+       "code": "Th-12",
+       "label": "Bọ đáy",
+       "rotation": 0,
+       "x_pct": 0.90625,
+       "y_pct": 0.81749,
+       "w_pct": 0.08811,
+       "h_pct": 0.08371
+      }
+     ]
+    },
+    {
+     "name": "Ống",
+     "group": "chinh",
+     "prefix": "Ôn",
+     "sort_order": 4,
+     "page": 25,
+     "image_png": "positions/yem_thethao/v2/chinh/p25_4799dc9444cf.png",
+     "image_sha256": "4799dc9444cfafdc9db5094b80de89ea3967d6a67746a7ef59fcb75d710905fb",
+     "image_size": [
+      1530,
+      1277
+     ],
+     "hotspots": [
+      {
+       "code": "Ôn-1",
+       "label": "Thân trước",
+       "rotation": 0,
+       "x_pct": 0.0486,
+       "y_pct": 0.12704,
+       "w_pct": 0.07225,
+       "h_pct": 0.04385
+      },
+      {
+       "code": "Ôn-2",
+       "label": "Thân sau",
+       "rotation": 0,
+       "x_pct": 0.0486,
+       "y_pct": 0.19454,
+       "w_pct": 0.07479,
+       "h_pct": 0.04385
+      },
+      {
+       "code": "Ôn-3",
+       "label": "Dàn trong",
+       "rotation": 0,
+       "x_pct": 0.04888,
+       "y_pct": 0.28744,
+       "w_pct": 0.07385,
+       "h_pct": 0.04385
+      },
+      {
+       "code": "Ôn-4",
+       "label": "Sườn ngoài",
+       "rotation": 0,
+       "x_pct": 0.04888,
+       "y_pct": 0.37038,
+       "w_pct": 0.07508,
+       "h_pct": 0.04385
+      },
+      {
+       "code": "Ôn-5",
+       "label": "Chít ly ống",
+       "rotation": 0,
+       "x_pct": 0.04576,
+       "y_pct": 0.47431,
+       "w_pct": 0.07351,
+       "h_pct": 0.04385
+      },
+      {
+       "code": "Ôn-6",
+       "label": "Xẻ Lai",
+       "rotation": 0,
+       "x_pct": 0.04495,
+       "y_pct": 0.62633,
+       "w_pct": 0.07586,
+       "h_pct": 0.04385
+      },
+      {
+       "code": "Ôn-7",
+       "label": "Diễu xẻ lai",
+       "rotation": 0,
+       "x_pct": 0.04495,
+       "y_pct": 0.69023,
+       "w_pct": 0.07304,
+       "h_pct": 0.04385
+      },
+      {
+       "code": "Ôn-8",
+       "label": "Bọ xẻ lai",
+       "rotation": 0,
+       "x_pct": 0.04495,
+       "y_pct": 0.75438,
+       "w_pct": 0.07492,
+       "h_pct": 0.04385
+      },
+      {
+       "code": "Ôn-9",
+       "label": "Bạ đáy",
+       "rotation": 0,
+       "x_pct": 0.5217,
+       "y_pct": 0.31188,
+       "w_pct": 0.07508,
+       "h_pct": 0.04385
+      },
+      {
+       "code": "Ôn-10",
+       "label": "Can bạ đáy",
+       "rotation": 0,
+       "x_pct": 0.5217,
+       "y_pct": 0.39246,
+       "w_pct": 0.09101,
+       "h_pct": 0.04385
+      },
+      {
+       "code": "Ôn-11",
+       "label": "Diễu bạ đáy",
+       "rotation": 0,
+       "x_pct": 0.5217,
+       "y_pct": 0.45825,
+       "w_pct": 0.08574,
+       "h_pct": 0.04385
+      },
+      {
+       "code": "Ôn-12",
+       "label": "Lai",
+       "rotation": 0,
+       "x_pct": 0.45306,
+       "y_pct": 0.53057,
+       "w_pct": 0.08828,
+       "h_pct": 0.04385
+      },
+      {
+       "code": "Ôn-13",
+       "label": "Diễu lai",
+       "rotation": 0,
+       "x_pct": 0.45698,
+       "y_pct": 0.62872,
+       "w_pct": 0.08734,
+       "h_pct": 0.04385
+      },
+      {
+       "code": "Ôn-14",
+       "label": "Decoup ống",
+       "rotation": 0,
+       "x_pct": 0.90071,
+       "y_pct": 0.16746,
+       "w_pct": 0.08763,
+       "h_pct": 0.04385
+      },
+      {
+       "code": "Ôn-15",
+       "label": "Can decoup ống",
+       "rotation": 0,
+       "x_pct": 0.90071,
+       "y_pct": 0.25348,
+       "w_pct": 0.087,
+       "h_pct": 0.04385
+      },
+      {
+       "code": "Ôn-16",
+       "label": "Bạ ống",
+       "rotation": 0,
+       "x_pct": 0.90133,
+       "y_pct": 0.32872,
+       "w_pct": 0.08935,
+       "h_pct": 0.04385
+      },
+      {
+       "code": "Ôn-17",
+       "label": "Can bạ ống",
+       "rotation": 0,
+       "x_pct": 0.90133,
+       "y_pct": 0.39087,
+       "w_pct": 0.08559,
+       "h_pct": 0.04385
+      },
+      {
+       "code": "Ôn-18",
+       "label": "Diễu bạ ống",
+       "rotation": 0,
+       "x_pct": 0.90169,
+       "y_pct": 0.44726,
+       "w_pct": 0.08841,
+       "h_pct": 0.04385
+      },
+      {
+       "code": "Ôn-19",
+       "label": "Bạ lai",
+       "rotation": 0,
+       "x_pct": 0.90227,
+       "y_pct": 0.53557,
+       "w_pct": 0.08857,
+       "h_pct": 0.04385
+      },
+      {
+       "code": "Ôn-20",
+       "label": "Can bạ lai",
+       "rotation": 0,
+       "x_pct": 0.90227,
+       "y_pct": 0.59092,
+       "w_pct": 0.09393,
+       "h_pct": 0.04385
+      },
+      {
+       "code": "Ôn-21",
+       "label": "Diễu bạ lai",
+       "rotation": 0,
+       "x_pct": 0.90227,
+       "y_pct": 0.64358,
+       "w_pct": 0.08828,
+       "h_pct": 0.04385
+      },
+      {
+       "code": "Ôn-22",
+       "label": "Bạ dàn/sườn",
+       "rotation": 0,
+       "x_pct": 0.57276,
+       "y_pct": 0.59092,
+       "w_pct": 0.09083,
+       "h_pct": 0.04385
+      },
+      {
+       "code": "Ôn-23",
+       "label": "Can bạ dàn/sườn",
+       "rotation": 0,
+       "x_pct": 0.57276,
+       "y_pct": 0.64358,
+       "w_pct": 0.08988,
+       "h_pct": 0.04385
+      },
+      {
+       "code": "Ôn-24",
+       "label": "Diễu bạ dàn/sườn",
+       "rotation": 0,
+       "x_pct": 0.57276,
+       "y_pct": 0.71232,
+       "w_pct": 0.09111,
+       "h_pct": 0.04385
+      }
+     ]
+    },
+    {
+     "name": "Barget",
+     "group": "chinh",
+     "prefix": "Ba",
+     "sort_order": 5,
+     "page": 26,
+     "image_png": "positions/yem_thethao/v2/chinh/p26_151918be76c9.png",
+     "image_sha256": "151918be76c93501796b56435f28f116f98186bd6eabf8ae4a9db2a3f936ef1d",
+     "image_size": [
+      1725,
+      879
+     ],
+     "hotspots": [
+      {
+       "code": "Ba-1",
+       "label": "Barget",
+       "rotation": 0,
+       "x_pct": 0.13116,
+       "y_pct": 0.09086,
+       "w_pct": 0.05959,
+       "h_pct": 0.06371
+      },
+      {
+       "code": "Ba-2",
+       "label": "Can barget",
+       "rotation": 0,
+       "x_pct": 0.1289,
+       "y_pct": 0.24395,
+       "w_pct": 0.06184,
+       "h_pct": 0.06371
+      },
+      {
+       "code": "Ba-3",
+       "label": "Diễu barget",
+       "rotation": 0,
+       "x_pct": 0.12803,
+       "y_pct": 0.3489,
+       "w_pct": 0.06101,
+       "h_pct": 0.06371
+      },
+      {
+       "code": "Ba-4",
+       "label": "Bọ barget",
+       "rotation": 0,
+       "x_pct": 0.12803,
+       "y_pct": 0.48986,
+       "w_pct": 0.06209,
+       "h_pct": 0.06371
+      },
+      {
+       "code": "Ba-5",
+       "label": "Môi đôi",
+       "rotation": 0,
+       "x_pct": 0.86668,
+       "y_pct": 0.11633,
+       "w_pct": 0.0607,
+       "h_pct": 0.06371
+      },
+      {
+       "code": "Ba-6",
+       "label": "Mí parget",
+       "rotation": 0,
+       "x_pct": 0.86668,
+       "y_pct": 0.26481,
+       "w_pct": 0.06279,
+       "h_pct": 0.06371
+      },
+      {
+       "code": "Ba-7",
+       "label": "Dây kéo barget",
+       "rotation": 0,
+       "x_pct": 0.86668,
+       "y_pct": 0.36956,
+       "w_pct": 0.06028,
+       "h_pct": 0.06371
+      },
+      {
+       "code": "Ba-8",
+       "label": "Diễu dây kéo barget",
+       "rotation": 0,
+       "x_pct": 0.86668,
+       "y_pct": 0.54465,
+       "w_pct": 0.06195,
+       "h_pct": 0.06371
+      },
+      {
+       "code": "Ba-9",
+       "label": "Môi chiếc",
+       "rotation": 0,
+       "x_pct": 0.86668,
+       "y_pct": 0.66069,
+       "w_pct": 0.06209,
+       "h_pct": 0.06371
+      }
+     ]
+    },
+    {
+     "name": "Cụm dây kéo yếm",
+     "group": "chinh",
+     "prefix": "Ky",
+     "sort_order": 6,
+     "page": 27,
+     "image_png": "positions/yem_thethao/v2/chinh/p27_7db1d0597eca.png",
+     "image_sha256": "7db1d0597ecaedc34778be8a871996d2e75c597204aae1c7fd69e8201fac5c31",
+     "image_size": [
+      1051,
+      848
+     ],
+     "hotspots": [
+      {
+       "code": "Ky-1",
+       "label": "Dây kéo yếm",
+       "rotation": 0,
+       "x_pct": 0.00788,
+       "y_pct": 0.06729,
+       "w_pct": 0.09729,
+       "h_pct": 0.06604
+      },
+      {
+       "code": "Ky-2",
+       "label": "Diễu dây kéo yếm",
+       "rotation": 0,
+       "x_pct": 0.00659,
+       "y_pct": 0.22303,
+       "w_pct": 0.10099,
+       "h_pct": 0.06604
+      },
+      {
+       "code": "Ky-3",
+       "label": "Bọ dây kéo yếm",
+       "rotation": 0,
+       "x_pct": 0.00788,
+       "y_pct": 0.3833,
+       "w_pct": 0.09962,
+       "h_pct": 0.06604
+      },
+      {
+       "code": "Ky-4",
+       "label": "Can dây kéo yếm",
+       "rotation": 0,
+       "x_pct": 0.00659,
+       "y_pct": 0.6497,
+       "w_pct": 0.1014,
+       "h_pct": 0.06604
+      },
+      {
+       "code": "Ky-5",
+       "label": "Nẹp che dây kéo yếm",
+       "rotation": 0,
+       "x_pct": 0.00788,
+       "y_pct": 0.74097,
+       "w_pct": 0.09912,
+       "h_pct": 0.06604
+      },
+      {
+       "code": "Ky-6",
+       "label": "Can nẹp che dây kéo yếm",
+       "rotation": 0,
+       "x_pct": 0.00659,
+       "y_pct": 0.83224,
+       "w_pct": 0.10254,
+       "h_pct": 0.06604
+      },
+      {
+       "code": "Ky-7",
+       "label": "Diễu nẹp che dây kéo yếm",
+       "rotation": 0,
+       "x_pct": 0.00659,
+       "y_pct": 0.92088,
+       "w_pct": 0.09843,
+       "h_pct": 0.06604
+      }
+     ]
+    },
+    {
+     "name": "Túi trước",
+     "group": "chinh",
+     "prefix": "Tt",
+     "sort_order": 7,
+     "page": 28,
+     "image_png": "positions/yem_thethao/v2/chinh/p28_5a86ea77013a.png",
+     "image_sha256": "5a86ea77013a0bcae121a7374fbbd7f22216b03a8ac1b94afe273442c995922b",
+     "image_size": [
+      1652,
+      1093
+     ],
+     "hotspots": [
+      {
+       "code": "Tt-1",
+       "label": "Miệng túi con (trước)",
+       "rotation": 0,
+       "x_pct": 0.48153,
+       "y_pct": 0.14753,
+       "w_pct": 0.05599,
+       "h_pct": 0.05124
+      },
+      {
+       "code": "Tt-2",
+       "label": "Diễu miệng túi con (trước)",
+       "rotation": 0,
+       "x_pct": 0.48153,
+       "y_pct": 0.26843,
+       "w_pct": 0.05835,
+       "h_pct": 0.05124
+      },
+      {
+       "code": "Tt-3",
+       "label": "Bọ miệng túi con (trước)",
+       "rotation": 0,
+       "x_pct": 0.48153,
+       "y_pct": 0.34404,
+       "w_pct": 0.05747,
+       "h_pct": 0.05124
+      },
+      {
+       "code": "Tt-4",
+       "label": "Dây kéo miệng túi con (trước)",
+       "rotation": 0,
+       "x_pct": 0.48153,
+       "y_pct": 0.40158,
+       "w_pct": 0.05861,
+       "h_pct": 0.05124
+      },
+      {
+       "code": "Tt-5",
+       "label": "Bao túi con (trước)",
+       "rotation": 0,
+       "x_pct": 0.48153,
+       "y_pct": 0.48108,
+       "w_pct": 0.05715,
+       "h_pct": 0.05124
+      },
+      {
+       "code": "Tt-6",
+       "label": "Đường may bao túi con (trước)",
+       "rotation": 0,
+       "x_pct": 0.48153,
+       "y_pct": 0.54935,
+       "w_pct": 0.05933,
+       "h_pct": 0.05124
+      },
+      {
+       "code": "Tt-7",
+       "label": "Miệng túi trước",
+       "rotation": 0,
+       "x_pct": 0.48153,
+       "y_pct": 0.64432,
+       "w_pct": 0.05672,
+       "h_pct": 0.05124
+      },
+      {
+       "code": "Tt-8",
+       "label": "Diễu miệng túi trước",
+       "rotation": 0,
+       "x_pct": 0.48153,
+       "y_pct": 0.71487,
+       "w_pct": 0.05846,
+       "h_pct": 0.05124
+      },
+      {
+       "code": "Tt-9",
+       "label": "Bọ miệng túi trước",
+       "rotation": 0,
+       "x_pct": 0.48153,
+       "y_pct": 0.79393,
+       "w_pct": 0.05861,
+       "h_pct": 0.05124
+      },
+      {
+       "code": "Tt-10",
+       "label": "Bao túi trước",
+       "rotation": 0,
+       "x_pct": 0.48153,
+       "y_pct": 0.88067,
+       "w_pct": 0.07337,
+       "h_pct": 0.05124
+      },
+      {
+       "code": "Tt-11",
+       "label": "Đường may bao túi trước",
+       "rotation": 0,
+       "x_pct": 0.48153,
+       "y_pct": 0.94586,
+       "w_pct": 0.06849,
+       "h_pct": 0.05124
+      },
+      {
+       "code": "Tt-12",
+       "label": "Nẹp túi trước",
+       "rotation": 0,
+       "x_pct": 0.68524,
+       "y_pct": 0.00184,
+       "w_pct": 0.07084,
+       "h_pct": 0.05124
+      },
+      {
+       "code": "Tt-13",
+       "label": "Diễu nẹp túi trước",
+       "rotation": 0,
+       "x_pct": 0.68355,
+       "y_pct": 0.12015,
+       "w_pct": 0.06997,
+       "h_pct": 0.05124
+      },
+      {
+       "code": "Tt-14",
+       "label": "Bọ nẹp túi trước",
+       "rotation": 0,
+       "x_pct": 0.68355,
+       "y_pct": 0.20258,
+       "w_pct": 0.07023,
+       "h_pct": 0.05124
+      },
+      {
+       "code": "Tt-15",
+       "label": "Dây kéo túi trước",
+       "rotation": 0,
+       "x_pct": 0.68355,
+       "y_pct": 0.33945,
+       "w_pct": 0.06965,
+       "h_pct": 0.05124
+      },
+      {
+       "code": "Tt-16",
+       "label": "Đầu cầm dây kéo túi trước",
+       "rotation": 0,
+       "x_pct": 0.68292,
+       "y_pct": 0.45528,
+       "w_pct": 0.07183,
+       "h_pct": 0.05124
+      }
+     ]
+    },
+    {
+     "name": "Túi sau",
+     "group": "chinh",
+     "prefix": "Ts",
+     "sort_order": 8,
+     "page": 29,
+     "image_png": "positions/yem_thethao/v2/chinh/p29_f2142ccaab6f.png",
+     "image_sha256": "f2142ccaab6fc13ecff3589d343b04ab7a64fd2aaad66da7cd252931b55b2ce7",
+     "image_size": [
+      1177,
+      954
+     ],
+     "hotspots": [
+      {
+       "code": "Ts-1",
+       "label": "Miệng túi sau",
+       "rotation": 0,
+       "x_pct": 0.00656,
+       "y_pct": 0.00212,
+       "w_pct": 0.08018,
+       "h_pct": 0.0587
+      },
+      {
+       "code": "Ts-2",
+       "label": "Diễu miệng túi sau",
+       "rotation": 0,
+       "x_pct": 0.00656,
+       "y_pct": 0.12529,
+       "w_pct": 0.08349,
+       "h_pct": 0.0587
+      },
+      {
+       "code": "Ts-3",
+       "label": "Bọ miệng túi sau",
+       "rotation": 0,
+       "x_pct": 0.01038,
+       "y_pct": 0.41579,
+       "w_pct": 0.08226,
+       "h_pct": 0.0587
+      },
+      {
+       "code": "Ts-4",
+       "label": "Bao túi sau",
+       "rotation": 0,
+       "x_pct": 0.00783,
+       "y_pct": 0.71454,
+       "w_pct": 0.08385,
+       "h_pct": 0.0587
+      },
+      {
+       "code": "Ts-5",
+       "label": "Đường may bao túi sau",
+       "rotation": 0,
+       "x_pct": 0.01038,
+       "y_pct": 0.83003,
+       "w_pct": 0.08181,
+       "h_pct": 0.0587
+      },
+      {
+       "code": "Ts-6",
+       "label": "Nẹp túi sau",
+       "rotation": 0,
+       "x_pct": 0.89043,
+       "y_pct": 0.06125,
+       "w_pct": 0.08487,
+       "h_pct": 0.0587
+      },
+      {
+       "code": "Ts-7",
+       "label": "Diễu nẹp túi sau",
+       "rotation": 0,
+       "x_pct": 0.89043,
+       "y_pct": 0.21438,
+       "w_pct": 0.0812,
+       "h_pct": 0.0587
+      },
+      {
+       "code": "Ts-8",
+       "label": "Bọ nẹp túi sau",
+       "rotation": 0,
+       "x_pct": 0.89043,
+       "y_pct": 0.33283,
+       "w_pct": 0.08365,
+       "h_pct": 0.0587
+      },
+      {
+       "code": "Ts-9",
+       "label": "Dây kéo túi sau",
+       "rotation": 0,
+       "x_pct": 0.89043,
+       "y_pct": 0.47058,
+       "w_pct": 0.08385,
+       "h_pct": 0.0587
+      },
+      {
+       "code": "Ts-10",
+       "label": "Đầu cầm dây kéo túi sau",
+       "rotation": 0,
+       "x_pct": 0.89043,
+       "y_pct": 0.58574,
+       "w_pct": 0.10457,
+       "h_pct": 0.0587
+      }
+     ]
+    },
+    {
+     "name": "Túi đùi",
+     "group": "chinh",
+     "prefix": "Tđ",
+     "sort_order": 9,
+     "page": 30,
+     "image_png": "positions/yem_thethao/v2/chinh/p30_e3127d0ca79c.png",
+     "image_sha256": "e3127d0ca79ce1032862e3c3ccfdc223f728ba19a69b86aea4958bfc8f70b9b9",
+     "image_size": [
+      1572,
+      862
+     ],
+     "hotspots": [
+      {
+       "code": "Tđ-1",
+       "label": "Nẹp dây kéo túi đùi",
+       "rotation": 0,
+       "x_pct": 0.01604,
+       "y_pct": 0.04284,
+       "w_pct": 0.06419,
+       "h_pct": 0.06497
+      },
+      {
+       "code": "Tđ-2",
+       "label": "Đầu cầm dây kéo túi đùi",
+       "rotation": 0,
+       "x_pct": 0.01604,
+       "y_pct": 0.14124,
+       "w_pct": 0.06667,
+       "h_pct": 0.06497
+      },
+      {
+       "code": "Tđ-3",
+       "label": "Dây kéo túi đùi",
+       "rotation": 0,
+       "x_pct": 0.01604,
+       "y_pct": 0.29547,
+       "w_pct": 0.06575,
+       "h_pct": 0.06497
+      },
+      {
+       "code": "Tđ-4",
+       "label": "Diễu dây kéo túi đùi",
+       "rotation": 0,
+       "x_pct": 0.01604,
+       "y_pct": 0.38553,
+       "w_pct": 0.06694,
+       "h_pct": 0.06497
+      },
+      {
+       "code": "Tđ-5",
+       "label": "Bọ dây kéo túi đùi",
+       "rotation": 0,
+       "x_pct": 0.01604,
+       "y_pct": 0.45097,
+       "w_pct": 0.06542,
+       "h_pct": 0.06497
+      },
+      {
+       "code": "Tđ-6",
+       "label": "Miệng túi con (đùi)",
+       "rotation": 0,
+       "x_pct": 0.01604,
+       "y_pct": 0.51152,
+       "w_pct": 0.06771,
+       "h_pct": 0.06497
+      },
+      {
+       "code": "Tđ-7",
+       "label": "Bọ miệng túi con (đùi)",
+       "rotation": 0,
+       "x_pct": 0.01604,
+       "y_pct": 0.59676,
+       "w_pct": 0.06496,
+       "h_pct": 0.06497
+      },
+      {
+       "code": "Tđ-8",
+       "label": "Diễu miệng túi con (đùi)",
+       "rotation": 0,
+       "x_pct": 0.01604,
+       "y_pct": 0.70396,
+       "w_pct": 0.06679,
+       "h_pct": 0.06497
+      },
+      {
+       "code": "Tđ-9",
+       "label": "Bao túi con (đùi)",
+       "rotation": 0,
+       "x_pct": 0.01604,
+       "y_pct": 0.81741,
+       "w_pct": 0.06694,
+       "h_pct": 0.06497
+      },
+      {
+       "code": "Tđ-10",
+       "label": "Diễu bao túi con (đùi)",
+       "rotation": 0,
+       "x_pct": 0.00485,
+       "y_pct": 0.92088,
+       "w_pct": 0.08245,
+       "h_pct": 0.06497
+      },
+      {
+       "code": "Tđ-11",
+       "label": "Nắp túi đùi",
+       "rotation": 0,
+       "x_pct": 0.91469,
+       "y_pct": 0.00462,
+       "w_pct": 0.07732,
+       "h_pct": 0.06497
+      },
+      {
+       "code": "Tđ-12",
+       "label": "Đường may nắp túi đùi",
+       "rotation": 0,
+       "x_pct": 0.91469,
+       "y_pct": 0.09206,
+       "w_pct": 0.0798,
+       "h_pct": 0.06497
+      },
+      {
+       "code": "Tđ-13",
+       "label": "Bọ nắp túi đùi",
+       "rotation": 0,
+       "x_pct": 0.91469,
+       "y_pct": 0.19305,
+       "w_pct": 0.07888,
+       "h_pct": 0.06497
+      },
+      {
+       "code": "Tđ-14",
+       "label": "Nút túi đùi",
+       "rotation": 0,
+       "x_pct": 0.91469,
+       "y_pct": 0.2747,
+       "w_pct": 0.07916,
+       "h_pct": 0.06497
+      },
+      {
+       "code": "Tđ-15",
+       "label": "Bao túi đùi",
+       "rotation": 0,
+       "x_pct": 0.91469,
+       "y_pct": 0.46027,
+       "w_pct": 0.07855,
+       "h_pct": 0.06497
+      },
+      {
+       "code": "Tđ-16",
+       "label": "Đường may bao túi đùi",
+       "rotation": 0,
+       "x_pct": 0.91469,
+       "y_pct": 0.58139,
+       "w_pct": 0.08084,
+       "h_pct": 0.06497
+      },
+      {
+       "code": "Tđ-17",
+       "label": "Chít ly bao túi đùi",
+       "rotation": 0,
+       "x_pct": 0.91469,
+       "y_pct": 0.69687,
+       "w_pct": 0.07717,
+       "h_pct": 0.06497
+      },
+      {
+       "code": "Tđ-18",
+       "label": "Bọ bao túi đùi",
+       "rotation": 0,
+       "x_pct": 0.91469,
+       "y_pct": 0.82326,
+       "w_pct": 0.07992,
+       "h_pct": 0.06497
+      }
+     ]
+    },
+    {
+     "name": "Cụm chỉnh eo",
+     "group": "chinh",
+     "prefix": "Ce",
+     "sort_order": 10,
+     "page": 31,
+     "image_png": "positions/yem_thethao/v2/chinh/p31_91d02835fa2e.png",
+     "image_sha256": "91d02835fa2ec5691c3bc9339d1e4248eacdf80a72dc5d3ae4ad088941f8d9af",
+     "image_size": [
+      1725,
+      1009
+     ],
+     "hotspots": [
+      {
+       "code": "Ce-1",
+       "label": "Khoá cụm chỉnh eo",
+       "rotation": 0,
+       "x_pct": 0.07423,
+       "y_pct": 0.00261,
+       "w_pct": 0.05774,
+       "h_pct": 0.0555
+      },
+      {
+       "code": "Ce-2",
+       "label": "Khoen chỉnh eo",
+       "rotation": 0,
+       "x_pct": 0.07423,
+       "y_pct": 0.13768,
+       "w_pct": 0.05999,
+       "h_pct": 0.0555
+      },
+      {
+       "code": "Ce-3",
+       "label": "Khoá khoen chỉnh eo",
+       "rotation": 0,
+       "x_pct": 0.07594,
+       "y_pct": 0.28138,
+       "w_pct": 0.05916,
+       "h_pct": 0.0555
+      },
+      {
+       "code": "Ce-4",
+       "label": "Thun chỉnh eo",
+       "rotation": 0,
+       "x_pct": 0.07423,
+       "y_pct": 0.39564,
+       "w_pct": 0.06024,
+       "h_pct": 0.0555
+      },
+      {
+       "code": "Ce-5",
+       "label": "Băng dính chỉnh eo",
+       "rotation": 0,
+       "x_pct": 0.82186,
+       "y_pct": 0.28088,
+       "w_pct": 0.05885,
+       "h_pct": 0.0555
+      },
+      {
+       "code": "Ce-6",
+       "label": "Diễu băng dính chỉnh eo",
+       "rotation": 0,
+       "x_pct": 0.82203,
+       "y_pct": 0.4001,
+       "w_pct": 0.06094,
+       "h_pct": 0.0555
+      },
+      {
+       "code": "Ce-7",
+       "label": "Nẹp chỉnh eo",
+       "rotation": 0,
+       "x_pct": 0.82203,
+       "y_pct": 0.5546,
+       "w_pct": 0.05844,
+       "h_pct": 0.0555
+      },
+      {
+       "code": "Ce-8",
+       "label": "Khoá nẹp chỉnh eo",
+       "rotation": 0,
+       "x_pct": 0.82294,
+       "y_pct": 0.64969,
+       "w_pct": 0.06011,
+       "h_pct": 0.0555
+      },
+      {
+       "code": "Ce-9",
+       "label": "Diễu nẹp chỉnh eo",
+       "rotation": 0,
+       "x_pct": 0.82294,
+       "y_pct": 0.74126,
+       "w_pct": 0.06024,
+       "h_pct": 0.0555
+      }
+     ]
+    },
+    {
+     "name": "Cụm chỉnh ống",
+     "group": "chinh",
+     "prefix": "Cô",
+     "sort_order": 11,
+     "page": 32,
+     "image_png": "positions/yem_thethao/v2/chinh/p32_240c2d11a11c.png",
+     "image_sha256": "240c2d11a11cf7049bd8c6d2d98040add42bbe6da908a47839dcba7dd821a4dd",
+     "image_size": [
+      744,
+      973
+     ],
+     "hotspots": [
+      {
+       "code": "Cô-1",
+       "label": "Bọ cụm chỉnh lai",
+       "rotation": 0,
+       "x_pct": 0.01325,
+       "y_pct": 0.00561,
+       "w_pct": 0.13737,
+       "h_pct": 0.05755
+      },
+      {
+       "code": "Cô-2",
+       "label": "Nẹp che dây kéo cụm chỉnh lai",
+       "rotation": 0,
+       "x_pct": 0.01325,
+       "y_pct": 0.20996,
+       "w_pct": 0.1426,
+       "h_pct": 0.05755
+      },
+      {
+       "code": "Cô-3",
+       "label": "Miệng cụm chỉnh lai",
+       "rotation": 0,
+       "x_pct": 0.0097,
+       "y_pct": 0.33211,
+       "w_pct": 0.14066,
+       "h_pct": 0.05755
+      },
+      {
+       "code": "Cô-4",
+       "label": "Diễu miệng cụm chỉnh lai",
+       "rotation": 0,
+       "x_pct": 0.01325,
+       "y_pct": 0.54716,
+       "w_pct": 0.14318,
+       "h_pct": 0.05755
+      },
+      {
+       "code": "Cô-5",
+       "label": "Diễu dây kéo cụm chỉnh lai",
+       "rotation": 0,
+       "x_pct": 0.84665,
+       "y_pct": 0.54408,
+       "w_pct": 0.13995,
+       "h_pct": 0.05755
+      },
+      {
+       "code": "Cô-6",
+       "label": "Tape dệt cụm chỉnh lai",
+       "rotation": 0,
+       "x_pct": 0.84665,
+       "y_pct": 0.66138,
+       "w_pct": 0.14479,
+       "h_pct": 0.05755
+      },
+      {
+       "code": "Cô-7",
+       "label": "Dây nối lai",
+       "rotation": 0,
+       "x_pct": 0.84463,
+       "y_pct": 0.85287,
+       "w_pct": 0.13898,
+       "h_pct": 0.05755
+      }
+     ]
+    },
+    {
+     "name": "Lót",
+     "group": "chinh",
+     "prefix": "Lo",
+     "sort_order": 12,
+     "page": 33,
+     "image_png": "positions/yem_thethao/v2/chinh/p33_58e6e0da6942.png",
+     "image_sha256": "58e6e0da6942e9c5b4f532c52bd1fab9c1da4fbef1b7a3c97294fc50128b4078",
+     "image_size": [
+      893,
+      718
+     ],
+     "hotspots": [
+      {
+       "code": "Lo-1",
+       "label": "Thân trước",
+       "rotation": 0,
+       "x_pct": 0.01264,
+       "y_pct": 0.05213,
+       "w_pct": 0.10999,
+       "h_pct": 0.07799
+      },
+      {
+       "code": "Lo-2",
+       "label": "Đáy trước",
+       "rotation": 0,
+       "x_pct": 0.01264,
+       "y_pct": 0.14399,
+       "w_pct": 0.11434,
+       "h_pct": 0.07799
+      },
+      {
+       "code": "Lo-3",
+       "label": "Ống trước",
+       "rotation": 0,
+       "x_pct": 0.00928,
+       "y_pct": 0.26224,
+       "w_pct": 0.11273,
+       "h_pct": 0.07799
+      },
+      {
+       "code": "Lo-4",
+       "label": "Bạ ống",
+       "rotation": 0,
+       "x_pct": 0.00928,
+       "y_pct": 0.42031,
+       "w_pct": 0.11483,
+       "h_pct": 0.07799
+      },
+      {
+       "code": "Lo-5",
+       "label": "Can bạ ống",
+       "rotation": 0,
+       "x_pct": 0.00928,
+       "y_pct": 0.53438,
+       "w_pct": 0.11214,
+       "h_pct": 0.07799
+      },
+      {
+       "code": "Lo-6",
+       "label": "Lai",
+       "rotation": 0,
+       "x_pct": 0.00928,
+       "y_pct": 0.68396,
+       "w_pct": 0.11617,
+       "h_pct": 0.07799
+      },
+      {
+       "code": "Lo-7",
+       "label": "Diễu lai",
+       "rotation": 0,
+       "x_pct": 0.0076,
+       "y_pct": 0.83008,
+       "w_pct": 0.11133,
+       "h_pct": 0.07799
+      },
+      {
+       "code": "Lo-8",
+       "label": "Thân sau",
+       "rotation": 0,
+       "x_pct": 0.84759,
+       "y_pct": 0.01704,
+       "w_pct": 0.11456,
+       "h_pct": 0.07799
+      },
+      {
+       "code": "Lo-9",
+       "label": "Đáy sau",
+       "rotation": 0,
+       "x_pct": 0.84759,
+       "y_pct": 0.11544,
+       "w_pct": 0.11482,
+       "h_pct": 0.07799
+      },
+      {
+       "code": "Lo-10",
+       "label": "Ống sau",
+       "rotation": 0,
+       "x_pct": 0.85095,
+       "y_pct": 0.20865,
+       "w_pct": 0.14213,
+       "h_pct": 0.07799
+      },
+      {
+       "code": "Lo-11",
+       "label": "Decoup ống",
+       "rotation": 0,
+       "x_pct": 0.85095,
+       "y_pct": 0.30792,
+       "w_pct": 0.1331,
+       "h_pct": 0.07799
+      },
+      {
+       "code": "Lo-12",
+       "label": "Bạ lai",
+       "rotation": 0,
+       "x_pct": 0.84648,
+       "y_pct": 0.50402,
+       "w_pct": 0.13745,
+       "h_pct": 0.07799
+      },
+      {
+       "code": "Lo-13",
+       "label": "Decoup lai",
+       "rotation": 0,
+       "x_pct": 0.85095,
+       "y_pct": 0.65319,
+       "w_pct": 0.13584,
+       "h_pct": 0.07799
+      },
+      {
+       "code": "Lo-14",
+       "label": "Sườn ngoài",
+       "rotation": 0,
+       "x_pct": 0.85152,
+       "y_pct": 0.80483,
+       "w_pct": 0.13633,
+       "h_pct": 0.07799
+      },
+      {
+       "code": "Lo-15",
+       "label": "Sườn trong",
+       "rotation": 0,
+       "x_pct": 0.85152,
+       "y_pct": 0.91791,
+       "w_pct": 0.13525,
+       "h_pct": 0.07799
+      }
+     ]
+    },
+    {
+     "name": "Nhãn mác",
+     "group": "chinh",
+     "prefix": "Nh(1)",
+     "sort_order": 13,
+     "page": 34,
+     "image_png": "positions/yem_thethao/v2/chinh/p34_d1058e86496b.png",
+     "image_sha256": "d1058e86496bee73f53c3c02431833132c5d31ad860a2583c4a7df3f56e23dd9",
+     "image_size": [
+      1747,
+      1005
+     ],
+     "hotspots": [
+      {
+       "code": "Nh(1)-1",
+       "label": "Nhãn care",
+       "rotation": 0,
+       "x_pct": 0.00824,
+       "y_pct": 0.00833,
+       "w_pct": 0.0898,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-2",
+       "label": "Diễu nhãn care",
+       "rotation": 0,
+       "x_pct": 0.0056,
+       "y_pct": 0.11844,
+       "w_pct": 0.09203,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-3",
+       "label": "Nhãn chống trộm",
+       "rotation": 0,
+       "x_pct": 0.28006,
+       "y_pct": 0.00833,
+       "w_pct": 0.0912,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-4",
+       "label": "Diễu nhãn chống trộm",
+       "rotation": 0,
+       "x_pct": 0.28006,
+       "y_pct": 0.11844,
+       "w_pct": 0.09227,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-5",
+       "label": "Nhãn Barcode",
+       "rotation": 0,
+       "x_pct": 0.5366,
+       "y_pct": 0.00684,
+       "w_pct": 0.0909,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-6",
+       "label": "Diễu nhãn barcode",
+       "rotation": 0,
+       "x_pct": 0.53489,
+       "y_pct": 0.11397,
+       "w_pct": 0.09296,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-7",
+       "label": "Nhãn truy xuất",
+       "rotation": 0,
+       "x_pct": 0.89031,
+       "y_pct": 0.00386,
+       "w_pct": 0.09049,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-8",
+       "label": "Diễu nhãn truy xuất",
+       "rotation": 0,
+       "x_pct": 0.89031,
+       "y_pct": 0.12247,
+       "w_pct": 0.09214,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-9",
+       "label": "Nhãn size",
+       "rotation": 0,
+       "x_pct": 0.88859,
+       "y_pct": 0.35304,
+       "w_pct": 0.09227,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-10",
+       "label": "Diễu nhãn size",
+       "rotation": 0,
+       "x_pct": 0.89031,
+       "y_pct": 0.4257,
+       "w_pct": 0.10623,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-11",
+       "label": "Nhãn dệt",
+       "rotation": 0,
+       "x_pct": 0.0,
+       "y_pct": 0.6591,
+       "w_pct": 0.10162,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-12",
+       "label": "Diễu nhãn dệt",
+       "rotation": 0,
+       "x_pct": 0.00137,
+       "y_pct": 0.78836,
+       "w_pct": 0.10384,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-13",
+       "label": "Hình thêu",
+       "rotation": 0,
+       "x_pct": 0.37202,
+       "y_pct": 0.61858,
+       "w_pct": 0.10302,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-14",
+       "label": "Hình ép",
+       "rotation": 0,
+       "x_pct": 0.55233,
+       "y_pct": 0.56373,
+       "w_pct": 0.10326,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-15",
+       "label": "Hình in",
+       "rotation": 0,
+       "x_pct": 0.82607,
+       "y_pct": 0.55095,
+       "w_pct": 0.10271,
+       "h_pct": 0.05572
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Áo khoác thể thao nhiều lớp",
+   "version_code": "co2-v2",
+   "version_name": "Visual Co-2 lần 2",
+   "blocks": [
+    {
+     "name": "Mũ",
+     "group": "lop_1",
+     "prefix": "Mu(1)",
+     "sort_order": 1,
+     "page": 35,
+     "image_png": "positions/aokhoac_thethao/v2/lop_1/p35_99d3bcda5c9c.png",
+     "image_sha256": "99d3bcda5c9ca5a9177b5c7e88c39ee01d5a50319674fe95cf792e37163f6232",
+     "image_size": [
+      1369,
+      705
+     ],
+     "hotspots": [
+      {
+       "code": "Mu(1)-1",
+       "label": "Vành mũ",
+       "rotation": 0,
+       "x_pct": 0.00529,
+       "y_pct": 0.21499,
+       "w_pct": 0.11982,
+       "h_pct": 0.07943
+      },
+      {
+       "code": "Mu(1)-2",
+       "label": "Diễu vành mũ",
+       "rotation": 0,
+       "x_pct": 0.00529,
+       "y_pct": 0.39248,
+       "w_pct": 0.12266,
+       "h_pct": 0.07943
+      },
+      {
+       "code": "Mu(1)-3",
+       "label": "Mắt cáo vành mũ",
+       "rotation": 0,
+       "x_pct": 0.00529,
+       "y_pct": 0.56398,
+       "w_pct": 0.12161,
+       "h_pct": 0.07943
+      },
+      {
+       "code": "Mu(1)-4",
+       "label": "Cục chặn vành mũ",
+       "rotation": 0,
+       "x_pct": 0.00529,
+       "y_pct": 0.69058,
+       "w_pct": 0.12297,
+       "h_pct": 0.07943
+      },
+      {
+       "code": "Mu(1)-5",
+       "label": "Dây thun vành mũ",
+       "rotation": 0,
+       "x_pct": 0.00529,
+       "y_pct": 0.88335,
+       "w_pct": 0.12122,
+       "h_pct": 0.07943
+      },
+      {
+       "code": "Mu(1)-6",
+       "label": "Nẹp mũ",
+       "rotation": 0,
+       "x_pct": 0.85743,
+       "y_pct": 0.00654,
+       "w_pct": 0.12385,
+       "h_pct": 0.07943
+      },
+      {
+       "code": "Mu(1)-7",
+       "label": "Can nẹp mũ",
+       "rotation": 0,
+       "x_pct": 0.85524,
+       "y_pct": 0.1236,
+       "w_pct": 0.12069,
+       "h_pct": 0.07943
+      },
+      {
+       "code": "Mu(1)-8",
+       "label": "Diễu nẹp mũ",
+       "rotation": 0,
+       "x_pct": 0.85524,
+       "y_pct": 0.21034,
+       "w_pct": 0.1228,
+       "h_pct": 0.07943
+      },
+      {
+       "code": "Mu(1)-9",
+       "label": "Bách mũ",
+       "rotation": 0,
+       "x_pct": 0.85743,
+       "y_pct": 0.31475,
+       "w_pct": 0.12297,
+       "h_pct": 0.07943
+      },
+      {
+       "code": "Mu(1)-10",
+       "label": "Diễu bách mũ",
+       "rotation": 0,
+       "x_pct": 0.85524,
+       "y_pct": 0.45647,
+       "w_pct": 0.14079,
+       "h_pct": 0.07943
+      },
+      {
+       "code": "Mu(1)-11",
+       "label": "Băng dính bách mũ",
+       "rotation": 0,
+       "x_pct": 0.85524,
+       "y_pct": 0.65058,
+       "w_pct": 0.1349,
+       "h_pct": 0.07943
+      },
+      {
+       "code": "Mu(1)-12",
+       "label": "Băng dính chân mũ",
+       "rotation": 0,
+       "x_pct": 0.85524,
+       "y_pct": 0.84334,
+       "w_pct": 0.13773,
+       "h_pct": 0.07943
+      }
+     ]
+    },
+    {
+     "name": "Cổ",
+     "group": "lop_1",
+     "prefix": "Cô(1)",
+     "sort_order": 2,
+     "page": 36,
+     "image_png": "positions/aokhoac_thethao/v2/lop_1/p36_4f4cace25415.png",
+     "image_sha256": "4f4cace254154622599158f002e33b5e9e70fb58b7128befe5d2947964b08757",
+     "image_size": [
+      1481,
+      461
+     ],
+     "hotspots": [
+      {
+       "code": "Cô(1)-1",
+       "label": "Lá cổ ngoài",
+       "rotation": 0,
+       "x_pct": 0.00489,
+       "y_pct": 0.06523,
+       "w_pct": 0.09966,
+       "h_pct": 0.12148
+      },
+      {
+       "code": "Cô(1)-2",
+       "label": "Đường diễu cổ ngoài",
+       "rotation": 0,
+       "x_pct": 0.00489,
+       "y_pct": 0.31854,
+       "w_pct": 0.10229,
+       "h_pct": 0.12148
+      },
+      {
+       "code": "Cô(1)-3",
+       "label": "Đường tra cổ ngoài",
+       "rotation": 0,
+       "x_pct": 0.00489,
+       "y_pct": 0.57756,
+       "w_pct": 0.10132,
+       "h_pct": 0.12148
+      },
+      {
+       "code": "Cô(1)-4",
+       "label": "Đường can mép cổ",
+       "rotation": 0,
+       "x_pct": 0.39286,
+       "y_pct": 0.06198,
+       "w_pct": 0.10258,
+       "h_pct": 0.12148
+      },
+      {
+       "code": "Cô(1)-5",
+       "label": "Nẹp cổ trong",
+       "rotation": 0,
+       "x_pct": 0.89264,
+       "y_pct": 0.07091,
+       "w_pct": 0.10096,
+       "h_pct": 0.12148
+      },
+      {
+       "code": "Cô(1)-6",
+       "label": "Đường diễu nẹp cổ trong",
+       "rotation": 0,
+       "x_pct": 0.89061,
+       "y_pct": 0.2251,
+       "w_pct": 0.10339,
+       "h_pct": 0.12148
+      },
+      {
+       "code": "Cô(1)-7",
+       "label": "Lá cổ trong",
+       "rotation": 0,
+       "x_pct": 0.89061,
+       "y_pct": 0.43852,
+       "w_pct": 0.10047,
+       "h_pct": 0.12148
+      },
+      {
+       "code": "Cô(1)-8",
+       "label": "Đường diễu lá cổ trong",
+       "rotation": 0,
+       "x_pct": 0.89264,
+       "y_pct": 0.71566,
+       "w_pct": 0.10242,
+       "h_pct": 0.12148
+      },
+      {
+       "code": "Cô(1)-9",
+       "label": "Đường tra cổ trong",
+       "rotation": 0,
+       "x_pct": 0.89061,
+       "y_pct": 0.85786,
+       "w_pct": 0.10258,
+       "h_pct": 0.12148
+      }
+     ]
+    },
+    {
+     "name": "Tà",
+     "group": "lop_1",
+     "prefix": "Tà(1)",
+     "sort_order": 3,
+     "page": 37,
+     "image_png": "positions/aokhoac_thethao/v2/lop_1/p37_51815b9734b0.png",
+     "image_sha256": "51815b9734b07a9f568e367c52d6fa610df666d0cac7a8780380ff77b7131df8",
+     "image_size": [
+      1659,
+      788
+     ],
+     "hotspots": [
+      {
+       "code": "Tà(1)-1",
+       "label": "Nẹp tà",
+       "rotation": 0,
+       "x_pct": 0.00467,
+       "y_pct": 0.40548,
+       "w_pct": 0.08643,
+       "h_pct": 0.07107
+      },
+      {
+       "code": "Tà(1)-2",
+       "label": "Diễu nẹp tà",
+       "rotation": 0,
+       "x_pct": 0.00467,
+       "y_pct": 0.68338,
+       "w_pct": 0.08877,
+       "h_pct": 0.07107
+      },
+      {
+       "code": "Tà(1)-3",
+       "label": "Nẹp che dây kéo tà",
+       "rotation": 0,
+       "x_pct": 0.90718,
+       "y_pct": 0.006,
+       "w_pct": 0.0879,
+       "h_pct": 0.07107
+      },
+      {
+       "code": "Tà(1)-4",
+       "label": "Diễu nẹp che dây kéo tà",
+       "rotation": 0,
+       "x_pct": 0.90646,
+       "y_pct": 0.21978,
+       "w_pct": 0.08903,
+       "h_pct": 0.07107
+      },
+      {
+       "code": "Tà(1)-5",
+       "label": "Dây kéo tà",
+       "rotation": 0,
+       "x_pct": 0.91051,
+       "y_pct": 0.56387,
+       "w_pct": 0.09096,
+       "h_pct": 0.07107
+      },
+      {
+       "code": "Tà(1)-6",
+       "label": "Nút tà",
+       "rotation": 0,
+       "x_pct": 0.9087,
+       "y_pct": 0.85464,
+       "w_pct": 0.08836,
+       "h_pct": 0.07107
+      }
+     ]
+    },
+    {
+     "name": "Thân trước",
+     "group": "lop_1",
+     "prefix": "Th(1)",
+     "sort_order": 4,
+     "page": 38,
+     "image_png": "positions/aokhoac_thethao/v2/lop_1/p38_cd544e22967f.png",
+     "image_sha256": "cd544e22967f40cc867a4dc978259a90128f588fb7c6197cb96006be2156678e",
+     "image_size": [
+      953,
+      1095
+     ],
+     "hotspots": [
+      {
+       "code": "Th(1)-1",
+       "label": "Vai",
+       "rotation": 0,
+       "x_pct": 0.00791,
+       "y_pct": 0.00392,
+       "w_pct": 0.15626,
+       "h_pct": 0.05114
+      },
+      {
+       "code": "Th(1)-2",
+       "label": "Đô trước",
+       "rotation": 0,
+       "x_pct": 0.00791,
+       "y_pct": 0.14998,
+       "w_pct": 0.16034,
+       "h_pct": 0.05114
+      },
+      {
+       "code": "Th(1)-3",
+       "label": "Nẹp đô trước",
+       "rotation": 0,
+       "x_pct": 0.00791,
+       "y_pct": 0.27882,
+       "w_pct": 0.15883,
+       "h_pct": 0.05114
+      },
+      {
+       "code": "Th(1)-4",
+       "label": "Diễu nẹp đô trước",
+       "rotation": 0,
+       "x_pct": 0.00791,
+       "y_pct": 0.36622,
+       "w_pct": 0.16079,
+       "h_pct": 0.05114
+      },
+      {
+       "code": "Th(1)-5",
+       "label": "Thân trước",
+       "rotation": 0,
+       "x_pct": 0.00791,
+       "y_pct": 0.50453,
+       "w_pct": 0.14795,
+       "h_pct": 0.05114
+      },
+      {
+       "code": "Th(1)-6",
+       "label": "Thân sườn",
+       "rotation": 0,
+       "x_pct": 0.00791,
+       "y_pct": 0.64243,
+       "w_pct": 0.16205,
+       "h_pct": 0.05114
+      },
+      {
+       "code": "Th(1)-7",
+       "label": "Đường sườn trước",
+       "rotation": 0,
+       "x_pct": 0.00791,
+       "y_pct": 0.73938,
+       "w_pct": 0.15752,
+       "h_pct": 0.05114
+      },
+      {
+       "code": "Th(1)-8",
+       "label": "Đường diễu sườn trước",
+       "rotation": 0,
+       "x_pct": 0.00791,
+       "y_pct": 0.83788,
+       "w_pct": 0.16054,
+       "h_pct": 0.05114
+      },
+      {
+       "code": "Th(1)-9",
+       "label": "Chít ly thân trước",
+       "rotation": 0,
+       "x_pct": 0.81119,
+       "y_pct": 0.41367,
+       "w_pct": 0.16079,
+       "h_pct": 0.05114
+      },
+      {
+       "code": "Th(1)-10",
+       "label": "Diễu chít ly thân trước",
+       "rotation": 0,
+       "x_pct": 0.808,
+       "y_pct": 0.53101,
+       "w_pct": 0.18638,
+       "h_pct": 0.05114
+      },
+      {
+       "code": "Th(1)-11",
+       "label": "Lai trước",
+       "rotation": 0,
+       "x_pct": 0.81119,
+       "y_pct": 0.73938,
+       "w_pct": 0.16891,
+       "h_pct": 0.05114
+      },
+      {
+       "code": "Th(1)-12",
+       "label": "Diễu lai trước",
+       "rotation": 0,
+       "x_pct": 0.81119,
+       "y_pct": 0.86437,
+       "w_pct": 0.17108,
+       "h_pct": 0.05114
+      }
+     ]
+    },
+    {
+     "name": "Lưng",
+     "group": "lop_1",
+     "prefix": "Lư(1)",
+     "sort_order": 5,
+     "page": 39,
+     "image_png": "positions/aokhoac_thethao/v2/lop_1/p39_82ad79e50a62.png",
+     "image_sha256": "82ad79e50a62d39e92103ebc665cd3f8d8033765f496f0c393e152639dbe9c5f",
+     "image_size": [
+      999,
+      1038
+     ],
+     "hotspots": [
+      {
+       "code": "Lư(1)-1",
+       "label": "Vòng cổ sau",
+       "rotation": 0,
+       "x_pct": 0.00689,
+       "y_pct": 0.00381,
+       "w_pct": 0.14714,
+       "h_pct": 0.05395
+      },
+      {
+       "code": "Lư(1)-2",
+       "label": "Đô sau",
+       "rotation": 0,
+       "x_pct": 0.00689,
+       "y_pct": 0.14513,
+       "w_pct": 0.15103,
+       "h_pct": 0.05395
+      },
+      {
+       "code": "Lư(1)-3",
+       "label": "Nẹp đô sau",
+       "rotation": 0,
+       "x_pct": 0.00689,
+       "y_pct": 0.2582,
+       "w_pct": 0.14959,
+       "h_pct": 0.05395
+      },
+      {
+       "code": "Lư(1)-4",
+       "label": "Diễu nẹp đô sau",
+       "rotation": 0,
+       "x_pct": 0.00689,
+       "y_pct": 0.35588,
+       "w_pct": 0.15146,
+       "h_pct": 0.05395
+      },
+      {
+       "code": "Lư(1)-5",
+       "label": "Thân sau",
+       "rotation": 0,
+       "x_pct": 0.00689,
+       "y_pct": 0.4573,
+       "w_pct": 0.14906,
+       "h_pct": 0.05395
+      },
+      {
+       "code": "Lư(1)-6",
+       "label": "Đường sườn sau",
+       "rotation": 0,
+       "x_pct": 0.00689,
+       "y_pct": 0.65624,
+       "w_pct": 0.15266,
+       "h_pct": 0.05395
+      },
+      {
+       "code": "Lư(1)-7",
+       "label": "Đường diễu sườn sau",
+       "rotation": 0,
+       "x_pct": 0.00689,
+       "y_pct": 0.84796,
+       "w_pct": 0.14834,
+       "h_pct": 0.05395
+      },
+      {
+       "code": "Lư(1)-8",
+       "label": "Bách lưng",
+       "rotation": 0,
+       "x_pct": 0.81876,
+       "y_pct": 0.36575,
+       "w_pct": 0.15122,
+       "h_pct": 0.05395
+      },
+      {
+       "code": "Lư(1)-9",
+       "label": "Diễu bách lưng",
+       "rotation": 0,
+       "x_pct": 0.81876,
+       "y_pct": 0.49348,
+       "w_pct": 0.14214,
+       "h_pct": 0.05395
+      },
+      {
+       "code": "Lư(1)-10",
+       "label": "Nút bách lưng",
+       "rotation": 0,
+       "x_pct": 0.81876,
+       "y_pct": 0.6126,
+       "w_pct": 0.17587,
+       "h_pct": 0.05395
+      },
+      {
+       "code": "Lư(1)-11",
+       "label": "Lai thân sau",
+       "rotation": 0,
+       "x_pct": 0.81876,
+       "y_pct": 0.7282,
+       "w_pct": 0.1678,
+       "h_pct": 0.05395
+      },
+      {
+       "code": "Lư(1)-12",
+       "label": "Diễu lai thân sau",
+       "rotation": 0,
+       "x_pct": 0.81876,
+       "y_pct": 0.87285,
+       "w_pct": 0.17169,
+       "h_pct": 0.05395
+      }
+     ]
+    },
+    {
+     "name": "Tay",
+     "group": "lop_1",
+     "prefix": "Ta(1)",
+     "sort_order": 6,
+     "page": 40,
+     "image_png": "positions/aokhoac_thethao/v2/lop_1/p40_195476bc5087.png",
+     "image_sha256": "195476bc508742cc86a24422cb63289ff01b7d8ed375ec7e1492b1ece758693f",
+     "image_size": [
+      1725,
+      1095
+     ],
+     "hotspots": [
+      {
+       "code": "Ta(1)-1",
+       "label": "Nách tay",
+       "rotation": 0,
+       "x_pct": 0.31543,
+       "y_pct": 0.10426,
+       "w_pct": 0.08312,
+       "h_pct": 0.05114
+      },
+      {
+       "code": "Ta(1)-2",
+       "label": "Tay",
+       "rotation": 0,
+       "x_pct": 0.31543,
+       "y_pct": 0.30731,
+       "w_pct": 0.08537,
+       "h_pct": 0.05114
+      },
+      {
+       "code": "Ta(1)-3",
+       "label": "Đường sườn tay",
+       "rotation": 0,
+       "x_pct": 0.31543,
+       "y_pct": 0.49908,
+       "w_pct": 0.08454,
+       "h_pct": 0.05114
+      },
+      {
+       "code": "Ta(1)-4",
+       "label": "Chít ly lai tay",
+       "rotation": 0,
+       "x_pct": 0.86841,
+       "y_pct": 0.2295,
+       "w_pct": 0.08562,
+       "h_pct": 0.05114
+      },
+      {
+       "code": "Ta(1)-5",
+       "label": "Lai tay",
+       "rotation": 0,
+       "x_pct": 0.86841,
+       "y_pct": 0.42401,
+       "w_pct": 0.08423,
+       "h_pct": 0.05114
+      },
+      {
+       "code": "Ta(1)-6",
+       "label": "Diễu lai tay",
+       "rotation": 0,
+       "x_pct": 0.86928,
+       "y_pct": 0.59129,
+       "w_pct": 0.08632,
+       "h_pct": 0.05114
+      },
+      {
+       "code": "Ta(1)-7",
+       "label": "Bách lai tay",
+       "rotation": 0,
+       "x_pct": 0.86928,
+       "y_pct": 0.71982,
+       "w_pct": 0.08382,
+       "h_pct": 0.05114
+      },
+      {
+       "code": "Ta(1)-8",
+       "label": "Diễu bách lai tay",
+       "rotation": 0,
+       "x_pct": 0.86928,
+       "y_pct": 0.80741,
+       "w_pct": 0.08549,
+       "h_pct": 0.05114
+      },
+      {
+       "code": "Ta(1)-9",
+       "label": "Băng dính bách lai tay",
+       "rotation": 0,
+       "x_pct": 0.86928,
+       "y_pct": 0.8885,
+       "w_pct": 0.08562,
+       "h_pct": 0.05114
+      }
+     ]
+    },
+    {
+     "name": "Túi ngực",
+     "group": "lop_1",
+     "prefix": "Tn(1)",
+     "sort_order": 7,
+     "page": 41,
+     "image_png": "positions/aokhoac_thethao/v2/lop_1/p41_f1ca788fdfcc.png",
+     "image_sha256": "f1ca788fdfcc820ed68ec45491cbf963c4e1cae8b6aaff7cc7378668d8769540",
+     "image_size": [
+      1239,
+      896
+     ],
+     "hotspots": [
+      {
+       "code": "Tn(1)-1",
+       "label": "Miệng túi/nẹp miệng túi ngực",
+       "rotation": 0,
+       "x_pct": 0.00995,
+       "y_pct": 0.16485,
+       "w_pct": 0.11835,
+       "h_pct": 0.0625
+      },
+      {
+       "code": "Tn(1)-2",
+       "label": "Diễu miệng túi ngực",
+       "rotation": 0,
+       "x_pct": 0.00632,
+       "y_pct": 0.28804,
+       "w_pct": 0.12149,
+       "h_pct": 0.0625
+      },
+      {
+       "code": "Tn(1)-3",
+       "label": "Bọ miệng túi ngực",
+       "rotation": 0,
+       "x_pct": 0.00753,
+       "y_pct": 0.40541,
+       "w_pct": 0.12033,
+       "h_pct": 0.0625
+      },
+      {
+       "code": "Tn(1)-4",
+       "label": "Bao túi ngực",
+       "rotation": 0,
+       "x_pct": 0.85634,
+       "y_pct": 0.00436,
+       "w_pct": 0.12184,
+       "h_pct": 0.0625
+      },
+      {
+       "code": "Tn(1)-5",
+       "label": "Đường may bao túi ngực",
+       "rotation": 0,
+       "x_pct": 0.85391,
+       "y_pct": 0.11359,
+       "w_pct": 0.1199,
+       "h_pct": 0.0625
+      },
+      {
+       "code": "Tn(1)-6",
+       "label": "Nẹp che/nắp miệng túi ngực",
+       "rotation": 0,
+       "x_pct": 0.85513,
+       "y_pct": 0.21779,
+       "w_pct": 0.12281,
+       "h_pct": 0.0625
+      },
+      {
+       "code": "Tn(1)-7",
+       "label": "Diễu nẹp/nắp miệng túi ngực",
+       "rotation": 0,
+       "x_pct": 0.85352,
+       "y_pct": 0.3028,
+       "w_pct": 0.11932,
+       "h_pct": 0.0625
+      },
+      {
+       "code": "Tn(1)-8",
+       "label": "Bọ nẹp che/nắp miệng túi ngực",
+       "rotation": 0,
+       "x_pct": 0.85634,
+       "y_pct": 0.39209,
+       "w_pct": 0.12165,
+       "h_pct": 0.0625
+      },
+      {
+       "code": "Tn(1)-9",
+       "label": "Dây kéo túi ngực",
+       "rotation": 0,
+       "x_pct": 0.85634,
+       "y_pct": 0.48183,
+       "w_pct": 0.12184,
+       "h_pct": 0.0625
+      },
+      {
+       "code": "Tn(1)-10",
+       "label": "Đầu cầm dây kéo túi ngực",
+       "rotation": 0,
+       "x_pct": 0.85352,
+       "y_pct": 0.56655,
+       "w_pct": 0.14152,
+       "h_pct": 0.0625
+      }
+     ]
+    },
+    {
+     "name": "Túi tay",
+     "group": "lop_1",
+     "prefix": "Tt(1)",
+     "sort_order": 8,
+     "page": 42,
+     "image_png": "positions/aokhoac_thethao/v2/lop_1/p42_47922e3954be.png",
+     "image_sha256": "47922e3954beb8cf9fe21ee85809803f3d3049bb7a00f539c8b1b15838e1fe1b",
+     "image_size": [
+      1230,
+      896
+     ],
+     "hotspots": [
+      {
+       "code": "Tt(1)-1",
+       "label": "Miệng túi/nẹp miệng túi tay",
+       "rotation": 0,
+       "x_pct": 0.01002,
+       "y_pct": 0.16485,
+       "w_pct": 0.11213,
+       "h_pct": 0.0625
+      },
+      {
+       "code": "Tt(1)-2",
+       "label": "Diễu miệng túi tay",
+       "rotation": 0,
+       "x_pct": 0.00636,
+       "y_pct": 0.28804,
+       "w_pct": 0.11529,
+       "h_pct": 0.0625
+      },
+      {
+       "code": "Tt(1)-3",
+       "label": "Bọ miệng túi tay",
+       "rotation": 0,
+       "x_pct": 0.00758,
+       "y_pct": 0.40541,
+       "w_pct": 0.11412,
+       "h_pct": 0.0625
+      },
+      {
+       "code": "Tt(1)-4",
+       "label": "Bao túi tay",
+       "rotation": 0,
+       "x_pct": 0.8626,
+       "y_pct": 0.00436,
+       "w_pct": 0.11564,
+       "h_pct": 0.0625
+      },
+      {
+       "code": "Tt(1)-5",
+       "label": "Đường may bao túi tay",
+       "rotation": 0,
+       "x_pct": 0.86016,
+       "y_pct": 0.11359,
+       "w_pct": 0.11369,
+       "h_pct": 0.0625
+      },
+      {
+       "code": "Tt(1)-6",
+       "label": "Nẹp che/nắp miệng túi tay",
+       "rotation": 0,
+       "x_pct": 0.86138,
+       "y_pct": 0.21779,
+       "w_pct": 0.11662,
+       "h_pct": 0.0625
+      },
+      {
+       "code": "Tt(1)-7",
+       "label": "Diễu nẹp/nắp miệng túi tay",
+       "rotation": 0,
+       "x_pct": 0.85977,
+       "y_pct": 0.3028,
+       "w_pct": 0.11311,
+       "h_pct": 0.0625
+      },
+      {
+       "code": "Tt(1)-8",
+       "label": "Bọ nẹp che/nắp miệng túi tay",
+       "rotation": 0,
+       "x_pct": 0.8626,
+       "y_pct": 0.39209,
+       "w_pct": 0.11545,
+       "h_pct": 0.0625
+      },
+      {
+       "code": "Tt(1)-9",
+       "label": "Dây kéo túi tay",
+       "rotation": 0,
+       "x_pct": 0.8626,
+       "y_pct": 0.48183,
+       "w_pct": 0.11564,
+       "h_pct": 0.0625
+      },
+      {
+       "code": "Tt(1)-10",
+       "label": "Đầu cầm dây kéo túi tay",
+       "rotation": 0,
+       "x_pct": 0.85977,
+       "y_pct": 0.56655,
+       "w_pct": 0.13547,
+       "h_pct": 0.0625
+      }
+     ]
+    },
+    {
+     "name": "Túi sau",
+     "group": "lop_1",
+     "prefix": "Ts",
+     "sort_order": 9,
+     "page": 43,
+     "image_png": "positions/aokhoac_thethao/v2/lop_1/p43_f2142ccaab6f.png",
+     "image_sha256": "f2142ccaab6fc13ecff3589d343b04ab7a64fd2aaad66da7cd252931b55b2ce7",
+     "image_size": [
+      1177,
+      954
+     ],
+     "hotspots": [
+      {
+       "code": "Ts-1",
+       "label": "Miệng túi/nẹp miệng túi sau",
+       "rotation": 0,
+       "x_pct": 0.00656,
+       "y_pct": 0.00212,
+       "w_pct": 0.08018,
+       "h_pct": 0.0587
+      },
+      {
+       "code": "Ts-2",
+       "label": "Diễu miệng túi sau",
+       "rotation": 0,
+       "x_pct": 0.00656,
+       "y_pct": 0.12529,
+       "w_pct": 0.08349,
+       "h_pct": 0.0587
+      },
+      {
+       "code": "Ts-3",
+       "label": "Bọ miệng túi sau",
+       "rotation": 0,
+       "x_pct": 0.01038,
+       "y_pct": 0.41579,
+       "w_pct": 0.08226,
+       "h_pct": 0.0587
+      },
+      {
+       "code": "Ts-4",
+       "label": "Bao túi sau",
+       "rotation": 0,
+       "x_pct": 0.00783,
+       "y_pct": 0.71454,
+       "w_pct": 0.08385,
+       "h_pct": 0.0587
+      },
+      {
+       "code": "Ts-5",
+       "label": "Đường may bao túi sau",
+       "rotation": 0,
+       "x_pct": 0.01038,
+       "y_pct": 0.83003,
+       "w_pct": 0.08181,
+       "h_pct": 0.0587
+      },
+      {
+       "code": "Ts-6",
+       "label": "Nẹp che/nắp miệng túi sau",
+       "rotation": 0,
+       "x_pct": 0.89043,
+       "y_pct": 0.06125,
+       "w_pct": 0.08487,
+       "h_pct": 0.0587
+      },
+      {
+       "code": "Ts-7",
+       "label": "Diễu nẹp che/nắp miệng túi sau",
+       "rotation": 0,
+       "x_pct": 0.89043,
+       "y_pct": 0.21438,
+       "w_pct": 0.0812,
+       "h_pct": 0.0587
+      },
+      {
+       "code": "Ts-8",
+       "label": "Bọ nẹp che/nắp miệng túi sau",
+       "rotation": 0,
+       "x_pct": 0.89043,
+       "y_pct": 0.33283,
+       "w_pct": 0.08365,
+       "h_pct": 0.0587
+      },
+      {
+       "code": "Ts-9",
+       "label": "Dây kéo túi sau",
+       "rotation": 0,
+       "x_pct": 0.89043,
+       "y_pct": 0.47058,
+       "w_pct": 0.08385,
+       "h_pct": 0.0587
+      },
+      {
+       "code": "Ts-10",
+       "label": "Đầu cầm dây kéo túi sau",
+       "rotation": 0,
+       "x_pct": 0.89043,
+       "y_pct": 0.58574,
+       "w_pct": 0.10457,
+       "h_pct": 0.0587
+      }
+     ]
+    },
+    {
+     "name": "Nhãn mác",
+     "group": "lop_1",
+     "prefix": "Nh(1)",
+     "sort_order": 10,
+     "page": 44,
+     "image_png": "positions/aokhoac_thethao/v2/lop_1/p44_d1058e86496b.png",
+     "image_sha256": "d1058e86496bee73f53c3c02431833132c5d31ad860a2583c4a7df3f56e23dd9",
+     "image_size": [
+      1747,
+      1005
+     ],
+     "hotspots": [
+      {
+       "code": "Nh(1)-1",
+       "label": "Nhãn care",
+       "rotation": 0,
+       "x_pct": 0.00824,
+       "y_pct": 0.00833,
+       "w_pct": 0.0898,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-2",
+       "label": "Diễu nhãn care",
+       "rotation": 0,
+       "x_pct": 0.0056,
+       "y_pct": 0.11844,
+       "w_pct": 0.09203,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-3",
+       "label": "Nhãn chống trộm",
+       "rotation": 0,
+       "x_pct": 0.28006,
+       "y_pct": 0.00833,
+       "w_pct": 0.0912,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-4",
+       "label": "Diễu nhãn chống trộm",
+       "rotation": 0,
+       "x_pct": 0.28006,
+       "y_pct": 0.11844,
+       "w_pct": 0.09227,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-5",
+       "label": "Nhãn Barcode",
+       "rotation": 0,
+       "x_pct": 0.5366,
+       "y_pct": 0.00684,
+       "w_pct": 0.0909,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-6",
+       "label": "Diễu nhãn barcode",
+       "rotation": 0,
+       "x_pct": 0.53489,
+       "y_pct": 0.11397,
+       "w_pct": 0.09296,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-7",
+       "label": "Nhãn truy xuất",
+       "rotation": 0,
+       "x_pct": 0.89031,
+       "y_pct": 0.00386,
+       "w_pct": 0.09049,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-8",
+       "label": "Diễu nhãn truy xuất",
+       "rotation": 0,
+       "x_pct": 0.89031,
+       "y_pct": 0.12247,
+       "w_pct": 0.09214,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-9",
+       "label": "Nhãn size",
+       "rotation": 0,
+       "x_pct": 0.88859,
+       "y_pct": 0.35304,
+       "w_pct": 0.09227,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-10",
+       "label": "Diễu nhãn size",
+       "rotation": 0,
+       "x_pct": 0.89031,
+       "y_pct": 0.4257,
+       "w_pct": 0.10623,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-11",
+       "label": "Nhãn dệt",
+       "rotation": 0,
+       "x_pct": 0.0,
+       "y_pct": 0.6591,
+       "w_pct": 0.10162,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-12",
+       "label": "Diễu nhãn dệt",
+       "rotation": 0,
+       "x_pct": 0.00137,
+       "y_pct": 0.78836,
+       "w_pct": 0.10384,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-13",
+       "label": "Hình thêu",
+       "rotation": 0,
+       "x_pct": 0.37202,
+       "y_pct": 0.61858,
+       "w_pct": 0.10302,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-14",
+       "label": "Hình ép",
+       "rotation": 0,
+       "x_pct": 0.55233,
+       "y_pct": 0.56373,
+       "w_pct": 0.10326,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-15",
+       "label": "Hình in",
+       "rotation": 0,
+       "x_pct": 0.82607,
+       "y_pct": 0.55095,
+       "w_pct": 0.10271,
+       "h_pct": 0.05572
+      }
+     ]
+    },
+    {
+     "name": "Thân trước",
+     "group": "lop_2",
+     "prefix": "Th(2)",
+     "sort_order": 11,
+     "page": 45,
+     "image_png": "positions/aokhoac_thethao/v2/lop_2/p45_6f754b74024a.png",
+     "image_sha256": "6f754b74024a0e9a6c100dba33d33f59028f2b2ad90956978b2a6857c5c1415c",
+     "image_size": [
+      850,
+      888
+     ],
+     "hotspots": [
+      {
+       "code": "Th(2)-1",
+       "label": "Nẹp che dây kéo",
+       "rotation": 0,
+       "x_pct": 0.0115,
+       "y_pct": 0.05779,
+       "w_pct": 0.17977,
+       "h_pct": 0.06306
+      },
+      {
+       "code": "Th(2)-2",
+       "label": "Dây kéo tà trước",
+       "rotation": 0,
+       "x_pct": 0.00921,
+       "y_pct": 0.24421,
+       "w_pct": 0.18434,
+       "h_pct": 0.06306
+      },
+      {
+       "code": "Th(2)-3",
+       "label": "Diễu dây kéo tà trước",
+       "rotation": 0,
+       "x_pct": 0.01004,
+       "y_pct": 0.43622,
+       "w_pct": 0.18265,
+       "h_pct": 0.06306
+      },
+      {
+       "code": "Th(2)-4",
+       "label": "Nẹp dây kéo",
+       "rotation": 0,
+       "x_pct": 0.00897,
+       "y_pct": 0.63667,
+       "w_pct": 0.18485,
+       "h_pct": 0.06306
+      },
+      {
+       "code": "Th(2)-5",
+       "label": "Can nẹp dây kéo",
+       "rotation": 0,
+       "x_pct": 0.01037,
+       "y_pct": 0.82867,
+       "w_pct": 0.18203,
+       "h_pct": 0.06306
+      },
+      {
+       "code": "Th(2)-6",
+       "label": "Vòng cổ",
+       "rotation": 0,
+       "x_pct": 0.79354,
+       "y_pct": 0.00512,
+       "w_pct": 0.18626,
+       "h_pct": 0.06306
+      },
+      {
+       "code": "Th(2)-7",
+       "label": "Vai",
+       "rotation": 0,
+       "x_pct": 0.79608,
+       "y_pct": 0.13759,
+       "w_pct": 0.18118,
+       "h_pct": 0.06306
+      },
+      {
+       "code": "Th(2)-8",
+       "label": "Thân trước",
+       "rotation": 0,
+       "x_pct": 0.7944,
+       "y_pct": 0.27687,
+       "w_pct": 0.18457,
+       "h_pct": 0.06306
+      },
+      {
+       "code": "Th(2)-9",
+       "label": "Chít ly nách",
+       "rotation": 0,
+       "x_pct": 0.79426,
+       "y_pct": 0.52049,
+       "w_pct": 0.18485,
+       "h_pct": 0.06306
+      },
+      {
+       "code": "Th(2)-10",
+       "label": "Lai thân trước",
+       "rotation": 0,
+       "x_pct": 0.77989,
+       "y_pct": 0.73436,
+       "w_pct": 0.21354,
+       "h_pct": 0.06306
+      },
+      {
+       "code": "Th(2)-11",
+       "label": "Đúp lai thân trước",
+       "rotation": 0,
+       "x_pct": 0.78464,
+       "y_pct": 0.90947,
+       "w_pct": 0.20405,
+       "h_pct": 0.06306
+      }
+     ]
+    },
+    {
+     "name": "Lưng",
+     "group": "lop_2",
+     "prefix": "Lư(2)",
+     "sort_order": 12,
+     "page": 46,
+     "image_png": "positions/aokhoac_thethao/v2/lop_2/p46_cb0ece5fb081.png",
+     "image_sha256": "cb0ece5fb081131951a5f579af295936abd77b93fd3f794e0b244bf2e10649df",
+     "image_size": [
+      1132,
+      991
+     ],
+     "hotspots": [
+      {
+       "code": "Lư(2)-1",
+       "label": "Vòng cổ sau",
+       "rotation": 0,
+       "x_pct": 0.00929,
+       "y_pct": 0.15581,
+       "w_pct": 0.12544,
+       "h_pct": 0.05651
+      },
+      {
+       "code": "Lư(2)-2",
+       "label": "Lưng",
+       "rotation": 0,
+       "x_pct": 0.00757,
+       "y_pct": 0.38204,
+       "w_pct": 0.12544,
+       "h_pct": 0.05651
+      },
+      {
+       "code": "Lư(2)-3",
+       "label": "Sườn",
+       "rotation": 0,
+       "x_pct": 0.00822,
+       "y_pct": 0.55895,
+       "w_pct": 0.12544,
+       "h_pct": 0.05651
+      },
+      {
+       "code": "Lư(2)-4",
+       "label": "Lai thân sau",
+       "rotation": 0,
+       "x_pct": 0.00739,
+       "y_pct": 0.73099,
+       "w_pct": 0.12544,
+       "h_pct": 0.05651
+      },
+      {
+       "code": "Lư(2)-5",
+       "label": "Đúp lai thân sau",
+       "rotation": 0,
+       "x_pct": 0.00844,
+       "y_pct": 0.90127,
+       "w_pct": 0.12544,
+       "h_pct": 0.05651
+      },
+      {
+       "code": "Lư(2)-6",
+       "label": "Bách cổ",
+       "rotation": 0,
+       "x_pct": 0.86845,
+       "y_pct": 0.18507,
+       "w_pct": 0.12544,
+       "h_pct": 0.05651
+      },
+      {
+       "code": "Lư(2)-7",
+       "label": "Diễu bách cổ",
+       "rotation": 0,
+       "x_pct": 0.87038,
+       "y_pct": 0.31575,
+       "w_pct": 0.12544,
+       "h_pct": 0.05651
+      },
+      {
+       "code": "Lư(2)-8",
+       "label": "Nút bách cổ",
+       "rotation": 0,
+       "x_pct": 0.86909,
+       "y_pct": 0.44057,
+       "w_pct": 0.12544,
+       "h_pct": 0.05651
+      }
+     ]
+    },
+    {
+     "name": "Tay",
+     "group": "lop_2",
+     "prefix": "Ta(2)",
+     "sort_order": 13,
+     "page": 47,
+     "image_png": "positions/aokhoac_thethao/v2/lop_2/p47_5b0e455ace3c.png",
+     "image_sha256": "5b0e455ace3c8d5d44ac1bbc522d9df04f7250c1408855edb969bca535d9ea5f",
+     "image_size": [
+      833,
+      906
+     ],
+     "hotspots": [
+      {
+       "code": "Ta(2)-1",
+       "label": "Lót tay",
+       "rotation": 0,
+       "x_pct": 0.82904,
+       "y_pct": 0.0001,
+       "w_pct": 0.16679,
+       "h_pct": 0.06181
+      },
+      {
+       "code": "Ta(2)-2",
+       "label": "Vòng nách",
+       "rotation": 0,
+       "x_pct": 0.8267,
+       "y_pct": 0.18167,
+       "w_pct": 0.16679,
+       "h_pct": 0.06181
+      },
+      {
+       "code": "Ta(2)-3",
+       "label": "Sườn tay",
+       "rotation": 0,
+       "x_pct": 0.82757,
+       "y_pct": 0.39801,
+       "w_pct": 0.16679,
+       "h_pct": 0.06181
+      },
+      {
+       "code": "Ta(2)-4",
+       "label": "Lai tay",
+       "rotation": 0,
+       "x_pct": 0.82645,
+       "y_pct": 0.55889,
+       "w_pct": 0.16679,
+       "h_pct": 0.06181
+      },
+      {
+       "code": "Ta(2)-5",
+       "label": "Đúp lai tay",
+       "rotation": 0,
+       "x_pct": 0.82788,
+       "y_pct": 0.77939,
+       "w_pct": 0.16679,
+       "h_pct": 0.06181
+      },
+      {
+       "code": "Ta(2)-6",
+       "label": "Bách lai tay",
+       "rotation": 0,
+       "x_pct": 0.00819,
+       "y_pct": 0.53779,
+       "w_pct": 0.16679,
+       "h_pct": 0.06181
+      },
+      {
+       "code": "Ta(2)-7",
+       "label": "Diễu bách lai tay",
+       "rotation": 0,
+       "x_pct": 0.00974,
+       "y_pct": 0.66622,
+       "w_pct": 0.16679,
+       "h_pct": 0.06181
+      },
+      {
+       "code": "Ta(2)-8",
+       "label": "Nút bách lai tay",
+       "rotation": 0,
+       "x_pct": 0.00906,
+       "y_pct": 0.79501,
+       "w_pct": 0.16679,
+       "h_pct": 0.06181
+      }
+     ]
+    },
+    {
+     "name": "Nhãn mác",
+     "group": "lop_2",
+     "prefix": "Nh(1)",
+     "sort_order": 14,
+     "page": 48,
+     "image_png": "positions/aokhoac_thethao/v2/lop_2/p48_d1058e86496b.png",
+     "image_sha256": "d1058e86496bee73f53c3c02431833132c5d31ad860a2583c4a7df3f56e23dd9",
+     "image_size": [
+      1747,
+      1005
+     ],
+     "hotspots": [
+      {
+       "code": "Nh(1)-1",
+       "label": "Nhãn care",
+       "rotation": 0,
+       "x_pct": 0.00824,
+       "y_pct": 0.00833,
+       "w_pct": 0.0898,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-2",
+       "label": "Diễu nhãn care",
+       "rotation": 0,
+       "x_pct": 0.0056,
+       "y_pct": 0.11844,
+       "w_pct": 0.09203,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-3",
+       "label": "Nhãn chống trộm",
+       "rotation": 0,
+       "x_pct": 0.28006,
+       "y_pct": 0.00833,
+       "w_pct": 0.0912,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-4",
+       "label": "Diễu nhãn chống trộm",
+       "rotation": 0,
+       "x_pct": 0.28006,
+       "y_pct": 0.11844,
+       "w_pct": 0.09227,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-5",
+       "label": "Nhãn Barcode",
+       "rotation": 0,
+       "x_pct": 0.5366,
+       "y_pct": 0.00684,
+       "w_pct": 0.0909,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-6",
+       "label": "Diễu nhãn barcode",
+       "rotation": 0,
+       "x_pct": 0.53489,
+       "y_pct": 0.11397,
+       "w_pct": 0.09296,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-7",
+       "label": "Nhãn truy xuất",
+       "rotation": 0,
+       "x_pct": 0.89031,
+       "y_pct": 0.00386,
+       "w_pct": 0.09049,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-8",
+       "label": "Diễu nhãn truy xuất",
+       "rotation": 0,
+       "x_pct": 0.89031,
+       "y_pct": 0.12247,
+       "w_pct": 0.09214,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-9",
+       "label": "Nhãn size",
+       "rotation": 0,
+       "x_pct": 0.88859,
+       "y_pct": 0.35304,
+       "w_pct": 0.09227,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-10",
+       "label": "Diễu nhãn size",
+       "rotation": 0,
+       "x_pct": 0.89031,
+       "y_pct": 0.4257,
+       "w_pct": 0.10623,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-11",
+       "label": "Nhãn dệt",
+       "rotation": 0,
+       "x_pct": 0.0,
+       "y_pct": 0.6591,
+       "w_pct": 0.10162,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-12",
+       "label": "Diễu nhãn dệt",
+       "rotation": 0,
+       "x_pct": 0.00137,
+       "y_pct": 0.78836,
+       "w_pct": 0.10384,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-13",
+       "label": "Hình thêu",
+       "rotation": 0,
+       "x_pct": 0.37202,
+       "y_pct": 0.61858,
+       "w_pct": 0.10302,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-14",
+       "label": "Hình ép",
+       "rotation": 0,
+       "x_pct": 0.55233,
+       "y_pct": 0.56373,
+       "w_pct": 0.10326,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-15",
+       "label": "Hình in",
+       "rotation": 0,
+       "x_pct": 0.82607,
+       "y_pct": 0.55095,
+       "w_pct": 0.10271,
+       "h_pct": 0.05572
+      }
+     ]
+    },
+    {
+     "name": "Cổ",
+     "group": "lop_3",
+     "prefix": "Cô(3)",
+     "sort_order": 15,
+     "page": 49,
+     "image_png": "positions/aokhoac_thethao/v2/lop_3/p49_3f489a96cccf.png",
+     "image_sha256": "3f489a96cccf84299001335391dd0365b780d5aef0c6a1a2cb561b206cb1d85c",
+     "image_size": [
+      1733,
+      885
+     ],
+     "hotspots": [
+      {
+       "code": "Cô(3)-1",
+       "label": "Lá cổ ngoài",
+       "rotation": 0,
+       "x_pct": 0.01277,
+       "y_pct": 0.11888,
+       "w_pct": 0.08548,
+       "h_pct": 0.06335
+      },
+      {
+       "code": "Cô(3)-2",
+       "label": "Đường diễu lá cổ ngoài",
+       "rotation": 0,
+       "x_pct": 0.01144,
+       "y_pct": 0.26397,
+       "w_pct": 0.08814,
+       "h_pct": 0.06335
+      },
+      {
+       "code": "Cô(3)-3",
+       "label": "Đường tra cổ ngoài",
+       "rotation": 0,
+       "x_pct": 0.00772,
+       "y_pct": 0.42093,
+       "w_pct": 0.08692,
+       "h_pct": 0.06335
+      },
+      {
+       "code": "Cô(3)-4",
+       "label": "Đường can lá cổ",
+       "rotation": 0,
+       "x_pct": 0.90833,
+       "y_pct": 0.00594,
+       "w_pct": 0.08803,
+       "h_pct": 0.06335
+      },
+      {
+       "code": "Cô(3)-5",
+       "label": "Lá cổ trong",
+       "rotation": 0,
+       "x_pct": 0.90804,
+       "y_pct": 0.10697,
+       "w_pct": 0.0869,
+       "h_pct": 0.06335
+      },
+      {
+       "code": "Cô(3)-6",
+       "label": "Đường diễu lá cổ trong",
+       "rotation": 0,
+       "x_pct": 0.90705,
+       "y_pct": 0.19539,
+       "w_pct": 0.08886,
+       "h_pct": 0.06335
+      },
+      {
+       "code": "Cô(3)-7",
+       "label": "Đường tra cổ trong",
+       "rotation": 0,
+       "x_pct": 0.90814,
+       "y_pct": 0.32771,
+       "w_pct": 0.08667,
+       "h_pct": 0.06335
+      },
+      {
+       "code": "Cô(3)-8",
+       "label": "Viền cổ",
+       "rotation": 0,
+       "x_pct": 0.90747,
+       "y_pct": 0.42874,
+       "w_pct": 0.08803,
+       "h_pct": 0.06335
+      },
+      {
+       "code": "Cô(3)-9",
+       "label": "Đường diễu viền cổ",
+       "rotation": 0,
+       "x_pct": 0.90743,
+       "y_pct": 0.52468,
+       "w_pct": 0.08811,
+       "h_pct": 0.06335
+      }
+     ]
+    },
+    {
+     "name": "Thân trước",
+     "group": "lop_3",
+     "prefix": "Th(3)",
+     "sort_order": 16,
+     "page": 50,
+     "image_png": "positions/aokhoac_thethao/v2/lop_3/p50_367a39c554af.png",
+     "image_sha256": "367a39c554afb5a07fa59bbbba663984f6692fdb1b99cf487cd6a783c1aa9b48",
+     "image_size": [
+      716,
+      1142
+     ],
+     "hotspots": [
+      {
+       "code": "Th(3)-1",
+       "label": "Đầu dây kéo tà",
+       "rotation": 0,
+       "x_pct": 0.7779,
+       "y_pct": 0.00398,
+       "w_pct": 0.2087,
+       "h_pct": 0.04909
+      },
+      {
+       "code": "Th(3)-2",
+       "label": "Dây kéo tà",
+       "rotation": 0,
+       "x_pct": 0.77466,
+       "y_pct": 0.10894,
+       "w_pct": 0.21514,
+       "h_pct": 0.04909
+      },
+      {
+       "code": "Th(3)-3",
+       "label": "Diễu dây kéo tà",
+       "rotation": 0,
+       "x_pct": 0.77614,
+       "y_pct": 0.22015,
+       "w_pct": 0.21219,
+       "h_pct": 0.04909
+      },
+      {
+       "code": "Th(3)-4",
+       "label": "Vòng cổ trước",
+       "rotation": 0,
+       "x_pct": 0.05045,
+       "y_pct": 0.03078,
+       "w_pct": 0.21487,
+       "h_pct": 0.04909
+      },
+      {
+       "code": "Th(3)-5",
+       "label": "Vai",
+       "rotation": 0,
+       "x_pct": 0.0342,
+       "y_pct": 0.11807,
+       "w_pct": 0.21212,
+       "h_pct": 0.04909
+      },
+      {
+       "code": "Th(3)-6",
+       "label": "Bạ ngực",
+       "rotation": 0,
+       "x_pct": 0.03184,
+       "y_pct": 0.20301,
+       "w_pct": 0.21688,
+       "h_pct": 0.04909
+      },
+      {
+       "code": "Th(3)-7",
+       "label": "Decoup ngực",
+       "rotation": 0,
+       "x_pct": 0.03449,
+       "y_pct": 0.29583,
+       "w_pct": 0.21159,
+       "h_pct": 0.04909
+      },
+      {
+       "code": "Th(3)-8",
+       "label": "Thân trước",
+       "rotation": 0,
+       "x_pct": 0.03282,
+       "y_pct": 0.37212,
+       "w_pct": 0.21487,
+       "h_pct": 0.04909
+      },
+      {
+       "code": "Th(3)-9",
+       "label": "Bạ sườn",
+       "rotation": 0,
+       "x_pct": 0.03272,
+       "y_pct": 0.4807,
+       "w_pct": 0.21507,
+       "h_pct": 0.04909
+      },
+      {
+       "code": "Th(3)-10",
+       "label": "Decoup sườn trước",
+       "rotation": 0,
+       "x_pct": 0.01626,
+       "y_pct": 0.64708,
+       "w_pct": 0.2339,
+       "h_pct": 0.04909
+      },
+      {
+       "code": "Th(3)-11",
+       "label": "Lai thân trước",
+       "rotation": 0,
+       "x_pct": 0.01649,
+       "y_pct": 0.75604,
+       "w_pct": 0.23485,
+       "h_pct": 0.04909
+      },
+      {
+       "code": "Th(3)-12",
+       "label": "Viền lai thân trước",
+       "rotation": 0,
+       "x_pct": 0.01753,
+       "y_pct": 0.8666,
+       "w_pct": 0.24128,
+       "h_pct": 0.04909
+      },
+      {
+       "code": "Th(3)-13",
+       "label": "Diễu viền lai thân trước",
+       "rotation": 0,
+       "x_pct": 0.01056,
+       "y_pct": 0.94234,
+       "w_pct": 0.23833,
+       "h_pct": 0.04909
+      }
+     ]
+    },
+    {
+     "name": "Tay",
+     "group": "lop_3",
+     "prefix": "Ta(3)",
+     "sort_order": 17,
+     "page": 51,
+     "image_png": "positions/aokhoac_thethao/v2/lop_3/p51_afaec8aa418d.png",
+     "image_sha256": "afaec8aa418d90310874e66b4f33754a88d6bf23b01a98a145fd2ed34f11da8d",
+     "image_size": [
+      682,
+      1118
+     ],
+     "hotspots": [
+      {
+       "code": "Ta(3)-1",
+       "label": "Nách",
+       "rotation": 0,
+       "x_pct": 0.01645,
+       "y_pct": 0.12098,
+       "w_pct": 0.22316,
+       "h_pct": 0.05015
+      },
+      {
+       "code": "Ta(3)-2",
+       "label": "Sườn tay",
+       "rotation": 0,
+       "x_pct": 0.01645,
+       "y_pct": 0.3483,
+       "w_pct": 0.2261,
+       "h_pct": 0.05015
+      },
+      {
+       "code": "Ta(3)-3",
+       "label": "Tay",
+       "rotation": 0,
+       "x_pct": 0.0146,
+       "y_pct": 0.52327,
+       "w_pct": 0.22682,
+       "h_pct": 0.05015
+      },
+      {
+       "code": "Ta(3)-4",
+       "label": "Lai tay",
+       "rotation": 0,
+       "x_pct": 0.01319,
+       "y_pct": 0.73531,
+       "w_pct": 0.22964,
+       "h_pct": 0.05015
+      },
+      {
+       "code": "Ta(3)-5",
+       "label": "Thun lai tay",
+       "rotation": 0,
+       "x_pct": 0.01463,
+       "y_pct": 0.84597,
+       "w_pct": 0.22675,
+       "h_pct": 0.05015
+      },
+      {
+       "code": "Ta(3)-6",
+       "label": "Diễu thun lai tay",
+       "rotation": 0,
+       "x_pct": 0.01216,
+       "y_pct": 0.94112,
+       "w_pct": 0.23175,
+       "h_pct": 0.05015
+      },
+      {
+       "code": "Ta(3)-7",
+       "label": "Bách lai tay",
+       "rotation": 0,
+       "x_pct": 0.56808,
+       "y_pct": 0.89785,
+       "w_pct": 0.22619,
+       "h_pct": 0.05015
+      }
+     ]
+    },
+    {
+     "name": "Lưng",
+     "group": "lop_3",
+     "prefix": "Lư(3)",
+     "sort_order": 18,
+     "page": 52,
+     "image_png": "positions/aokhoac_thethao/v2/lop_3/p52_7c42ded963e0.png",
+     "image_sha256": "7c42ded963e07a20427040c0cd0567435f05b9c8b31581c4b5fdded0872d89a6",
+     "image_size": [
+      954,
+      1001
+     ],
+     "hotspots": [
+      {
+       "code": "Lư(3)-1",
+       "label": "Vòng cổ",
+       "rotation": 0,
+       "x_pct": 0.01468,
+       "y_pct": 0.00443,
+       "w_pct": 0.15462,
+       "h_pct": 0.05601
+      },
+      {
+       "code": "Lư(3)-2",
+       "label": "Đường sườn sau",
+       "rotation": 0,
+       "x_pct": 0.01225,
+       "y_pct": 0.22836,
+       "w_pct": 0.15945,
+       "h_pct": 0.05601
+      },
+      {
+       "code": "Lư(3)-3",
+       "label": "Thân sau",
+       "rotation": 0,
+       "x_pct": 0.00863,
+       "y_pct": 0.46312,
+       "w_pct": 0.15724,
+       "h_pct": 0.05601
+      },
+      {
+       "code": "Lư(3)-4",
+       "label": "Lai thân sau",
+       "rotation": 0,
+       "x_pct": 0.00763,
+       "y_pct": 0.61847,
+       "w_pct": 0.15925,
+       "h_pct": 0.05601
+      },
+      {
+       "code": "Lư(3)-5",
+       "label": "Viền thun lai thân sau",
+       "rotation": 0,
+       "x_pct": 0.00866,
+       "y_pct": 0.77014,
+       "w_pct": 0.15719,
+       "h_pct": 0.05601
+      },
+      {
+       "code": "Lư(3)-6",
+       "label": "Diễu viền thun lai thân sau",
+       "rotation": 0,
+       "x_pct": 0.00689,
+       "y_pct": 0.9118,
+       "w_pct": 0.16076,
+       "h_pct": 0.05601
+      },
+      {
+       "code": "Lư(3)-7",
+       "label": "Bách cổ",
+       "rotation": 0,
+       "x_pct": 0.84627,
+       "y_pct": 0.0334,
+       "w_pct": 0.14885,
+       "h_pct": 0.05601
+      }
+     ]
+    },
+    {
+     "name": "Túi ngực",
+     "group": "lop_3",
+     "prefix": "Tn(3)",
+     "sort_order": 19,
+     "page": 53,
+     "image_png": "positions/aokhoac_thethao/v2/lop_3/p53_abfa7badd3e5.png",
+     "image_sha256": "abfa7badd3e5b79a6f8a47d930db18b912dedb4644eb631644b11cdb9ba5ff53",
+     "image_size": [
+      1241,
+      896
+     ],
+     "hotspots": [
+      {
+       "code": "Tn(3)-1",
+       "label": "Miệng túi/nẹp miệng túi ngực",
+       "rotation": 0,
+       "x_pct": 0.00993,
+       "y_pct": 0.16485,
+       "w_pct": 0.12015,
+       "h_pct": 0.0625
+      },
+      {
+       "code": "Tn(3)-2",
+       "label": "Diễu miệng túi ngực",
+       "rotation": 0,
+       "x_pct": 0.00631,
+       "y_pct": 0.28804,
+       "w_pct": 0.12328,
+       "h_pct": 0.0625
+      },
+      {
+       "code": "Tn(3)-3",
+       "label": "Bọ miệng túi ngực",
+       "rotation": 0,
+       "x_pct": 0.00752,
+       "y_pct": 0.40541,
+       "w_pct": 0.12212,
+       "h_pct": 0.0625
+      },
+      {
+       "code": "Tn(3)-4",
+       "label": "Bao túi ngực",
+       "rotation": 0,
+       "x_pct": 0.85496,
+       "y_pct": 0.00436,
+       "w_pct": 0.12363,
+       "h_pct": 0.0625
+      },
+      {
+       "code": "Tn(3)-5",
+       "label": "Đường may bao túi ngực",
+       "rotation": 0,
+       "x_pct": 0.85254,
+       "y_pct": 0.11359,
+       "w_pct": 0.12169,
+       "h_pct": 0.0625
+      },
+      {
+       "code": "Tn(3)-6",
+       "label": "Nẹp che/nắp miệng túi ngực",
+       "rotation": 0,
+       "x_pct": 0.85375,
+       "y_pct": 0.21779,
+       "w_pct": 0.12459,
+       "h_pct": 0.0625
+      },
+      {
+       "code": "Tn(3)-7",
+       "label": "Diễu nẹp/nắp miệng túi ngực",
+       "rotation": 0,
+       "x_pct": 0.85215,
+       "y_pct": 0.3028,
+       "w_pct": 0.12111,
+       "h_pct": 0.0625
+      },
+      {
+       "code": "Tn(3)-8",
+       "label": "Bọ nẹp che/nắp miệng túi ngực",
+       "rotation": 0,
+       "x_pct": 0.85496,
+       "y_pct": 0.39209,
+       "w_pct": 0.12343,
+       "h_pct": 0.0625
+      },
+      {
+       "code": "Tn(3)-9",
+       "label": "Dây kéo túi ngực",
+       "rotation": 0,
+       "x_pct": 0.85496,
+       "y_pct": 0.48183,
+       "w_pct": 0.12363,
+       "h_pct": 0.0625
+      },
+      {
+       "code": "Tn(3)-10",
+       "label": "Đầu cầm dây kéo túi ngực",
+       "rotation": 0,
+       "x_pct": 0.85215,
+       "y_pct": 0.56655,
+       "w_pct": 0.14328,
+       "h_pct": 0.0625
+      }
+     ]
+    },
+    {
+     "name": "Túi tay",
+     "group": "lop_3",
+     "prefix": "Tt(3)",
+     "sort_order": 20,
+     "page": 54,
+     "image_png": "positions/aokhoac_thethao/v2/lop_3/p54_bf28d75bc494.png",
+     "image_sha256": "bf28d75bc494713ada4f7ebc7d2a095a645c3660aa8f71c3592385af7fd7daaa",
+     "image_size": [
+      1232,
+      896
+     ],
+     "hotspots": [
+      {
+       "code": "Tt(3)-1",
+       "label": "Miệng túi/nẹp miệng túi ngực",
+       "rotation": 0,
+       "x_pct": 0.01001,
+       "y_pct": 0.16485,
+       "w_pct": 0.11393,
+       "h_pct": 0.0625
+      },
+      {
+       "code": "Tt(3)-2",
+       "label": "Diễu miệng túi ngực",
+       "rotation": 0,
+       "x_pct": 0.00635,
+       "y_pct": 0.28804,
+       "w_pct": 0.11708,
+       "h_pct": 0.0625
+      },
+      {
+       "code": "Tt(3)-3",
+       "label": "Bọ miệng túi ngực",
+       "rotation": 0,
+       "x_pct": 0.00757,
+       "y_pct": 0.40541,
+       "w_pct": 0.11592,
+       "h_pct": 0.0625
+      },
+      {
+       "code": "Tt(3)-4",
+       "label": "Bao túi ngực",
+       "rotation": 0,
+       "x_pct": 0.8612,
+       "y_pct": 0.00436,
+       "w_pct": 0.11743,
+       "h_pct": 0.0625
+      },
+      {
+       "code": "Tt(3)-5",
+       "label": "Đường may bao túi ngực",
+       "rotation": 0,
+       "x_pct": 0.85877,
+       "y_pct": 0.11359,
+       "w_pct": 0.11549,
+       "h_pct": 0.0625
+      },
+      {
+       "code": "Tt(3)-6",
+       "label": "Nẹp che/nắp miệng túi ngực",
+       "rotation": 0,
+       "x_pct": 0.85998,
+       "y_pct": 0.21779,
+       "w_pct": 0.11841,
+       "h_pct": 0.0625
+      },
+      {
+       "code": "Tt(3)-7",
+       "label": "Diễu nẹp/nắp miệng túi ngực",
+       "rotation": 0,
+       "x_pct": 0.85837,
+       "y_pct": 0.3028,
+       "w_pct": 0.1149,
+       "h_pct": 0.0625
+      },
+      {
+       "code": "Tt(3)-8",
+       "label": "Bọ nẹp che/nắp miệng túi ngực",
+       "rotation": 0,
+       "x_pct": 0.8612,
+       "y_pct": 0.39209,
+       "w_pct": 0.11724,
+       "h_pct": 0.0625
+      },
+      {
+       "code": "Tt(3)-9",
+       "label": "Dây kéo túi ngực",
+       "rotation": 0,
+       "x_pct": 0.8612,
+       "y_pct": 0.48183,
+       "w_pct": 0.11743,
+       "h_pct": 0.0625
+      },
+      {
+       "code": "Tt(3)-10",
+       "label": "Đầu cầm dây kéo túi ngực",
+       "rotation": 0,
+       "x_pct": 0.85837,
+       "y_pct": 0.56655,
+       "w_pct": 0.13723,
+       "h_pct": 0.0625
+      }
+     ]
+    },
+    {
+     "name": "Nhãn mác",
+     "group": "lop_3",
+     "prefix": "Nh(1)",
+     "sort_order": 21,
+     "page": 55,
+     "image_png": "positions/aokhoac_thethao/v2/lop_3/p55_d1058e86496b.png",
+     "image_sha256": "d1058e86496bee73f53c3c02431833132c5d31ad860a2583c4a7df3f56e23dd9",
+     "image_size": [
+      1747,
+      1005
+     ],
+     "hotspots": [
+      {
+       "code": "Nh(1)-1",
+       "label": "Nhãn care",
+       "rotation": 0,
+       "x_pct": 0.00824,
+       "y_pct": 0.00833,
+       "w_pct": 0.0898,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-2",
+       "label": "Diễu nhãn care",
+       "rotation": 0,
+       "x_pct": 0.0056,
+       "y_pct": 0.11844,
+       "w_pct": 0.09203,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-3",
+       "label": "Nhãn chống trộm",
+       "rotation": 0,
+       "x_pct": 0.28006,
+       "y_pct": 0.00833,
+       "w_pct": 0.0912,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-4",
+       "label": "Diễu nhãn chống trộm",
+       "rotation": 0,
+       "x_pct": 0.28006,
+       "y_pct": 0.11844,
+       "w_pct": 0.09227,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-5",
+       "label": "Nhãn Barcode",
+       "rotation": 0,
+       "x_pct": 0.5366,
+       "y_pct": 0.00684,
+       "w_pct": 0.0909,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-6",
+       "label": "Diễu nhãn barcode",
+       "rotation": 0,
+       "x_pct": 0.53489,
+       "y_pct": 0.11397,
+       "w_pct": 0.09296,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-7",
+       "label": "Nhãn truy xuất",
+       "rotation": 0,
+       "x_pct": 0.89031,
+       "y_pct": 0.00386,
+       "w_pct": 0.09049,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-8",
+       "label": "Diễu nhãn truy xuất",
+       "rotation": 0,
+       "x_pct": 0.89031,
+       "y_pct": 0.12247,
+       "w_pct": 0.09214,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-9",
+       "label": "Nhãn size",
+       "rotation": 0,
+       "x_pct": 0.88859,
+       "y_pct": 0.35304,
+       "w_pct": 0.09227,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-10",
+       "label": "Diễu nhãn size",
+       "rotation": 0,
+       "x_pct": 0.89031,
+       "y_pct": 0.4257,
+       "w_pct": 0.10623,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-11",
+       "label": "Nhãn dệt",
+       "rotation": 0,
+       "x_pct": 0.0,
+       "y_pct": 0.6591,
+       "w_pct": 0.10162,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-12",
+       "label": "Diễu nhãn dệt",
+       "rotation": 0,
+       "x_pct": 0.00137,
+       "y_pct": 0.78836,
+       "w_pct": 0.10384,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-13",
+       "label": "Hình thêu",
+       "rotation": 0,
+       "x_pct": 0.37202,
+       "y_pct": 0.61858,
+       "w_pct": 0.10302,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-14",
+       "label": "Hình ép",
+       "rotation": 0,
+       "x_pct": 0.55233,
+       "y_pct": 0.56373,
+       "w_pct": 0.10326,
+       "h_pct": 0.05572
+      },
+      {
+       "code": "Nh(1)-15",
+       "label": "Hình in",
+       "rotation": 0,
+       "x_pct": 0.82607,
+       "y_pct": 0.55095,
+       "w_pct": 0.10271,
+       "h_pct": 0.05572
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

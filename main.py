@@ -7959,7 +7959,11 @@ def api_qc_visual_picker(
         khoi_list = sorted(bps.values(), key=lambda x: (x["sort_order"], x["bo_phan_id"]))
         nhoms.append({"nhom": key, "label": NHOM_LABELS.get(key, key.title()), "khoi": khoi_list})
 
-    return {"has_visual_picker": True, "nhoms": nhoms, "visual_catalog": catalog}
+    # PDF-sourced visuals print the position codes on the image itself, so the UI
+    # overlays transparent tap areas instead of drawing its own code badges.
+    labels_in_image = bool(catalog and str(catalog.get("source_file") or "").lower().endswith(".pdf"))
+    return {"has_visual_picker": True, "nhoms": nhoms, "visual_catalog": catalog,
+            "labels_in_image": labels_in_image}
 
 
 @app.get("/api/qc/visual-picker/loai-hang-list")

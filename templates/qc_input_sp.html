@@ -829,6 +829,119 @@
             animation: vp-pulse 1.2s ease-in-out infinite;
             z-index: 10;
         }
+        /* Code printed on the image (PDF sheet): invisible tap area over the label */
+        .vp-hotspot.vp-hotspot-box {
+            min-width: 0;
+            padding: 0;
+            border-radius: 4px;
+            background: transparent;
+            border: 1.5px solid transparent;
+            box-shadow: none;
+            color: transparent;
+            min-height: 0;
+        }
+        .vp-hotspot.vp-hotspot-box::after {   /* finger-sized hit area */
+            content: "";
+            position: absolute;
+            inset: -6px -4px;
+        }
+        .vp-hotspot.vp-hotspot-box:hover {
+            transform: none;
+            border-color: rgba(245, 158, 11, 0.7);
+            box-shadow: none;
+        }
+        .vp-hotspot.vp-hotspot-box.active {
+            background: rgba(250, 204, 21, 0.28);
+            border: 2.5px solid #f59e0b;
+            color: transparent;
+            animation: vp-pulse 1.2s ease-in-out infinite;
+        }
+
+        /* PDF-style sheet: header row + illustration | detail table */
+        .vp-sheet {
+            --vp-head: #1d4ed8;
+            --vp-head-soft: #dbeafe;
+            border: 1.5px solid var(--vp-head);
+            border-radius: 12px;
+            overflow: hidden;
+            background: #fff;
+        }
+        .vp-sheet[data-nhom="lop_1"] { --vp-head: #9d4f9f; --vp-head-soft: #f3e1f5; }
+        .vp-sheet[data-nhom="lop_2"] { --vp-head: #b8860b; --vp-head-soft: #fdf3c4; }
+        .vp-sheet[data-nhom="lop_3"] { --vp-head: #d9468f; --vp-head-soft: #fde2ef; }
+        .vp-sheet[data-nhom="lot"] { --vp-head: #0f766e; --vp-head-soft: #ccfbf1; }
+        .vp-sheet[data-nhom="nhan_dien"] { --vp-head: #475569; --vp-head-soft: #e2e8f0; }
+        .vp-sheet-head {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            padding: 6px 10px;
+            background: var(--vp-head);
+            color: #fff;
+            font-weight: 700;
+        }
+        .vp-sheet-code {
+            background: #fff;
+            color: var(--vp-head);
+            border-radius: 6px;
+            padding: 1px 8px;
+            font-size: 0.8rem;
+            font-weight: 800;
+        }
+        .vp-sheet-name { font-size: 0.95rem; }
+        .vp-sheet-hint { margin-left: auto; font-size: 0.7rem; font-weight: 500; opacity: 0.85; }
+        .vp-sheet-body { display: flex; flex-direction: column; }
+        .vp-sheet .vp-stage {
+            border: none;
+            border-radius: 0;
+            background: #fff;
+            padding: 8px;
+        }
+        .vp-table-wrap {
+            max-height: 45vh;
+            overflow-y: auto;
+            border-top: 1.5px solid var(--vp-head);
+            -webkit-overflow-scrolling: touch;
+        }
+        .vp-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        .vp-table thead th {
+            position: sticky;
+            top: 0;
+            z-index: 1;
+            background: var(--vp-head-soft);
+            color: #0f172a;
+            font-weight: 700;
+            font-size: 0.75rem;
+            padding: 6px 8px;
+            border-bottom: 1px solid var(--vp-head);
+        }
+        .vp-table tbody tr { cursor: pointer; border-bottom: 1px solid #e2e8f0; }
+        .vp-table tbody tr:hover { background: #f8fafc; }
+        .vp-table td { padding: 8px; vertical-align: middle; line-height: 1.25; }
+        .vp-table .vp-td-code {
+            white-space: nowrap;
+            font-weight: 800;
+            color: var(--vp-head);
+            width: 1%;
+        }
+        .vp-table tbody tr.active { background: #fef3c7; box-shadow: inset 4px 0 0 #f59e0b; }
+        .vp-table tbody tr.active td { font-weight: 700; color: #92400e; }
+        .vp-td-note { display: block; font-size: 0.68rem; color: #94a3b8; font-weight: 500; }
+        /* Wide enough (tablet / landscape split): side by side like the PDF page.
+           Container query because the page column is capped at 520px in portrait. */
+        .vp-sheet { container-type: inline-size; }
+        @container (min-width: 600px) {
+            .vp-sheet-body { flex-direction: row; align-items: stretch; }
+            .vp-sheet .vp-stage { flex: 1.7 1 0; min-width: 0; align-self: center; }
+            .vp-table-wrap {
+                flex: 1 1 0;
+                min-width: 240px;
+                max-height: 70vh;
+                border-top: none;
+                border-left: 1.5px solid var(--vp-head);
+            }
+        }
         @keyframes vp-pulse {
             0%, 100% { box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.40), 0 6px 14px rgba(245, 158, 11, 0.45); }
             50%      { box-shadow: 0 0 0 10px rgba(245, 158, 11, 0.10), 0 6px 14px rgba(245, 158, 11, 0.45); }
@@ -2810,22 +2923,32 @@
                     </button>
                 </div>
                 <div class="vp-khoi-grid" data-vp-grid></div>
-                <div class="d-flex align-items-center justify-content-between">
-                    <label class="label mb-0">Mã vị trí</label>
-                    <button type="button" class="btn-mic-inline" onclick="startVoiceField('chi_tiet', { blockId: ${blockId} })" title="Voice Mã vị trí">
-                        <i class="fas fa-microphone"></i>
-                    </button>
-                </div>
-                <div class="combo-dropdown" data-type="vp-chi-tiet" data-block-id="${blockId}">
+                <!-- Hidden: keeps the existing value/quick-combo plumbing; the table below replaces it. -->
+                <div class="combo-dropdown" data-type="vp-chi-tiet" data-block-id="${blockId}" style="display:none;">
                     <button type="button" class="combo-trigger" onclick="toggleCombo(this)">-- Chọn Mã vị trí --</button>
                     <div class="combo-panel">
-                        <input type="text" class="combo-search" placeholder="Tìm mã vị trí / tên..." oninput="filterCombo(this)">
+                        <input type="text" class="combo-search" oninput="filterCombo(this)">
                         <div class="combo-list"></div>
                     </div>
                     <select class="sel-vp-chi-tiet" style="display:none;"></select>
                 </div>
-                <div class="vp-stage" data-vp-stage>
-                    <div class="vp-stage-empty">Chọn 1 khối phía dưới để chọn vị trí lỗi</div>
+                <div class="vp-stage-empty" data-vp-empty>Chọn 1 khối phía trên để chọn vị trí lỗi</div>
+                <!-- Same layout as the QLCL PDF sheet: illustration | detail table -->
+                <div class="vp-sheet" data-vp-sheet style="display:none;">
+                    <div class="vp-sheet-head">
+                        <span class="vp-sheet-code" data-vp-sheet-code></span>
+                        <span class="vp-sheet-name" data-vp-sheet-name></span>
+                        <span class="vp-sheet-hint">Chạm mã trên hình hoặc dòng trong bảng</span>
+                    </div>
+                    <div class="vp-sheet-body">
+                        <div class="vp-stage" data-vp-stage></div>
+                        <div class="vp-table-wrap" data-vp-table-wrap>
+                            <table class="vp-table">
+                                <thead><tr><th>Mã tổng</th><th>Chi tiết</th></tr></thead>
+                                <tbody data-vp-tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
                 <select class="sel-bo-phan" style="display:none;"></select>
                 <select class="sel-chi-tiet" style="display:none;"></select>
@@ -2914,7 +3037,15 @@
             const bar = block.querySelector('[data-vp-selection]');
             if (bar) bar.style.display = 'none';
         }
-        // Render stage
+        // Render the PDF-style sheet: header, illustration, detail table
+        const sheet = block.querySelector('[data-vp-sheet]');
+        const empty = block.querySelector('[data-vp-empty]');
+        if (empty) empty.style.display = 'none';
+        sheet.style.display = '';
+        sheet.dataset.nhom = state.nhom || '';
+        sheet.querySelector('[data-vp-sheet-code]').textContent = vpBlockCode(khoi);
+        sheet.querySelector('[data-vp-sheet-name]').textContent = khoi.ten_khoi || '';
+        vpRenderTable(block, blockId, khoi);
         const stage = block.querySelector('[data-vp-stage]');
         const imgSrc = khoi.image_svg || khoi.image_png;
         stage.innerHTML = `
@@ -2946,18 +3077,31 @@
         // Clear previous hotspots (keep image)
         holder.querySelectorAll('.vp-hotspot').forEach(h => h.remove());
         const state = vpBlockState[blockId] || {};
+        const labelsInImage = !!(visualPickerData && visualPickerData.labels_in_image);
         (khoi.hotspots || []).forEach(h => {
+            if (h.x_pct == null || h.y_pct == null) return;  // table-only code
             const dot = document.createElement('button');
             dot.type = 'button';
-            dot.className = 'vp-hotspot';
-            dot.textContent = h.ma_vi_tri;
-            dot.title = h.label || '';
-            // x_pct / y_pct là tọa độ TOP-LEFT của text box (đã normalize 0..1 theo image bbox).
-            // Đặt hotspot tại tâm của text box: left = x + w/2, top = y + h/2
-            const cx = (h.x_pct + (h.w_pct || 0) / 2) * 100;
-            const cy = (h.y_pct + (h.h_pct || 0) / 2) * 100;
-            dot.style.left = `calc(${cx}% - 14px)`;
-            dot.style.top = `calc(${cy}% - 11px)`;
+            dot.dataset.chiTietId = h.chi_tiet_id;
+            dot.title = `${h.ma_vi_tri || ''} · ${h.label || ''}`;
+            dot.setAttribute('aria-label', dot.title);
+            if (labelsInImage) {
+                // Code is printed on the image (PDF sheet): transparent tap area over it.
+                dot.className = 'vp-hotspot vp-hotspot-box';
+                dot.style.left = `${h.x_pct * 100}%`;
+                dot.style.top = `${h.y_pct * 100}%`;
+                dot.style.width = `${(h.w_pct || 0.04) * 100}%`;
+                dot.style.height = `${(h.h_pct || 0.04) * 100}%`;
+            } else {
+                dot.className = 'vp-hotspot';
+                dot.textContent = h.ma_vi_tri;
+                // x_pct / y_pct là tọa độ TOP-LEFT của text box (đã normalize 0..1 theo image bbox).
+                // Đặt hotspot tại tâm của text box: left = x + w/2, top = y + h/2
+                const cx = (h.x_pct + (h.w_pct || 0) / 2) * 100;
+                const cy = (h.y_pct + (h.h_pct || 0) / 2) * 100;
+                dot.style.left = `calc(${cx}% - 14px)`;
+                dot.style.top = `calc(${cy}% - 11px)`;
+            }
             if (state.chi_tiet_id === h.chi_tiet_id) dot.classList.add('active');
             dot.addEventListener('click', () => vpSelectHotspot(blockId, khoi.bo_phan_id, h));
             holder.appendChild(dot);
@@ -2978,12 +3122,8 @@
         selBp.value = String(boPhanId);
         selCt.value = String(hotspot.chi_tiet_id);
         selectComboValue(block.querySelector('.combo-dropdown[data-type="vp-chi-tiet"]'), String(hotspot.chi_tiet_id));
-        // Update hotspot active class
-        block.querySelectorAll('.vp-hotspot').forEach(d => d.classList.remove('active'));
-        const dots = block.querySelectorAll('.vp-hotspot');
-        dots.forEach(d => {
-            if (d.textContent === hotspot.ma_vi_tri) d.classList.add('active');
-        });
+        // Highlight the code on the image and its row in the table
+        vpMarkActive(block, hotspot.chi_tiet_id);
         // Show selection bar
         const bar = block.querySelector('[data-vp-selection]');
         bar.style.display = 'flex';
@@ -3027,9 +3167,73 @@
         block.querySelector('.sel-bo-phan').innerHTML = '';
         block.querySelector('.sel-chi-tiet').innerHTML = '';
         selectComboValue(block.querySelector('.combo-dropdown[data-type="vp-chi-tiet"]'), '');
-        block.querySelectorAll('.vp-hotspot.active').forEach(d => d.classList.remove('active'));
+        vpMarkActive(block, null);
         const bar = block.querySelector('[data-vp-selection]');
         bar.style.display = 'none';
+    }
+
+    // "Th-12" -> ["Th", 12]; also handles old codes like "TS1" / "L(1) - 10".
+    function vpSplitCode(code) {
+        const m = String(code || '').match(/^(.*?)[\s-]*(\d+)\s*$/);
+        return m ? [m[1].trim(), parseInt(m[2], 10)] : [String(code || ''), 0];
+    }
+
+    function vpSortedHotspots(khoi) {
+        return (khoi.hotspots || []).slice().sort((a, b) => {
+            const [pa, na] = vpSplitCode(a.ma_vi_tri);
+            const [pb, nb] = vpSplitCode(b.ma_vi_tri);
+            return pa.localeCompare(pb) || na - nb || a.chi_tiet_id - b.chi_tiet_id;
+        });
+    }
+
+    // Block code shown in the sheet header, e.g. "Th(1)" (PDF "Mã bộ phận").
+    function vpBlockCode(khoi) {
+        const first = vpSortedHotspots(khoi)[0];
+        return first ? vpSplitCode(first.ma_vi_tri)[0] : '';
+    }
+
+    function vpRenderTable(block, blockId, khoi) {
+        const tbody = block.querySelector('[data-vp-tbody]');
+        if (!tbody) return;
+        const state = vpBlockState[blockId] || {};
+        tbody.innerHTML = '';
+        vpSortedHotspots(khoi).forEach(h => {
+            const tr = document.createElement('tr');
+            tr.dataset.chiTietId = h.chi_tiet_id;
+            if (state.chi_tiet_id === h.chi_tiet_id) tr.classList.add('active');
+            const code = document.createElement('td');
+            code.className = 'vp-td-code';
+            code.textContent = h.ma_vi_tri || '';
+            const name = document.createElement('td');
+            name.textContent = h.label || '';
+            if (h.x_pct == null) {
+                const note = document.createElement('span');
+                note.className = 'vp-td-note';
+                note.textContent = 'không có trên hình';
+                name.appendChild(note);
+            }
+            tr.append(code, name);
+            tr.addEventListener('click', () => vpSelectHotspot(blockId, khoi.bo_phan_id, h));
+            tbody.appendChild(tr);
+        });
+    }
+
+    function vpMarkActive(block, chiTietId) {
+        const id = chiTietId == null ? null : String(chiTietId);
+        block.querySelectorAll('.vp-hotspot').forEach(d => d.classList.toggle('active', d.dataset.chiTietId === id));
+        let activeRow = null;
+        block.querySelectorAll('[data-vp-tbody] tr').forEach(tr => {
+            const on = tr.dataset.chiTietId === id;
+            tr.classList.toggle('active', on);
+            if (on) activeRow = tr;
+        });
+        // Keep the selected row visible inside the scrollable table only.
+        const wrap = block.querySelector('[data-vp-table-wrap]');
+        if (activeRow && wrap) {
+            const top = activeRow.offsetTop, bottom = top + activeRow.offsetHeight;
+            if (top < wrap.scrollTop + 30) wrap.scrollTop = Math.max(0, top - 30);
+            else if (bottom > wrap.scrollTop + wrap.clientHeight) wrap.scrollTop = bottom - wrap.clientHeight;
+        }
     }
 
     function removeBoPhanBlock(productId, blockId) {
