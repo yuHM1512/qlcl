@@ -42,6 +42,52 @@
         .vp-hotspot.dirty { background: #10b981; }
         .vp-hotspot.dirty.dragging { background: #f59e0b; }
 
+        /* PDF-sourced visual: the code is printed on the image, so the editable
+           hotspot is a frame over that printed code (same tap area QC uses). */
+        .vp-hotspot.vp-box {
+            transform: none; min-width: 0; height: auto; padding: 0; border-radius: 4px;
+            background: rgba(0, 64, 161, 0.06); border: 2px dashed rgba(0, 64, 161, 0.6);
+            color: transparent; box-shadow: none;
+        }
+        .vp-hotspot.vp-box:hover { transform: none; border-style: solid; background: rgba(0, 64, 161, 0.12); }
+        .vp-hotspot.vp-box.dirty { background: rgba(16, 185, 129, 0.18); border: 2px solid #10b981; }
+        .vp-hotspot.vp-box.dragging { transform: none; background: rgba(250, 204, 21, 0.3); border: 2px solid #f59e0b; }
+        .vp-hotspot.active { box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.45); z-index: 9; }
+        .vp-hotspot.vp-box.active { border: 2.5px solid #f59e0b; background: rgba(250, 204, 21, 0.28); }
+
+        /* Same PDF-style sheet as the QC input screen: header + illustration | table */
+        .vp-sheet {
+            --vp-head: #1d4ed8; --vp-head-soft: #dbeafe;
+            border: 1.5px solid var(--vp-head); border-radius: 12px; overflow: hidden; background: #fff;
+            container-type: inline-size;
+        }
+        .vp-sheet[data-nhom="lop_1"] { --vp-head: #9d4f9f; --vp-head-soft: #f3e1f5; }
+        .vp-sheet[data-nhom="lop_2"] { --vp-head: #b8860b; --vp-head-soft: #fdf3c4; }
+        .vp-sheet[data-nhom="lop_3"] { --vp-head: #d9468f; --vp-head-soft: #fde2ef; }
+        .vp-sheet[data-nhom="lot"] { --vp-head: #0f766e; --vp-head-soft: #ccfbf1; }
+        .vp-sheet[data-nhom="nhan_dien"] { --vp-head: #475569; --vp-head-soft: #e2e8f0; }
+        .vp-sheet-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 6px 10px; background: var(--vp-head); color: #fff; font-weight: 700; }
+        .vp-sheet-code { background: #fff; color: var(--vp-head); border-radius: 6px; padding: 1px 8px; font-size: 0.8rem; font-weight: 800; }
+        .vp-sheet-name { font-size: 0.95rem; }
+        .vp-sheet-hint { margin-left: auto; font-size: 0.7rem; font-weight: 500; opacity: 0.85; }
+        .vp-sheet-body { display: flex; flex-direction: column; }
+        .vp-sheet-stage { padding: 10px; background: #fff; }
+        .vp-table-wrap { max-height: 45vh; overflow-y: auto; border-top: 1.5px solid var(--vp-head); }
+        .vp-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        .vp-table thead th { position: sticky; top: 0; z-index: 1; background: var(--vp-head-soft); color: #0f172a; font-weight: 700; font-size: 0.75rem; padding: 6px 8px; border-bottom: 1px solid var(--vp-head); text-align: left; }
+        .vp-table tbody tr { cursor: pointer; border-bottom: 1px solid #e2e8f0; }
+        .vp-table tbody tr:hover { background: #f8fafc; }
+        .vp-table td { padding: 7px 8px; vertical-align: middle; line-height: 1.25; }
+        .vp-table .vp-td-code { white-space: nowrap; font-weight: 800; color: var(--vp-head); width: 1%; }
+        .vp-table tbody tr.active { background: #fef3c7; box-shadow: inset 4px 0 0 #f59e0b; }
+        .vp-table tbody tr.dirty .vp-td-code::after { content: " •"; color: #10b981; }
+        .vp-td-note { display: block; font-size: 0.68rem; color: #94a3b8; font-weight: 500; }
+        @container (min-width: 600px) {
+            .vp-sheet-body { flex-direction: row; align-items: stretch; }
+            .vp-sheet-stage { flex: 1.7 1 0; min-width: 0; align-self: center; }
+            .vp-table-wrap { flex: 1 1 0; min-width: 220px; max-height: 70vh; border-top: none; border-left: 1.5px solid var(--vp-head); }
+        }
+
         .stage-empty { min-height: 200px; display: flex; align-items: center; justify-content: center; color: #424654; font-size: 0.95rem; }
         .save-bar {
             position: sticky; bottom: 0; background: rgba(248, 249, 250, 0.97); backdrop-filter: blur(12px);
@@ -301,15 +347,52 @@
             document.getElementById('saveBar').style.display = 'none';
         }
 
+        // Same helpers as the QC input screen: "Th(1)-12" -> ["Th(1)", 12]; PDF row order.
+        function vpSplitCode(code) {
+            const m = String(code || '').match(/^(.*?)[\s-]*(\d+)\s*$/);
+            return m ? [m[1].trim(), parseInt(m[2], 10)] : [String(code || ''), 0];
+        }
+        function vpSortedHotspots(khoi) {
+            return (khoi.hotspots || []).slice().sort((a, b) => {
+                const [pa, na] = vpSplitCode(a.ma_vi_tri);
+                const [pb, nb] = vpSplitCode(b.ma_vi_tri);
+                return pa.localeCompare(pb) || na - nb || a.chi_tiet_id - b.chi_tiet_id;
+            });
+        }
+        function escapeHtml(s) {
+            return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        }
+        function labelsInImage() { return !!(visualPickerData && visualPickerData.labels_in_image); }
+
         function renderStage(khoi) {
             const stage = document.getElementById('stage');
             stage.className = '';
             const imgSrc = khoi.image_svg || khoi.image_png;
+            const sorted = vpSortedHotspots(khoi);
+            const blockCode = sorted.length ? vpSplitCode(sorted[0].ma_vi_tri)[0] : '';
             stage.innerHTML = `
-                <div class="vp-img-holder" data-holder>
-                    <img src="${imgSrc}" alt="${khoi.ten_khoi}" data-img>
+                <div class="vp-sheet" data-nhom="${escapeHtml(currentNhomKey || '')}">
+                    <div class="vp-sheet-head">
+                        <span class="vp-sheet-code">${escapeHtml(blockCode)}</span>
+                        <span class="vp-sheet-name">${escapeHtml(khoi.ten_khoi)}</span>
+                        <span class="vp-sheet-hint">Kéo ${labelsInImage() ? 'khung' : 'nút'} để chỉnh · bấm dòng để tìm trên hình</span>
+                    </div>
+                    <div class="vp-sheet-body">
+                        <div class="vp-sheet-stage">
+                            <div class="vp-img-holder" data-holder>
+                                <img src="${imgSrc}" alt="${escapeHtml(khoi.ten_khoi)}" data-img>
+                            </div>
+                        </div>
+                        <div class="vp-table-wrap" data-table-wrap>
+                            <table class="vp-table">
+                                <thead><tr><th>Mã tổng</th><th>Chi tiết</th></tr></thead>
+                                <tbody data-tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             `;
+            renderTable(khoi);
             document.getElementById('stageTitle').textContent = `Khối: ${khoi.ten_khoi}`;
             document.getElementById('koiHotspotCount').textContent = `${(khoi.hotspots || []).length} vị trí`;
             document.getElementById('saveBar').style.display = 'flex';
@@ -326,39 +409,104 @@
             const holder = document.querySelector('[data-holder]');
             if (!holder) return;
             holder.querySelectorAll('.vp-hotspot').forEach(h => h.remove());
+            const boxMode = labelsInImage();
             (khoi.hotspots || []).forEach(h => {
+                if (h.x_pct == null || h.y_pct == null) return;  // table-only code
                 const cur = dirtyHotspots[h.chi_tiet_id] || { x_pct: h.x_pct, y_pct: h.y_pct };
                 const dot = document.createElement('div');
-                dot.className = 'vp-hotspot';
+                dot.className = 'vp-hotspot' + (boxMode ? ' vp-box' : '');
                 if (dirtyHotspots[h.chi_tiet_id]) dot.classList.add('dirty');
                 dot.dataset.chiTietId = h.chi_tiet_id;
                 dot.textContent = h.ma_vi_tri || '';
-                dot.title = h.label || '';
-                const cx = (cur.x_pct + (h.w_pct || 0) / 2) * 100;
-                const cy = (cur.y_pct + (h.h_pct || 0) / 2) * 100;
-                dot.style.left = `${cx}%`;
-                dot.style.top = `${cy}%`;
+                dot.title = `${h.ma_vi_tri || ''} · ${h.label || ''}`;
                 dot.dataset.wPct = h.w_pct || 0;
                 dot.dataset.hPct = h.h_pct || 0;
+                if (boxMode) {
+                    dot.style.width = `${(h.w_pct || 0.04) * 100}%`;
+                    dot.style.height = `${(h.h_pct || 0.04) * 100}%`;
+                }
+                placeDot(dot, cur.x_pct, cur.y_pct);
+                dot.addEventListener('mouseenter', () => markActive(h.chi_tiet_id, false));
                 attachDragHandlers(dot, h);
                 holder.appendChild(dot);
             });
+        }
+
+        // x/y are the top-left of the code's box (normalised 0..1), as stored in DB.
+        // Frames sit exactly on that box; legacy badges are centred on it.
+        function placeDot(dot, xPct, yPct) {
+            const w = parseFloat(dot.dataset.wPct) || 0;
+            const h = parseFloat(dot.dataset.hPct) || 0;
+            if (dot.classList.contains('vp-box')) {
+                dot.style.left = `${xPct * 100}%`;
+                dot.style.top = `${yPct * 100}%`;
+            } else {
+                dot.style.left = `${(xPct + w / 2) * 100}%`;
+                dot.style.top = `${(yPct + h / 2) * 100}%`;
+            }
+        }
+
+        function renderTable(khoi) {
+            const tbody = document.querySelector('[data-tbody]');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            vpSortedHotspots(khoi).forEach(h => {
+                const tr = document.createElement('tr');
+                tr.dataset.chiTietId = h.chi_tiet_id;
+                if (dirtyHotspots[h.chi_tiet_id]) tr.classList.add('dirty');
+                const note = h.x_pct == null ? '<span class="vp-td-note">không có trên hình</span>' : '';
+                tr.innerHTML = `<td class="vp-td-code">${escapeHtml(h.ma_vi_tri)}</td><td>${escapeHtml(h.label)}${note}</td>`;
+                tr.addEventListener('click', () => markActive(h.chi_tiet_id, true));
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Highlight one code on the image and in the table.
+        function markActive(chiTietId, scrollImage) {
+            const id = String(chiTietId);
+            let dotEl = null, rowEl = null;
+            document.querySelectorAll('[data-holder] .vp-hotspot').forEach(d => {
+                const on = d.dataset.chiTietId === id;
+                d.classList.toggle('active', on);
+                if (on) dotEl = d;
+            });
+            document.querySelectorAll('[data-tbody] tr').forEach(tr => {
+                const on = tr.dataset.chiTietId === id;
+                tr.classList.toggle('active', on);
+                if (on) rowEl = tr;
+            });
+            const wrap = document.querySelector('[data-table-wrap]');
+            if (rowEl && wrap) {
+                const top = rowEl.offsetTop, bottom = top + rowEl.offsetHeight;
+                if (top < wrap.scrollTop + 30) wrap.scrollTop = Math.max(0, top - 30);
+                else if (bottom > wrap.scrollTop + wrap.clientHeight) wrap.scrollTop = bottom - wrap.clientHeight;
+            }
+            if (scrollImage && dotEl) dotEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }
+
+        function markRowDirty(chiTietId) {
+            const tr = document.querySelector(`[data-tbody] tr[data-chi-tiet-id="${chiTietId}"]`);
+            if (tr) tr.classList.add('dirty');
         }
 
         function attachDragHandlers(dot, hotspot) {
             const onStart = (clientX, clientY, e) => {
                 const holder = dot.closest('[data-holder]');
                 const holderRect = holder.getBoundingClientRect();
+                const cur = dirtyHotspots[hotspot.chi_tiet_id] || { x_pct: hotspot.x_pct, y_pct: hotspot.y_pct };
                 draggingState = {
                     chi_tiet_id: hotspot.chi_tiet_id,
                     startX: clientX,
                     startY: clientY,
+                    origX: cur.x_pct,
+                    origY: cur.y_pct,
                     holderRect,
                     wPct: parseFloat(dot.dataset.wPct) || 0,
                     hPct: parseFloat(dot.dataset.hPct) || 0,
                     dot,
                 };
                 dot.classList.add('dragging');
+                markActive(hotspot.chi_tiet_id, false);
                 e.preventDefault();
             };
             dot.addEventListener('mousedown', e => onStart(e.clientX, e.clientY, e));
@@ -368,60 +516,42 @@
             }, { passive: false });
         }
 
+        // Move by the pointer delta (no jump to the cursor), clamped inside the image.
+        function dragTo(clientX, clientY) {
+            const s = draggingState;
+            const moved = Math.abs(clientX - s.startX) + Math.abs(clientY - s.startY);
+            if (moved < 3 && !s.moved) return;  // a click, not a drag
+            s.moved = true;
+            const newXPct = Math.max(0, Math.min(1 - s.wPct, s.origX + (clientX - s.startX) / s.holderRect.width));
+            const newYPct = Math.max(0, Math.min(1 - s.hPct, s.origY + (clientY - s.startY) / s.holderRect.height));
+            dirtyHotspots[s.chi_tiet_id] = { x_pct: newXPct, y_pct: newYPct };
+            placeDot(s.dot, newXPct, newYPct);
+        }
+        function endDrag() {
+            if (!draggingState) return;
+            const s = draggingState;
+            s.dot.classList.remove('dragging');
+            if (s.moved) {
+                s.dot.classList.add('dirty');
+                markRowDirty(s.chi_tiet_id);
+            }
+            draggingState = null;
+            updateDirtyCount();
+        }
         window.addEventListener('mousemove', e => {
             if (draggingState) {
                 e.preventDefault();
-                const h = getCurrentKhoi()?.hotspots?.find(x => x.chi_tiet_id === draggingState.chi_tiet_id);
-                if (h) {
-                    const { holderRect, wPct, hPct, dot } = draggingState;
-                    const cxPct = (e.clientX - holderRect.left) / holderRect.width;
-                    const cyPct = (e.clientY - holderRect.top) / holderRect.height;
-                    const clampedCx = Math.max(0, Math.min(1, cxPct));
-                    const clampedCy = Math.max(0, Math.min(1, cyPct));
-                    const newXPct = Math.max(0, Math.min(1 - wPct, clampedCx - wPct / 2));
-                    const newYPct = Math.max(0, Math.min(1 - hPct, clampedCy - hPct / 2));
-                    dirtyHotspots[h.chi_tiet_id] = { x_pct: newXPct, y_pct: newYPct };
-                    const cx = (newXPct + wPct / 2) * 100;
-                    const cy = (newYPct + hPct / 2) * 100;
-                    dot.style.left = `${cx}%`;
-                    dot.style.top = `${cy}%`;
-                }
+                dragTo(e.clientX, e.clientY);
             }
         });
-        window.addEventListener('mouseup', () => {
-            if (draggingState) {
-                draggingState.dot.classList.remove('dragging');
-                draggingState.dot.classList.add('dirty');
-                draggingState = null;
-                updateDirtyCount();
-            }
-        });
+        window.addEventListener('mouseup', endDrag);
         window.addEventListener('touchmove', e => {
             if (draggingState && e.touches[0]) {
                 e.preventDefault();
-                const t = e.touches[0];
-                const { holderRect, wPct, hPct, dot, chi_tiet_id } = draggingState;
-                const cxPct = (t.clientX - holderRect.left) / holderRect.width;
-                const cyPct = (t.clientY - holderRect.top) / holderRect.height;
-                const clampedCx = Math.max(0, Math.min(1, cxPct));
-                const clampedCy = Math.max(0, Math.min(1, cyPct));
-                const newXPct = Math.max(0, Math.min(1 - wPct, clampedCx - wPct / 2));
-                const newYPct = Math.max(0, Math.min(1 - hPct, clampedCy - hPct / 2));
-                dirtyHotspots[chi_tiet_id] = { x_pct: newXPct, y_pct: newYPct };
-                const cx = (newXPct + wPct / 2) * 100;
-                const cy = (newYPct + hPct / 2) * 100;
-                dot.style.left = `${cx}%`;
-                dot.style.top = `${cy}%`;
+                dragTo(e.touches[0].clientX, e.touches[0].clientY);
             }
         }, { passive: false });
-        window.addEventListener('touchend', () => {
-            if (draggingState) {
-                draggingState.dot.classList.remove('dragging');
-                draggingState.dot.classList.add('dirty');
-                draggingState = null;
-                updateDirtyCount();
-            }
-        });
+        window.addEventListener('touchend', endDrag);
 
         function updateDirtyCount() {
             const n = Object.keys(dirtyHotspots).length;
