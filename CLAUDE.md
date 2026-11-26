@@ -171,8 +171,7 @@ qlcl/
 |----------|---------|-------|
 | `/api/prod-plan` | GET, POST, PUT, DELETE | CRUD kế hoạch sản xuất |
 | `/api/prod-plan/sync-qtcn` | POST | Sync từ hệ thống QTCN |
-| `/api/prod-plan/sync-hanging-line` | POST | Sync từ chuyền treo |
-| `/api/prod-plan/push-from-hl` | POST | Push data từ hanging line |
+| `/api/prod-plan/push-from-hl` | POST | App chuyền treo từng XN tự đẩy kế hoạch sang (X-API-Key) — xem `HUONG_DAN_SYNC_CHUYEN_TREO.md` |
 | `/api/prod-plan/sync-flat-line` | POST | Sync kế hoạch Chuyền bệt từ Google Sheets |
 
 ### KPI & Others

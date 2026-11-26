@@ -190,29 +190,6 @@ async function syncFlatLinePlans(options = {}) {
     }
 }
 
-async function syncHangingLinePlans(options = {}) {
-    try {
-        const res = await fetch('/api/prod-plan/sync-hanging-line', { method: 'POST' });
-        const data = await res.json();
-        if (!res.ok) {
-            if (!options.silent) {
-                alert(data.detail || 'Không thể đồng bộ kế hoạch chuyền treo.');
-            }
-            return null;
-        }
-        if (!options.silent) {
-            alert(`Đồng bộ chuyền treo xong. Thêm ${data.inserted || 0}, cập nhật ${data.updated || 0}, bỏ qua ${data.skipped || 0}.`);
-            await loadPlans();
-        }
-        return data;
-    } catch (e) {
-        if (!options.silent) {
-            alert('Lỗi kết nối máy chủ khi đồng bộ chuyền treo.');
-        }
-        return null;
-    }
-}
-
 async function selectPlan(planId) {
     if (hasUnsavedData() && !confirm('Bạn đang có dữ liệu chưa lưu. Chuyển kế hoạch sẽ mất dữ liệu này. Tiếp tục?')) return;
     selectedPlanId = planId;

@@ -2,121 +2,97 @@
 
 ## Tổng quan
 
-Module QC (`qlcl`) có thể tự động kéo danh sách kế hoạch sản xuất từ hệ thống chuyền treo (`hanging_app` trên SQL Server) về, dùng làm cơ sở để QC nhập lỗi theo đúng mã sản xuất.
+QLCL và app chuyền treo (`hanging_line_factory`) của từng xí nghiệp chạy trên **các server riêng**,
+không dùng chung database. Dữ liệu đi qua **API**: app chuyền treo của mỗi XN **tự đẩy (PUSH)** sang QLCL.
+QLCL không kết nối thẳng SQL Server chuyền treo (ngoại lệ: chế độ PULL XNV2, mặc định tắt — xem cuối file).
 
-**Luồng dữ liệu:**
 ```
-SQL Server (hanging_app.app.tPlanMaster)
-        ↓  sync
-PostgreSQL (qlcl.prod_plan)  ←  mono = MONo
-        ↓
-QC nhập lỗi → dữ liệu sẵn sàng để TV-3 lấy
+App chuyền treo XN1-V1 / XN2 / XN3  (SQL Server riêng, APP_UNIT = đơn vị)
+        │  POST + header X-API-Key
+        ├─► /api/prod-plan/push-from-hl      kế hoạch (toàn bộ, mặc định 60 phút/lần hoặc bấm tay)
+        ├─► /api/qc/hanging-output/push      sản lượng ra chuyền theo MONo + ngày (~2 phút/lần)
+        ├─► /api/qc/employees/push-from-hl   danh sách QC + công đoạn
+        └─► /api/qc/flat-output/push         sản lượng chuyền bệt (5 mốc giờ)
+        ▼
+PostgreSQL QLCL: prod_plan (source_system='hanging_line'), qc_hanging_output, qc_flat_output
+        ▼
+QC chọn kế hoạch trên /qc-input → nhập lỗi theo plan_id
 ```
+
+Kế hoạch **Chuyền bệt** không đi qua app chuyền treo: QLCL tự đọc Google Sheet của từng XN
+(`/api/prod-plan/sync-flat-line`, tự động mỗi `FLAT_LINE_AUTO_SYNC_INTERVAL_MINUTES` phút).
 
 ---
 
-## Cài đặt một lần
+## Cấu hình
 
-### 1. Cài pyodbc
-
-```powershell
-# Trong venv của qlcl
-.\.venv\Scripts\activate
-pip install pyodbc==5.1.0
-```
-
-> ODBC Driver 17 for SQL Server đã có sẵn trên máy (dùng chung với hanging line app).
-
-### 2. Chạy migration PostgreSQL
-
-```powershell
-# Kết nối vào PostgreSQL qlcl rồi chạy:
-psql -U postgres -d qlcl -f "db\alter_prod_plan_add_mono.sql"
-```
-
-Hoặc khởi động lại app — migration được áp dụng tự động khi startup.
-
-### 3. Kiểm tra file .env
-
-Mở `qlcl\.env`, đảm bảo có 3 dòng sau (chỉnh server/DB nếu cần):
+**QLCL** (`.env`):
 
 ```
-HANGING_LINE_SQL_SERVER=.\SQLEXPRESS
-HANGING_LINE_APP_DB=hanging_app
-HANGING_LINE_SQL_DRIVER=ODBC Driver 17 for SQL Server
+QLCL_API_KEY=<key dùng chung>
 ```
+
+Thiếu key → mọi API push trả 403.
+
+**App chuyền treo từng XN** (`.env`): `QLCL_API_KEY` trùng key trên, URL của QLCL, `APP_UNIT` đúng tên
+đơn vị trong QLCL (`XN1-V1`, `XN2`, `XN3`), và `QLCL_AUTO_SYNC_ENABLED=true` nếu muốn tự đẩy kế hoạch.
+Đẩy tay: nút đồng bộ trên trang admin của app chuyền treo (`POST /admin/api/sync-to-qlcl`).
 
 ---
 
-## Cách đồng bộ
+## Dữ liệu kế hoạch nhận được
 
-### Từ trang Quản lý Kế hoạch (`/qc`)
+Body: `{"don_vi": "XN2", "plans": [{guid, mono, ke_hoach, line_no, style_no, customer, loai_hang, first_hang, san_luong}]}`
 
-Nhấn nút **"Đồng bộ Chuyền treo"** trên thanh action bar (bên cạnh nút "Đồng bộ XNV2").
-
-### Từ màn hình Nhập lỗi QC (`/qc-input`)
-
-Nhấn nút **"Chuyền treo"** trên vùng chọn kế hoạch.
-
-Sau khi sync, app hiện thông báo:
-> *Đồng bộ chuyền treo xong. Thêm X, cập nhật Y, bỏ qua Z.*
-
----
-
-## Dữ liệu được sync
-
-| Field trong `prod_plan` | Nguồn từ hanging line |
+| Field trong `prod_plan` | Nguồn |
 |---|---|
-| `mono` | `tPlanMaster.MONo` (ví dụ: `LINE 1 #324287AW26-001`) |
-| `ke_hoach` | `SYNC-HL-LINE1324287AW26-001` (tự sinh) |
-| `don_vi` | `"Chuyền treo"` (cố định) |
-| `bo_phan` | `["Line 1"]` (từ LineNo) |
-| `ma_hang` | `tPlanMaster.StyleNo` |
-| `khach_hang` | `tPlanMaster.Customer` |
-| `loai_hang` | Map từ `PhanLoaiDH`: `Vest` → `Áo vest` |
-| `ngay_rc` | `tPlanMaster.FirstHangDate` |
-| `san_luong` | Tổng PO qty hoặc `tPlanMaster.SLKH` |
-| `po_info` | Từ `tPlanPO` (PONo, Qty, ShipDate) |
+| `source_record_id` | `guid` (`tPlanMaster.PlanMaster_guid`) |
+| `mono` | `tPlanMaster.MONo` |
+| `ke_hoach` | `HL-<MONo>` |
+| `don_vi` | `don_vi` trong payload (`APP_UNIT` của XN) |
+| `bo_phan` | `["Tổ <LineNo>"]` |
+| `ma_hang` / `khach_hang` / `loai_hang` | `StyleNo` / `Customer` / `LoaiHang` |
+| `ngay_rc` | `FirstHangDate` |
+| `san_luong` | Sản lượng kế hoạch hiệu lực (SLKH + điều chỉnh) |
 
-### Lưu ý về Loại hàng
+### Quy tắc upsert
 
-Chỉ `PhanLoaiDH = 'Vest'` được tự động map thành `Áo vest`. Các loại khác (`Mới`, `Lặp lại`, `Đặc biệt`) cần admin chọn loại hàng thủ công trong phần chỉnh sửa kế hoạch sau khi sync.
-
----
-
-## Quy tắc upsert
-
-Mỗi lần sync, app thực hiện theo thứ tự:
-
-1. **Cập nhật** nếu `source_system = 'hanging_line'` và `source_record_id = PlanMaster_guid`
-2. **Cập nhật** nếu `mono = MONo` (backward compat)
+1. **Cập nhật** nếu `source_system = 'hanging_line'` và `source_record_id = guid`
+2. **Cập nhật** nếu `mono` trùng (kế hoạch nhập tay trước đó)
 3. **Thêm mới** nếu không tìm thấy
 
-Dữ liệu QC đã nhập (lỗi, hình ảnh) **không bị xóa** khi sync — chỉ metadata kế hoạch được cập nhật.
+Dữ liệu QC đã nhập **không bị xóa** khi đồng bộ — chỉ thông tin kế hoạch được cập nhật.
+Mỗi lần đẩy kế hoạch được bật lại `is_active`, nhưng **không** đụng tới `is_finished` (nút "Kết thúc" trên QLCL).
 
----
+### Kế hoạch đã xong
 
-## Liên kết với TV-3 (Hanging Line Dashboard)
-
-Sau khi QC nhập lỗi theo kế hoạch đã sync, TV-3 có thể truy vấn dữ liệu lỗi từ QC thông qua `mono` (= MONo):
-
-```
-TV3 request: /tv/api/tv3?mono=LINE 1 #324287AW26-001
-                ↓ (sau khi tích hợp thêm)
-QC DB query:  SELECT ... FROM qc_error_log_sp
-              JOIN prod_plan ON prod_plan.id = qc_error_log_sp.plan_id
-              WHERE prod_plan.mono = 'LINE 1 #324287AW26-001'
-```
-
-> Bước tích hợp TV-3 đọc dữ liệu lỗi từ QC là giai đoạn tiếp theo.
+Chuyền treo hiện chưa gửi trạng thái kết thúc, nên kế hoạch chỉ ẩn khỏi danh sách QC khi admin bấm
+**"Kết thúc"** trên `/qc`.
 
 ---
 
 ## Xử lý lỗi thường gặp
 
-| Thông báo | Nguyên nhân | Cách xử lý |
+| Hiện tượng | Nguyên nhân | Cách xử lý |
 |---|---|---|
-| `Không kết nối được SQL Server chuyền treo` | Hanging app chưa chạy hoặc sai tên server | Kiểm tra `HANGING_LINE_SQL_SERVER` trong `.env` |
-| `pyodbc chưa được cài đặt` | Thiếu thư viện | `pip install pyodbc` |
-| `Bỏ qua X: thiếu MONo` | Record trong tPlanMaster không có MONo | Kiểm tra dữ liệu bên hanging line |
-| Loại hàng trống sau sync | PhanLoaiDH không có trong map | Admin chỉnh tay loại hàng trong trang QC |
+| App chuyền treo báo 403 | `QLCL_API_KEY` hai bên khác nhau hoặc QLCL chưa đặt | Đặt cùng một key ở cả hai `.env`, khởi động lại |
+| QC không thấy kế hoạch | `APP_UNIT` khác tên đơn vị của QC trong QLCL, hoặc `LineNo` khác tổ của QC | Sửa `APP_UNIT` / `LineNo` bên chuyền treo rồi đẩy lại |
+| `Bỏ qua 1 plan vì thiếu mono` | Kế hoạch bên chuyền treo không có MONo | Kiểm tra dữ liệu bên chuyền treo |
+| Sản lượng ra chuyền = 0 | Chưa có lượt push sản lượng cho MONo + ngày đó | Kiểm tra job đẩy sản lượng bên chuyền treo |
+
+---
+
+## Ngoại lệ: QLCL tự PULL kế hoạch XNV2
+
+Chỉ dùng khi XNV2 không tự đẩy được và server QLCL kết nối được SQL Server XNV2:
+
+```
+HL_XNV2_AUTO_SYNC_ENABLED=true
+HL_XNV2_AUTO_SYNC_INTERVAL_MINUTES=60
+XNV2_SQL_SERVER=<server>
+XNV2_APP_DB=hanging_app
+XNV2_SQL_DRIVER=ODBC Driver 17 for SQL Server
+XNV2_DON_VI=XNV2
+```
+
+Mặc định tắt. Code: `prod_plan_sync.py` (`run_xnv2_auto_sync_loop` → `sync_hanging_line_prod_plan`).

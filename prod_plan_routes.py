@@ -286,19 +286,6 @@ def api_prod_plan_sync_flat_line(
         raise HTTPException(status_code=502, detail=f"Không đọc được Google Sheet Chuyền bệt: {exc}")
 
 
-@router.post("/api/prod-plan/sync-hanging-line")
-def api_prod_plan_sync_hanging_line(request: Request):
-    """Sync plans from hanging-line SQL Server (tPlanMaster) into qlcl.prod_plan.
-    Dùng khi QLCL và hanging line chạy cùng máy (local dev).
-    """
-    user = core.require_plan_admin(request)
-    core.check_factory_access(user, core.HANGING_LINE_DON_VI)
-    result = core.sync_hanging_line_prod_plan()
-    if result.get("status") == "error":
-        raise HTTPException(status_code=500, detail=result.get("detail", "Lỗi đồng bộ"))
-    return result
-
-
 @router.post("/api/prod-plan/push-from-hl")
 def api_push_from_hanging_line(request: Request, payload: dict):
     """Nhận danh sách kế hoạch JSON từ hanging line app và upsert vào prod_plan.

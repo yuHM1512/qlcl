@@ -89,15 +89,10 @@ QLCL_API_KEY=<key_vua_tao>
 
 **Sau đó** copy đúng key này vào `.env` của từng app XN (`QLCL_API_KEY=<key_vua_tao>`).
 
-### Chú ý: biến KHÔNG cần trong production
+### Chú ý: biến không còn dùng
 
-```env
-# XÓA hoặc comment các dòng này trong production.
-# Chỉ dùng khi dev local (QLCL và hanging line cùng máy, dùng PULL sync cũ).
-# HANGING_LINE_SQL_SERVER=.\SQLEXPRESS
-# HANGING_LINE_APP_DB=hanging_app
-# HANGING_LINE_SQL_DRIVER=ODBC Driver 17 for SQL Server
-```
+`HANGING_LINE_SQL_SERVER`, `HANGING_LINE_APP_DB`, `HANGING_LINE_SQL_DRIVER`, `QLCL_DON_VI` đã bỏ (QLCL không còn
+kết nối thẳng SQL Server chuyền treo). Nếu `.env` cũ còn các dòng này thì xóa đi, để lại cũng không ảnh hưởng.
 
 ---
 

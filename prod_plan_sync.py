@@ -35,7 +35,7 @@ _xnv2_auto_sync_lock = threading.Lock()
 
 
 def get_xnv2_connection():
-    """Kết nối SQL Server của XNV2 — dùng riêng biệt với HANGING_LINE_SQL_SERVER."""
+    """Kết nối SQL Server app chuyền treo của XNV2 (QLCL tự PULL, bật bằng HL_XNV2_AUTO_SYNC_ENABLED)."""
     if not core.PYODBC_AVAILABLE:
         raise RuntimeError("pyodbc chưa được cài đặt. Chạy: pip install pyodbc")
     if not core.XNV2_SQL_SERVER:
@@ -615,17 +615,15 @@ def build_hl_sync_plan_code(mono: str) -> str:
     return f"{HL_SYNC_PLAN_PREFIX}{safe}" if safe else HL_SYNC_PLAN_PREFIX.rstrip("-")
 
 
-def sync_hanging_line_prod_plan(
-    conn_override=None,
-    don_vi_override: str | None = None,
-) -> Dict[str, Any]:
-    """Read tPlanMaster + tDemandRoot + tPlanPO from hanging-line SQL Server
+def sync_hanging_line_prod_plan(conn_override, don_vi_override: str) -> Dict[str, Any]:
+    """Read tPlanMaster + tDemandRoot + tPlanPO from a hanging-line SQL Server
     and upsert into qlcl.prod_plan with source_system='hanging_line'.
 
+    Chỉ dùng cho chế độ QLCL tự PULL từ XNV2. Các XN khác tự PUSH qua /api/prod-plan/push-from-hl.
+
     Args:
-        conn_override: pyodbc connection đã mở sẵn (dùng cho XNV2 hoặc XN khác).
-                       Nếu None thì dùng get_hanging_line_connection() mặc định.
-        don_vi_override: ghi đè HANGING_LINE_DON_VI (vd 'XNV2').
+        conn_override: pyodbc connection đã mở sẵn (vd get_xnv2_connection()).
+        don_vi_override: đơn vị ghi vào prod_plan.don_vi (vd 'XNV2').
     """
     synced = 0
     inserted = 0
@@ -634,11 +632,7 @@ def sync_hanging_line_prod_plan(
     warnings: List[str] = []
 
     # --- Read from SQL Server ---
-    try:
-        hl_conn = conn_override if conn_override is not None else core.get_hanging_line_connection()
-    except Exception as exc:
-        return {"status": "error", "detail": f"Không kết nối được SQL Server chuyền treo: {exc}"}
-
+    hl_conn = conn_override
     try:
         hl_cur = hl_conn.cursor()
         hl_cur.execute("""
@@ -691,7 +685,7 @@ def sync_hanging_line_prod_plan(
                 guid_str = str(row["PlanMaster_guid"])
                 ke_hoach = build_hl_sync_plan_code(mono)
                 line_no = row.get("LineNo") or 0
-                don_vi = don_vi_override if don_vi_override is not None else core.HANGING_LINE_DON_VI
+                don_vi = don_vi_override
                 bo_phan_list = [f"Tổ {line_no}"] if line_no else []
 
                 # Loại hàng lấy trực tiếp từ tPlanMaster.LoaiHang (ten_loai)

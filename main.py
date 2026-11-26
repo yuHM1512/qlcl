@@ -109,7 +109,7 @@ try:
     HL_XNV2_AUTO_SYNC_INTERVAL_MINUTES = max(1, int(os.getenv("HL_XNV2_AUTO_SYNC_INTERVAL_MINUTES", "60")))
 except ValueError:
     HL_XNV2_AUTO_SYNC_INTERVAL_MINUTES = 60
-# SQL Server của XNV2 — cấu hình riêng, có thể khác với HANGING_LINE_SQL_SERVER
+# SQL Server của XNV2 (QLCL tự PULL kế hoạch, mặc định tắt)
 XNV2_SQL_SERVER = os.getenv("XNV2_SQL_SERVER", "")
 XNV2_APP_DB     = os.getenv("XNV2_APP_DB", "hanging_app")
 XNV2_SQL_DRIVER = os.getenv("XNV2_SQL_DRIVER", "ODBC Driver 17 for SQL Server")
@@ -322,27 +322,6 @@ def _detect_bo_phan_jsonb() -> bool:
             row = cur.fetchone()
             _PROD_PLAN_BO_PHAN_IS_JSONB = (row[0] == "jsonb") if row else False
     return _PROD_PLAN_BO_PHAN_IS_JSONB
-
-
-# --- Hanging Line (SQL Server) connection ---
-HANGING_LINE_SQL_SERVER = os.getenv("HANGING_LINE_SQL_SERVER", r".\SQLEXPRESS")
-HANGING_LINE_APP_DB = os.getenv("HANGING_LINE_APP_DB", "hanging_app")
-HANGING_LINE_SQL_DRIVER = os.getenv("HANGING_LINE_SQL_DRIVER", "ODBC Driver 17 for SQL Server")
-HANGING_LINE_DON_VI = os.getenv("QLCL_DON_VI", "Chuyền treo")  # don_vi for prod_plan sync
-
-
-def get_hanging_line_connection():
-    """Connect to SQL Server hanging-line DB (read-only, Windows Auth)."""
-    if not PYODBC_AVAILABLE:
-        raise RuntimeError("pyodbc chưa được cài đặt. Chạy: pip install pyodbc")
-    conn_str = (
-        f"DRIVER={{{HANGING_LINE_SQL_DRIVER}}};"
-        f"SERVER={HANGING_LINE_SQL_SERVER};"
-        f"DATABASE={HANGING_LINE_APP_DB};"
-        "Trusted_Connection=yes;"
-        "TrustServerCertificate=yes;"
-    )
-    return pyodbc.connect(conn_str, autocommit=True)
 
 
 def get_effective_defect_catalog_id(cur, effective_date: Optional[str] = None) -> Optional[int]:
