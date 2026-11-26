@@ -138,6 +138,37 @@ class QCInputWritesTest(unittest.TestCase):
         self.assertEqual(ok.status_code, 200, ok.text)
         self.assertEqual(self.client.patch(f'/api/qc/rework-2/{log_id}/99', json={'rework_done': True}).status_code, 404)
 
+    def test_qc_login_lands_on_input_page(self):
+        self.client.cookies.clear()
+        for path in ('/login', '/qc-login'):
+            res = self.client.post(path, data={'ma_nv': self.qc}, follow_redirects=False)
+            self.assertEqual((res.status_code, res.headers['location']), (303, '/qc-input'), path)
+        # An explicit next target still wins.
+        res = self.client.post('/login', data={'ma_nv': self.qc, 'next_url': '/qc/cap'}, follow_redirects=False)
+        self.assertEqual(res.headers['location'], '/qc/cap')
+        self.client.cookies.set('ma_nv', main.encode_ma_nv_cookie(self.qc))
+        for path in ('/', '/login', '/qc-login'):
+            res = self.client.get(path, follow_redirects=False)
+            self.assertEqual((res.status_code, res.headers['location']), (303, '/qc-input'), path)
+
+    def test_input_page_loads_split_assets(self):
+        page = self.client.get('/qc-input')
+        self.assertEqual(page.status_code, 200, page.text[:200])
+        import re
+        urls = re.findall(r'(?:src|href)="(/assets/qc_input/[^"]+)"', page.text)
+        self.assertGreaterEqual(len(urls), 10)  # 1 CSS + 9 JS
+        for url in urls:
+            self.assertRegex(url, r'\?v=\d+$')
+            self.assertEqual(self.client.get(url).status_code, 200, url)
+
+    def test_non_qc_login_still_goes_home(self):
+        with self.connection.cursor() as cur:
+            cur.execute("SELECT ma_nv FROM quality_employees WHERE COALESCE(qc_role, '') <> 'QC' LIMIT 1")
+            other = cur.fetchone()[0]
+        self.client.cookies.clear()
+        res = self.client.post('/login', data={'ma_nv': other}, follow_redirects=False)
+        self.assertEqual(res.headers['location'], '/')
+
     def test_quick_defect_combos_still_works(self):
         self.client.post('/api/qc/error-log-sp', json=self.error_body(1))
         response = self.client.get(f'/api/qc/input/quick-defect-combos?plan_id={PLAN_ID}&station=TEST&date={DAY}')

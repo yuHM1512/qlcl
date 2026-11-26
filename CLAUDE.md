@@ -28,14 +28,31 @@ Có liên kết với hệ thống chuyền treo (hanging app) để sync nhân 
 
 ```
 qlcl/
-├── main.py                    # ⚠️ File DUY NHẤT chứa TẤT CẢ routes + business logic (~307KB)
+├── main.py                    # Khởi tạo app, DB pool, đăng nhập/phân quyền, template, bootstrap schema, lifespan,
+│                              #   trang chủ "/", gemba page, healthz + include các module route bên dưới
+├── app_core.py                # `core` = module main; các *_routes.py gọi hàm dùng chung qua `core.<tên>`
+├── auth_routes.py             # /login, /logout, /qc-login (QC vào thẳng /qc-input)
+├── kpi_routes.py              # KPI: /kpi, /kpi-input, /view-kpi, /api/summary*, /api/input*, /api/error*, HĐKP KPI
+├── final_internal_routes.py   # Final nội bộ + HĐKP Final
+├── bulletin_routes.py         # Bản tin chất lượng
+├── qc_pages_routes.py         # Trang QC có sidebar (/qc, /qc/settings/*, /qc/cap, /qc/dashboard)
+├── qc_dashboard_routes.py     # /api/qc/dashboard*
+├── qc_cap_routes.py           # /api/qc/cap*
+├── qc_employees_routes.py     # /api/qc/employees*
+├── qc_hdkp_routes.py          # HĐKP endline (/hdkp-form-endline, /api/qc/hdkp)
+├── qc_input_routes.py         # Nhập liệu QC (/qc-input*, error-log-sp, output-sp, rework-2, combo lỗi...)
+├── prod_plan_routes.py        # /api/prod-plan*, /api/qc/hanging-output*
+├── prod_plan_sync.py          # Logic đồng bộ kế hoạch (QTCN, XNV2, chuyền bệt, chuyền treo) + auto-sync; main re-export
+├── catalog_routes.py          # /api/dm/* + visual picker
+├── tv3_routes.py              # /api/tv3/qc-data
+├── assets/qc_input/           # CSS + JS của qc_input_sp.html (script thường, chung global scope, thứ tự nạp trong template)
 ├── .env / env.example         # Config database, storage paths
 ├── requirements.txt           # Python dependencies
 ├── templates/                 # Jinja2 HTML pages (flat, không có subfolder)
 │   ├── index.html             # Landing page - chọn module (KPI / QC)
 │   ├── login.html             # Login form (dùng chung KPI + QC via qc_mode flag)
 │   ├── qc.html                # QC home - Kế hoạch sản xuất (có sidebar đầy đủ)
-│   ├── qc_input_sp.html       # ⭐ Nhập liệu QC sản phẩm (Bootstrap, mobile-first, KHÔNG sidebar)
+│   ├── qc_input_sp.html       # ⭐ Nhập liệu QC sản phẩm (Bootstrap, mobile-first, KHÔNG sidebar) — chỉ còn HTML, CSS/JS ở assets/qc_input/
 │   ├── qc_rework_2.html       # Nhập liệu rework
 │   ├── cap.html               # Hành động khắc phục (CAP)
 │   ├── qc_dashboard.html      # Dashboard tỉ lệ lỗi
@@ -247,6 +264,7 @@ Backend truyền các flag vào template context:
 - ❌ Đổi tên biến Jinja2 context (user, don_vi_options, is_qc_role, etc.)
 - ❌ Xóa hoặc rename route paths (/qc, /qc/cap, /qc/dashboard, etc.)
 - ❌ Thay đổi cấu trúc `main.py` mà không test lại toàn bộ flow
+- ❌ Gọi hàm dùng chung của main trong *_routes.py bằng tên trần — luôn dùng `core.<tên>` (để test patch `main.<tên>` có hiệu lực)
 - ❌ Mix thêm framework CSS mới (đã có 2 framework rồi)
 
 ### NÊN LÀM
@@ -274,3 +292,4 @@ Backend truyền các flag vào template context:
 | `/api/pdf` | `pdf_files/` |
 | `/api/images` | `images/` |
 | `/static` | `gemba_cp/static/` |
+| `/assets` | `assets/` — dùng `{{ asset_url('qc_input/core.js') }}` trong template (tự thêm `?v=<mtime>` chống cache) |

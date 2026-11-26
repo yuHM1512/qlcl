@@ -4,6 +4,12 @@ import unittest
 from final_internal_sync import ORDER_TYPE_LABELS, _inspector_name
 
 
+def APP_SOURCE() -> str:
+    """Mã nguồn app: main.py + các module route đã tách (*_routes.py)."""
+    files = [Path("main.py")] + sorted(Path(".").glob("*_routes.py"))
+    return "\n".join(f.read_text(encoding="utf-8") for f in files)
+
+
 class FinalInternalTests(unittest.TestCase):
     def test_final_inspector_name_removes_date_suffix(self):
         self.assertEqual(_inspector_name({"name": "QUYENQA-01/07/2026"}), "QUYENQA")
@@ -21,14 +27,14 @@ class FinalInternalTests(unittest.TestCase):
         self.assertIn("SET cap_required = (final_status_code = '0')", migration)
 
     def test_final_cap_endpoint_and_sync_require_fail_only(self):
-        app_source = Path("main.py").read_text(encoding="utf-8")
+        app_source = APP_SOURCE()
         sync_source = Path("final_internal_sync.py").read_text(encoding="utf-8")
         self.assertIn('final_status_code") or "") != "0"', app_source)
         self.assertIn('detail="Chỉ kết quả FAIL mới cần HĐKP 10.1"', app_source)
         self.assertIn('status_code == "0"', sync_source)
 
     def test_final_cap_editor_can_reach_dedicated_form_route(self):
-        app_source = Path("main.py").read_text(encoding="utf-8")
+        app_source = APP_SOURCE()
         self.assertIn('"/final-internal/"', app_source)
 
     def test_qc_leader_final_cap_migration_is_separate_from_kpi_roles(self):
@@ -38,7 +44,7 @@ class FinalInternalTests(unittest.TestCase):
         self.assertIn("don_vi IN ('XN1-V1', 'XN2', 'XN3', 'XNDT')", migration)
 
     def test_final_cap_editors_are_factory_scoped(self):
-        app_source = Path("main.py").read_text(encoding="utf-8")
+        app_source = APP_SOURCE()
         migration = Path("db/migrate_final_cap_editors.sql").read_text(encoding="utf-8")
         self.assertIn('FINAL_CAP_ROLE = "FINAL_CAP"', app_source)
         self.assertIn('"XN1-V1": "XN01"', app_source)
@@ -66,13 +72,13 @@ class FinalInternalTests(unittest.TestCase):
         self.assertIn("ALTER TABLE", sql)
 
     def test_final_hdkp_complete_endpoint_exists(self):
-        app_source = Path("main.py").read_text(encoding="utf-8")
+        app_source = APP_SOURCE()
         self.assertIn("/api/final-internal/hdkp/{inspection_id}/complete", app_source)
         self.assertIn("completed_at IS NOT NULL", app_source)
         self.assertIn("already_completed", app_source)
 
     def test_final_hdkp_cap_status_uses_completed_at(self):
-        app_source = Path("main.py").read_text(encoding="utf-8")
+        app_source = APP_SOURCE()
         self.assertIn("fh.completed_at IS NOT NULL THEN 'completed'", app_source)
         self.assertIn("fh.completed_at IS NULL", app_source)
         self.assertNotIn("fh.pdf_url IS NOT NULL THEN 'completed'", app_source)
@@ -85,7 +91,7 @@ class FinalInternalTests(unittest.TestCase):
         self.assertIn("/complete", html)
 
     def test_final_migration_registered_in_main(self):
-        app_source = Path("main.py").read_text(encoding="utf-8")
+        app_source = APP_SOURCE()
         self.assertIn('"alter_qa_final_hdkp_completed.sql"', app_source)
 
 
