@@ -43,6 +43,7 @@ qlcl/
 ├── qc_input_routes.py         # Nhập liệu QC (/qc-input*, error-log-sp, output-sp, rework-2, combo lỗi...)
 ├── prod_plan_routes.py        # /api/prod-plan*, /api/qc/hanging-output*
 ├── prod_plan_sync.py          # Logic đồng bộ kế hoạch (QTCN, XNV2, chuyền bệt, chuyền treo) + auto-sync; main re-export
+├── hanging_output_live.py     # Kéo sản lượng chuyền treo trực tiếp từ app XN (HANGING_APP_URLS) + cache cho /api/qc/hanging-output
 ├── catalog_routes.py          # /api/dm/* + visual picker
 ├── tv3_routes.py              # /api/tv3/qc-data
 ├── assets/qc_input/           # CSS + JS của qc_input_sp.html (script thường, chung global scope, thứ tự nạp trong template)

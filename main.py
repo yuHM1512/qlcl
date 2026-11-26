@@ -146,6 +146,36 @@ FLAT_LINE_SOURCES = {
     },
 }
 
+# --- Sản lượng chuyền treo: QLCL kéo trực tiếp từ app chuyền treo của từng XN ---
+# HANGING_APP_URLS="XN1-V1=https://...,XN2=https://...,XN3=https://..."
+# Gọi GET <url>/api/qlcl/hanging-output với header X-API-Key = QLCL_API_KEY.
+# Đơn vị không có URL → dùng số app chuyền treo đã push vào qc_hanging_output (như cũ).
+def _parse_unit_urls(raw: str) -> Dict[str, str]:
+    urls: Dict[str, str] = {}
+    for part in (raw or "").split(","):
+        unit, sep, url = part.partition("=")
+        unit, url = unit.strip(), url.strip().rstrip("/")
+        if not sep or not unit or not url:
+            continue
+        if not url.startswith(("http://", "https://")):
+            url = f"https://{url}"
+        urls[unit] = url
+    return urls
+
+
+HANGING_APP_URLS = _parse_unit_urls(os.getenv("HANGING_APP_URLS", ""))
+
+
+def _env_seconds(name: str, default: float, minimum: float) -> float:
+    try:
+        return max(minimum, float(os.getenv(name, str(default))))
+    except ValueError:
+        return default
+
+
+HANGING_OUTPUT_CACHE_SECONDS = _env_seconds("HANGING_OUTPUT_CACHE_SECONDS", 60, 10)
+HANGING_OUTPUT_TIMEOUT_SECONDS = _env_seconds("HANGING_OUTPUT_TIMEOUT_SECONDS", 8, 1)
+
 # --- Internal Final QA sync from po.hachiba.app ---
 FINAL_QA_API_BASE_URL = os.getenv("FINAL_QA_API_BASE_URL", "https://po.hachiba.app").rstrip("/")
 FINAL_QA_API_USERNAME = os.getenv("FINAL_QA_API_USERNAME", "").strip()

@@ -59,11 +59,47 @@ function setOutputDisplay(total, failed, reworked) {
     renderOutputDisplay();
 }
 
-async function fetchHangingOutput() {
+function fmtSyncTime(iso) {
+    if (!iso) return '';
+    const d = new Date(iso);
+    if (isNaN(d)) return '';
+    const hm = d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+    const sameDay = d.toDateString() === new Date().toDateString();
+    return sameDay ? hm : `${hm} ${d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })}`;
+}
+
+// Dòng nhỏ dưới ô số: nguồn số chuyền treo + giờ cập nhật + nút Làm mới (chỉ chuyền treo, không phải chuyền bệt).
+function renderHangingOutputMeta(data, failed) {
+    const wrap = document.getElementById('hlOutputMeta');
+    const text = document.getElementById('hlOutputMetaText');
+    if (!wrap || !text) return;
+    const show = isCurrentPlanHangingLine() && !isCurrentPlanFlatLine();
+    wrap.style.display = show ? '' : 'none';
+    if (!show) return;
+    wrap.classList.remove('warn');
+    if (failed) {
+        wrap.classList.add('warn');
+        text.textContent = 'Không đọc được sản lượng chuyền treo';
+        return;
+    }
+    if (!data) { text.textContent = ''; return; }
+    const at = fmtSyncTime(data.synced_at);
+    if (data.source === 'live') {
+        text.textContent = `Sản lượng MES · cập nhật ${at}`;
+    } else if (data.live_error) {
+        wrap.classList.add('warn');
+        text.textContent = at ? `Không kết nối được chuyền treo · số lưu lúc ${at}` : 'Không kết nối được chuyền treo';
+    } else {
+        text.textContent = at ? `Sản lượng chuyền treo gửi lúc ${at}` : 'Chuyền treo chưa gửi sản lượng ngày này';
+    }
+}
+
+async function fetchHangingOutput(options = {}) {
     if (!selectedPlanId || !isCurrentPlanHangingLine()) return;
     const planId = selectedPlanId, day = reportDateStr;
     try {
         const params = new URLSearchParams({ plan_id: selectedPlanId, date: reportDateStr });
+        if (options.refresh) params.append('refresh', 'true');
         const res = await fetch(`/api/qc/hanging-output?${params.toString()}`);
         const data = await res.json();
         if (selectedPlanId != planId || reportDateStr !== day) return;
@@ -77,17 +113,33 @@ async function fetchHangingOutput() {
             hlPassedCount = data.qty || 0;
             renderOutputDisplay();
         }
+        renderHangingOutputMeta(data, false);
     } catch (e) {
-        if (selectedPlanId == planId && reportDateStr === day && isCurrentPlanFlatLine()) {
-            flatOutput = null;
-            renderOutputDisplay();
+        if (selectedPlanId == planId && reportDateStr === day) {
+            if (isCurrentPlanFlatLine()) {
+                flatOutput = null;
+                renderOutputDisplay();
+            } else {
+                renderHangingOutputMeta(null, true);
+            }
         }
         console.error('[hanging-output]', e);
     }
 }
 
+async function refreshHangingOutput() {
+    const btn = document.getElementById('btnHlOutputRefresh');
+    if (btn) { btn.disabled = true; btn.classList.add('spinning'); }
+    try {
+        await fetchHangingOutput({ refresh: true });
+    } finally {
+        if (btn) { btn.disabled = false; btn.classList.remove('spinning'); }
+    }
+}
+
 function startHlAutoRefresh() {
     stopHlAutoRefresh();
+    renderHangingOutputMeta(null, false);
     if (isCurrentPlanHangingLine()) {
         fetchHangingOutput();
         // Không gọi API khi tab bị ẩn / màn hình tắt.

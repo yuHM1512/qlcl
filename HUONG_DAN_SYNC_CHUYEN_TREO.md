@@ -10,7 +10,7 @@ QLCL không kết nối thẳng SQL Server chuyền treo (ngoại lệ: chế đ
 App chuyền treo XN1-V1 / XN2 / XN3  (SQL Server riêng, APP_UNIT = đơn vị)
         │  POST + header X-API-Key
         ├─► /api/prod-plan/push-from-hl      kế hoạch (toàn bộ, mặc định 60 phút/lần hoặc bấm tay)
-        ├─► /api/qc/hanging-output/push      sản lượng ra chuyền theo MONo + ngày (~2 phút/lần)
+        ├─► /api/qc/hanging-output/push      sản lượng ra chuyền theo MONo + ngày (~2 phút/lần, nếu bật)
         ├─► /api/qc/employees/push-from-hl   danh sách QC + công đoạn
         └─► /api/qc/flat-output/push         sản lượng chuyền bệt (5 mốc giờ)
         ▼
@@ -63,6 +63,22 @@ Body: `{"don_vi": "XN2", "plans": [{guid, mono, ke_hoach, line_no, style_no, cus
 
 Dữ liệu QC đã nhập **không bị xóa** khi đồng bộ — chỉ thông tin kế hoạch được cập nhật.
 Mỗi lần đẩy kế hoạch được bật lại `is_active`, nhưng **không** đụng tới `is_finished` (nút "Kết thúc" trên QLCL).
+
+## Sản lượng ra chuyền trên trang nhập liệu QC
+
+Ô **Tổng đạt** của kế hoạch chuyền treo = sản lượng ra chuyền ngày báo cáo.
+
+1. Trang `/qc-input` hỏi QLCL mỗi 30 giây (`/api/qc/hanging-output`), có nút **Làm mới** dưới ô số.
+2. Nếu đơn vị có trong `HANGING_APP_URLS`, QLCL **kéo trực tiếp** từ app chuyền treo XN:
+   `GET <URL>/api/qlcl/hanging-output?mono=&date=` (X-API-Key = `QLCL_API_KEY`).
+   - Số tính giống TV-1: bước cuối **cụm 6** theo cấu hình, cộng **mọi bàn QC**
+     (plan chưa cấu hình cụm 6 → bước StRole=13 cuối), `QcOdr = 0`.
+   - QLCL nhớ số `HANGING_OUTPUT_CACHE_SECONDS` giây (mặc định 60) và lưu vào `qc_hanging_output`.
+   - Nút **Làm mới** bỏ qua bộ nhớ đệm.
+3. Không kéo được (XN chưa khai báo URL, mất mạng, sai key) → hiện số đã lưu gần nhất kèm giờ lưu,
+   dòng chú thích chuyển màu cam.
+
+App chuyền treo vẫn có thể tự push (`QLCL_OUTPUT_SYNC_ENABLED=true`), nhưng không còn bắt buộc.
 
 ### Kế hoạch đã xong
 

@@ -8,10 +8,12 @@ import psycopg2
 import psycopg2.extras
 import psycopg2.pool
 import re
+from datetime import date
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from typing import Any, List, Optional
 
 from app_core import core
+import hanging_output_live
 
 router = APIRouter()
 
@@ -399,8 +401,14 @@ def api_push_from_hanging_line(request: Request, payload: dict):
 def api_qc_hanging_output(
     plan_id: int = Query(...),
     date_str: str = Query(..., alias="date"),
+    refresh: bool = Query(False),
 ):
-    """Sản lượng ra chuyền từ MES (đã được push từ hanging_app)."""
+    """Sản lượng ra chuyền.
+
+    Chuyền treo: kéo trực tiếp từ app chuyền treo của XN (HANGING_APP_URLS, cache ngắn) rồi lưu vào
+    qc_hanging_output; không gọi được hoặc XN chưa cấu hình URL → trả số đã push gần nhất.
+    `refresh=true` (nút làm mới) bỏ qua cache.
+    """
     with core.get_db_connection() as conn:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute(
@@ -411,23 +419,62 @@ def api_qc_hanging_output(
             if plan and plan.get('source_system') == core.FLAT_LINE_SOURCE_SYSTEM:
                 from flat_output import get_output
                 return get_output(cur, plan, date_str)
-            if not plan or plan.get("source_system") != core.HL_SOURCE_SYSTEM:
-                return {"qty": 0, "available": False}
+    if not plan or plan.get("source_system") != core.HL_SOURCE_SYSTEM:
+        return {"qty": 0, "available": False}
 
-            mono = (plan.get("mono") or "").strip()
-            if not mono:
-                return {"qty": 0, "available": False}
+    mono = (plan.get("mono") or "").strip()
+    if not mono:
+        return {"qty": 0, "available": False}
+    try:
+        day = date.fromisoformat(date_str).isoformat()
+    except ValueError:
+        raise HTTPException(status_code=422, detail="Ngày không hợp lệ (YYYY-MM-DD)")
+    don_vi = plan["don_vi"]
 
-            cur.execute(
-                """
-                SELECT qty FROM public.qc_hanging_output
-                WHERE mono = %s AND report_date = %s AND don_vi = %s
-                ORDER BY synced_at DESC LIMIT 1
-                """,
-                (mono, date_str, plan['don_vi']),
-            )
-            row = cur.fetchone()
-            return {"qty": int(row["qty"]) if row else 0, "available": True}
+    # Gọi app chuyền treo NGOÀI kết nối DB để không giữ connection pool trong lúc chờ mạng.
+    live = None
+    live_error = None
+    try:
+        live = hanging_output_live.get_live_output(don_vi, mono, day, force=refresh)
+    except hanging_output_live.LiveOutputError as exc:
+        live_error = str(exc)
+        core.logger.warning("Live hanging output %s %s %s failed: %s", don_vi, mono, day, exc)
+
+    with core.get_db_connection() as conn:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            if live is not None:
+                cur.execute(
+                    """
+                    INSERT INTO public.qc_hanging_output (don_vi, mono, report_date, qty, synced_at)
+                    VALUES (%s, %s, %s, %s, NOW())
+                    ON CONFLICT (don_vi, mono, report_date)
+                    DO UPDATE SET qty = EXCLUDED.qty, synced_at = NOW()
+                    RETURNING qty, synced_at
+                    """,
+                    (don_vi, mono, day, live["qty"]),
+                )
+                row = cur.fetchone()
+                conn.commit()
+                source = "live"
+            else:
+                cur.execute(
+                    """
+                    SELECT qty, synced_at FROM public.qc_hanging_output
+                    WHERE mono = %s AND report_date = %s AND don_vi = %s
+                    ORDER BY synced_at DESC LIMIT 1
+                    """,
+                    (mono, day, don_vi),
+                )
+                row = cur.fetchone()
+                source = "stored"
+    return {
+        "qty": int(row["qty"]) if row else 0,
+        "available": True,
+        "source": source,
+        "synced_at": row["synced_at"].isoformat() if row and row.get("synced_at") else None,
+        "live_configured": hanging_output_live.base_url_for(don_vi) is not None,
+        "live_error": live_error,
+    }
 
 
 @router.post("/api/qc/hanging-output/push")

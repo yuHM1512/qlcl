@@ -1088,3 +1088,28 @@ body { background: var(--bg); font-family: 'Roboto', 'Inter', system-ui, sans-se
 /* Vùng chạm tối thiểu cho các nút thao tác chính */
 .btn-verify { min-height: 44px; min-width: 44px; font-size: 0.95rem; font-weight: 700; }
 .btn-verify:disabled { opacity: .6; }
+
+/* Nguồn + giờ cập nhật sản lượng chuyền treo, nút làm mới */
+.hl-output-meta {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 8px;
+    font-size: 0.75rem;
+    color: #64748b;
+}
+.hl-output-meta.warn { color: #b45309; }
+.hl-output-refresh {
+    border: 1px solid #cbd5e1;
+    background: #fff;
+    color: #1e40af;
+    border-radius: 999px;
+    padding: 2px 10px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.hl-output-refresh:disabled { opacity: 0.6; }
+.hl-output-refresh.spinning i { animation: hl-spin 0.8s linear infinite; }
+@keyframes hl-spin { to { transform: rotate(360deg); } }
