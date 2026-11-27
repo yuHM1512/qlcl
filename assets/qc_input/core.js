@@ -79,6 +79,7 @@ function flagInvalid(el, message) {
 const userDonVi = pageContext.don_vi || "";
 const userBoPhan = pageContext.bo_phan || "";
 const userStationsRaw = pageContext.station || [];
+const userPlanStations = pageContext.plan_stations || {};
 const isFlexibleQcUnit = userDonVi === 'XNV2';
 const stationOptions = ["QC kiểm thành phẩm", "QC vỏ", "QC trước seam", "QC sau seam"];
 

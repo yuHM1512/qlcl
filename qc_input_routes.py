@@ -34,9 +34,27 @@ def qc_input_page(request: Request):
         return RedirectResponse(url="/qc-login", status_code=303)
     core.require_qc_input_user(request)
 
+    plan_stations: Dict[str, list] = {}
+    with core.get_db_connection() as conn:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(
+                """
+                SELECT mono, station FROM public.qc_employee_plan_station
+                WHERE ma_nv = %s AND don_vi = %s
+                ORDER BY mono, station
+                """,
+                (user_data.get("ma_nv"), (user_data.get("don_vi") or "").strip()),
+            )
+            for r in cur.fetchall():
+                plan_stations.setdefault(r["mono"], []).append(r["station"])
+
     return core.templates.TemplateResponse(
         "qc_input_sp.html",
-        core.build_qc_template_context(request, user_data, don_vi_options=core.DON_VI_OPTIONS, page_subtitle="Nhập liệu QC", active_page="input"),
+        core.build_qc_template_context(
+            request, user_data,
+            don_vi_options=core.DON_VI_OPTIONS, page_subtitle="Nhập liệu QC", active_page="input",
+            plan_stations=plan_stations,
+        ),
     )
 
 

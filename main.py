@@ -274,6 +274,7 @@ SCHEMA_BOOTSTRAP_FILES = [
     "alter_qa_final_hdkp_completed.sql",
     "create_qc_client_request.sql",
     "migrate_qc_input_perf_20261125.sql",
+    "create_qc_employee_plan_station.sql",
 ]
 
 # Tạo thư mục lưu PDF và images nếu chưa có

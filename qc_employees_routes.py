@@ -117,11 +117,17 @@ def api_push_qc_employees_from_hanging_line(request: Request, payload: dict):
     Body:
       {
         "don_vi": "XN2",
+        "plan_monos": ["MONo-1", ...],
         "employees": [
           {"ma_nv": "A001", "ho_ten": "...", "bo_phan": "Tổ 3",
-           "station": ["Odr 1 - CẤP PHÔI", ...]}
+           "station": ["Odr 1 - CẤP PHÔI", ...],
+           "plans": [{"mono": "MONo-1", "station": ["Odr 1 - CẤP PHÔI"]}]}
         ]
       }
+
+    plan_monos (tuỳ chọn): các MONo được đồng bộ ở lần gửi này. Công đoạn theo
+    MONo của các MONo này được thay toàn bộ (cả khi không còn NV nào). Bản app
+    cũ không gửi plan_monos thì bảng công đoạn theo MONo giữ nguyên.
     """
     if not core._PUSH_API_KEY or request.headers.get("X-API-Key") != core._PUSH_API_KEY:
         raise HTTPException(status_code=403, detail="API key không hợp lệ")
@@ -129,12 +135,18 @@ def api_push_qc_employees_from_hanging_line(request: Request, payload: dict):
     don_vi = str(payload.get("don_vi") or "").strip()
     employees = payload.get("employees") or []
     replace_station_scope = bool(payload.get("replace_station_scope"))
+    raw_plan_monos = payload.get("plan_monos")
     if not don_vi:
         raise HTTPException(status_code=422, detail="Thiếu don_vi")
     if not isinstance(employees, list):
         raise HTTPException(status_code=422, detail="employees phải là list")
+    if raw_plan_monos is not None and not isinstance(raw_plan_monos, list):
+        raise HTTPException(status_code=422, detail="plan_monos phải là list")
+    plan_monos = sorted({str(m).strip() for m in (raw_plan_monos or []) if str(m or "").strip()})
+    track_plan_stations = raw_plan_monos is not None
 
     inserted = updated = skipped = 0
+    plan_station_rows = 0
     warnings: list[str] = []
 
     with core.get_db_connection() as conn:
@@ -148,6 +160,17 @@ def api_push_qc_employees_from_hanging_line(request: Request, payload: dict):
                     """,
                     (don_vi,),
                 )
+            if track_plan_stations:
+                if replace_station_scope:
+                    cur.execute(
+                        "DELETE FROM public.qc_employee_plan_station WHERE don_vi = %s",
+                        (don_vi,),
+                    )
+                elif plan_monos:
+                    cur.execute(
+                        "DELETE FROM public.qc_employee_plan_station WHERE don_vi = %s AND mono = ANY(%s)",
+                        (don_vi, plan_monos),
+                    )
             for row in employees:
                 ma_nv = str(row.get("ma_nv") or "").strip()
                 ho_ten = str(row.get("ho_ten") or "").strip()
@@ -201,6 +224,22 @@ def api_push_qc_employees_from_hanging_line(request: Request, payload: dict):
                     )
                     inserted += 1
 
+                if track_plan_stations:
+                    for plan in row.get("plans") or []:
+                        mono = str((plan or {}).get("mono") or "").strip()
+                        if not mono or (not replace_station_scope and mono not in plan_monos):
+                            continue
+                        for station in {str(s).strip() for s in (plan.get("station") or []) if str(s or "").strip()}:
+                            cur.execute(
+                                """
+                                INSERT INTO public.qc_employee_plan_station (don_vi, mono, ma_nv, station)
+                                VALUES (%s, %s, %s, %s)
+                                ON CONFLICT (don_vi, mono, ma_nv, station) DO UPDATE SET synced_at = NOW()
+                                """,
+                                (don_vi, mono, ma_nv, station),
+                            )
+                            plan_station_rows += 1
+
         conn.commit()
 
     return {
@@ -209,5 +248,6 @@ def api_push_qc_employees_from_hanging_line(request: Request, payload: dict):
         "inserted": inserted,
         "updated": updated,
         "skipped": skipped,
+        "plan_station_rows": plan_station_rows,
         "warnings": warnings[:20],
     }

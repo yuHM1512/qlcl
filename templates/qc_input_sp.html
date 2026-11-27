@@ -215,7 +215,7 @@
 <div class="speech-toast" id="speechToast"></div>
 
 <script id="pageContext" type="application/json">
-    {{ {"don_vi": user.don_vi, "bo_phan": user.bo_phan, "station": (user.station or []), "ma_nv": user.ma_nv} | tojson }}
+    {{ {"don_vi": user.don_vi, "bo_phan": user.bo_phan, "station": (user.station or []), "plan_stations": (plan_stations or {}), "ma_nv": user.ma_nv} | tojson }}
 </script>
 
 <script src="{{ asset_url('qc_input/core.js') }}"></script>

@@ -22,7 +22,18 @@ function getLegacyStationOptions() {
     return items.length ? items : stationOptions.slice();
 }
 
+// Công đoạn được phân công cho QC ở đúng MONo của kế hoạch đang chọn (từ chuyền treo).
+function getSelectedPlanAssignedStations() {
+    const plan = availablePlans.find(p => p.id == selectedPlanId);
+    const mono = plan && plan.mono;
+    return mono ? normalizeStationList(userPlanStations[mono]) : [];
+}
+
 function getPlanStationOptions() {
+    const planStations = getSelectedPlanAssignedStations();
+    if (planStations.length) {
+        return planStations;
+    }
     const assignedStations = normalizeStationList(userStationsRaw);
     if (assignedStations.length) {
         return assignedStations;
@@ -116,7 +127,10 @@ function renderStationSelector() {
         });
         optionsEl.appendChild(btn);
     });
-    hintEl.textContent = 'Chọn trạm để nhập dữ liệu.';
+    const usingFallback = Object.keys(userPlanStations).length > 0 && !getSelectedPlanAssignedStations().length;
+    hintEl.textContent = usingFallback
+        ? 'Chọn trạm để nhập dữ liệu (MONo này chưa có phân công từ MES).'
+        : 'Chọn trạm để nhập dữ liệu.';
 }
 
 async function loadClusterOptions(loaiHangId) {

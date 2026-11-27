@@ -58,14 +58,18 @@ def api_prod_plan_list(
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             use_jsonb_bo_phan = core._detect_bo_phan_jsonb()
 
+            is_qc = core.get_qc_role(user) == "QC"
             clauses = []
             params = []
-            if only_active or core.get_qc_role(user) == "QC":
+            if only_active or is_qc:
                 clauses.append("COALESCE(is_active, TRUE) = TRUE")
                 clauses.append("is_finished = FALSE")
             if don_vi:
                 clauses.append("don_vi = %s")
                 params.append(don_vi)
+
+            bo_phan_clause = ""
+            bo_phan_params: list = []
             if bo_phan:
                 if use_jsonb_bo_phan:
                     items = normalize_prod_plan_bo_phan_list(bo_phan)
@@ -73,18 +77,39 @@ def api_prod_plan_list(
                         or_clauses = []
                         for item in items:
                             or_clauses.append("bo_phan @> %s::jsonb")
-                            params.append(json.dumps([item]))
+                            bo_phan_params.append(json.dumps([item]))
                             # b_line's direct publisher may still send UDT - L1.
                             # Match the entire code within XNDT only (L1 != L10).
                             if re.fullmatch(r"Tổ \d+", item):
                                 or_clauses.append("""(don_vi = 'XNDT' AND EXISTS (
                                     SELECT 1 FROM jsonb_array_elements_text(bo_phan) AS team(value)
                                     WHERE team.value ~* %s))""")
-                                params.append(r"^\s*UDT\s*-\s*L0*" + item[3:] + r"\s*$")
-                        clauses.append("(" + " OR ".join(or_clauses) + ")")
+                                bo_phan_params.append(r"^\s*UDT\s*-\s*L0*" + item[3:] + r"\s*$")
+                        bo_phan_clause = "(" + " OR ".join(or_clauses) + ")"
                 else:
-                    clauses.append("bo_phan = %s")
-                    params.append(bo_phan)
+                    bo_phan_clause = "bo_phan = %s"
+                    bo_phan_params.append(bo_phan)
+
+            # QC có phân công từ chuyền treo: thấy MONo được phân công (mọi tổ) + kế hoạch
+            # cùng tổ chưa có dữ liệu phân công; ẩn MONo đã phân cho QC khác.
+            assigned_monos: list = []
+            if is_qc and user.get("ma_nv"):
+                cur.execute(
+                    "SELECT DISTINCT mono FROM public.qc_employee_plan_station WHERE ma_nv = %s AND don_vi = %s",
+                    (user["ma_nv"], (user.get("don_vi") or "").strip()),
+                )
+                assigned_monos = [r["mono"] for r in cur.fetchall()]
+            if assigned_monos:
+                unassigned = """NOT EXISTS (
+                    SELECT 1 FROM public.qc_employee_plan_station eps
+                    WHERE eps.don_vi = prod_plan.don_vi AND eps.mono = prod_plan.mono)"""
+                fallback = f"({bo_phan_clause} AND {unassigned})" if bo_phan_clause else unassigned
+                clauses.append(f"(mono = ANY(%s) OR {fallback})")
+                params.append(assigned_monos)
+                params.extend(bo_phan_params)
+            elif bo_phan_clause:
+                clauses.append(bo_phan_clause)
+                params.extend(bo_phan_params)
             where = ("WHERE " + " AND ".join(clauses)) if clauses else ""
             cur.execute(
                 f"""
@@ -328,24 +353,29 @@ def api_push_from_hanging_line(request: Request, payload: dict):
                 loai_hang      = str(row.get("loai_hang") or "").strip() or None
                 first_hang     = row.get("first_hang")  # YYYY-MM-DD string hoặc None
                 san_luong      = row.get("san_luong") or 0
-                is_finished    = bool(row.get("is_finished"))
+                # Chuyền treo kết thúc nhu cầu mẹ → finished; "Mở lại" chỉ mở plan do chính
+                # chuyền treo kết thúc (source_status='finished'), không đụng plan QA kết thúc tay.
+                hl_finished    = bool(row.get("is_finished"))
+                if hl_finished:
+                    finish_sql = "source_status = 'finished', is_finished = TRUE"
+                else:
+                    finish_sql = ("is_finished = CASE WHEN source_status = 'finished' THEN FALSE "
+                                  "ELSE is_finished END, source_status = 'active'")
 
                 # UPDATE by (source_system, source_record_id)
                 cur.execute(
-                    """
+                    f"""
                     UPDATE public.prod_plan
                     SET ke_hoach = %s, don_vi = %s, bo_phan = %s::jsonb,
                         khach_hang = %s, ma_hang = %s,
                         loai_hang = COALESCE(%s, loai_hang),
                         ngay_rc = %s, san_luong = %s, mono = %s,
-                        source_status = 'active', is_active = TRUE,
-                        is_finished = %s,
+                        {finish_sql}, is_active = TRUE,
                         last_synced_at = NOW(), updated_at = NOW()
                     WHERE source_system = %s AND source_record_id = %s
                     """,
                     (ke_hoach, don_vi, json.dumps(bo_phan_list),
                      customer, style_no, loai_hang, first_hang, san_luong, mono,
-                     is_finished,
                      core.HL_SOURCE_SYSTEM, guid_str),
                 )
                 if cur.rowcount:
@@ -354,22 +384,20 @@ def api_push_from_hanging_line(request: Request, payload: dict):
 
                 # UPDATE by mono (fallback — plan đã nhập tay chưa có source tracking)
                 cur.execute(
-                    """
+                    f"""
                     UPDATE public.prod_plan
                     SET source_system = %s, source_record_id = %s,
                         ke_hoach = %s, don_vi = %s, bo_phan = %s::jsonb,
                         khach_hang = %s, ma_hang = %s,
                         loai_hang = COALESCE(%s, loai_hang),
                         ngay_rc = %s, san_luong = %s,
-                        source_status = 'active', is_active = TRUE,
-                        is_finished = %s,
+                        {finish_sql}, is_active = TRUE,
                         last_synced_at = NOW(), updated_at = NOW()
                     WHERE mono = %s
                     """,
                     (core.HL_SOURCE_SYSTEM, guid_str, ke_hoach, don_vi,
                      json.dumps(bo_phan_list), customer, style_no, loai_hang,
-                     first_hang, san_luong,
-                     is_finished, mono),
+                     first_hang, san_luong, mono),
                 )
                 if cur.rowcount:
                     updated += 1
@@ -383,11 +411,12 @@ def api_push_from_hanging_line(request: Request, payload: dict):
                          ngay_rc, san_luong, mau, size, mono,
                          source_system, source_record_id, source_status, is_active,
                          is_finished, last_synced_at)
-                    VALUES (%s, %s, %s::jsonb, %s, %s, %s, %s, %s, '', '', %s, %s, %s, 'active', TRUE, %s, NOW())
+                    VALUES (%s, %s, %s::jsonb, %s, %s, %s, %s, %s, '', '', %s, %s, %s, %s, TRUE, %s, NOW())
                     """,
                     (ke_hoach, don_vi, json.dumps(bo_phan_list),
                      customer, style_no, loai_hang, first_hang, san_luong,
-                     mono, core.HL_SOURCE_SYSTEM, guid_str, is_finished),
+                     mono, core.HL_SOURCE_SYSTEM, guid_str,
+                     'finished' if hl_finished else 'active', hl_finished),
                 )
                 inserted += 1
 
