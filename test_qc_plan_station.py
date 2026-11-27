@@ -115,6 +115,33 @@ class QcPlanStationTest(unittest.TestCase):
         self.push_employees([legacy], replace_station_scope=True)
         self.assertEqual(self.plan_stations(), [(MONO_A, QC_A, S16)])
 
+    # --- TV-3: chỉ lấy trạm cụm 6 theo odrs ---
+    def test_tv3_qc_data_filters_by_station_odr(self):
+        plan_id = self.push_plan(MONO_A)['id']
+        day = '2026-11-27'
+        with self.connection.cursor() as cur:
+            for station, output, defects in ((S16, 40, 4), (S18, 100, 3), ('Odr 1 - Cắt', 10, 9)):
+                cur.execute("INSERT INTO qc_error_log_sp (plan_id, date, station, output, defect_count) "
+                            "VALUES (%s, %s, %s, %s, %s)", (plan_id, day, station, output, defects))
+            for station in (S16, S18):
+                cur.execute("INSERT INTO qc_defect_multi (plan_id, date, station, time, bo_phan, chi_tiet, ma_loi) "
+                            "VALUES (%s, %s, %s, '10:00', 'BP', 'CT', 'ML')", (plan_id, day, station))
+        get = lambda **p: self.client.get('/api/tv3/qc-data', headers={'X-API-Key': KEY},
+                                          params={'mono': MONO_A, 'date': day, **p})
+
+        only18 = get(odrs='18').json()
+        self.assertEqual((only18['total_kiem'], only18['total_loi'], only18['odrs']), (100, 3, [18]))
+        self.assertEqual(sum(s['loi'] for s in only18['slots']), 3)
+        self.assertEqual(len(only18['canh_bao']), 1)
+
+        both = get(odrs='16,18').json()
+        self.assertEqual((both['total_kiem'], both['total_loi']), (140, 7))
+
+        everything = get().json()  # không truyền odrs → mọi trạm như cũ
+        self.assertEqual((everything['total_kiem'], everything['total_loi']), (150, 16))
+
+        self.assertEqual(get(odrs='18,x').status_code, 422)
+
     # --- danh sách kế hoạch + trạm trên trang nhập liệu ---
     def test_qc_sees_assigned_monos_and_unassigned_same_line(self):
         ids = {m: self.push_plan(m, line_no=line)['id']

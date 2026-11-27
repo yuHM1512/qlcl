@@ -3,6 +3,8 @@
 Tách từ main.py. Hàm/biến dùng chung (DB, đăng nhập, phân quyền, template, cấu hình...) vẫn ở main.py
 và được gọi qua `core.<tên>` lúc chạy, nên test patch `main.<tên>` vẫn có hiệu lực.
 """
+from typing import List, Optional
+
 import psycopg2
 import psycopg2.extras
 import psycopg2.pool
@@ -39,17 +41,33 @@ def _tv3_bucket_sql(time_expr: str) -> str:
     """
 
 
+def _parse_odrs(raw: Optional[str]) -> List[int]:
+    try:
+        return sorted({int(x) for x in (raw or "").split(",") if x.strip()})
+    except ValueError:
+        raise HTTPException(status_code=422, detail="odrs phải là danh sách số, vd 18,19")
+
+
 @router.get("/api/tv3/qc-data")
 def api_tv3_qc_data(
     request: Request,
     mono: str = Query(..., description="MONo từ chuyền treo (prod_plan.mono)"),
     date: str = Query(..., description="Ngày YYYY-MM-DD"),
+    odrs: Optional[str] = Query(None, description="Chỉ lấy trạm 'Odr N - ...' với N trong danh sách, vd 18,19"),
 ):
     """Trả về toàn bộ QC defect data cho TV-3 chuyền treo.
 
-    Lọc theo MONo (qua prod_plan.mono) + date.
+    Lọc theo MONo (qua prod_plan.mono) + date; có odrs thì chỉ các trạm thuộc các Odr đó
+    (trạm QC lưu dạng "Odr N - Tên công đoạn", đồng bộ từ chuyền treo).
     Endpoint này được gọi từ hanging line app backend.
     """
+    odr_list = _parse_odrs(odrs)
+    station_patterns = [f"Odr {n} - %" for n in odr_list]
+    # Không truyền odrs → giữ hành vi cũ (mọi trạm).
+    sp_station = " AND sp.station LIKE ANY(%s)" if station_patterns else ""
+    multi_station = " AND station LIKE ANY(%s)" if station_patterns else ""
+    st_params = (station_patterns,) if station_patterns else ()
+
     # Backend integrations use the shared key; browser requests follow account scope.
     scoped_factory = None
     if not (core._PUSH_API_KEY and request.headers.get("X-API-Key") == core._PUSH_API_KEY):
@@ -74,14 +92,14 @@ def api_tv3_qc_data(
 
                 # ── 2. Tổng kiểm + tổng lỗi (từ cached columns) ────────
                 cur.execute(
-                    """
+                    f"""
                     SELECT
-                        COALESCE(SUM(output), 0)       AS total_kiem,
-                        COALESCE(SUM(defect_count), 0) AS total_loi
-                    FROM public.qc_error_log_sp
-                    WHERE plan_id = %s AND date = %s
+                        COALESCE(SUM(sp.output), 0)       AS total_kiem,
+                        COALESCE(SUM(sp.defect_count), 0) AS total_loi
+                    FROM public.qc_error_log_sp sp
+                    WHERE sp.plan_id = %s AND sp.date = %s{sp_station}
                     """,
-                    (plan_id, date),
+                    (plan_id, date, *st_params),
                 )
                 agg = cur.fetchone() or {}
                 total_kiem = int(agg.get("total_kiem") or 0)
@@ -95,10 +113,10 @@ def api_tv3_qc_data(
                            COALESCE(SUM(sp.output), 0)       AS kiem,
                            COALESCE(SUM(sp.defect_count), 0) AS loi
                     FROM public.qc_error_log_sp sp
-                    WHERE sp.plan_id = %s AND sp.date = %s
+                    WHERE sp.plan_id = %s AND sp.date = %s{sp_station}
                     GROUP BY bucket
                     """,
-                    (plan_id, date),
+                    (plan_id, date, *st_params),
                 )
                 bucket_rows = {r["bucket"]: r for r in cur.fetchall()}
                 slots = []
@@ -117,18 +135,18 @@ def api_tv3_qc_data(
 
                 # ── 4. Phân bổ lỗi theo bộ phận (donut) ────────────────
                 cur.execute(
-                    """
+                    f"""
                     SELECT
                         COALESCE(NULLIF(bp.ten_bo_phan, ''), '(Không rõ)') AS bp_name,
                         COUNT(*) AS n
                     FROM public.qc_defect d
                     JOIN public.qc_error_log_sp sp ON sp.id = d.error_log_sp_id
                     LEFT JOIN public.dm_bo_phan bp ON bp.id = d.bo_phan_id
-                    WHERE sp.plan_id = %s AND sp.date = %s
+                    WHERE sp.plan_id = %s AND sp.date = %s{sp_station}
                     GROUP BY bp_name
                     ORDER BY n DESC
                     """,
-                    (plan_id, date),
+                    (plan_id, date, *st_params),
                 )
                 bo_phan = [
                     {"name": r["bp_name"], "count": int(r["n"])}
@@ -137,19 +155,19 @@ def api_tv3_qc_data(
 
                 # ── 5. Top 3 mã lỗi (column chart) ─────────────────────
                 cur.execute(
-                    """
+                    f"""
                     SELECT
                         COALESCE(NULLIF(ml.ten_ma, ''), d.ma_loi_id::text, '(Không rõ)') AS ma_loi,
                         COUNT(*) AS n
                     FROM public.qc_defect d
                     JOIN public.qc_error_log_sp sp ON sp.id = d.error_log_sp_id
                     LEFT JOIN public.dm_ma_loi ml ON ml.id = d.ma_loi_id
-                    WHERE sp.plan_id = %s AND sp.date = %s
+                    WHERE sp.plan_id = %s AND sp.date = %s{sp_station}
                     GROUP BY ma_loi
                     ORDER BY n DESC
                     LIMIT 3
                     """,
-                    (plan_id, date),
+                    (plan_id, date, *st_params),
                 )
                 top3 = [
                     {"ma_loi": r["ma_loi"], "n": int(r["n"])}
@@ -158,7 +176,7 @@ def api_tv3_qc_data(
 
                 # ── 6. Combo table (bp + ct + ma_loi + count) ───────────
                 cur.execute(
-                    """
+                    f"""
                     SELECT
                         COALESCE(NULLIF(bp.ten_bo_phan, ''), '(Không rõ)') AS bp,
                         COALESCE(NULLIF(ct.ten_chi_tiet, ''), '(Không rõ)') AS ct,
@@ -169,11 +187,11 @@ def api_tv3_qc_data(
                     LEFT JOIN public.dm_bo_phan  bp ON bp.id = d.bo_phan_id
                     LEFT JOIN public.dm_chi_tiet ct ON ct.id = d.chi_tiet_id
                     LEFT JOIN public.dm_ma_loi   ml ON ml.id = d.ma_loi_id
-                    WHERE sp.plan_id = %s AND sp.date = %s
+                    WHERE sp.plan_id = %s AND sp.date = %s{sp_station}
                     GROUP BY bp, ct, ma_loi
                     ORDER BY n DESC
                     """,
-                    (plan_id, date),
+                    (plan_id, date, *st_params),
                 )
                 combo = [
                     {"bp": r["bp"], "ct": r["ct"], "ma_loi": r["ma_loi"], "n": int(r["n"])}
@@ -182,13 +200,13 @@ def api_tv3_qc_data(
 
                 # ── 7. Cảnh báo hàng loạt (qc_defect_multi) ────────────
                 cur.execute(
-                    """
+                    f"""
                     SELECT time, bo_phan, chi_tiet, ma_loi
                     FROM public.qc_defect_multi
-                    WHERE plan_id = %s AND date = %s
+                    WHERE plan_id = %s AND date = %s{multi_station}
                     ORDER BY time
                     """,
-                    (plan_id, date),
+                    (plan_id, date, *st_params),
                 )
                 canh_bao = []
                 for r in cur.fetchall():
@@ -200,6 +218,7 @@ def api_tv3_qc_data(
                 return {
                     "found":      True,
                     "plan_id":    plan_id,
+                    "odrs":       odr_list,
                     "total_kiem": total_kiem,
                     "total_loi":  total_loi,
                     "ty_le_loi":  ty_le_loi,
