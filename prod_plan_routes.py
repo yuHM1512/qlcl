@@ -328,6 +328,7 @@ def api_push_from_hanging_line(request: Request, payload: dict):
                 loai_hang      = str(row.get("loai_hang") or "").strip() or None
                 first_hang     = row.get("first_hang")  # YYYY-MM-DD string hoặc None
                 san_luong      = row.get("san_luong") or 0
+                is_finished    = bool(row.get("is_finished"))
 
                 # UPDATE by (source_system, source_record_id)
                 cur.execute(
@@ -338,11 +339,13 @@ def api_push_from_hanging_line(request: Request, payload: dict):
                         loai_hang = COALESCE(%s, loai_hang),
                         ngay_rc = %s, san_luong = %s, mono = %s,
                         source_status = 'active', is_active = TRUE,
+                        is_finished = %s,
                         last_synced_at = NOW(), updated_at = NOW()
                     WHERE source_system = %s AND source_record_id = %s
                     """,
                     (ke_hoach, don_vi, json.dumps(bo_phan_list),
                      customer, style_no, loai_hang, first_hang, san_luong, mono,
+                     is_finished,
                      core.HL_SOURCE_SYSTEM, guid_str),
                 )
                 if cur.rowcount:
@@ -359,12 +362,14 @@ def api_push_from_hanging_line(request: Request, payload: dict):
                         loai_hang = COALESCE(%s, loai_hang),
                         ngay_rc = %s, san_luong = %s,
                         source_status = 'active', is_active = TRUE,
+                        is_finished = %s,
                         last_synced_at = NOW(), updated_at = NOW()
                     WHERE mono = %s
                     """,
                     (core.HL_SOURCE_SYSTEM, guid_str, ke_hoach, don_vi,
                      json.dumps(bo_phan_list), customer, style_no, loai_hang,
-                     first_hang, san_luong, mono),
+                     first_hang, san_luong,
+                     is_finished, mono),
                 )
                 if cur.rowcount:
                     updated += 1
@@ -376,12 +381,13 @@ def api_push_from_hanging_line(request: Request, payload: dict):
                     INSERT INTO public.prod_plan
                         (ke_hoach, don_vi, bo_phan, khach_hang, ma_hang, loai_hang,
                          ngay_rc, san_luong, mau, size, mono,
-                         source_system, source_record_id, source_status, is_active, last_synced_at)
-                    VALUES (%s, %s, %s::jsonb, %s, %s, %s, %s, %s, '', '', %s, %s, %s, 'active', TRUE, NOW())
+                         source_system, source_record_id, source_status, is_active,
+                         is_finished, last_synced_at)
+                    VALUES (%s, %s, %s::jsonb, %s, %s, %s, %s, %s, '', '', %s, %s, %s, 'active', TRUE, %s, NOW())
                     """,
                     (ke_hoach, don_vi, json.dumps(bo_phan_list),
                      customer, style_no, loai_hang, first_hang, san_luong,
-                     mono, core.HL_SOURCE_SYSTEM, guid_str),
+                     mono, core.HL_SOURCE_SYSTEM, guid_str, is_finished),
                 )
                 inserted += 1
 
